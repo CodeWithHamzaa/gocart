@@ -1,0 +1,571 @@
+# Migration Plan — GoCart Pakistan
+
+59 milestones taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+
+Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
+
+## How to read a milestone
+
+- **Goal** — what changes and why, in one or two sentences.
+- **Files** — the concrete files/directories touched, taken from the classifications in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) and [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) wherever those apply.
+- **Dependencies** — which prior milestone(s) must land first.
+- **Testing** — the minimum manual/automated check before moving on. (No test framework exists yet — see Phase 12; until then "testing" means manual verification plus `npm run build`.)
+- **Rollback** — how to undo this specific milestone if it turns out to be wrong, without unwinding unrelated work.
+- **Commit message** — a ready-to-use commit subject line.
+
+## Scope note
+
+Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (Filters, Wishlist, Brands, advanced Inventory, advanced Settings) are intentionally **not** milestones in this plan — they're post-launch. Reviews and Coupons appear here only as *decision + minimal-scope-or-removal* milestones, per their Future-Phase-leaning status in the matrix, not as full feature builds.
+
+---
+
+## Phase 1 — Foundation & tooling (M1–M5)
+
+### M1 — Dockerized PostgreSQL for local development
+- **Goal**: Stand up a local Postgres instance in Docker so every later milestone has a real database to work against.
+- **Files**: `docker-compose.yml` (new, Postgres service only), `.env.example` (add `DATABASE_URL`)
+- **Dependencies**: none
+- **Testing**: `docker compose up postgres`; connect with `psql`/a DB client and confirm the container is healthy.
+- **Rollback**: Remove `docker-compose.yml` and the added env var; stop/remove the container. No application code is touched.
+- **Commit message**: `Add Dockerized PostgreSQL for local development`
+
+### M2 — Install Payload CMS v3 and Postgres adapter
+- **Goal**: Add the core dependencies the entire backend will be built on.
+- **Files**: `package.json`, `package-lock.json`
+- **Dependencies**: M1
+- **Testing**: `npm install` completes without peer-dependency errors; `npm run build` still succeeds (nothing references Payload yet, so the app is unchanged at runtime).
+- **Rollback**: `git checkout -- package.json package-lock.json && npm install`.
+- **Commit message**: `Add Payload CMS v3 and Postgres adapter dependencies`
+
+### M3 — Scaffold and mount Payload inside the Next.js app
+- **Goal**: Create an empty Payload config wired to Postgres, and mount its admin UI and REST/GraphQL API inside the existing Next.js App Router, per the mounting decision in [ARCHITECTURE.md](./ARCHITECTURE.md).
+- **Files**: `payload.config.ts` (new, no collections yet), `app/(payload)/admin/[[...segments]]/page.tsx` (new), `app/(payload)/api/[...slug]/route.ts` (new), `next.config.mjs` (Payload's Next.js integration wrapper), `.env.example` (add `PAYLOAD_SECRET`)
+- **Dependencies**: M2
+- **Testing**: `/admin` serves Payload's (collection-less) admin shell locally; no errors in server logs.
+- **Rollback**: Delete the new route files and `payload.config.ts`; revert `next.config.mjs`.
+- **Commit message**: `Scaffold and mount empty Payload CMS v3 instance in Next.js`
+
+### M4 — Retire the unwired Prisma schema
+- **Goal**: Remove the Prisma schema now that Payload/Postgres is the live data layer, per [ADR-003](./DECISIONS.md). Nothing in the app imports it today, so this is a pure cleanup.
+- **Files**: `prisma/schema.prisma` (deleted), `prisma/` (deleted if empty), `.gitignore` (remove the now-meaningless `/app/generated/prisma` line)
+- **Dependencies**: M3 (Payload confirmed as the replacement data layer)
+- **Testing**: `npm run build` succeeds; `grep -r "prisma" app components lib` returns nothing.
+- **Rollback**: `git revert` the commit to restore the file from history.
+- **Commit message**: `Retire unused Prisma schema in favor of Payload collections (ADR-003)`
+
+### M5 — Add development Dockerfile for the app
+- **Goal**: Containerize the Next.js/Payload app for local development, matching the Postgres container from M1.
+- **Files**: `Dockerfile` (new, dev stage), `.dockerignore` (new)
+- **Dependencies**: M3
+- **Testing**: `docker build --target dev .` succeeds; container starts and serves `/admin`.
+- **Rollback**: Delete `Dockerfile` and `.dockerignore`.
+- **Commit message**: `Add development Dockerfile for the Next.js + Payload app`
+
+---
+
+## Phase 2 — Payload data model (M6–M13)
+
+### M6 — Users collection (admin-only auth)
+- **Goal**: Create the single authenticated role in the system, per [ADR-006](./DECISIONS.md).
+- **Files**: `collections/Users.ts` (new), `payload.config.ts` (register collection)
+- **Dependencies**: M3
+- **Testing**: Create the first admin user via Payload's CLI/local API; log into `/admin` with it.
+- **Rollback**: Remove the collection file and its registration.
+- **Commit message**: `Add Users collection as the sole admin-only auth role`
+
+### M7 — Lock down Users access control
+- **Goal**: Ensure only an existing admin can create another admin — no public self-registration.
+- **Files**: `collections/Users.ts` (access rules)
+- **Dependencies**: M6
+- **Testing**: Anonymous REST `POST` to create a user is rejected; an authenticated admin session can create one.
+- **Rollback**: Revert the access-control changes.
+- **Commit message**: `Restrict Users collection creation to authenticated admins`
+
+### M8 — Media collection
+- **Goal**: Real file upload/storage for product images and future media, replacing the client-only `URL.createObjectURL()` previews found in `add-product`/`create-store` today.
+- **Files**: `collections/Media.ts` (new), `payload.config.ts`
+- **Dependencies**: M3
+- **Testing**: Upload an image through `/admin`; confirm the file is stored and served back correctly.
+- **Rollback**: Remove the collection file and its registration.
+- **Commit message**: `Add Media collection with real upload storage`
+
+### M9 — Categories collection
+- **Goal**: Replace the hardcoded category string array with a real, admin-editable entity.
+- **Files**: `collections/Categories.ts` (new)
+- **Dependencies**: M3
+- **Testing**: Create/edit/list a category via `/admin` and via the REST API.
+- **Rollback**: Remove the collection file.
+- **Commit message**: `Add Categories collection`
+
+### M10 — Products collection
+- **Goal**: Real product catalog storage, using the existing Prisma schema's field shape as reference per [ADR-003](./DECISIONS.md), with relations to Categories and Media.
+- **Files**: `collections/Products.ts` (new)
+- **Dependencies**: M8, M9
+- **Testing**: Create a product with a category relation and an uploaded image via `/admin`; confirm it's retrievable via REST and GraphQL.
+- **Rollback**: Remove the collection file.
+- **Commit message**: `Add Products collection with category and media relations`
+
+### M11 — Orders collection with guest fields and line items
+- **Goal**: Model orders for guest checkout — embedded customer/address fields instead of a `User` relation, plus a line-items array instead of a separate join table, per [ADR-005](./DECISIONS.md).
+- **Files**: `collections/Orders.ts` (new)
+- **Dependencies**: M10
+- **Testing**: Create a sample order via `/admin` with an embedded guest address and multiple line items; confirm it renders correctly with no login prompt beyond the admin's own.
+- **Rollback**: Remove the collection file.
+- **Commit message**: `Add Orders collection with guest checkout and line-item fields`
+
+### M12 — Payment method and status fields on Orders
+- **Goal**: Add a COD-only `paymentMethod` field (extensible enum, per [ADR-004](./DECISIONS.md)) and an order status workflow field.
+- **Files**: `collections/Orders.ts`
+- **Dependencies**: M11
+- **Testing**: Confirm only `COD` is selectable in `/admin` today; confirm the field type would accept an added value later without a data migration (documented, not built).
+- **Rollback**: Revert the field additions.
+- **Commit message**: `Add COD-only paymentMethod and status fields to Orders`
+
+### M13 — Collection access control pass + dev seed script
+- **Goal**: Set public-read/admin-write access on `Products`/`Categories`/`Media`, public-create/admin-read on `Orders` (guest checkout), and seed a handful of dev records so later milestones have real data to build against.
+- **Files**: `collections/Products.ts`, `Categories.ts`, `Media.ts`, `Orders.ts` (access functions), `scripts/seed.ts` (new)
+- **Dependencies**: M9, M10, M11, M12
+- **Testing**: Anonymous `GET /api/products` succeeds; anonymous `POST /api/products` fails; anonymous `POST /api/orders` succeeds; anonymous `GET /api/orders` fails. Seed script populates a clean dev DB.
+- **Rollback**: Revert access functions; delete seed script.
+- **Commit message**: `Set collection access control for public storefront and guest checkout`
+
+---
+
+## Phase 3 — Remove the multi-vendor surface (M14–M19)
+
+Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Seller in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md). These milestones are independent of Phases 1–2 and can land in parallel with them.
+
+### M14 — Delete the vendor dashboard
+- **Goal**: Remove the entire hand-built seller area, including its hardcoded `isSeller = true` auth bypass.
+- **Files**: `app/store/**` (deleted: `layout.jsx`, `page.jsx`, `add-product/`, `manage-product/`, `orders/`), `components/store/**` (deleted: `StoreLayout.jsx`, `StoreNavbar.jsx`, `StoreSidebar.jsx`)
+- **Dependencies**: none
+- **Testing**: `npm run build` succeeds; confirm no remaining file imports anything from `app/store` or `components/store`.
+- **Rollback**: `git revert` to restore the deleted files.
+- **Commit message**: `Remove vendor dashboard — single-store platform (ADR-006)`
+
+### M15 — Delete vendor signup and per-vendor storefront
+- **Goal**: Remove the "become a seller" flow and the `/shop/[username]` per-vendor storefront route.
+- **Files**: `app/(public)/create-store/page.jsx` (deleted), `app/(public)/shop/[username]/page.jsx` (deleted)
+- **Dependencies**: none
+- **Testing**: `npm run build` succeeds; confirm `Footer.jsx`'s "Create Your Store" link is addressed (see M... Footer cleanup, Phase 5) so no dangling link remains live in the meantime.
+- **Rollback**: `git revert`.
+- **Commit message**: `Remove vendor signup and per-vendor storefront routes`
+
+### M16 — Delete admin vendor-management routes
+- **Goal**: Remove vendor approval and activation screens.
+- **Files**: `app/admin/stores/page.jsx` (deleted), `app/admin/approve/page.jsx` (deleted)
+- **Dependencies**: none
+- **Testing**: `npm run build` succeeds.
+- **Rollback**: `git revert`.
+- **Commit message**: `Remove vendor approval and store-management admin routes`
+
+### M17 — Delete the hand-built admin dashboard shell
+- **Goal**: Remove the custom admin panel (with its hardcoded `isAdmin = true` bypass) now that Payload's own `/admin` is live and superior — per the **Replace** classification in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md).
+- **Files**: `app/admin/layout.jsx`, `app/admin/page.jsx` (deleted), `components/admin/AdminLayout.jsx`, `AdminNavbar.jsx`, `AdminSidebar.jsx`, `StoreInfo.jsx` (deleted), `components/OrdersAreaChart.jsx` (deleted)
+- **Dependencies**: M3 (Payload's `/admin` must already be reachable so nothing is lost)
+- **Testing**: Navigating to `/admin` now serves Payload's real admin UI, not a 404 or the old custom dashboard; `npm run build` succeeds.
+- **Rollback**: `git revert`.
+- **Commit message**: `Remove hand-built admin dashboard — superseded by Payload CMS admin UI`
+
+### M18 — Delete orphaned stub routes
+- **Goal**: Remove the empty pricing stub and the vendor-approval-only redirect page, both dead weight with no place in the target product.
+- **Files**: `app/(public)/pricing/page.jsx` (deleted), `app/(public)/loading/page.jsx` (deleted)
+- **Dependencies**: none
+- **Testing**: `npm run build` succeeds; confirm `Footer.jsx`'s "Become Plus Member" link is addressed in the same cleanup pass or immediately after (Phase 5 Footer milestone).
+- **Rollback**: `git revert`.
+- **Commit message**: `Remove orphaned pricing stub and vendor-redirect loading page`
+
+### M19 — Remove the admin coupons stub page
+- **Goal**: Remove the non-functional coupon CRUD screen for now; real coupon support (if any) is redesigned later per Phase 11, since account-based targeting (`forNewUser`/`forMember`) doesn't fit guest checkout.
+- **Files**: `app/admin/coupons/page.jsx` (deleted)
+- **Dependencies**: M17
+- **Testing**: `npm run build` succeeds.
+- **Rollback**: `git revert`.
+- **Commit message**: `Remove non-functional coupon admin page pending guest-checkout-compatible redesign`
+
+---
+
+## Phase 4 — Confirm admin-only auth end to end (M20–M21)
+
+### M20 — Verify no route bypasses Payload auth
+- **Goal**: Audit that the only authenticated surface left in the app is Payload's own `/admin`, with no leftover custom auth checks anywhere.
+- **Files**: none changed — audit only; fixes (if any) land as follow-up commits scoped to whatever is found
+- **Dependencies**: M17, M19
+- **Testing**: Manually browse every remaining route while logged out of `/admin`; confirm nothing customer-facing requires or fakes a login.
+- **Rollback**: N/A (audit milestone).
+- **Commit message**: `Audit: confirm Payload admin auth is the only authenticated surface`
+
+### M21 — Remove the non-functional customer "Login" button
+- **Goal**: The storefront `Navbar` has a "Login" button with no handler; remove it since customers never authenticate under guest-checkout-only ([ADR-005](./DECISIONS.md)).
+- **Files**: `components/Navbar.jsx`
+- **Dependencies**: M20
+- **Testing**: Visual check — navbar renders correctly on mobile and desktop without the button; no console errors.
+- **Rollback**: Revert the file.
+- **Commit message**: `Remove non-functional customer login button from navbar`
+
+---
+
+## Phase 5 — Storefront: real product & category data (M22–M28)
+
+### M22 — Product/category data-fetching utility
+- **Goal**: A small server-side utility to fetch Products/Categories from Payload (local API when server-rendered, REST/GraphQL when client-rendered), replacing ad hoc dummy-data assignment.
+- **Files**: `lib/payload/products.ts` (new), `lib/payload/categories.ts` (new)
+- **Dependencies**: M13
+- **Testing**: Call each function from a temporary script/route and confirm it returns seeded data from M13.
+- **Rollback**: Delete the new files; nothing else references them yet.
+- **Commit message**: `Add server-side data-fetching utilities for Products and Categories`
+
+### M23 — Wire home page product sections to real data
+- **Goal**: Replace dummy-data-backed `LatestProducts`/`BestSelling` with real Payload data; convert what can be server-rendered for SEO.
+- **Files**: `components/LatestProducts.jsx`, `components/BestSelling.jsx`, `app/(public)/page.jsx`
+- **Dependencies**: M22
+- **Testing**: Home page renders real seeded products; no console errors; page still builds/loads under `npm run build && npm run start`.
+- **Rollback**: Revert the three files.
+- **Commit message**: `Wire home page product sections to real Payload data`
+
+### M24 — Wire shop listing page to real data
+- **Goal**: Replace the Redux-dummy-list-backed shop page with a real Products query.
+- **Files**: `app/(public)/shop/page.jsx`
+- **Dependencies**: M22
+- **Testing**: `/shop` lists real seeded products; existing name-based search still filters correctly against real data.
+- **Rollback**: Revert the file.
+- **Commit message**: `Wire shop listing page to real Payload product data`
+
+### M25 — Wire product detail page to real data
+- **Goal**: Replace the Redux-lookup-based product page with a real per-product fetch.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `components/ProductDetails.jsx`, `components/ProductDescription.jsx`
+- **Dependencies**: M22
+- **Testing**: Visiting `/product/[id]` for a seeded product renders correct name/price/images; a non-existent ID renders a proper not-found state instead of a blank page.
+- **Rollback**: Revert the three files.
+- **Commit message**: `Wire product detail page to real Payload product data`
+
+### M26 — Remove multi-vendor "Product by {store}" attribution
+- **Goal**: Now that products aren't vendor-owned, drop the store-attribution block and its link to the (already-deleted) per-vendor storefront.
+- **Files**: `components/ProductDescription.jsx`
+- **Dependencies**: M25, M15
+- **Testing**: Product detail page renders correctly with no broken link and no reference to a store/vendor.
+- **Rollback**: Revert the file.
+- **Commit message**: `Remove vendor attribution block from product page`
+
+### M27 — Wire CategoriesMarquee to real categories
+- **Goal**: Replace whatever category source `CategoriesMarquee` used with the real `Categories` collection.
+- **Files**: `components/CategoriesMarquee.jsx`
+- **Dependencies**: M22
+- **Testing**: Marquee renders the seeded categories from M9/M13; clicking one filters/links correctly.
+- **Rollback**: Revert the file.
+- **Commit message**: `Wire category marquee to real Payload categories`
+
+### M28 — Remove dummy data source and orphaned Redux slices
+- **Goal**: Now that every storefront consumer has been re-pointed, delete the dummy-data file and the Redux slices that existed only to hold it.
+- **Files**: `assets/assets.js` (deleted), `lib/features/product/productSlice.js` (deleted), `lib/features/rating/ratingSlice.js` (deleted), `lib/store.js` (trimmed to remaining reducers), `assets/product_img*.png`, `hero_*`, `happy_store.webp`, `profile_pic*.jpg` (deleted — placeholder imagery tied to the dummy dataset; real product/marketing photography to be supplied separately)
+- **Dependencies**: M23, M24, M25, M26, M27
+- **Testing**: `npm run build` succeeds; `grep -r "assets/assets"` and `grep -r "productDummyData\|dummyRatingsData"` across `app`/`components`/`lib` return nothing.
+- **Rollback**: `git revert` to restore all deleted files at once.
+- **Commit message**: `Remove dummy data source and orphaned Redux slices now that storefront uses real data`
+
+---
+
+## Phase 6 — Search (M29)
+
+### M29 — Replace client-array search with a real query
+- **Goal**: The current search filters an in-memory Redux array with `.includes()` — replace with a real query against Payload/Postgres so it scales past a handful of seeded products.
+- **Files**: `app/(public)/shop/page.jsx`, `lib/payload/products.ts`
+- **Dependencies**: M24
+- **Testing**: Search for a seeded product name returns correct results; search for a non-matching term returns an empty state, not an error.
+- **Rollback**: Revert both files.
+- **Commit message**: `Replace client-side array search with real product query`
+
+---
+
+## Phase 7 — Cart persistence & guest checkout (COD) (M30–M36)
+
+### M30 — Fix cart persistence
+- **Goal**: The cart is currently in-memory-only and empties on refresh — a real problem with no account to recover it from. Persist it (e.g. `localStorage`).
+- **Files**: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
+- **Dependencies**: none (independent of the Payload work, can land any time after Phase 0)
+- **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
+- **Rollback**: Revert both files.
+- **Commit message**: `Persist cart state across page reloads`
+
+### M31 — Redesign guest address capture
+- **Goal**: `AddressModal`'s submit handler currently does nothing. Wire it to real guest-checkout address capture with Pakistani address field conventions (phone-first, city/area), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
+- **Files**: `components/AddressModal.jsx`
+- **Dependencies**: none
+- **Testing**: Fill out the form, submit, confirm the address is available to the checkout flow that consumes it (verified together with M33).
+- **Rollback**: Revert the file.
+- **Commit message**: `Wire guest address form to real checkout state with Pakistani address fields`
+
+### M32 — Remove the Stripe option from checkout UI
+- **Goal**: COD is the only payment method for launch, per [ADR-004](./DECISIONS.md); the Stripe radio button was never functional and shouldn't be presented as a choice.
+- **Files**: `components/OrderSummary.jsx`
+- **Dependencies**: none
+- **Testing**: Checkout UI shows COD only, no radio group needed.
+- **Rollback**: Revert the file.
+- **Commit message**: `Remove non-functional Stripe option from checkout UI (COD-only for launch)`
+
+### M33 — Real order creation on "Place Order"
+- **Goal**: Replace the `router.push('/orders')` stub with an actual `POST` to the `Orders` collection, using the cart contents and guest address.
+- **Files**: `components/OrderSummary.jsx`, `lib/payload/orders.ts` (new)
+- **Dependencies**: M13, M30, M31, M32
+- **Testing**: Add items, fill address, place order; confirm a real `Order` record appears in `/admin` with correct line items, total, and `paymentMethod: COD`.
+- **Rollback**: Revert both files.
+- **Commit message**: `Create real orders on checkout instead of navigating to a stub page`
+
+### M34 — Confirm shipping/total calculation rules
+- **Goal**: Wire the cart/checkout total calculation to whatever shipping model is confirmed in [PROJECT_SPEC.md](./PROJECT_SPEC.md)'s open questions (flat/free/city-based).
+- **Files**: `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx`
+- **Dependencies**: M33
+- **Testing**: Totals shown at checkout match the confirmed shipping rule for a sample order.
+- **Rollback**: Revert both files.
+- **Commit message**: `Apply confirmed shipping/total calculation rules at checkout`
+
+### M35 — Order confirmation flow
+- **Goal**: After a successful COD order, show a real confirmation (order number, summary) instead of the current dummy `/orders` listing.
+- **Files**: `app/(public)/orders/page.jsx` or a new `app/(public)/order-confirmation/[orderId]/page.jsx`
+- **Dependencies**: M33
+- **Testing**: Placing an order lands on a confirmation view showing that order's real data.
+- **Rollback**: Revert/delete the new/changed route.
+- **Commit message**: `Add real order confirmation flow after guest checkout`
+
+### M36 — Guest order lookup
+- **Goal**: Since there are no accounts, "My Orders" needs a non-account lookup mechanism (e.g. order ID + phone/email), replacing the current dummy-data table.
+- **Files**: `app/(public)/orders/page.jsx`, `components/OrderItem.jsx`, `lib/payload/orders.ts`
+- **Dependencies**: M33, M35
+- **Testing**: Look up a real placed order by its lookup key; confirm correct data renders and an incorrect key is rejected without leaking other customers' orders.
+- **Rollback**: Revert the three files.
+- **Commit message**: `Add guest order lookup by order reference`
+
+---
+
+## Phase 8 — Orders & admin fulfillment (M37–M39)
+
+### M37 — Verify admin order management via Payload
+- **Goal**: Confirm the store admin can view and manage all incoming orders directly in Payload's `/admin` — no custom UI needed for the base case.
+- **Files**: none changed — verification only; `collections/Orders.ts` admin UI config tweaks if list/detail views need field visibility adjustments
+- **Dependencies**: M33
+- **Testing**: Place a few test orders; confirm an admin can see, open, and read full details of each in `/admin`.
+- **Rollback**: Revert any admin UI config tweaks made.
+- **Commit message**: `Tune Orders admin UI for fulfillment visibility`
+
+### M38 — Order status update flow for admin
+- **Goal**: Ensure the admin can move an order through its status workflow (Placed → Processing → Shipped → Delivered) — via Payload's native admin editing unless a dedicated view is required.
+- **Files**: `collections/Orders.ts` (status field admin config)
+- **Dependencies**: M12, M37
+- **Testing**: Update a test order's status via `/admin`; confirm it persists and is reflected wherever order status is displayed to the guest (M36).
+- **Rollback**: Revert config changes.
+- **Commit message**: `Enable order status updates through Payload admin`
+
+### M39 — Align OrderItem component to the real Orders schema
+- **Goal**: `OrderItem.jsx` currently assumes the dummy order shape; align it to the real `Orders` collection shape from M11/M16.
+- **Files**: `components/OrderItem.jsx`
+- **Dependencies**: M36
+- **Testing**: Guest order lookup (M36) renders order line items correctly with no shape mismatches.
+- **Rollback**: Revert the file.
+- **Commit message**: `Align OrderItem component to real Orders collection schema`
+
+---
+
+## Phase 9 — SEO (M40–M43)
+
+### M40 — Convert storefront layout/pages to server components
+- **Goal**: Remove unnecessary `'use client'` directives from the public layout and home page so they render server-side, per the SEO-first requirement.
+- **Files**: `app/(public)/layout.jsx`, `app/(public)/page.jsx`
+- **Dependencies**: M23 (real data already server-fetchable)
+- **Testing**: View page source and confirm product content is present in the initial HTML response, not only after client hydration.
+- **Rollback**: Revert both files.
+- **Commit message**: `Convert public layout and home page to server components`
+
+### M41 — Per-page metadata
+- **Goal**: Add `generateMetadata` to product, category/shop, and home pages, replacing the single site-wide static title/description.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `app/(public)/shop/page.jsx`, `app/(public)/page.jsx`, `app/layout.jsx`
+- **Dependencies**: M25, M40
+- **Testing**: Inspect rendered `<head>` per route; each shows a distinct, relevant title/description.
+- **Rollback**: Revert the four files.
+- **Commit message**: `Add per-page SEO metadata via generateMetadata`
+
+### M42 — sitemap.xml and robots.txt
+- **Goal**: Add Next.js file-convention sitemap and robots files, generated from real product/category data.
+- **Files**: `app/sitemap.ts` (new), `app/robots.ts` (new)
+- **Dependencies**: M22
+- **Testing**: `/sitemap.xml` and `/robots.txt` return valid content listing real seeded products/categories.
+- **Rollback**: Delete both new files.
+- **Commit message**: `Add sitemap.xml and robots.txt generated from real catalog data`
+
+### M43 — JSON-LD structured data for products
+- **Goal**: Add `Product` structured data to product detail pages for rich search results.
+- **Files**: `app/(public)/product/[productId]/page.jsx`
+- **Dependencies**: M25, M41
+- **Testing**: Validate the rendered JSON-LD against Google's Rich Results structured-data requirements for the `Product` type.
+- **Rollback**: Revert the file.
+- **Commit message**: `Add JSON-LD structured data to product pages`
+
+---
+
+## Phase 10 — Mobile-first audit (M44–M45)
+
+### M44 — Component-by-component mobile review
+- **Goal**: Audit every storefront component for mobile-first correctness (tap targets, layout at small widths, readable type), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
+- **Files**: `components/**` (storefront-facing; fixes scoped per component found to need them)
+- **Dependencies**: M28 (real data in place, so the audit reflects real content, not placeholders)
+- **Testing**: Manually test the golden path (browse → product → cart → checkout) at common mobile viewport widths; no horizontal scroll, no unreachable controls.
+- **Rollback**: Revert whichever specific component fixes are found to be wrong.
+- **Commit message**: `Mobile-first layout and interaction fixes across storefront components`
+
+### M45 — Mobile performance pass
+- **Goal**: Address load performance on mid-tier mobile devices/slower connections — image sizing, font loading, bundle size.
+- **Files**: `next.config.mjs`, `app/layout.jsx`, image-heavy components identified in M44
+- **Dependencies**: M44
+- **Testing**: Run a mobile Lighthouse/PageSpeed pass on the storefront; confirm meaningful improvement over the pre-audit baseline.
+- **Rollback**: Revert the specific performance changes found to regress anything.
+- **Commit message**: `Improve mobile load performance (images, fonts, bundle size)`
+
+---
+
+## Phase 11 — Reviews & Coupons: decide and land minimal scope (M46–M48)
+
+Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leaning with an open identity/targeting question in [PROJECT_SPEC.md](./PROJECT_SPEC.md). These milestones resolve that ambiguity rather than assuming an outcome.
+
+### M46 — Decide Reviews v1 scope
+- **Goal**: Get an explicit stakeholder answer to the open question ("does ratings/reviews stay for v1, and with what non-account identity model, or is it dropped?") and implement whichever outcome is chosen — either a guest-safe `Reviews`/`Ratings` collection wired to `RatingModal`, or removal of `RatingModal` and its entry points entirely.
+- **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `collections/Reviews.ts` (new, only if kept)
+- **Dependencies**: M25
+- **Testing**: If kept — submitting a review via `RatingModal` persists to Payload and appears on the product page. If removed — no dead entry points remain.
+- **Rollback**: Revert whichever path was taken.
+- **Commit message**: `Implement decided v1 scope for product reviews` *(adjust wording to "Remove review submission for v1" if the removal path is chosen)*
+
+### M47 — Decide Coupons v1 scope
+- **Goal**: Same pattern for coupons — either a simplified, guest-safe code-based `Coupons` collection (dropping account-based `forNewUser`/`forMember` targeting) wired into checkout, or explicit deferral with the coupon-code input removed from `OrderSummary.jsx` for v1.
+- **Files**: `components/OrderSummary.jsx`, `collections/Coupons.ts` (new, only if kept)
+- **Dependencies**: M33
+- **Testing**: If kept — applying a valid seeded coupon code at checkout correctly discounts the order total. If removed — no non-functional coupon input remains in the UI.
+- **Rollback**: Revert whichever path was taken.
+- **Commit message**: `Implement decided v1 scope for checkout coupons` *(adjust wording to "Remove coupon input for v1" if the removal path is chosen)*
+
+### M48 — Clean up any remaining dead ends from M46/M47
+- **Goal**: Sweep for any leftover references (nav links, footer copy, unused imports) tied to whichever paths were removed in M46/M47.
+- **Files**: identified during M46/M47, likely `components/Footer.jsx`
+- **Dependencies**: M46, M47
+- **Testing**: `npm run build` succeeds; manual click-through finds no dead links or references to removed functionality.
+- **Rollback**: Revert the specific cleanup commit.
+- **Commit message**: `Clean up references to deferred/removed reviews and coupons functionality`
+
+---
+
+## Phase 12 — Dockerization & production readiness (M49–M54)
+
+### M49 — Production Dockerfile stage
+- **Goal**: Add a production build stage to the Dockerfile (multi-stage, non-root user, minimal final image), building on the dev stage from M5.
+- **Files**: `Dockerfile`
+- **Dependencies**: M5
+- **Testing**: `docker build --target production .`; resulting container starts and serves the app correctly with `NODE_ENV=production`.
+- **Rollback**: Revert `Dockerfile` to the dev-only version.
+- **Commit message**: `Add production build stage to Dockerfile`
+
+### M50 — Full-stack docker-compose (dev and prod variants)
+- **Goal**: Compose the app and Postgres together (extending M1), with separate dev/prod configurations.
+- **Files**: `docker-compose.yml` (extended), `docker-compose.prod.yml` (new)
+- **Dependencies**: M1, M49
+- **Testing**: `docker compose up` brings up app + Postgres together locally; `docker compose -f docker-compose.prod.yml up` runs the production target successfully.
+- **Rollback**: Revert compose files to the Postgres-only version from M1.
+- **Commit message**: `Add full-stack docker-compose for dev and production`
+
+### M51 — Real image optimization for self-hosted deployment
+- **Goal**: Remove `images.unoptimized: true` (a Vercel-shortcut default) and configure Next.js image optimization to work correctly under Docker.
+- **Files**: `next.config.mjs`
+- **Dependencies**: M49
+- **Testing**: Product images on the storefront load correctly and are actually optimized (check response headers/sizes) when served from the Dockerized app.
+- **Rollback**: Revert `next.config.mjs`.
+- **Commit message**: `Enable real image optimization for self-hosted production deployment`
+
+### M52 — Production environment/secrets handling
+- **Goal**: Document and structure how `DATABASE_URL`, `PAYLOAD_SECRET`, and any other secrets are supplied in production (without committing real values).
+- **Files**: `.env.example` (finalized), `docker-compose.prod.yml`
+- **Dependencies**: M50
+- **Testing**: A fresh clone can be configured for production using only `.env.example` as a guide and real secrets supplied out-of-band.
+- **Rollback**: Revert the two files.
+- **Commit message**: `Document production environment and secrets configuration`
+
+### M53 — Health checks and logging
+- **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
+- **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
+- **Dependencies**: M50
+- **Testing**: `docker compose -f docker-compose.prod.yml ps` shows the app container as healthy; hitting `/api/health` returns a 200.
+- **Rollback**: Remove the healthcheck config and the new route.
+- **Commit message**: `Add health check endpoint and container health checks`
+
+### M54 — Backup/persistence strategy for Postgres and media
+- **Goal**: Ensure Postgres data and uploaded media survive container restarts/redeploys, with a documented backup approach.
+- **Files**: `docker-compose.prod.yml` (named volumes), `docs/ARCHITECTURE.md` (backup notes, if not already covered)
+- **Dependencies**: M50, M8
+- **Testing**: Stop and restart the full stack; confirm previously seeded/created data and uploaded media are still present.
+- **Rollback**: Revert compose volume changes.
+- **Commit message**: `Add persistent volumes and backup strategy for Postgres and media`
+
+---
+
+## Phase 13 — Currency & localization sweep (M55–M56)
+
+### M55 — PKR currency formatting sweep
+- **Goal**: Replace the hardcoded `$`-fallback currency pattern (currently duplicated across 9 files) with a single PKR-aware formatting utility, per the confirmed answer to the currency open question in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
+- **Files**: `lib/currency.ts` (new), and every consumer currently reading `process.env.NEXT_PUBLIC_CURRENCY_SYMBOL` directly: `components/Hero.jsx`, `OrderSummary.jsx`, `OrderItem.jsx`, `ProductCard.jsx`, `ProductDetails.jsx`, plus any admin-adjacent pages retained
+- **Dependencies**: M28
+- **Testing**: All prices across the storefront render in the confirmed PKR format consistently.
+- **Rollback**: Revert all touched files.
+- **Commit message**: `Replace hardcoded currency fallback with PKR formatting utility`
+
+### M56 — Pakistani address/phone validation
+- **Goal**: Apply the confirmed Pakistani address format (city/area conventions, phone-first) as real validation, not just field labels, across guest checkout.
+- **Files**: `components/AddressModal.jsx`, `collections/Orders.ts` (field validation)
+- **Dependencies**: M31, M11
+- **Testing**: Submitting an invalid Pakistani phone number/address is rejected with a clear message; a valid one succeeds.
+- **Rollback**: Revert both files.
+- **Commit message**: `Add Pakistani address and phone format validation to guest checkout`
+
+---
+
+## Phase 14 — Launch cutover (M57–M59)
+
+### M57 — End-to-end regression pass
+- **Goal**: Walk the full core flow from [PROJECT_SPEC.md](./PROJECT_SPEC.md) end to end — browse → cart → guest checkout → COD order → admin fulfillment — and fix anything broken by the cumulative migration.
+- **Files**: scoped to whatever the regression pass finds
+- **Dependencies**: all prior milestones
+- **Testing**: The core flow completes successfully, on both desktop and mobile viewports, against a freshly seeded database.
+- **Rollback**: Revert whichever specific fix commit is found to be wrong.
+- **Commit message**: `Fix regressions found in end-to-end launch readiness pass`
+
+### M58 — Update documentation to reflect the live architecture
+- **Goal**: Update `README.md`, `CLAUDE.md`, and `docs/ARCHITECTURE.md` to describe the system as it now actually is, not as it was planned to become.
+- **Files**: `README.md`, `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/TASKS.md` (mark phases complete)
+- **Dependencies**: M57
+- **Testing**: A new contributor following `README.md`'s setup instructions can get the real stack running locally.
+- **Rollback**: Revert the doc changes.
+- **Commit message**: `Update documentation to reflect the live Payload CMS + PostgreSQL architecture`
+
+### M59 — Production deploy runbook and release tag
+- **Goal**: Document the actual production deployment steps and cut the first release.
+- **Files**: `docs/DEPLOYMENT.md` (new), `docs/CHANGELOG.md` (release entry)
+- **Dependencies**: M58
+- **Testing**: Following the runbook on a clean environment successfully deploys a working production instance.
+- **Rollback**: N/A at this point — a failed production deploy is rolled back via the runbook's own rollback section, not by reverting this documentation commit.
+- **Commit message**: `Add production deployment runbook and cut v1.0.0`
+
+---
+
+## Summary
+
+| Phase | Milestones | Focus |
+|---|---|---|
+| 1 | M1–M5 | Docker, Payload, Postgres foundation; retire Prisma |
+| 2 | M6–M13 | Payload collections: Users, Media, Categories, Products, Orders |
+| 3 | M14–M19 | Delete vendor/seller/admin-shell surface (ADR-006) |
+| 4 | M20–M21 | Confirm admin-only auth end to end |
+| 5 | M22–M28 | Storefront wired to real product/category data; dummy data removed |
+| 6 | M29 | Real search |
+| 7 | M30–M36 | Cart persistence, guest checkout, real COD order creation |
+| 8 | M37–M39 | Admin order fulfillment |
+| 9 | M40–M43 | SEO: server rendering, metadata, sitemap, structured data |
+| 10 | M44–M45 | Mobile-first audit and performance |
+| 11 | M46–M48 | Reviews/Coupons: decide and land minimal v1 scope |
+| 12 | M49–M54 | Docker production hardening, health checks, backups |
+| 13 | M55–M56 | PKR currency and Pakistani address/phone validation |
+| 14 | M57–M59 | Regression pass, docs, launch |
