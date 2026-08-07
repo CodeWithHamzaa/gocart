@@ -1,85 +1,45 @@
 <div align="center">
   <h1><img src="https://gocart-gs.vercel.app/favicon.ico" width="20" height="20" alt="GoCart Favicon">
-   GoCart</h1>
+   GoCart — Pakistan</h1>
   <p>
-    An open-source multi-vendor e-commerce platform built with Next.js and Tailwind CSS.
-  </p>
-  <p>
-    <a href="https://github.com/GreatStackDev/goCart/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/GreatStackDev/goCart?style=for-the-badge" alt="License"></a>
-    <a href="https://github.com/GreatStackDev/goCart/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
-    <a href="https://github.com/GreatStackDev/goCart/issues"><img src="https://img.shields.io/github/issues/GreatStackDev/goCart?style=for-the-badge" alt="GitHub issues"></a>
+    A production-ready, Cash-on-Delivery ecommerce platform for the Pakistani market, built on Next.js, Payload CMS v3, and PostgreSQL.
   </p>
 </div>
 
 ---
 
-## 📖 Table of Contents
+> **Status: Planning.** This repository was cloned from the open-source [GoCart](https://github.com/GreatStackDev/goCart) multi-vendor storefront and is being transformed into a single-store, admin-managed, Cash-on-Delivery platform for Pakistan. No application code has changed yet — see [docs/](./docs) for the plan.
 
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
+## What this is becoming
 
----
+- **Payload CMS v3** as the content/commerce backend and admin panel
+- **PostgreSQL** as the datastore
+- **Cash on Delivery** as the only payment method for launch (architecture leaves room for online payment gateways later)
+- **Guest checkout** — customers can order without creating an account
+- **Admin-only login** — no public vendor/customer authentication
+- **SEO-first** and **mobile-first** by default
+- **Dockerized** for local development and production
 
-## Features
+## Documentation
 
-- **Multi-Vendor Architecture:** Allows multiple vendors to register, manage their own products, and sell on a single platform.
-- **Customer-Facing Storefront:** A beautiful and responsive user interface for customers to browse and purchase products.
-- **Vendor Dashboards:** Dedicated dashboards for vendors to manage products, view sales analytics, and track orders.
-- **Admin Panel:** A comprehensive dashboard for platform administrators to oversee vendors, products, and commissions.
+Start here, in order:
 
-## 🛠️ Tech Stack <a name="-tech-stack"></a>
+1. [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) — requirements, scope, roles, flows
+2. [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — current state, target design, data model
+3. [docs/TASKS.md](./docs/TASKS.md) — phased execution plan
+4. [docs/DECISIONS.md](./docs/DECISIONS.md) — why we chose what we chose
+5. [docs/CHANGELOG.md](./docs/CHANGELOG.md) — notable changes over time
+6. [CLAUDE.md](./CLAUDE.md) — working agreement for AI agents contributing to this repo
 
-- **Framework:** Next.js
-- **Styling:** Tailwind CSS
-- **UI Components:** Lucide React for icons
-- **State Management:** Redux Toolkit
+## Original project
 
-## 🚀 Getting Started <a name="-getting-started"></a>
+This codebase started from the GreatStack **GoCart** open-source multi-vendor storefront (Next.js + Tailwind CSS + Redux Toolkit + Prisma). Its `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `LICENSE.md` still apply to this repository.
 
-First, install the dependencies. We recommend using `npm` for this project.
+## Getting started
+
+Local setup instructions will be added once the Payload CMS v3 + PostgreSQL integration lands (see [docs/TASKS.md](./docs/TASKS.md)). In the meantime, the original Next.js app still runs with:
 
 ```bash
 npm install
-```
-
-Then, run the development server:
-
-```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/(public)/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Outfit](https://vercel.com/font), a new font family for Vercel.
-
----
-
-## 🤝 Contributing <a name="-contributing"></a>
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to get started.
-
----
-
-## 📜 License <a name="-license"></a>
-
-This project is licensed under the MIT License. See the [LICENSE.md](./LICENSE.md) file for details.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
