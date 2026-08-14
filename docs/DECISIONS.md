@@ -187,3 +187,30 @@ The decisive factors are performance on the SEO-critical path and the absence of
 - Risk `R10`'s database-variable half is closed. Its second half — an absolute public base URL (e.g. `NEXT_PUBLIC_SERVER_URL`) needed by `M42` — is untouched by this ADR and remains open against `M42`/`M52`.
 - Prior documentation that names `DATABASE_URL` as a thing to add is superseded by this ADR. `M1` and `M52` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) were corrected as part of `M1`. [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md)'s references stay as written: they are a point-in-time audit of what the Prisma schema declared, and correctly anticipated replacement "with Payload's own DB connection variable."
 - The variable is not consumed by any code yet — nothing reads it until `M3`. `M1` ships it as configuration the developer sets up front, matching the credentials `docker-compose.yml` starts Postgres with.
+
+---
+
+## ADR-011: Payload v3 dependency set — exact pins, a raised Next.js floor, and patched `sharp`
+
+**Status**: **Accepted (2026-08-14)** — decided while executing `M2`, the milestone that installs the stack.
+
+**Context**: `M2` installs Payload v3 into an app already running Next.js 15.3.5. The milestone text delegates the specifics — *"Confirm the exact set and versions against the Payload v3 release being installed"* — and three non-obvious choices surfaced during execution:
+
+1. **The install cannot proceed as-is.** `@payloadcms/next@3.88.0` peer-depends on `next` at `">=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.2.6 <17.0.0"`. Next 15.3.5 falls in the gap between the first two ranges and satisfies none of them; `npm install` fails with `ERESOLVE`. The ranges encode Next security-patch floors.
+2. **The `@payloadcms/*` packages cross-peer on an exact `payload` version**, and a Payload `4.0.0-canary` line already exists on npm, so an unpinned install could silently land on v4 and violate [ADR-001](#adr-001-adopt-payload-cms-v3-as-the-backend-and-admin-panel).
+3. **`sharp` 0.34.x carries a HIGH advisory** — inherited libvips CVE-2026-33327/33328/35590/35591 — fixed in 0.35.0. Pinning 0.34.x would have deduplicated with the copy Next declares as an optional dependency (one fewer native binary set on disk); pinning 0.35.x patches the vulnerability but leaves Next's own nested 0.34.5 copy in the tree.
+
+**Decision**:
+
+- **`next` is pinned to exactly `15.3.9`** — the lowest version satisfying Payload's peer range, a patch-level move inside the same minor. Working around the conflict with `--legacy-peer-deps` or `--force` was **rejected**: the range encodes security floors, and bypassing it installs a combination Payload does not support.
+- **`payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, and `@payloadcms/richtext-lexical` are pinned to exactly `3.88.0`** and are always upgraded as a set.
+- **`@payloadcms/richtext-lexical` is the editor** — Payload v3's own default; `richtext-slate` is the legacy option.
+- **`sharp` is `^0.35.3`, not `^0.34.1`.** Security outranks the duplicate-binary saving. The `M2` brief had specified `^0.34.1` for deduplication before the advisory was known; that trade inverted once it was.
+- `graphql` is `^16.14.2`, satisfying the `^16.8.1` peer.
+
+**Consequences**:
+
+- **Next 15.3.9 is not advisory-free, and cannot be made so inside Payload's supported range.** Payload's peer range excludes the entire `15.5.x` line, which is where most published Next fixes landed; the only fully patched compatible line is **Next 16.2.6+**, a major upgrade with its own breaking-change surface. This is deliberately out of `M2`'s scope and **must be decided before production** — it belongs with the hardening milestones (`M49`–`M54`) and the launch gate (`M59`). No milestone owns it today.
+- **A nested `sharp@0.34.5` remains under `next`** (Next declares `sharp` as an optional dependency at `^0.34.1`). It is reachable only through Next's image optimizer, which is **disabled today** by `images.unoptimized: true`. **`M51`, which re-enables the optimizer, must resolve that nested copy first** — by upgrading Next or by adding an npm `overrides` entry. An override was not added at `M2`: forcing Next onto a `sharp` major it does not declare is an untested combination, and there is no benefit while the optimizer is off.
+- Audit posture moved from **3 advisories (1 critical, 2 high)** before `M2` to **10 (3 high, 6 moderate, 1 low)** after. The critical was eliminated by the Next bump. The seven additions come from Payload's own tree — `drizzle-kit → esbuild` (dev-server advisory) and `monaco-editor → dompurify` (admin-panel editor) — and are upstream-owned, not fixable by application-level version choices.
+- Any future Payload upgrade must re-check the `next` peer range before it is attempted; the two are coupled from here on.

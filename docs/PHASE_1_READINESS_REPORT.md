@@ -216,10 +216,10 @@ Three of Audit 1's thirteen are closed — including all three critical ones.
 | R7 | No test or CI milestone in the plan | ⚠️ Open — broken pointer fixed, **gap still unscheduled** |
 | R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ◐ **Mitigated** — the `M6` gate now forces both decisions before collection design; the milestones themselves still sit late |
 | R9 | No production `payload migrate` step | ⚠️ Open |
-| R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ⚠️ Open — **verify while executing `M1`/`M2`**; cheap now, confusing later |
+| R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ◐ **Half closed** — the database name is settled as `DATABASE_URI` by [ADR-010](./DECISIONS.md) at `M1`; the missing public base URL is still open against `M42`/`M52` |
 | R11 | `Newsletter.jsx` neither wired nor dropped | ⚠️ Open |
 | R12 | No owner for storefront copy ("Free shipping worldwide") | ⚠️ Open |
-| R13 | `next dev --turbopack` unverified against Payload v3 | ⚠️ Open — verify at `M2` |
+| R13 | `next dev --turbopack` unverified against Payload v3 | ◐ **Verified at `M2`** — Turbopack boots clean on Next 15.3.9 with the Payload packages installed (nothing imports them yet). The conclusive test is `M3`, once Payload is actually mounted |
 
 **R10 deserves attention during `M1` itself**, since `M1` is the milestone that adds the variable.
 It is not a blocker — a wrong name fails loudly at `M3` — but it is free to get right now.

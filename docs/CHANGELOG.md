@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M2`** — Payload CMS v3 dependency stack: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, and `@payloadcms/richtext-lexical` (all pinned to `3.88.0`), plus `graphql` and `sharp` as direct dependencies. No configuration, no application code — nothing imports Payload yet.
+- **ADR-011**: Payload v3 dependency set — exact version pins, the raised Next.js floor, and patched `sharp` (Accepted 2026-08-14).
 - **`M1`** — `docker-compose.yml` with a PostgreSQL 17 service for local development: pinned Alpine image, healthcheck, named volume for persistence, and a loopback-bound published port. First implementation milestone; no application code touched.
 - **`M1`** — `DATABASE_URI` added to `.env.example` alongside commented overrides for the compose service's credentials.
 - **ADR-010**: the PostgreSQL connection string is named `DATABASE_URI` (Accepted 2026-08-14), not the Prisma-era `DATABASE_URL`, and not both. Closes the database-variable half of readiness risk `R10`.
@@ -17,6 +19,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Changed
 
+- **`M2`** — `next` upgraded `15.3.5` → `15.3.9`, the minimum version satisfying `@payloadcms/next`'s peer range (per ADR-011). Patch-level, same minor; the storefront builds to the same 19 routes. This also cleared a pre-existing **critical** Next.js advisory.
+- **`M2`** — `MIGRATION_PLAN.md`'s `M2` records the Next.js floor and cites ADR-011.
 - **`M1`** — `MIGRATION_PLAN.md`'s `M1` and `M52` now name the database connection variable `DATABASE_URI` instead of `DATABASE_URL`, per ADR-010.
 - **ADR-003** promoted from `Proposed` to **Accepted** (2026-08-14), with its supporting evidence recorded.
 - **Milestone IDs (`M1`–`M59`, `M2a`) are now the single authoritative execution sequence.** Phase/group names demoted to reporting labels across `CLAUDE.md`, `docs/TASKS.md`, `docs/MIGRATION_PLAN.md`, `docs/DECISIONS.md`, `docs/REPOSITORY_ANALYSIS.md`, and `docs/README.md`.
@@ -25,4 +29,4 @@ All notable changes to this project are documented here. Format loosely follows 
 - Stale "multi-vendor vs. single-store is unresolved" framing removed from `docs/ARCHITECTURE.md`, `CLAUDE.md`, and `docs/TASKS.md`; ADR-006 has been Accepted since 2026-08-07.
 - `docs/TASKS.md` rewritten as a milestone-keyed status roll-up with explicit `M1` and `M6` gates; planning marked **Done**.
 
-- No application code was changed and no packages were installed by any entry above. The planning entries are documentation-only; `M1` adds local development infrastructure and configuration only.
+- **No application code has been changed by any entry above.** The planning entries are documentation-only; `M1` added local development infrastructure and configuration; `M2` added dependencies to the manifest. The storefront still renders exactly as inherited.
