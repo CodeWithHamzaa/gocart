@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M17`** — `docs/MIGRATION_PLAN.md`'s `M17` interim-state note extended: `/admin/coupons` stays live (200) after this milestone, now with no layout chrome, since its wrapper (`app/admin/layout.jsx`) is deleted here while the page itself is not deleted until `M19`. Recorded as expected migration debt, not a regression — the `isAdmin` gate it loses was never real.
 - **`M2a`** — TypeScript toolchain established: `tsconfig.json` (strict mode, `allowJs: true`, `checkJs: false`, `@/*` path alias carried over from `jsconfig.json`), `next-env.d.ts` (committed per Next.js convention), and a `type-check` script (`tsc --noEmit`). `typescript`, `@types/node`, `@types/react`, `@types/react-dom` added as `devDependencies`. No `.jsx` file converted; nothing type-checked yet.
 - **ADR-012**: TypeScript pinned to the `5.x` line (`^5.9.3`), not the `latest` npm tag — which resolved to `7.0.2`, a same-day-fresh native compiler rewrite (Accepted 2026-08-14).
 - **`M2`** — Payload CMS v3 dependency stack: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, and `@payloadcms/richtext-lexical` (all pinned to `3.88.0`), plus `graphql` and `sharp` as direct dependencies. No configuration, no application code — nothing imports Payload yet.
