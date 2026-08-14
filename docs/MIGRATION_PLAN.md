@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-59 milestones taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+60 milestones (`M1`–`M59`, plus `M2a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -9,9 +9,29 @@ Each milestone is scoped to be one reviewable commit (or a small, tightly relate
 - **Goal** — what changes and why, in one or two sentences.
 - **Files** — the concrete files/directories touched, taken from the classifications in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) and [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) wherever those apply.
 - **Dependencies** — which prior milestone(s) must land first.
-- **Testing** — the minimum manual/automated check before moving on. (No test framework exists yet — see Phase 12; until then "testing" means manual verification plus `npm run build`.)
+- **Testing** — the minimum manual/automated check before moving on. (No test framework exists in the repository, and **no milestone in this plan establishes one** — that gap is tracked as an open risk in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) and is not yet scheduled. Until it is, "testing" means manual verification plus `npm run build`.)
 - **Rollback** — how to undo this specific milestone if it turns out to be wrong, without unwinding unrelated work.
 - **Commit message** — a ready-to-use commit subject line.
+
+## Milestone IDs are the only execution reference
+
+**`M1`–`M59` is the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
+
+**Execution order is defined by each milestone's `Dependencies` line, not by ascending ID.** One deliberate exception to ID order exists and matters:
+
+> **`M16`, `M17`, and `M19` run *before* `M3`.** Payload mounts its admin UI at `/admin` (per [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service)), and the inherited hand-built admin at `app/admin/*` resolves to the same path. Next.js route groups contribute no path segment, so `app/(payload)/admin/[[...segments]]/page.tsx` and `app/admin/page.jsx` are parallel routes for `/admin` and the build fails. The legacy admin must be gone before Payload arrives.
+
+### Critical-path order for the opening milestones
+
+```
+M1  → M2 → M2a ─┐
+                ├→ M3 → M4, M5, M6 …
+M16, M17, M19 ──┘        (M17 → M19)
+```
+
+`M14`, `M15`, and `M18` have no dependencies and may land at any point; they are grouped with `M16`/`M17`/`M19` below for narrative reasons only. Everything from `M3` onward follows the stated dependency graph in ascending ID order.
+
+**Between `M17` and `M3`, `/admin` returns 404.** This is acceptable and expected: the route it replaces was never an authenticated surface (`isAdmin` was hardcoded `true`, per [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md)) and served only dummy data, so nothing of value is unavailable during the gap. Keep the gap short by scheduling `M3` immediately after.
 
 ## Scope note
 
@@ -19,7 +39,9 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 ---
 
-## Phase 1 — Foundation & tooling (M1–M5)
+## Group: Foundation & tooling — `M1`, `M2`, `M2a`, `M3`, `M4`, `M5`
+
+> Runs after `M16`/`M17`/`M19` clear the `/admin` route. See the execution order above.
 
 ### M1 — Dockerized PostgreSQL for local development
 - **Goal**: Stand up a local Postgres instance in Docker so every later milestone has a real database to work against.
@@ -29,20 +51,39 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 - **Rollback**: Remove `docker-compose.yml` and the added env var; stop/remove the container. No application code is touched.
 - **Commit message**: `Add Dockerized PostgreSQL for local development`
 
-### M2 — Install Payload CMS v3 and Postgres adapter
-- **Goal**: Add the core dependencies the entire backend will be built on.
+### M2 — Install Payload CMS v3, the Postgres adapter, and `sharp`
+- **Goal**: Add the core dependencies the entire backend will be built on, including the image-processing library both Payload media and Next.js image optimization depend on.
+- **Packages**: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, a Payload richtext editor package, `graphql`, and **`sharp`**. Confirm the exact set and versions against the Payload v3 release being installed — Payload's own installer is the authority, not this list.
+- **Why `sharp` here and not later**: it is a native-binary dependency needed by two separate milestones — `M8` (Media collection image processing on upload) and `M51` (removing `images.unoptimized: true`, which re-enables Next.js's optimizer). Installing it once at the foundation avoids a mid-migration native rebuild inside the Docker image, and surfaces any platform/binary issues while the app still has nothing to break.
 - **Files**: `package.json`, `package-lock.json`
-- **Dependencies**: M1
-- **Testing**: `npm install` completes without peer-dependency errors; `npm run build` still succeeds (nothing references Payload yet, so the app is unchanged at runtime).
+- **Dependencies**: `M1`
+- **Testing**: `npm install` completes without peer-dependency errors; `sharp` resolves on the target platform (`node -e "require('sharp')"`); `npm run build` still succeeds (nothing references Payload yet, so the app is unchanged at runtime).
 - **Rollback**: `git checkout -- package.json package-lock.json && npm install`.
-- **Commit message**: `Add Payload CMS v3 and Postgres adapter dependencies`
+- **Commit message**: `Add Payload CMS v3, Postgres adapter, and sharp dependencies`
+
+### M2a — Establish the TypeScript toolchain
+- **Goal**: Add TypeScript to a repository that currently has none, **before** any milestone authors a `.ts` file. Every milestone from `M3` onward (`payload.config.ts`, `collections/*.ts`, `lib/payload/*.ts`, `scripts/seed.ts`, `app/sitemap.ts`, `app/robots.ts`, `app/api/health/route.ts`) assumes a working TypeScript setup, and Payload v3 additionally generates a `payload-types.ts` that the storefront imports.
+- **Current state**: `jsconfig.json` only — no `tsconfig.json`, no `typescript` dependency, and every application file is `.js`/`.jsx`. Verified in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md).
+- **Files**: `tsconfig.json` (new), `jsconfig.json` (deleted — superseded; `tsconfig.json` takes over the `@/*` path alias), `package.json` (dev dependencies + `type-check` script), `next.config.mjs` (only if build-time type-check behavior needs pinning), `.gitignore` (ignore `*.tsbuildinfo` and Payload's generated types if they are not committed)
+- **Scope, explicitly**:
+  - **Packages**: `typescript`, `@types/node`, `@types/react`, `@types/react-dom` as `devDependencies`.
+  - **`tsconfig.json`**: generated by Next.js on first TS build, then adjusted. Must carry over the `@/*` path alias from `jsconfig.json`, include Next's plugin, and set `"strict": true` — strictness is far cheaper to adopt now, with zero TS files, than after fifty.
+  - **JavaScript/TypeScript coexistence**: set `"allowJs": true` so the existing `.jsx` storefront keeps compiling untouched. This migration is incremental by design — **no milestone converts existing `.jsx` files to `.tsx`**, and none should be converted opportunistically. New files are `.ts`/`.tsx`; existing files stay `.jsx` unless a milestone has its own reason to rewrite them.
+  - **`"checkJs": false`** — do not type-check the existing JavaScript. Turning it on would surface hundreds of errors in code that is scheduled for deletion or rewrite anyway.
+  - **Type-check command**: add `"type-check": "tsc --noEmit"` to `package.json` scripts. From this milestone forward, `npm run type-check` joins `npm run build` as a standard per-milestone verification step.
+  - **Next.js compatibility**: Next 15 has first-class TS support and generates `next-env.d.ts` on first run — commit it. Confirm the TypeScript version satisfies both Next 15 and the Payload v3 release installed at `M2`.
+- **Dependencies**: `M2`
+- **Testing**: `npm run type-check` passes on a repository with no `.ts` files yet (a clean no-op); `npm run build` still succeeds and the existing `.jsx` storefront renders unchanged; a throwaway `.ts` file is type-checked and resolves the `@/*` alias correctly, then is deleted.
+- **Rollback**: Delete `tsconfig.json`, `next-env.d.ts`, and the `type-check` script; restore `jsconfig.json`; `git checkout -- package.json package-lock.json && npm install`. No application code is touched by this milestone, so rollback is clean.
+- **Commit message**: `Establish TypeScript toolchain ahead of Payload configuration`
 
 ### M3 — Scaffold and mount Payload inside the Next.js app
-- **Goal**: Create an empty Payload config wired to Postgres, and mount its admin UI and REST/GraphQL API inside the existing Next.js App Router, per the mounting decision in [ARCHITECTURE.md](./ARCHITECTURE.md).
+- **Goal**: Create an empty Payload config wired to Postgres, and mount its admin UI and REST/GraphQL API inside the existing Next.js App Router, per [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) (Payload embedded in the Next.js app, Accepted 2026-08-14).
 - **Files**: `payload.config.ts` (new, no collections yet), `app/(payload)/admin/[[...segments]]/page.tsx` (new), `app/(payload)/api/[...slug]/route.ts` (new), `next.config.mjs` (Payload's Next.js integration wrapper), `.env.example` (add `PAYLOAD_SECRET`)
-- **Dependencies**: M2
-- **Testing**: `/admin` serves Payload's (collection-less) admin shell locally; no errors in server logs.
-- **Rollback**: Delete the new route files and `payload.config.ts`; revert `next.config.mjs`.
+- **Dependencies**: `M2a` (TypeScript must exist — every file this milestone creates is `.ts`/`.tsx`), and **`M16`, `M17`, `M19`** (`app/admin/**` must be gone first).
+- **⚠️ Route-collision precondition**: Payload mounts at `/admin`. Next.js route groups contribute no path segment, so `app/(payload)/admin/[[...segments]]/page.tsx` and the inherited `app/admin/page.jsx` both resolve `/admin` — a parallel-route build failure. The optional catch-all also collides with `app/admin/stores`, `app/admin/approve`, and `app/admin/coupons`. **Verify `app/admin/` no longer exists before starting this milestone.**
+- **Testing**: `ls app/admin` returns nothing (precondition); `/admin` serves Payload's (collection-less) admin shell locally; `npm run type-check` and `npm run build` both pass; no errors in server logs.
+- **Rollback**: Delete the new route files and `payload.config.ts`; revert `next.config.mjs`. Note that rolling back `M3` leaves `/admin` returning 404 rather than restoring the old admin — recovering that requires also reverting `M17`.
 - **Commit message**: `Scaffold and mount empty Payload CMS v3 instance in Next.js`
 
 ### M4 — Retire the unwired Prisma schema
@@ -63,7 +104,7 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 ---
 
-## Phase 2 — Payload data model (M6–M13)
+## Group: Payload data model — `M6`–`M13`
 
 ### M6 — Users collection (admin-only auth)
 - **Goal**: Create the single authenticated role in the system, per [ADR-006](./DECISIONS.md).
@@ -131,9 +172,11 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 ---
 
-## Phase 3 — Remove the multi-vendor surface (M14–M19)
+## Group: Remove the multi-vendor surface — `M14`–`M19`
 
-Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Seller in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md). These milestones are independent of Phases 1–2 and can land in parallel with them.
+Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Seller in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md).
+
+> **Ordering — read before scheduling.** `M16`, `M17`, and `M19` delete `app/admin/**` and **must land before `M3`**, which mounts Payload's admin UI at the same `/admin` path (see [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service)). Running `M3` first produces a Next.js parallel-route build failure. `M14`, `M15`, and `M18` touch no admin routes and are genuinely order-independent — they may land at any time.
 
 ### M14 — Delete the vendor dashboard
 - **Goal**: Remove the entire hand-built seller area, including its hardcoded `isSeller = true` auth bypass.
@@ -147,45 +190,47 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 - **Goal**: Remove the "become a seller" flow and the `/shop/[username]` per-vendor storefront route.
 - **Files**: `app/(public)/create-store/page.jsx` (deleted), `app/(public)/shop/[username]/page.jsx` (deleted)
 - **Dependencies**: none
-- **Testing**: `npm run build` succeeds; confirm `Footer.jsx`'s "Create Your Store" link is addressed (see M... Footer cleanup, Phase 5) so no dangling link remains live in the meantime.
+- **Testing**: `npm run build` succeeds. Note that `Footer.jsx`'s "Create Your Store" link now points at a deleted route; the Footer cleanup that resolves it is `M48`, which lands much later. Removing the link inline here is preferable to leaving it dead — see the dead-link window flagged in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove vendor signup and per-vendor storefront routes`
 
 ### M16 — Delete admin vendor-management routes
 - **Goal**: Remove vendor approval and activation screens.
 - **Files**: `app/admin/stores/page.jsx` (deleted), `app/admin/approve/page.jsx` (deleted)
-- **Dependencies**: none
+- **Dependencies**: none. **Must land before `M3`** — these routes sit under `app/admin/`, which Payload's optional catch-all also matches.
 - **Testing**: `npm run build` succeeds.
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove vendor approval and store-management admin routes`
 
 ### M17 — Delete the hand-built admin dashboard shell
-- **Goal**: Remove the custom admin panel (with its hardcoded `isAdmin = true` bypass) now that Payload's own `/admin` is live and superior — per the **Replace** classification in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md).
+- **Goal**: Remove the custom admin panel — including its hardcoded `isAdmin = true` auth bypass — to clear the `/admin` route **before** Payload takes ownership of it at `M3`. Per the **Replace** classification in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) and [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service).
 - **Files**: `app/admin/layout.jsx`, `app/admin/page.jsx` (deleted), `components/admin/AdminLayout.jsx`, `AdminNavbar.jsx`, `AdminSidebar.jsx`, `StoreInfo.jsx` (deleted), `components/OrdersAreaChart.jsx` (deleted)
-- **Dependencies**: M3 (Payload's `/admin` must already be reachable so nothing is lost)
-- **Testing**: Navigating to `/admin` now serves Payload's real admin UI, not a 404 or the old custom dashboard; `npm run build` succeeds.
-- **Rollback**: `git revert`.
+- **Dependencies**: none. **Must land before `M3`** — this is the milestone that frees `/admin`.
+- **Why this precedes Payload rather than following it**: the earlier plan had `M17` depend on `M3` ("so nothing is lost"), which is circular — `M3` cannot build while `app/admin/page.jsx` exists. Nothing is in fact lost by going first: this dashboard has no real authentication (`isAdmin` is hardcoded `true`, so it is public today) and displays only `assets/assets.js` dummy data. There is no live functionality to preserve during the gap.
+- **Interim state**: `/admin` returns 404 from this milestone until `M3` mounts Payload. Schedule the two close together.
+- **Testing**: `npm run build` succeeds; `/admin` returns 404; `grep -r "components/admin\|OrdersAreaChart" app components` returns nothing.
+- **Rollback**: `git revert`. Only meaningful before `M3` lands — afterwards, restoring these files would recreate the very route collision this ordering exists to prevent.
 - **Commit message**: `Remove hand-built admin dashboard — superseded by Payload CMS admin UI`
 
 ### M18 — Delete orphaned stub routes
 - **Goal**: Remove the empty pricing stub and the vendor-approval-only redirect page, both dead weight with no place in the target product.
 - **Files**: `app/(public)/pricing/page.jsx` (deleted), `app/(public)/loading/page.jsx` (deleted)
 - **Dependencies**: none
-- **Testing**: `npm run build` succeeds; confirm `Footer.jsx`'s "Become Plus Member" link is addressed in the same cleanup pass or immediately after (Phase 5 Footer milestone).
+- **Testing**: `npm run build` succeeds. As with `M15`, `Footer.jsx`'s "Become Plus Member" link now points at a deleted route; `M48` is the scheduled cleanup, so remove the link inline here rather than leaving it dead.
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove orphaned pricing stub and vendor-redirect loading page`
 
 ### M19 — Remove the admin coupons stub page
-- **Goal**: Remove the non-functional coupon CRUD screen for now; real coupon support (if any) is redesigned later per Phase 11, since account-based targeting (`forNewUser`/`forMember`) doesn't fit guest checkout.
+- **Goal**: Remove the non-functional coupon CRUD screen for now; real coupon support (if any) is redesigned at `M47`, since account-based targeting (`forNewUser`/`forMember`) doesn't fit guest checkout.
 - **Files**: `app/admin/coupons/page.jsx` (deleted)
-- **Dependencies**: M17
+- **Dependencies**: `M17`. **Must land before `M3`** — this route sits under `app/admin/`.
 - **Testing**: `npm run build` succeeds.
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove non-functional coupon admin page pending guest-checkout-compatible redesign`
 
 ---
 
-## Phase 4 — Confirm admin-only auth end to end (M20–M21)
+## Group: Confirm admin-only auth end to end — `M20`–`M21`
 
 ### M20 — Verify no route bypasses Payload auth
 - **Goal**: Audit that the only authenticated surface left in the app is Payload's own `/admin`, with no leftover custom auth checks anywhere.
@@ -205,7 +250,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 5 — Storefront: real product & category data (M22–M28)
+## Group: Storefront — real product & category data — `M22`–`M28`
 
 ### M22 — Product/category data-fetching utility
 - **Goal**: A small server-side utility to fetch Products/Categories from Payload (local API when server-rendered, REST/GraphQL when client-rendered), replacing ad hoc dummy-data assignment.
@@ -265,7 +310,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 6 — Search (M29)
+## Group: Search — `M29`
 
 ### M29 — Replace client-array search with a real query
 - **Goal**: The current search filters an in-memory Redux array with `.includes()` — replace with a real query against Payload/Postgres so it scales past a handful of seeded products.
@@ -277,12 +322,12 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 7 — Cart persistence & guest checkout (COD) (M30–M36)
+## Group: Cart persistence & guest checkout (COD) — `M30`–`M36`
 
 ### M30 — Fix cart persistence
 - **Goal**: The cart is currently in-memory-only and empties on refresh — a real problem with no account to recover it from. Persist it (e.g. `localStorage`).
 - **Files**: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
-- **Dependencies**: none (independent of the Payload work, can land any time after Phase 0)
+- **Dependencies**: none — independent of all Payload work; may land at any point in the sequence.
 - **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
 - **Rollback**: Revert both files.
 - **Commit message**: `Persist cart state across page reloads`
@@ -337,7 +382,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 8 — Orders & admin fulfillment (M37–M39)
+## Group: Orders & admin fulfillment — `M37`–`M39`
 
 ### M37 — Verify admin order management via Payload
 - **Goal**: Confirm the store admin can view and manage all incoming orders directly in Payload's `/admin` — no custom UI needed for the base case.
@@ -356,7 +401,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 - **Commit message**: `Enable order status updates through Payload admin`
 
 ### M39 — Align OrderItem component to the real Orders schema
-- **Goal**: `OrderItem.jsx` currently assumes the dummy order shape; align it to the real `Orders` collection shape from M11/M16.
+- **Goal**: `OrderItem.jsx` currently assumes the dummy order shape; align it to the real `Orders` collection shape from `M11`/`M12`.
 - **Files**: `components/OrderItem.jsx`
 - **Dependencies**: M36
 - **Testing**: Guest order lookup (M36) renders order line items correctly with no shape mismatches.
@@ -365,7 +410,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 9 — SEO (M40–M43)
+## Group: SEO — `M40`–`M43`
 
 ### M40 — Convert storefront layout/pages to server components
 - **Goal**: Remove unnecessary `'use client'` directives from the public layout and home page so they render server-side, per the SEO-first requirement.
@@ -401,7 +446,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 10 — Mobile-first audit (M44–M45)
+## Group: Mobile-first audit — `M44`–`M45`
 
 ### M44 — Component-by-component mobile review
 - **Goal**: Audit every storefront component for mobile-first correctness (tap targets, layout at small widths, readable type), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
@@ -421,7 +466,7 @@ Per [ADR-006](./DECISIONS.md) (accepted) and the **Remove** rows for Vendor/Sell
 
 ---
 
-## Phase 11 — Reviews & Coupons: decide and land minimal scope (M46–M48)
+## Group: Reviews & Coupons — decide and land minimal scope — `M46`–`M48`
 
 Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leaning with an open identity/targeting question in [PROJECT_SPEC.md](./PROJECT_SPEC.md). These milestones resolve that ambiguity rather than assuming an outcome.
 
@@ -451,7 +496,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ---
 
-## Phase 12 — Dockerization & production readiness (M49–M54)
+## Group: Dockerization & production readiness — `M49`–`M54`
 
 ### M49 — Production Dockerfile stage
 - **Goal**: Add a production build stage to the Dockerfile (multi-stage, non-root user, minimal final image), building on the dev stage from M5.
@@ -503,7 +548,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ---
 
-## Phase 13 — Currency & localization sweep (M55–M56)
+## Group: Currency & localization sweep — `M55`–`M56`
 
 ### M55 — PKR currency formatting sweep
 - **Goal**: Replace the hardcoded `$`-fallback currency pattern (currently duplicated across 9 files) with a single PKR-aware formatting utility, per the confirmed answer to the currency open question in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
@@ -523,7 +568,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ---
 
-## Phase 14 — Launch cutover (M57–M59)
+## Group: Launch cutover — `M57`–`M59`
 
 ### M57 — End-to-end regression pass
 - **Goal**: Walk the full core flow from [PROJECT_SPEC.md](./PROJECT_SPEC.md) end to end — browse → cart → guest checkout → COD order → admin fulfillment — and fix anything broken by the cumulative migration.
@@ -553,19 +598,24 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ## Summary
 
-| Phase | Milestones | Focus |
+Groups are labels, not a sequence. Read the **Order** column for execution.
+
+| Milestones | Group | Order |
 |---|---|---|
-| 1 | M1–M5 | Docker, Payload, Postgres foundation; retire Prisma |
-| 2 | M6–M13 | Payload collections: Users, Media, Categories, Products, Orders |
-| 3 | M14–M19 | Delete vendor/seller/admin-shell surface (ADR-006) |
-| 4 | M20–M21 | Confirm admin-only auth end to end |
-| 5 | M22–M28 | Storefront wired to real product/category data; dummy data removed |
-| 6 | M29 | Real search |
-| 7 | M30–M36 | Cart persistence, guest checkout, real COD order creation |
-| 8 | M37–M39 | Admin order fulfillment |
-| 9 | M40–M43 | SEO: server rendering, metadata, sitemap, structured data |
-| 10 | M44–M45 | Mobile-first audit and performance |
-| 11 | M46–M48 | Reviews/Coupons: decide and land minimal v1 scope |
-| 12 | M49–M54 | Docker production hardening, health checks, backups |
-| 13 | M55–M56 | PKR currency and Pakistani address/phone validation |
-| 14 | M57–M59 | Regression pass, docs, launch |
+| `M16`, `M17`, `M19` | Remove the multi-vendor surface (admin routes) | **First — must precede `M3`** |
+| `M1`, `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation & tooling: Docker Postgres, Payload, TypeScript, retire Prisma | After the `/admin` clearance above |
+| `M14`, `M15`, `M18` | Remove the multi-vendor surface (non-admin routes) | Any time — no dependencies |
+| `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | After `M3` |
+| `M20`–`M21` | Confirm admin-only auth end to end | After `M17`, `M19` |
+| `M22`–`M28` | Storefront wired to real product/category data; dummy data removed | After `M13` |
+| `M29` | Real search | After `M24` |
+| `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | After `M13` (`M30` any time) |
+| `M37`–`M39` | Admin order fulfillment | After `M33` |
+| `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | After `M23`, `M25` |
+| `M44`–`M45` | Mobile-first audit and performance | After `M28` |
+| `M46`–`M48` | Reviews/Coupons: decide and land minimal v1 scope | After `M25`, `M33` |
+| `M49`–`M54` | Docker production hardening, health checks, backups | After `M5` |
+| `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
+| `M57`–`M59` | Regression pass, docs, launch | Last |
+
+**60 milestones total** — `M1`–`M59` plus `M2a`, inserted for the TypeScript toolchain without renumbering the rest.

@@ -136,7 +136,7 @@ Per [ADR-004](./DECISIONS.md), this radio option should not exist in the COD-onl
 | Variable | Declared in `.env.example`? | Actually used? | Notes |
 |---|---|---|---|
 | `NEXT_PUBLIC_CURRENCY_SYMBOL` | Yes (`'$'`) | Yes — read in 9 files (`app/store/page.jsx`, `app/store/manage-product/page.jsx`, `app/admin/page.jsx`, `app/(public)/cart/page.jsx`, `Hero.jsx`, `OrderSummary.jsx`, `OrderItem.jsx`, `ProductCard.jsx`, `ProductDetails.jsx`) | Every usage falls back to `'$'` if unset. Needs to become PKR-aware per [PROJECT_SPEC.md](./PROJECT_SPEC.md) open question. |
-| `DATABASE_URL`, `DIRECT_URL` | **No** | Referenced only inside `prisma/schema.prisma` via `env(...)` | Never set anywhere, consistent with Prisma never actually being wired up. Will need to be added (or replaced with Payload's own DB connection variable) in Phase 1. |
+| `DATABASE_URL`, `DIRECT_URL` | **No** | Referenced only inside `prisma/schema.prisma` via `env(...)` | Never set anywhere, consistent with Prisma never actually being wired up. Will need to be added (or replaced with Payload's own DB connection variable) at `M1`/`M3`. |
 
 `.gitignore` already excludes `.env` and, notably, `/app/generated/prisma` — a leftover from an abandoned attempt to generate the Prisma client into a custom output path, further evidence the Prisma integration was started but never finished.
 
@@ -159,7 +159,7 @@ No Payload, auth, or payment-gateway environment variables exist yet — expecte
 
 **Dev (`devDependencies`):** `@tailwindcss/postcss`, `tailwindcss` — both keep.
 
-**Conspicuously absent** given the target architecture: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, `prisma`/`@prisma/client` (present only as an un-added schema file), any Stripe/payment SDK, any auth package, `sharp` (commonly required by both Payload and Next.js image optimization once `images.unoptimized` is removed). None of these should be installed as part of this analysis — flagged for Phase 1 of [TASKS.md](./TASKS.md).
+**Conspicuously absent** given the target architecture: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, `prisma`/`@prisma/client` (present only as an un-added schema file), any Stripe/payment SDK, any auth package, `sharp` (commonly required by both Payload and Next.js image optimization once `images.unoptimized` is removed). None of these should be installed as part of this analysis — scheduled as `M2` (Payload, Postgres adapter, `sharp`) and `M2a` (TypeScript toolchain) in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 
 ## Technical debt
 
@@ -174,7 +174,7 @@ Ranked roughly by severity/impact:
 7. **Multi-vendor scope is baked deep into the UI**, not just the data model: vendor signup (`create-store`), vendor approval (`admin/approve`), vendor activation (`admin/stores`), a per-vendor storefront route (`shop/[username]`), and "Product by {store.name}" attribution on every product page. All of this is now explicitly out of scope per [ADR-006](./DECISIONS.md) and needs removal, not adaptation.
 8. **Currency is hardcoded to `$`** across 9 files via one env var with a literal `'$'` fallback baked into the code itself, rather than a formatting utility — will need a small but repo-wide sweep for PKR.
 9. **`next.config.mjs` uses `images.unoptimized: true`**, a Vercel-shortcut default that disables Next.js's image optimization — wrong default for a self-hosted, Dockerized, production deployment.
-10. **No tests, no CI, no Docker, no linting beyond Next's default `next lint` script** (and even that has no committed ESLint config file visible in this listing). Production-readiness work (Phase 7 in [TASKS.md](./TASKS.md)) starts from zero here, not from hardening existing infra.
+10. **No tests, no CI, no Docker, no linting beyond Next's default `next lint` script** (and even that has no committed ESLint config file visible in this listing). Production-readiness work (`M49`–`M54`) starts from zero here, not from hardening existing infra. Note that no milestone currently establishes a test framework or CI — tracked as an open gap in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 11. **Dead/orphaned routes**: `pricing/page.jsx` is an empty stub tied to a "Plus membership" concept that's never explained elsewhere; `loading/page.jsx` is a standalone page (not the Next.js `loading.jsx` convention) that exists only to redirect after an 8-second delay for the vendor-approval flow being removed.
 12. **Coupon logic references account-based targeting** (`forNewUser`, `forMember`) that has no meaning once guest checkout (no accounts) is the only flow — needs redesign, not direct reuse, per the open question already flagged in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
 
@@ -186,8 +186,8 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 
 | Path | Classification | Why |
 |---|---|---|
-| `package.json` / `package-lock.json` | MODIFY | Add Payload v3 + Postgres adapter deps; remove/never-add Prisma; re-evaluate Redux deps once cart-state design is finalized (Phase 1–2, not this task) |
-| `next.config.mjs` | MODIFY | Remove `images.unoptimized: true` for self-hosted production; add Payload's Next.js integration config when Phase 1 starts |
+| `package.json` / `package-lock.json` | MODIFY | Add Payload v3 + Postgres adapter + `sharp` deps (`M2`) and the TypeScript toolchain (`M2a`); remove/never-add Prisma; re-evaluate Redux deps once cart-state design is finalized — not this task |
+| `next.config.mjs` | MODIFY | Remove `images.unoptimized: true` for self-hosted production (`M51`); add Payload's Next.js integration config at `M3` |
 | `jsconfig.json` | KEEP | `@/*` alias is fine and framework-agnostic |
 | `postcss.config.mjs` | KEEP | Tailwind v4 setup is fine |
 | `.env.example` | MODIFY | Add `DATABASE_URL`, Payload secret/config vars; revisit currency variable for PKR |

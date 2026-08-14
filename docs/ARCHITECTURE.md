@@ -44,8 +44,12 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 ### Frontend
 
 - Next.js App Router stays as the storefront rendering layer — SSR/ISR for product and category pages to satisfy SEO-first.
-- Payload CMS v3 supports embedding directly inside a Next.js app (shared app, `/admin` route mounted from Payload) — **preferred** over running Payload as a fully separate service, to avoid double-hosting complexity, unless production isolation needs argue otherwise (see open question below).
+- **Payload CMS v3 runs embedded inside the Next.js app** — one codebase, one build, one container. Its admin UI mounts at `/admin` and its REST/GraphQL API under `/api`, both as App Router routes; server-rendered storefront pages read through Payload's Local API with no HTTP hop. Decided in [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) (Accepted 2026-08-14) — running Payload as a separate service was evaluated and rejected.
 - Redux Toolkit likely stays for client-side cart state (guest cart doesn't need a backend session), but server state (products, orders) moves to Payload's API instead of Prisma.
+
+#### `/admin` route ownership
+
+`/admin` belongs to Payload in the target architecture. The inherited codebase serves its own hand-built admin from `app/admin/*` (with a hardcoded `isAdmin = true` bypass), which resolves to the same path. **The legacy admin is removed before Payload mounts** — `M16`, `M17`, and `M19` precede `M3` — so at no point do two implementations own `/admin`. See the execution order in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 
 ### Backend / CMS
 
@@ -56,7 +60,7 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 ### Data store
 
 - **PostgreSQL**, accessed exclusively through Payload's Postgres adapter (`@payloadcms/db-postgres`).
-- The existing `prisma/schema.prisma` should be treated as a **reference for field/relationship intent**, not carried forward as a live schema — Payload manages its own migrations. This retirement is a decision to confirm (see `DECISIONS.md`).
+- The existing `prisma/schema.prisma` is treated as a **reference for field/relationship intent**, not carried forward as a live schema — Payload manages its own migrations. Retirement is settled in [ADR-003](./DECISIONS.md#adr-003-retire-the-unwired-prisma-schema-in-favor-of-payload-managed-collections) (Accepted 2026-08-14) and executed by `M4`.
 
 ### Payments
 
@@ -76,13 +80,28 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 - `docker-compose.yml` for local dev: app + Postgres (+ maybe a volume-mounted Payload media dir or object storage stub).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
 
-## Major open architecture question
+## Settled structural decisions
 
-**Multi-vendor vs. single-store.** The inherited data model (`Store`, vendor-owned `Product`/`Order`, vendor dashboard at `app/store/*`, vendor approval at `app/admin/approve`) is a multi-vendor marketplace. "Admin login only" strongly implies this is being replaced by a single-store model. This is the single biggest structural change from the current codebase and should be explicitly decided (see `DECISIONS.md`) before any Payload collection design starts, since it changes the shape of `Products` and `Orders` significantly (owned by one store vs. owned by many).
+**The target platform is single-store. This is closed, not open.**
+
+The inherited data model (`Store`, vendor-owned `Product`/`Order`, vendor dashboard at `app/store/*`, vendor approval at `app/admin/approve`) is a multi-vendor marketplace. It is **not** the target architecture. Per [ADR-006](./DECISIONS.md#adr-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope) (Accepted 2026-08-07, stakeholder decision):
+
+- **One store.** No per-vendor stores, no `Store` ownership relation on `Products` or `Orders`.
+- **No vendors, no sellers.** No seller dashboard, no seller registration, no vendor approval flow.
+- **Admin-managed commerce.** The store admin manages the entire catalog and all orders directly through Payload's admin panel.
+- **Admin Users are the only authenticated role** ([ADR-006](./DECISIONS.md)); customers never authenticate ([ADR-005](./DECISIONS.md)).
+
+`Products` and `Orders` therefore belong to the platform directly. The multi-vendor surface in the inherited code is legacy to be removed (`M14`–`M17`, `M19`), not a requirement to reconcile.
+
+Other structural questions now settled: Payload topology ([ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) — embedded), Prisma retirement ([ADR-003](./DECISIONS.md#adr-003-retire-the-unwired-prisma-schema-in-favor-of-payload-managed-collections) — accepted), payment scope ([ADR-004](./DECISIONS.md) — COD only), and checkout identity ([ADR-005](./DECISIONS.md) — guest only).
 
 ## Not yet decided (tracked, not resolved here)
 
-- Payload mounted inside the Next.js app vs. a separate service
-- Whether Redux Toolkit stays for cart state or is replaced by a simpler client-side cart (e.g. localStorage + context)
-- Object storage for product media (local volume vs. S3-compatible service) under Docker
-- Exact `Orders` collection shape for guest customers (embedded address vs. relation to a lightweight `Customers` collection without auth)
+These remain genuinely open. None blocks `M1`; the first three block `M6` (the start of collection design).
+
+- Object storage for product media (local volume vs. S3-compatible service) under Docker — interacts with horizontal scaling, see [ADR-009](./DECISIONS.md) consequences
+- Shipping/delivery model, which the `Orders` collection must model (flat / free / weight-based / city-based)
+- Order status set — whether `CANCELLED`/`RETURNED` are needed for COD refusal-at-door
+- Exact `Orders` collection shape for guest customers (embedded address vs. relation to a lightweight `Customers` collection without auth) — `M11` currently assumes embedded
+- Whether Redux Toolkit stays for cart state or is replaced by a simpler client-side cart (e.g. localStorage + context) — `M30` currently assumes Redux + `localStorage`
+- Reviews and Coupons: in or out for v1 (`M46`, `M47`)

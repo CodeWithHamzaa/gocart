@@ -6,16 +6,24 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current phase: planning, not building
+## Current status: planning complete, implementation not started
 
-As of this writing, only documentation exists (`docs/`, `prompts/`, and this file). **No application code has been changed or migrated yet.** Do not assume Payload, PostgreSQL, or Docker are wired up until [docs/TASKS.md](./docs/TASKS.md) says so.
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Only documentation exists (`docs/`, `prompts/`, and this file). **No application code has been changed or migrated yet** — `M1`, the first implementation milestone, has not begun. Do not assume Payload, PostgreSQL, TypeScript, or Docker are wired up until [docs/TASKS.md](./docs/TASKS.md) records the relevant milestone as complete.
+
+## Milestone numbering — the one authoritative sequence
+
+**`M1`–`M59` in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) is the only implementation sequence.** Always reference work by milestone ID.
+
+Phase and group names are **labels for grouping and status reporting only**. They carry no execution order and must never be used as implementation references — "start Phase 2" is not an instruction anyone can act on correctly; "start `M6`" is. Execution order is defined by each milestone's stated dependencies, summarized in MIGRATION_PLAN's execution-order section, and is **not** the same as ascending milestone ID (notably, `M16`/`M17`/`M19` run before `M3`).
 
 ## Hard constraints (do not silently violate)
 
 - **Cash on Delivery only.** Do not add other payment gateways to the active checkout flow. The architecture must stay extensible for online payments later (see [docs/DECISIONS.md](./docs/DECISIONS.md)), but nothing beyond COD ships now.
 - **Guest checkout is required.** Never make account creation mandatory to place an order.
 - **Admin-only authentication.** There is no public customer login and no vendor login/dashboard in the target design. If you find code implementing vendor auth or a vendor dashboard, treat it as legacy from the original multi-vendor app, not a requirement — flag it, don't silently extend it.
+- **Single store — no vendors, no sellers.** Settled in [ADR-006](./docs/DECISIONS.md) (Accepted 2026-08-07). No seller dashboard, no vendor registration, no vendor approval, no per-store ownership of products or orders. Commerce is admin-managed. This is closed — do not reopen, hedge, or treat it as an open question.
 - **PostgreSQL only**, accessed through Payload CMS v3's data layer. Don't introduce a second ORM or database.
+- **Payload runs embedded in the Next.js app**, not as a separate service — [ADR-009](./docs/DECISIONS.md) (Accepted 2026-08-14). Payload owns `/admin`.
 - **SEO-first and mobile-first** are non-negotiable defaults for any storefront UI work — not an afterthought pass at the end.
 - **Everything must run in Docker** for both development and production.
 
@@ -41,6 +49,7 @@ prompts/        Reusable prompt templates for AI-assisted work on this repo
 
 ## Useful context for AI agents
 
-- The original app (`app/store/*`, `app/admin/approve`, `app/admin/stores`, `Store` model in `prisma/schema.prisma`) is a **multi-vendor marketplace**. The target product is **single-store**. Reconciling this is an open decision — see [docs/DECISIONS.md](./docs/DECISIONS.md) and [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) open questions.
+- The original app (`app/store/*`, `app/admin/approve`, `app/admin/stores`, `Store` model in `prisma/schema.prisma`) is a **multi-vendor marketplace**. The target product is **single-store**, and this is already decided — [ADR-006](./docs/DECISIONS.md) is Accepted. The multi-vendor surface is legacy to be **removed** (`M14`–`M17`, `M19`), not reconciled. Treat any doc or comment implying the question is still open as stale.
+- **The repository has no TypeScript toolchain yet** — `jsconfig.json` only, no `tsconfig.json`, no `typescript` dependency. Milestones from `M3` onward create `.ts` files; TypeScript is established first at `M2a`. Don't author `.ts` files before that milestone lands.
 - No authentication provider is currently wired into the app (no Clerk/NextAuth in `package.json`). Admin auth will come from Payload CMS v3's built-in auth once integrated.
 - Currency is currently hardcoded to `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example` — this needs to become PKR-aware for the Pakistan launch.
