@@ -214,3 +214,19 @@ The decisive factors are performance on the SEO-critical path and the absence of
 - **A nested `sharp@0.34.5` remains under `next`** (Next declares `sharp` as an optional dependency at `^0.34.1`). It is reachable only through Next's image optimizer, which is **disabled today** by `images.unoptimized: true`. **`M51`, which re-enables the optimizer, must resolve that nested copy first** — by upgrading Next or by adding an npm `overrides` entry. An override was not added at `M2`: forcing Next onto a `sharp` major it does not declare is an untested combination, and there is no benefit while the optimizer is off.
 - Audit posture moved from **3 advisories (1 critical, 2 high)** before `M2` to **10 (3 high, 6 moderate, 1 low)** after. The critical was eliminated by the Next bump. The seven additions come from Payload's own tree — `drizzle-kit → esbuild` (dev-server advisory) and `monaco-editor → dompurify` (admin-panel editor) — and are upstream-owned, not fixable by application-level version choices.
 - Any future Payload upgrade must re-check the `next` peer range before it is attempted; the two are coupled from here on.
+
+---
+
+## ADR-012: TypeScript pinned to the 5.x line, not the `latest` tag
+
+**Status**: **Accepted (2026-08-14)** — decided while executing `M2a`, the milestone that installs the toolchain.
+
+**Context**: `M2a` installs `typescript` as a `devDependency` ahead of every `.ts`-authoring milestone from `M3` onward. At execution time, npm's `latest` tag for `typescript` pointed to **`7.0.2`** — a native (Go-ported) compiler rewrite that had only just superseded a `6.x` line consisting of two releases. `next@15.3.9` (installed at [ADR-011](#adr-011-payload-v3-dependency-set--exact-pins-a-raised-nextjs-floor-and-patched-sharp)) itself declares a `typescript` **`devDependency` of `5.8.2`** — i.e., what Next.js's own tooling, including its automatic `tsconfig.json` setup and type-checking pass, is built and tested against. Payload v3's project templates likewise target the `5.x` line. `M2a`'s own text anticipates exactly this kind of check: *"Confirm the TypeScript version satisfies both Next 15 and the Payload v3 release installed at `M2`."*
+
+**Decision**: Install `typescript@^5.9.3` — the latest release on the mature `5.x` line — not the `latest` dist-tag. Stakeholder-confirmed.
+
+**Consequences**:
+
+- The toolchain matches what Next 15.3.9 and Payload v3's own tooling are validated against, rather than adopting a same-day major rewrite with materially less real-world mileage against this exact combination.
+- This is a deliberate divergence from "always take `@latest`." Revisit once TypeScript 7's ecosystem (editor integrations, Next.js's own internal upgrade, Payload's build pipeline) has matured — not on this migration's critical path.
+- `@types/node` is pinned to `^22.20.1` to match the actual Node.js runtime (`v22.19.0`), not the `@types/node` `latest` tag (which resolved to `26.x`, describing APIs absent from this runtime). `@types/react`/`@types/react-dom` are left at their resolved `^19.x` versions — those track the installed `react`/`react-dom` major directly, so no separate pin decision was needed.

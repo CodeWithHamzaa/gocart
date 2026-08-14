@@ -74,6 +74,7 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
   - **`"checkJs": false`** — do not type-check the existing JavaScript. Turning it on would surface hundreds of errors in code that is scheduled for deletion or rewrite anyway.
   - **Type-check command**: add `"type-check": "tsc --noEmit"` to `package.json` scripts. From this milestone forward, `npm run type-check` joins `npm run build` as a standard per-milestone verification step.
   - **Next.js compatibility**: Next 15 has first-class TS support and generates `next-env.d.ts` on first run — commit it. Confirm the TypeScript version satisfies both Next 15 and the Payload v3 release installed at `M2`.
+- **TypeScript version**: pinned to `^5.9.3`, the latest `5.x` release — not the `latest` npm tag, which resolved to `7.0.2` (a same-day-fresh native compiler rewrite). Next 15.3.9 itself is built against TypeScript `5.8.2`. Settled by [ADR-012](./DECISIONS.md#adr-012-typescript-pinned-to-the-5x-line-not-the-latest-tag).
 - **Dependencies**: `M2`
 - **Testing**: `npm run type-check` passes on a repository with no `.ts` files yet (a clean no-op); `npm run build` still succeeds and the existing `.jsx` storefront renders unchanged; a throwaway `.ts` file is type-checked and resolves the `@/*` alias correctly, then is deleted.
 - **Rollback**: Delete `tsconfig.json`, `next-env.d.ts`, and the `type-check` script; restore `jsconfig.json`; `git checkout -- package.json package-lock.json && npm install`. No application code is touched by this milestone, so rollback is clean.
