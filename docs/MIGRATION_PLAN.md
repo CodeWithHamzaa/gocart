@@ -45,7 +45,8 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 ### M1 — Dockerized PostgreSQL for local development
 - **Goal**: Stand up a local Postgres instance in Docker so every later milestone has a real database to work against.
-- **Files**: `docker-compose.yml` (new, Postgres service only), `.env.example` (add `DATABASE_URL`)
+- **Files**: `docker-compose.yml` (new, Postgres service only), `.env.example` (add `DATABASE_URI`)
+- **Env var naming**: the connection string is `DATABASE_URI`, the name Payload's Postgres adapter conventionally reads — **not** the Prisma-era `DATABASE_URL` this milestone originally specified, and not both. Settled by [ADR-010](./DECISIONS.md#adr-010-the-postgresql-connection-string-is-named-database_uri), which closes risk `R10` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 - **Dependencies**: none
 - **Testing**: `docker compose up postgres`; connect with `psql`/a DB client and confirm the container is healthy.
 - **Rollback**: Remove `docker-compose.yml` and the added env var; stop/remove the container. No application code is touched.
@@ -523,7 +524,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Commit message**: `Enable real image optimization for self-hosted production deployment`
 
 ### M52 — Production environment/secrets handling
-- **Goal**: Document and structure how `DATABASE_URL`, `PAYLOAD_SECRET`, and any other secrets are supplied in production (without committing real values).
+- **Goal**: Document and structure how `DATABASE_URI` (per [ADR-010](./DECISIONS.md#adr-010-the-postgresql-connection-string-is-named-database_uri)), `PAYLOAD_SECRET`, and any other secrets are supplied in production (without committing real values).
 - **Files**: `.env.example` (finalized), `docker-compose.prod.yml`
 - **Dependencies**: M50
 - **Testing**: A fresh clone can be configured for production using only `.env.example` as a guide and real secrets supplied out-of-band.

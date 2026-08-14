@@ -26,12 +26,14 @@ Status legend: `Not Started` · `In Progress` · `Blocked` · `Done`
 
 ## Implementation status by milestone
 
-Nothing below has started. No application code has been changed.
+Implementation has begun with `M1`. No application code has been changed yet — `M1` adds local
+development infrastructure only (`docker-compose.yml`, `.env.example`).
 
 | Milestones | Group | Status |
 |---|---|:---|
 | `M16`, `M17`, `M19` | Clear `app/admin/**` — **runs before `M3`** | Not Started |
-| `M1`, `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation: Docker Postgres, Payload, TypeScript, sharp, retire Prisma | Not Started |
+| `M1` | Foundation: Dockerized PostgreSQL for local development | **Done** (2026-08-14) |
+| `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation: Payload, TypeScript, sharp, retire Prisma | Not Started |
 | `M14`, `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
 | `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | Not Started |
 | `M20`–`M21` | Confirm admin-only auth end to end | Not Started |
@@ -50,10 +52,11 @@ Nothing below has started. No application code has been changed.
 
 ## Gates
 
-### `M1` gate — **OPEN**
+### `M1` gate — **OPEN** (cleared; `M1` complete)
 
-The six pre-`M1` corrections from the readiness audit are applied. Foundation work may begin.
-Start with `M16`, `M17`, `M19` (clear `/admin`), then `M1` → `M2` → `M2a` → `M3`.
+The six pre-`M1` corrections from the readiness audit are applied. Foundation work has begun:
+`M1` is **Done**. Remaining opening work is `M16`, `M17`, `M19` (clear `/admin`), then
+`M2` → `M2a` → `M3`.
 
 ### `M6` gate — **BLOCKED**
 

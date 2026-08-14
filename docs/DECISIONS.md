@@ -170,3 +170,20 @@ The decisive factors are performance on the SEO-critical path and the absence of
 - Storefront and admin share a deploy and a restart. A CMS upgrade is a full-app deploy.
 - Horizontal scaling remains available (the Next.js app is stateless), but it interacts with the still-open media-storage question: a local-volume media backend constrains multi-instance deployment in a way object storage does not. Tracked as a blocking decision before `M6`.
 - Payload's generated types become importable across the app once TypeScript is established at `M2a`.
+
+---
+
+## ADR-010: The PostgreSQL connection string is named `DATABASE_URI`
+
+**Status**: **Accepted (2026-08-14)** — decided while executing `M1`, the milestone that first declares the variable.
+
+**Context**: `M1` originally specified adding `DATABASE_URL` to `.env.example`. That name is inherited from `prisma/schema.prisma:8` (`url = env("DATABASE_URL")`) — a layer that was never wired up and is retired by `M4` per [ADR-003](#adr-003-retire-the-unwired-prisma-schema-in-favor-of-payload-managed-collections). Payload v3's Postgres adapter (`@payloadcms/db-postgres`), which [ADR-002](#adr-002-postgresql-as-the-only-datastore) makes the sole database access path, conventionally reads **`DATABASE_URI`** — that is the name its own project template, documentation, and generated configuration use. Carrying the Prisma-era name forward would leave the repository permanently off-convention against the only data layer it has. [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) flagged the mismatch as risk `R10` and required it be confirmed rather than discovered at `M3`'s first connection failure.
+
+**Decision**: The PostgreSQL connection string is `DATABASE_URI`, everywhere, in every environment. `DATABASE_URL` is **not** declared, aliased, or supported as a fallback — a second name for one value is drift waiting to happen, and there is no consumer of the old name to be compatible with (nothing has ever read it at runtime).
+
+**Consequences**:
+
+- `M1` declares `DATABASE_URI` in `.env.example`; `M3` reads it in `payload.config.ts`; `M50`/`M52` supply it to containers. One name, one value, one path.
+- Risk `R10`'s database-variable half is closed. Its second half — an absolute public base URL (e.g. `NEXT_PUBLIC_SERVER_URL`) needed by `M42` — is untouched by this ADR and remains open against `M42`/`M52`.
+- Prior documentation that names `DATABASE_URL` as a thing to add is superseded by this ADR. `M1` and `M52` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) were corrected as part of `M1`. [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md)'s references stay as written: they are a point-in-time audit of what the Prisma schema declared, and correctly anticipated replacement "with Payload's own DB connection variable."
+- The variable is not consumed by any code yet — nothing reads it until `M3`. `M1` ships it as configuration the developer sets up front, matching the credentials `docker-compose.yml` starts Postgres with.
