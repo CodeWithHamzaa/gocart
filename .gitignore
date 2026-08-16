@@ -41,5 +41,3 @@ yarn-error.log*
 
 # payload (generated; regenerated from payload.config.ts, not hand-authored)
 /payload-types.ts
-
-/app/generated/prisma
