@@ -230,3 +230,58 @@ The decisive factors are performance on the SEO-critical path and the absence of
 - The toolchain matches what Next 15.3.9 and Payload v3's own tooling are validated against, rather than adopting a same-day major rewrite with materially less real-world mileage against this exact combination.
 - This is a deliberate divergence from "always take `@latest`." Revisit once TypeScript 7's ecosystem (editor integrations, Next.js's own internal upgrade, Payload's build pipeline) has matured — not on this migration's critical path.
 - `@types/node` is pinned to `^22.20.1` to match the actual Node.js runtime (`v22.19.0`), not the `@types/node` `latest` tag (which resolved to `26.x`, describing APIs absent from this runtime). `@types/react`/`@types/react-dom` are left at their resolved `^19.x` versions — those track the installed `react`/`react-dom` major directly, so no separate pin decision was needed.
+
+---
+
+## ADR-013: Category browsing ships in Phase 1 as dedicated slug routes with a two-level hierarchy
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed. Closes readiness finding **C8**.
+
+**Context**: The target product is a multi-category, multi-product storefront, but customer-facing category browsing exists neither in the codebase nor in the plan. Verified read-only:
+
+- **No `/categories` route and no `/category/[slug]` route exist.** Categories appear only as a hardcoded six-item array in `assets/assets.js`, a second conflicting ten-item array in the vendor add-product form (itself scheduled for deletion at `M14`), a free-text `category` string on each dummy product, unlinked breadcrumb text on the product page, and `components/CategoriesMarquee.jsx`, which renders bare `<button>`s with no `onClick` and no `href`.
+- **`prisma/schema.prisma` has no `Category` model at all** — `category` is a plain required `String` on `Product`, with no slug, no relation, and no hierarchy. There is nothing to carry forward.
+- **No milestone in `M1`–`M59` created a category route**, while four assumed one existed: `M27`'s acceptance test asserted *"clicking one filters/links correctly"*, `M41` added metadata to *"product, category/shop, and home pages"*, `M42` generated a sitemap listing *"real seeded products/categories"*, and [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) justified the `Categories` collection by *"SEO-friendly category pages"*.
+- **`M9` specified no fields whatsoever** — one sentence, no `slug`, no `parent`, no ordering, no SEO fields.
+
+[PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) recorded this as contradiction **C8** (HIGH, blocking `M27`/`M41`/`M42`): *"Categories are modeled, seeded, marqueed, and sitemapped — but never browsable."* Its correction #14 prescribed inserting the missing milestone using decimal IDs.
+
+A second ambiguity compounded it: [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Filters** as Future Phase and [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s scope note excludes them from the plan. Read literally, that defers "category filtering" — and with it, plausibly, category browsing itself.
+
+### Decision
+
+**Category browsing is Phase 1 launch scope**, delivered as two dedicated server-rendered routes:
+
+| Route | Milestone |
+|---|:---:|
+| `/categories` — landing index of all top-level categories with their children | **`M27b`** |
+| `/category/[slug]` — category detail and paginated product listing | **`M27a`** |
+
+Four sub-decisions, each of which was a genuine fork:
+
+1. **Dedicated slug routes, not shop query-param filtering.** `/category/[slug]` is the single canonical products-by-category URL. **`/shop?category=` is not introduced.** Two URLs returning one result set split ranking signals between them — a duplicate-content problem, not a feature. `/shop` keeps its existing role: all products plus name-based search.
+2. **Exactly two levels — parent → child.** A `parent` self-relation on `Categories`, with validation rejecting a third level. Category URLs are **flat** (`/category/phone-cases`, never `/category/accessories/phone-cases`) and slugs are unique across the whole collection.
+3. **Parent pages roll up descendants.** A parent lists products assigned to itself *plus* every child. Resolved once in `getProductsByCategory()` (`M22`), not per route.
+4. **Page-number pagination** — `?page=N`, 24 per page, server-rendered, with canonical and `rel=prev`/`next` links.
+
+**Rejected alternatives**:
+
+- **`/shop?category=` filtering** — cheapest to build, but produces the duplicate-content split above, gives category-intent search nothing distinct to rank, and blurs the Filters boundary that this ADR exists partly to draw.
+- **Arbitrary-depth nesting** — more admin flexibility, at the cost of recursive descendant queries, recursive breadcrumbs, and a cycle guard. The `parent` self-relation already models it, so relaxing the depth validation later needs no data migration. Two levels is a bound, not a ceiling.
+- **Directly-assigned products only on parent pages** — a simpler query that renders parent pages empty whenever admins file products under children, which is exactly what admins do. The single most common way category navigation looks broken.
+- **Infinite scroll / load-more** — better mobile feel, but products past page 1 are invisible to crawlers unless a parallel paginated path is maintained anyway. Direct conflict with [ADR-007](#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass).
+
+Full behavior specification: [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
+
+**Consequences**:
+
+- **`M9` gains a real field list** — `title`, `slug` (unique, indexed, generated-then-stable), `parent` (self-relation, `hasMany: false`), `description`, `image`, SEO overrides, `displayOrder` — plus the two-level constraint and slug uniqueness in its acceptance tests. It also gains a dependency on `M8`, since the `image` field targets the Media collection.
+- **`M10` fixes `Products.category` cardinality** at `hasMany: false` — one product, one most-specific category.
+- **`M22` owns the rollup.** `getTopLevelCategories()`, `getCategoryBySlug()`, and `getProductsByCategory()` are shared utilities so the routes and the sitemap cannot disagree about a category's contents.
+- **`M27`'s false acceptance test is corrected.** The marquee stays inert at `M27` (preserving today's behavior, so no dead-link window opens) and becomes links at `M27a`.
+- **`M41`, `M42`, and `M44` gain `M27a`/`M27b` dependencies.** `M42`'s sitemap in particular could not previously have listed the category URLs its own goal describes.
+- **Slugs are stable by policy.** Renaming a category does not regenerate its slug; an admin changes one deliberately or not at all. Re-parenting never changes a URL, because URLs are flat.
+- **Category browsing requires no authentication**, consistent with [ADR-005](#adr-005-guest-checkout-no-customer-accounts) and [ADR-006](#adr-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope).
+- **Faceted filtering stays Future Phase** — price, brand, rating, in-stock, sort, multi-facet. This ADR draws the boundary; it does not move it.
+- **JSON-LD on category pages is not Phase 1.** `M43` stays scoped to `Product` on product detail pages.
+- One of the `M6` gate's collection-design inputs is now settled: the `Categories` shape no longer blocks the start of data modeling.

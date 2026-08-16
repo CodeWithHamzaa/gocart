@@ -56,7 +56,8 @@ domain concepts first, `.gitignore` cleanup is included, and `git revert` of `M4
 ### ✅ Correction 3 — One authoritative numbering system
 
 **`M1`–`M59` plus `M2a` is now the only implementation sequence.** Phase/group names are demoted to
-reporting labels everywhere.
+reporting labels everywhere. *(The scheme is unchanged; the set has since grown — `M27a` and `M27b`
+were added on 2026-08-16 as decimal insertions, again without renumbering. Current total: 62.)*
 
 | Document | Change |
 |---|---|
@@ -156,9 +157,38 @@ existing target; none changes a planning decision:
 - **[README.md](./README.md)** — doc index completed (it listed 5 of 9 files)
 - **[CHANGELOG.md](./CHANGELOG.md)** — entry recording this documentation pass
 
+### ✅ Post-audit correction — C8, category browsing scheduled (2026-08-16)
+
+Not a pre-`M1` correction — recorded here because it closes a HIGH contradiction that the correction
+pass above explicitly left open. Discharges the category-listing-route half of **required correction
+#14**, using the decimal-ID approach that correction prescribed. (Audit 1's text below is preserved
+verbatim as history and was not edited.)
+
+A read-only re-audit confirmed C8's finding in full: no `/categories` or `/category/[slug]` route
+exists; `CategoriesMarquee.jsx` still renders bare `<button>`s with no `onClick` and no `href`;
+`prisma/schema.prisma` has **no `Category` model at all** (just a free-text `String` on `Product`);
+and `M9` specified **no fields whatsoever** — no `slug`, no `parent`, nothing the four dependent
+milestones assumed.
+
+| Change | Where |
+|---|---|
+| **`M27a`** — `/category/[slug]` detail + paginated product listing; also converts the marquee to links and the product breadcrumb to a link | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M27b`** — `/categories` landing index | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M9` gains a real field list** — `slug` (unique, indexed, stable), `parent` (self-relation, two levels), `description`, `image`, SEO overrides, `displayOrder` — plus an `M8` dependency for the upload field | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M10`** fixes `Products.category` at `hasMany: false` | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M22`** owns the descendant rollup as a shared utility | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M27`'s false acceptance test corrected** — *"clicking one filters/links correctly"* was asserting behavior the component does not have and this milestone does not add | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **`M41`, `M42`, `M44`** gain `M27a`/`M27b` dependencies — `M42`'s sitemap could not previously have listed the category URLs its own goal describes | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) |
+| **ADR-013** records the four sub-decisions and the rejected alternatives | [DECISIONS.md](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy) |
+| **Filters ≠ category browsing** boundary drawn, closing the second-order ambiguity where a Future-Phase Filters row could be read as deferring browsing itself | [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), [PROJECT_SPEC.md](./PROJECT_SPEC.md), MIGRATION_PLAN scope note |
+| **Behavior specification** — routes, URL structure, hierarchy, product relationship, SEO, empty/loading/error states, pagination, out-of-scope filtering | [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) (new) |
+
+**No application code was changed.** `M27a` and `M27b` are planned, not built. The milestone count
+moves from 60 to **62** with no renumbering of `M1`–`M59`.
+
 ## Remaining contradictions
 
-Eight of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
+Nine of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 
 | # | Finding | Status | Blocks |
 |---|---|:---:|---|
@@ -169,7 +199,7 @@ Eight of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 | C5 | "No blog" never stated anywhere | ⚠️ **Open** | Nothing — but unstated scope in a CMS build |
 | C6 | Two conflicting phase-numbering systems | ✅ **Resolved** | — |
 | C7 | `M13` access rules forbid what `M36` requires | ⚠️ **Open** | `M13`, `M36` |
-| C8 | Category browsing assumed by 4 milestones, built by none | ⚠️ **Open** | `M27`, `M41`, `M42` |
+| C8 | Category browsing assumed by 4 milestones, built by none | ✅ **Resolved** (2026-08-16) | — |
 | C9 | `M39` cites wrong dependency | ✅ **Resolved** | — |
 | C10 | `M15`/`M18` Footer reference | ◐ **Partial** — pointer fixed to `M48`; the dead-link window until `M48` remains a scheduling gap | Nothing |
 | C11 | FEATURE_MATRIX Sanity row misuses "Replace" | ⚠️ **Open** (cosmetic) | Nothing |

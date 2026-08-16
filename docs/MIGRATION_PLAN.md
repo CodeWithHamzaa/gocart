@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-60 milestones (`M1`–`M59`, plus `M2a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+62 milestones (`M1`–`M59`, plus `M2a`, `M27a`, `M27b`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -36,6 +36,8 @@ M16, M17, M19 ──┘        (M17 → M19)
 ## Scope note
 
 Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (Filters, Wishlist, Brands, advanced Inventory, advanced Settings) are intentionally **not** milestones in this plan — they're post-launch. Reviews and Coupons appear here only as *decision + minimal-scope-or-removal* milestones, per their Future-Phase-leaning status in the matrix, not as full feature builds.
+
+> **Filters ≠ category browsing — read this before scoping `M27a`/`M27b`.** Deferring Filters defers *faceted filtering UI*: price ranges, brand, rating, in-stock toggles, sort controls, multi-facet selection, and any `/shop?category=` parameter. It does **not** defer **category browsing**, which is launch scope and is built by `M27a` (`/category/[slug]`) and `M27b` (`/categories`) per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy). Category browsing is navigation over a slug-based URL space; filtering is query refinement over a result set. The full boundary is enumerated in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 
 ---
 
@@ -134,18 +136,33 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 - **Commit message**: `Add Media collection with real upload storage`
 
 ### M9 — Categories collection
-- **Goal**: Replace the hardcoded category string array with a real, admin-editable entity.
-- **Files**: `collections/Categories.ts` (new)
-- **Dependencies**: M3
-- **Testing**: Create/edit/list a category via `/admin` and via the REST API.
-- **Rollback**: Remove the collection file.
-- **Commit message**: `Add Categories collection`
+- **Goal**: Replace the hardcoded category string array with a real, admin-editable entity that supports the two-level hierarchy and slug-based URLs the storefront category routes (`M27a`, `M27b`) require.
+- **Files**: `collections/Categories.ts` (new), `payload.config.ts` (register collection)
+- **Fields** — every one has a named reader in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md); nothing here is speculative:
+
+  | Field | Type | Required | Read by |
+  |---|---|:---:|---|
+  | `title` | text | ✓ | `<h1>`, cards, breadcrumbs, metadata fallback |
+  | `slug` | text, unique, indexed | ✓ | Every category URL; `generateStaticParams`; sitemap (`M42`) |
+  | `parent` | relationship → `categories`, `hasMany: false` | — | Hierarchy, product rollup, breadcrumbs, `/categories` grouping |
+  | `description` | textarea / richtext | — | Category page intro copy; meta-description fallback |
+  | `image` | upload → `media` | — | `/categories` landing cards (`M27b`) |
+  | `seo.metaTitle` / `seo.metaDescription` | text / textarea | — | `generateMetadata` overrides |
+  | `displayOrder` | number | — | Deterministic ordering on `/categories` and child navigation |
+
+- **Constraints**: `slug` generated from `title` on create and then **stable** — never auto-regenerated on a title edit, since renaming a category must not orphan its live URL; `slug` unique across the entire collection (parent and child share one flat URL space); a category whose `parent` already has a `parent` is **rejected** (two levels only, per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)); a category may not be its own parent.
+- **Why the field list is here and not left to implementation**: this milestone previously specified no fields at all, while four downstream milestones assumed category URLs and hierarchy existed — readiness finding **C8**. The `parent` self-relation and the `slug` field are the two that close it.
+- **Dependencies**: M3, M8 (the `image` upload field targets the Media collection)
+- **Testing**: Create a parent and a child category via `/admin`; confirm the child's `parent` resolves. Attempt to create a grandchild — rejected. Attempt a duplicate slug — rejected. Rename a category's title — confirm its slug does **not** change. Retrieve both via the REST API.
+- **Rollback**: Remove the collection file and its registration.
+- **Commit message**: `Add Categories collection with two-level hierarchy and stable slugs`
 
 ### M10 — Products collection
 - **Goal**: Real product catalog storage, using the existing Prisma schema's field shape as reference per [ADR-003](./DECISIONS.md), with relations to Categories and Media.
 - **Files**: `collections/Products.ts` (new)
+- **Category relation — cardinality is decided, not left open**: `category` is a `relationship` to `categories` with **`hasMany: false`**. A product belongs to exactly one category, the most specific one that applies (normally a child). Parent category pages get their inventory by rolling up their children (`M22`, `M27a`) rather than by admins double-filing a product under both a parent and its child. Per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy).
 - **Dependencies**: M8, M9
-- **Testing**: Create a product with a category relation and an uploaded image via `/admin`; confirm it's retrievable via REST and GraphQL.
+- **Testing**: Create a product with a category relation and an uploaded image via `/admin`; confirm it's retrievable via REST and GraphQL. Confirm the category field accepts exactly one value.
 - **Rollback**: Remove the collection file.
 - **Commit message**: `Add Products collection with category and media relations`
 
@@ -258,8 +275,13 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 ### M22 — Product/category data-fetching utility
 - **Goal**: A small server-side utility to fetch Products/Categories from Payload (local API when server-rendered, REST/GraphQL when client-rendered), replacing ad hoc dummy-data assignment.
 - **Files**: `lib/payload/products.ts` (new), `lib/payload/categories.ts` (new)
+- **Category functions this must expose** — `M27`, `M27a`, `M27b`, and `M42` all consume them, so they belong here rather than being reimplemented per route:
+  - `getTopLevelCategories()` — categories with no `parent`, each with its children resolved, ordered by `displayOrder` then title. Backs `/categories` (`M27b`).
+  - `getCategoryBySlug(slug)` — a single category with its `parent` and `children` resolved, for the page body and breadcrumbs. Returns null for an unknown slug so the route can `notFound()`.
+  - `getProductsByCategory(slug, { page, limit })` — paginated products for a category, **including all descendants when the category is a parent** (the rollup from [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)). Returns products plus total count and page count.
+- **Why rollup lives here**: "which products are in this category" must have exactly one implementation. Duplicating the descendant query into route code is how a parent page and the sitemap end up disagreeing about the same category.
 - **Dependencies**: M13
-- **Testing**: Call each function from a temporary script/route and confirm it returns seeded data from M13.
+- **Testing**: Call each function from a temporary script/route and confirm it returns seeded data from M13. Specifically confirm `getProductsByCategory()` on a **parent** slug returns products filed under its children, and on a **child** slug returns only that child's products.
 - **Rollback**: Delete the new files; nothing else references them yet.
 - **Commit message**: `Add server-side data-fetching utilities for Products and Categories`
 
@@ -296,12 +318,40 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Commit message**: `Remove vendor attribution block from product page`
 
 ### M27 — Wire CategoriesMarquee to real categories
-- **Goal**: Replace whatever category source `CategoriesMarquee` used with the real `Categories` collection.
+- **Goal**: Replace the hardcoded `categories` array `CategoriesMarquee` imports from `assets/assets.js` with the real `Categories` collection. **Data source only** — the marquee's items stay non-interactive in this milestone.
 - **Files**: `components/CategoriesMarquee.jsx`
 - **Dependencies**: M22
-- **Testing**: Marquee renders the seeded categories from M9/M13; clicking one filters/links correctly.
+- **⚠️ Corrected acceptance test**: this milestone previously asserted *"clicking one filters/links correctly"* — behavior that does not exist in the component and that this milestone does not add. `CategoriesMarquee.jsx` renders bare `<button>`s with no `onClick` and no `href`. **`M27a` is the milestone that makes them links**; `M27` only re-points the data. Keeping the items inert here is deliberate: it preserves today's behavior exactly rather than opening a dead-link window before `M27a` lands. Recorded as readiness finding **C8** in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+- **Testing**: Marquee renders the seeded categories from `M9`/`M13` instead of the hardcoded six; items remain non-interactive, unchanged from today; no console errors.
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire category marquee to real Payload categories`
+
+### M27a — Category detail and product listing route (`/category/[slug]`)
+- **Goal**: Build the customer-facing category page the storefront has never had — a server-rendered, slug-based, publicly browsable listing of a category's products, with parent/child navigation and pagination. Implements [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy).
+- **Files**: `app/(public)/category/[slug]/page.tsx` (new), `loading.tsx` (new), `error.tsx` (new), `not-found.tsx` (new); `components/CategoriesMarquee.jsx` (inert `<button>`s → `next/link` anchors); `app/(public)/product/[productId]/page.jsx` (the plain-text `Home / Products / {category}` breadcrumb becomes a link)
+- **`.tsx`, not `.jsx`** — per `M2a`'s rule that new files are TypeScript. The route reads Payload's generated types through `lib/payload/*`.
+- **Scope**:
+  - **Parent slug** → `<h1>`, description, child-category navigation, and products rolled up from the parent plus every child.
+  - **Child slug** → `<h1>`, description, its own products, and a breadcrumb linking back to its parent.
+  - **Pagination** — `?page=N`, 24 per page, rendered as real `<a>` links; page 1 canonicalizes to the bare URL; out-of-range → 404.
+  - **SEO ships here, not at `M41`** — `generateMetadata`, `generateStaticParams` over published slugs, one `<h1>`, canonical URLs on paginated variants, `rel=prev`/`next`. [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) makes SEO part of definition-of-done, not a later pass.
+  - **States** — an empty category renders **200** with an empty state (never 404: emptiness is a temporary property of inventory, and 404-ing would churn the sitemap on ordinary stock movement); unknown/unpublished slug → real 404; query failure → `error.tsx`, never a silent empty grid.
+  - **No filtering UI of any kind** — see the Filters boundary in the scope note above.
+- **Dependencies**: `M13` (seeded parent/child categories with products, public read access), `M22` (the three category query functions), `M27` (marquee already on real category data — this milestone converts it to links)
+- **Testing**: A parent slug lists its children and their rolled-up products; a child slug lists only its own with a working parent breadcrumb; a category with no products returns **200** with an empty state; an unknown slug returns **404**; `?page=2` paginates and an out-of-range page returns 404; page source contains the product grid (server-rendered, not hydrated in); marquee items and the product breadcrumb now navigate correctly; no login prompt anywhere in the flow; `npm run type-check` and `npm run build` pass.
+- **Rollback**: Delete `app/(public)/category/`; revert the two component edits. The marquee returns to inert items — its pre-`M27a` state — so no dead links are left behind.
+- **Commit message**: `Add category detail and product listing route`
+
+### M27b — Categories landing page (`/categories`)
+- **Goal**: A browsable index of the whole catalog structure — every top-level category with its children — giving customers and crawlers a single entry point into category browsing.
+- **Files**: `app/(public)/categories/page.tsx` (new), `loading.tsx` (new)
+- **Scope**: All top-level categories as cards (title, image, description), each listing its children as sub-links; ordered by `displayOrder` then title; every card and sub-link targets a live `/category/[slug]`; `generateMetadata`; server-rendered; a neutral empty state if no categories exist.
+- **Dependencies**: `M27a` (every link on this page must resolve — building the index before the detail route would ship a page of 404s), `M22`
+- **Testing**: All seeded top-level categories render with their children; every link resolves to a real category page; a parent with no children renders as a plain card without error; metadata is present and distinct; layout is correct at mobile, tablet, and desktop widths; no login required; `npm run type-check` and `npm run build` pass.
+- **Rollback**: Delete `app/(public)/categories/`. Nothing else references it.
+- **Commit message**: `Add categories landing page`
+
+> **Deliberately unchanged by the category work**: `M24` (`/shop` stays the all-products + search listing — no `category` param is introduced, per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)'s single-canonical-URL rule), `M25`, `M28`, `M40` (the new routes are server components from birth), and `M43` (JSON-LD stays scoped to `Product` on product detail pages; category structured data is explicitly not Phase 1). These omissions are decided, not overlooked.
 
 ### M28 — Remove dummy data source and orphaned Redux slices
 - **Goal**: Now that every storefront consumer has been re-pointed, delete the dummy-data file and the Redux slices that existed only to hold it.
@@ -424,18 +474,20 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Commit message**: `Convert public layout and home page to server components`
 
 ### M41 — Per-page metadata
-- **Goal**: Add `generateMetadata` to product, category/shop, and home pages, replacing the single site-wide static title/description.
-- **Files**: `app/(public)/product/[productId]/page.jsx`, `app/(public)/shop/page.jsx`, `app/(public)/page.jsx`, `app/layout.jsx`
-- **Dependencies**: M25, M40
-- **Testing**: Inspect rendered `<head>` per route; each shows a distinct, relevant title/description.
-- **Rollback**: Revert the four files.
+- **Goal**: Add `generateMetadata` to product, shop, and home pages, replacing the single site-wide static title/description, and normalize canonical/Open Graph tags across every storefront route.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `app/(public)/shop/page.jsx`, `app/(public)/page.jsx`, `app/layout.jsx`, `app/(public)/category/[slug]/page.tsx`, `app/(public)/categories/page.tsx`
+- **Scope on the category routes is normalization, not creation**: `M27a`/`M27b` ship their own `generateMetadata` and canonicals, since [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) makes SEO part of a storefront route's definition of done. This milestone verifies them and brings them into line with the site-wide canonical/OG conventions it establishes.
+- **Dependencies**: M25, M40, **M27a, M27b** (the category routes must exist before this pass can cover them)
+- **Testing**: Inspect rendered `<head>` per route; each shows a distinct, relevant title/description. Category and paginated category pages carry correct canonicals.
+- **Rollback**: Revert the touched files.
 - **Commit message**: `Add per-page SEO metadata via generateMetadata`
 
 ### M42 — sitemap.xml and robots.txt
 - **Goal**: Add Next.js file-convention sitemap and robots files, generated from real product/category data.
 - **Files**: `app/sitemap.ts` (new), `app/robots.ts` (new)
-- **Dependencies**: M22
-- **Testing**: `/sitemap.xml` and `/robots.txt` return valid content listing real seeded products/categories.
+- **Category entries**: the sitemap lists `/categories` plus one `/category/{slug}` per published category, parent and child alike, sourced from `getTopLevelCategories()`/`getCategoryBySlug()` (`M22`) so it cannot drift from what the routes actually serve. Paginated variants (`?page=N`) are **not** listed — they are reachable via `rel=next` from page 1.
+- **Dependencies**: M22, **M27a, M27b** (previously `M22` alone — but the goal's "real seeded products/categories" requires category URLs to exist, and no milestone created them until now)
+- **Testing**: `/sitemap.xml` and `/robots.txt` return valid content listing real seeded products/categories. Every category URL in the sitemap resolves to a 200; `/categories` is present.
 - **Rollback**: Delete both new files.
 - **Commit message**: `Add sitemap.xml and robots.txt generated from real catalog data`
 
@@ -452,10 +504,11 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 ## Group: Mobile-first audit — `M44`–`M45`
 
 ### M44 — Component-by-component mobile review
-- **Goal**: Audit every storefront component for mobile-first correctness (tap targets, layout at small widths, readable type), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
-- **Files**: `components/**` (storefront-facing; fixes scoped per component found to need them)
-- **Dependencies**: M28 (real data in place, so the audit reflects real content, not placeholders)
-- **Testing**: Manually test the golden path (browse → product → cart → checkout) at common mobile viewport widths; no horizontal scroll, no unreachable controls.
+- **Goal**: Audit every storefront component and route for mobile-first correctness (tap targets, layout at small widths, readable type), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
+- **Files**: `components/**` (storefront-facing; fixes scoped per component found to need them), plus the category routes `app/(public)/categories/**` and `app/(public)/category/**`
+- **Category routes are in scope**: `/categories` and `/category/[slug]` must work at mobile, tablet, and desktop widths — grid column counts, category-name wrapping, breadcrumb degradation on narrow viewports, and pagination tap targets. Expectations are enumerated in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
+- **Dependencies**: M28 (real data in place, so the audit reflects real content, not placeholders), **M27a, M27b**
+- **Testing**: Manually test the golden path (browse → category → product → cart → checkout) at common mobile, tablet, and desktop viewport widths; no horizontal scroll, no unreachable controls.
 - **Rollback**: Revert whichever specific component fixes are found to be wrong.
 - **Commit message**: `Mobile-first layout and interaction fixes across storefront components`
 
@@ -610,7 +663,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M14`, `M15`, `M18` | Remove the multi-vendor surface (non-admin routes) | Any time — no dependencies |
 | `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | After `M3` |
 | `M20`–`M21` | Confirm admin-only auth end to end | After `M17`, `M19` |
-| `M22`–`M28` | Storefront wired to real product/category data; dummy data removed | After `M13` |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront wired to real product/category data; category browsing routes; dummy data removed | After `M13` |
 | `M29` | Real search | After `M24` |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | After `M13` (`M30` any time) |
 | `M37`–`M39` | Admin order fulfillment | After `M33` |
@@ -621,4 +674,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**60 milestones total** — `M1`–`M59` plus `M2a`, inserted for the TypeScript toolchain without renumbering the rest.
+**62 milestones total** — `M1`–`M59` plus three decimal insertions that avoid renumbering the rest: `M2a` (TypeScript toolchain), and `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)).

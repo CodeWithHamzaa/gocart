@@ -47,6 +47,25 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 - **Payload CMS v3 runs embedded inside the Next.js app** — one codebase, one build, one container. Its admin UI mounts at `/admin` and its REST/GraphQL API under `/api`, both as App Router routes; server-rendered storefront pages read through Payload's Local API with no HTTP hop. Decided in [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) (Accepted 2026-08-14) — running Payload as a separate service was evaluated and rejected.
 - Redux Toolkit likely stays for client-side cart state (guest cart doesn't need a backend session), but server state (products, orders) moves to Payload's API instead of Prisma.
 
+#### Storefront route map (target)
+
+| Route | Purpose | Rendering |
+|---|---|---|
+| `/` | Home — hero, latest/best-selling sections | SSR |
+| `/categories` | Category index: all top-level categories with their children (`M27b`) | SSR/ISR |
+| `/category/[slug]` | Category detail + paginated product listing (`M27a`) | SSR/ISR |
+| `/shop` | All products + name-based search (`?search=`) | SSR |
+| `/product/[productId]` | Product detail | SSR/ISR |
+| `/cart`, guest checkout, order confirmation/lookup | Cart and COD checkout flow | Client + SSR |
+| `/admin` | Payload CMS admin UI | Payload-owned |
+
+Category URLs are **flat and slug-based** — a child category is `/category/phone-cases`, not
+`/category/accessories/phone-cases` — so re-parenting a category in the admin never breaks a live URL
+or an indexed page. `/category/[slug]` is the single canonical products-by-category URL; no
+`/shop?category=` parameter exists, since two URLs for one result set split ranking signals. Settled
+by [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy);
+full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
+
 #### `/admin` route ownership
 
 `/admin` belongs to Payload in the target architecture. The inherited codebase serves its own hand-built admin from `app/admin/*` (with a hardcoded `isAdmin = true` bypass), which resolves to the same path. **The legacy admin is removed before Payload mounts** — `M16`, `M17`, and `M19` precede `M3` — so at no point do two implementations own `/admin`. See the execution order in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
@@ -55,6 +74,7 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 
 - **Payload CMS v3** replaces the unwired Prisma layer as the system of record.
 - Collections needed (first pass, to refine in `docs/TASKS.md` once build starts): `Users` (admin-only, `auth: true`), `Products`, `Categories`, `Media`, `Orders` (with embedded/guest customer + address fields, no `User` relation), `Coupons` (optional for v1).
+- **`Categories` carries a `parent` self-relation** (`hasMany: false`) supporting exactly two levels — parent → child, with a third level rejected — plus a unique, indexed, stable `slug` that backs every category URL. `Products.category` is a single relationship (`hasMany: false`) to the most specific applicable category; parent category pages roll up their children's products rather than requiring double-filing. Per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy); field list in `M9`.
 - Payload's built-in auth becomes the **only** login in the system — no separate customer or vendor auth.
 
 ### Data store

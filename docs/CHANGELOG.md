@@ -6,6 +6,9 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M27a`, `M27b`** — two new milestones covering customer-facing category browsing: `/category/[slug]` (detail + paginated product listing, parent/child navigation, marquee and breadcrumb links) and `/categories` (landing index). Decimal IDs, no renumbering of `M1`–`M59`; the plan moves from 60 to **62** milestones. Closes readiness finding `C8` — *"category browsing assumed by four milestones and built by none."*
+- **`docs/CATEGORY_REQUIREMENTS.md`** — behavior specification the two milestones implement against: routes, purpose, URL structure, parent/child behavior, product relationship, SEO requirements, empty/loading/error states, pagination expectations, out-of-scope filtering, responsive expectations, and the `Categories` field list.
+- **ADR-013**: category browsing ships in Phase 1 as dedicated slug routes with a two-level hierarchy (Accepted 2026-08-16) — dedicated routes over `/shop?category=` filtering, two-level parent/child, descendant rollup on parent pages, page-number pagination.
 - **`M17`** — `docs/MIGRATION_PLAN.md`'s `M17` interim-state note extended: `/admin/coupons` stays live (200) after this milestone, now with no layout chrome, since its wrapper (`app/admin/layout.jsx`) is deleted here while the page itself is not deleted until `M19`. Recorded as expected migration debt, not a regression — the `isAdmin` gate it loses was never real.
 - **`M2a`** — TypeScript toolchain established: `tsconfig.json` (strict mode, `allowJs: true`, `checkJs: false`, `@/*` path alias carried over from `jsconfig.json`), `next-env.d.ts` (committed per Next.js convention), and a `type-check` script (`tsc --noEmit`). `typescript`, `@types/node`, `@types/react`, `@types/react-dom` added as `devDependencies`. No `.jsx` file converted; nothing type-checked yet.
 - **ADR-012**: TypeScript pinned to the `5.x` line (`^5.9.3`), not the `latest` npm tag — which resolved to `7.0.2`, a same-day-fresh native compiler rewrite (Accepted 2026-08-14).
@@ -22,6 +25,14 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Changed
 
+- **`M9`** — expanded from a one-line goal with no field list to an explicit `Categories` schema: `title`, `slug` (unique, indexed, generated-then-stable), `parent` (self-relation, `hasMany: false`, two-level limit), `description`, `image`, SEO overrides, `displayOrder`. Gains an `M8` dependency (the `image` upload field targets the Media collection).
+- **`M10`** — `Products.category` cardinality fixed at `hasMany: false` (one product, one most-specific category); parent category pages roll up children rather than requiring double-filing.
+- **`M22`** — scope expanded to own the category queries and the descendant rollup: `getTopLevelCategories()`, `getCategoryBySlug()`, `getProductsByCategory()`. One implementation, so the routes and the sitemap cannot disagree.
+- **`M27`** — **false acceptance test corrected.** It asserted *"clicking one filters/links correctly"* against a component that renders bare `<button>`s with no `onClick` and no `href`. `M27` now re-points the data only, leaving items inert (today's behavior, so no dead-link window); `M27a` makes them links.
+- **`M41`, `M42`, `M44`** — gained `M27a`/`M27b` dependencies and the category routes in their file/scope lists. `M42` in particular could not previously have produced the sitemap its own goal describes.
+- **Filters ≠ category browsing** boundary drawn across `docs/FEATURE_MATRIX.md` (Categories and Filters rows), `docs/PROJECT_SPEC.md` (browse flow + out-of-scope list), and `docs/MIGRATION_PLAN.md`'s scope note — a Future-Phase Filters row could previously be read as deferring category browsing itself.
+- **`docs/ARCHITECTURE.md`** — added a target storefront route map and recorded the `Categories` `parent` self-relation.
+- **`docs/PHASE_1_READINESS_REPORT.md`** — contradiction `C8` flipped from ⚠️ Open to ✅ Resolved, with a post-audit correction subsection. Audit 1's verbatim text was not edited.
 - **`M2a`** — `jsconfig.json` deleted, superseded by `tsconfig.json`, which takes over the `@/*` path alias. `.gitignore`'s `next-env.d.ts` entry removed so the file can be committed, per Next.js convention; `*.tsbuildinfo` stays ignored.
 - **`M2a`** — `MIGRATION_PLAN.md`'s `M2a` records the TypeScript version choice and cites ADR-012.
 - **`M2`** — `next` upgraded `15.3.5` → `15.3.9`, the minimum version satisfying `@payloadcms/next`'s peer range (per ADR-011). Patch-level, same minor; the storefront builds to the same 19 routes. This also cleared a pre-existing **critical** Next.js advisory.

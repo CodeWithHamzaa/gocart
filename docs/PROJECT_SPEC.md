@@ -25,6 +25,7 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 
 - Online payment gateways (Stripe, JazzCash, Easypaisa, etc.) — deferred, but must not be architecturally precluded
 - Customer accounts / customer login (guest checkout replaces this)
+- **Advanced/faceted product filtering** — price ranges, brand, rating, in-stock toggles, sort controls, multi-facet selection. **Category *browsing* is in scope and ships at launch** ([ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)); what is deferred is filter *UI* on top of it. See the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md).
 - **Multi-vendor marketplace features are permanently out of scope, not deferred** — decided (see [ADR-006](./DECISIONS.md)): no vendors, no seller dashboard, no seller registration, no vendor approval, no per-store ownership of products/orders. This platform is single-store.
 
 ## Roles
@@ -35,7 +36,7 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 
 ## Core flows
 
-1. **Browse** — customer visits the storefront, browses/searches products by category.
+1. **Browse** — customer visits the storefront and browses the catalog by category (`/categories` for the full category index, `/category/[slug]` for a category's products) or searches products by name (`/shop?search=`). Category browsing supports a two-level parent/child hierarchy, requires no account, and is server-rendered for SEO — settled by [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy), specified in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 2. **Cart** — customer adds items to a cart (works without an account).
 3. **Guest checkout** — customer provides contact details and a Pakistani delivery address (name, phone, address, city, area), reviews order, confirms.
 4. **Order placed (COD)** — order is created with `paymentMethod = COD`, `isPaid = false` until delivery/collection is confirmed by the admin.

@@ -9,7 +9,8 @@ Detailed, living documentation for the GoCart Pakistan transformation. Root-leve
 | [DECISIONS.md](./DECISIONS.md) | ADR log — why we chose what we chose |
 | [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) | Read-only audit of the inherited codebase as it actually is |
 | [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) | Per-feature disposition: keep / remove / replace / future phase |
-| [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) | **The authoritative implementation sequence** — milestones `M1`–`M59` plus `M2a` |
+| [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) | Category browsing behavior spec — routes, hierarchy, SEO, states, pagination (`M27a`/`M27b`) |
+| [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) | **The authoritative implementation sequence** — milestones `M1`–`M59` plus `M2a`, `M27a`, `M27b` |
 | [TASKS.md](./TASKS.md) | Status roll-up and gates (status only — order lives in the migration plan) |
 | [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) | Readiness audits gating the start of implementation |
 | [CHANGELOG.md](./CHANGELOG.md) | Notable changes over time |
