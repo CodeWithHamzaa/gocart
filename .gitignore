@@ -39,4 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
+# payload (generated; regenerated from payload.config.ts, not hand-authored)
+/payload-types.ts
+
 /app/generated/prisma
