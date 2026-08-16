@@ -186,6 +186,30 @@ milestones assumed.
 **No application code was changed.** `M27a` and `M27b` are planned, not built. The milestone count
 moves from 60 to **62** with no renumbering of `M1`–`M59`.
 
+### ✅ Post-audit correction — `M14`→`M3` dependency and initial infrastructure baseline (2026-08-16)
+
+Not a pre-`M1` correction — recorded here as newly approved/discovered decisions since Audit 2.
+(Audit 1's text below is preserved verbatim as history and was not edited.)
+
+1. **`M3` analysis surfaced a second precondition** beyond the `app/admin/**` route collision already
+   tracked for `M16`/`M17`/`M19`: mounting Payload requires restructuring the app into Next.js's
+   multiple-root-layouts pattern (one root layout per top-level route group). `app/store/**` —
+   deleted by `M14` — sits outside any route group and collides with that restructuring if still
+   present. **`M14` is now a hard prerequisite of `M3`**, not the order-independent milestone it was
+   previously classified as. See [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone).
+   [MIGRATION_PLAN.md](./MIGRATION_PLAN.md), [TASKS.md](./TASKS.md), and [CLAUDE.md](../CLAUDE.md)
+   are updated accordingly. **`M14`, not `M3`, is the next milestone to execute** — `M1`, `M2`, `M2a`,
+   `M16`, `M17`, and `M19` are already **Done**.
+2. **Initial production infrastructure baseline approved** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)):
+   Cloudflare Free + a single ~$10–12/month VPS running the Dockerized app and PostgreSQL + Resend's
+   free email tier + COD-only checkout. SMS is deferred to a future phase (partially resolves `D8`
+   below). Backups are managed manually at launch — `M54` remains the milestone that formalizes
+   persistence/backup strategy. The baseline is chosen to stay replaceable/upgradable without an
+   application rewrite (partially resolves `D12` below; full production migration/CI mechanics remain
+   open).
+
+**No application code was changed by either decision above.**
+
 ## Remaining contradictions
 
 Nine of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
@@ -222,11 +246,11 @@ One of Audit 1's twelve is closed. **None blocks `M1`.**
 | D5 | Order status set (`CANCELLED`/`RETURNED` for COD) | ⚠️ Open | **`M6`** |
 | D6 | Media storage backend (local volume vs. S3) | ⚠️ Open | **`M6`** |
 | D7 | PKR formatting convention | ⚠️ Open | `M55` |
-| D8 | Order notifications (SMS/WhatsApp/email) | ⚠️ Open — **no milestone exists** | Unscheduled |
+| D8 | Order notifications (SMS/WhatsApp/email) | ◐ **Partial** (2026-08-16) — SMS deferred to a future phase, email infra (Resend) decided; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). WhatsApp and which emails are sent remain open, still **no milestone exists** | Unscheduled |
 | D9 | Guest order-lookup key + abuse controls | ⚠️ Open | `M13`, `M36` |
 | D10 | Cart state: Redux vs. simpler store | ⚠️ Open — `M30` assumes an answer, unrecorded | `M30` |
 | D11 | `Orders` shape: embedded vs. `Customers` collection | ⚠️ Open — `M11` assumes an answer, unrecorded | `M11` |
-| D12 | Deployment target + production migration strategy | ⚠️ Open | `M49`–`M59` |
+| D12 | Deployment target + production migration strategy | ◐ **Partial** (2026-08-16) — hosting baseline decided: Cloudflare Free + ~$10–12/mo VPS + PostgreSQL + Resend Free + COD; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). Production migration/CI mechanics still open | `M49`–`M59` |
 
 D10 and D11 remain decided-in-prose but unrecorded as ADRs — still a live violation of
 [CLAUDE.md](../CLAUDE.md)'s working agreement, and scheduled in [TASKS.md](./TASKS.md).

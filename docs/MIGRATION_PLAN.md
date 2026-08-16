@@ -17,19 +17,21 @@ Each milestone is scoped to be one reviewable commit (or a small, tightly relate
 
 **`M1`–`M59` is the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
 
-**Execution order is defined by each milestone's `Dependencies` line, not by ascending ID.** One deliberate exception to ID order exists and matters:
+**Execution order is defined by each milestone's `Dependencies` line, not by ascending ID.** Two deliberate exceptions to ID order exist and matter:
 
 > **`M16`, `M17`, and `M19` run *before* `M3`.** Payload mounts its admin UI at `/admin` (per [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service)), and the inherited hand-built admin at `app/admin/*` resolves to the same path. Next.js route groups contribute no path segment, so `app/(payload)/admin/[[...segments]]/page.tsx` and `app/admin/page.jsx` are parallel routes for `/admin` and the build fails. The legacy admin must be gone before Payload arrives.
+
+> **`M14` also runs *before* `M3`.** A second, independent precondition surfaced during `M3` analysis: mounting Payload requires restructuring the app into Next.js's multiple-root-layouts pattern (each top-level route group, `(public)` and `(payload)`, defining its own root layout). `app/store/**` — the vendor dashboard `M14` deletes — sits outside any route group and collides with that restructuring if still present when `M3` lands. Per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone), `M14` is a hard prerequisite of `M3`, not an order-independent milestone. **`M3` must not be implemented before `M14`.**
 
 ### Critical-path order for the opening milestones
 
 ```
-M1  → M2 → M2a ─┐
-                ├→ M3 → M4, M5, M6 …
-M16, M17, M19 ──┘        (M17 → M19)
+M1  → M2 → M2a ───────┐
+                       ├→ M3 → M4, M5, M6 …
+M14, M16, M17, M19 ────┘        (M17 → M19)
 ```
 
-`M14`, `M15`, and `M18` have no dependencies and may land at any point; they are grouped with `M16`/`M17`/`M19` below for narrative reasons only. Everything from `M3` onward follows the stated dependency graph in ascending ID order.
+`M15` and `M18` have no dependencies and may land at any point; they are grouped with `M14`/`M16`/`M17`/`M19` below for narrative reasons only. Everything from `M3` onward follows the stated dependency graph in ascending ID order.
 
 **Between `M17` and `M3`, `/admin` returns 404.** This is acceptable and expected: the route it replaces was never an authenticated surface (`isAdmin` was hardcoded `true`, per [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md)) and served only dummy data, so nothing of value is unavailable during the gap. Keep the gap short by scheduling `M3` immediately after.
 
@@ -85,8 +87,9 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 ### M3 — Scaffold and mount Payload inside the Next.js app
 - **Goal**: Create an empty Payload config wired to Postgres, and mount its admin UI and REST/GraphQL API inside the existing Next.js App Router, per [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) (Payload embedded in the Next.js app, Accepted 2026-08-14).
 - **Files**: `payload.config.ts` (new, no collections yet), `app/(payload)/admin/[[...segments]]/page.tsx` (new), `app/(payload)/api/[...slug]/route.ts` (new), `next.config.mjs` (Payload's Next.js integration wrapper), `.env.example` (add `PAYLOAD_SECRET`)
-- **Dependencies**: `M2a` (TypeScript must exist — every file this milestone creates is `.ts`/`.tsx`), and **`M16`, `M17`, `M19`** (`app/admin/**` must be gone first).
+- **Dependencies**: `M2a` (TypeScript must exist — every file this milestone creates is `.ts`/`.tsx`); **`M16`, `M17`, `M19`** (`app/admin/**` must be gone first); and **`M14`** (`app/store/**` must be gone first — see the multiple-root-layouts precondition below, per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone)).
 - **⚠️ Route-collision precondition**: Payload mounts at `/admin`. Next.js route groups contribute no path segment, so `app/(payload)/admin/[[...segments]]/page.tsx` and the inherited `app/admin/page.jsx` both resolve `/admin` — a parallel-route build failure. The optional catch-all also collides with `app/admin/stores`, `app/admin/approve`, and `app/admin/coupons`. **Verify `app/admin/` no longer exists before starting this milestone.**
+- **⚠️ Multiple-root-layouts precondition**: mounting Payload requires restructuring the app so `(public)` and `(payload)` each own a root layout. `app/store/**`, outside any route group, collides with that restructuring if still present. **Verify `app/store/` no longer exists (i.e. `M14` is done) before starting this milestone.**
 - **Testing**: `ls app/admin` returns nothing (precondition); `/admin` serves Payload's (collection-less) admin shell locally; `npm run type-check` and `npm run build` both pass; no errors in server logs.
 - **Rollback**: Delete the new route files and `payload.config.ts`; revert `next.config.mjs`. Note that rolling back `M3` leaves `/admin` returning 404 rather than restoring the old admin — recovering that requires also reverting `M17`.
 - **Commit message**: `Scaffold and mount empty Payload CMS v3 instance in Next.js`
@@ -196,12 +199,12 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Seller in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md).
 
-> **Ordering — read before scheduling.** `M16`, `M17`, and `M19` delete `app/admin/**` and **must land before `M3`**, which mounts Payload's admin UI at the same `/admin` path (see [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service)). Running `M3` first produces a Next.js parallel-route build failure. `M14`, `M15`, and `M18` touch no admin routes and are genuinely order-independent — they may land at any time.
+> **Ordering — read before scheduling.** `M16`, `M17`, and `M19` delete `app/admin/**` and **must land before `M3`**, which mounts Payload's admin UI at the same `/admin` path (see [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service)). Running `M3` first produces a Next.js parallel-route build failure. **`M14` must also land before `M3`** — a second, independent precondition found during `M3` analysis: `app/store/**` collides with the multiple-root-layouts restructuring Payload's mount requires (see [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone)). Only `M15` and `M18` touch no admin routes and are genuinely order-independent — they may land at any time.
 
 ### M14 — Delete the vendor dashboard
 - **Goal**: Remove the entire hand-built seller area, including its hardcoded `isSeller = true` auth bypass.
 - **Files**: `app/store/**` (deleted: `layout.jsx`, `page.jsx`, `add-product/`, `manage-product/`, `orders/`), `components/store/**` (deleted: `StoreLayout.jsx`, `StoreNavbar.jsx`, `StoreSidebar.jsx`)
-- **Dependencies**: none
+- **Dependencies**: none — but **`M3` depends on this milestone**, per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone): `app/store/**` collides with the multiple-root-layouts restructuring Payload's mount (`M3`) requires. **`M14` is the next milestone to execute.**
 - **Testing**: `npm run build` succeeds; confirm no remaining file imports anything from `app/store` or `components/store`.
 - **Rollback**: `git revert` to restore the deleted files.
 - **Commit message**: `Remove vendor dashboard — single-store platform (ADR-006)`
@@ -554,6 +557,8 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ## Group: Dockerization & production readiness — `M49`–`M54`
 
+> **Target infrastructure baseline is decided** — [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline): Cloudflare Free + a single ~$10–12/month VPS running the Dockerized app and PostgreSQL + Resend free-tier email + COD only. SMS is deferred to a future phase; backups are managed manually at launch. These milestones should target that baseline, kept replaceable/upgradable without an application rewrite.
+
 ### M49 — Production Dockerfile stage
 - **Goal**: Add a production build stage to the Dockerfile (multi-stage, non-root user, minimal final image), building on the dev stage from M5.
 - **Files**: `Dockerfile`
@@ -658,9 +663,9 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 
 | Milestones | Group | Order |
 |---|---|---|
-| `M16`, `M17`, `M19` | Remove the multi-vendor surface (admin routes) | **First — must precede `M3`** |
-| `M1`, `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation & tooling: Docker Postgres, Payload, TypeScript, retire Prisma | After the `/admin` clearance above |
-| `M14`, `M15`, `M18` | Remove the multi-vendor surface (non-admin routes) | Any time — no dependencies |
+| `M14`, `M16`, `M17`, `M19` | Remove the multi-vendor surface (`app/store/**` and admin routes) | **First — must precede `M3`** (see [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone)) |
+| `M1`, `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation & tooling: Docker Postgres, Payload, TypeScript, retire Prisma | After the `M14`/`/admin` clearance above |
+| `M15`, `M18` | Remove the multi-vendor surface (remaining non-admin routes) | Any time — no dependencies |
 | `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | After `M3` |
 | `M20`–`M21` | Confirm admin-only auth end to end | After `M17`, `M19` |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront wired to real product/category data; category browsing routes; dummy data removed | After `M13` |

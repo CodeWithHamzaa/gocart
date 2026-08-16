@@ -33,6 +33,8 @@ Implementation has begun. `M1` added local development infrastructure (`docker-c
 legacy admin surface — `app/admin/**` and `components/admin/**` (plus `components/OrdersAreaChart.jsx`)
 are gone, clearing `/admin` ahead of `M3`.
 
+**`M14` — not `M3` — is the next milestone.** Per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone), `M3` analysis found that mounting Payload requires restructuring the app into Next.js's multiple-root-layouts pattern, which `app/store/**` (still present, deleted by `M14`) would collide with. `M14` is now a hard prerequisite of `M3`, alongside the pre-existing `M16`/`M17`/`M19` route-collision precondition. **`M3` must not be implemented before `M14`.**
+
 **Customer-facing behavior is unchanged.** The only application code touched so far is deletion, and
 what was deleted was the hand-built admin — a surface with no real authentication (`isAdmin` was
 hardcoded `true`) that rendered only `assets/assets.js` dummy data. Nothing imports Payload, no `.jsx`
@@ -47,8 +49,9 @@ documented in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) — not a regression. `M3
 | `M1` | Foundation: Dockerized PostgreSQL for local development | **Done** (2026-08-14) |
 | `M2` | Foundation: Payload v3, Postgres adapter, `sharp` dependencies | **Done** (2026-08-14) |
 | `M2a` | Foundation: TypeScript toolchain | **Done** (2026-08-14) |
-| `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile | Not Started |
-| `M14`, `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
+| `M14` | Delete vendor dashboard (`app/store/**`) — **hard prerequisite of `M3`**, per [ADR-014](./DECISIONS.md) | **Not Started — next milestone** |
+| `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile — **blocked on `M14`** | Not Started |
+| `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
 | `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | Not Started |
 | `M20`–`M21` | Confirm admin-only auth end to end | Not Started |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |
@@ -66,12 +69,19 @@ documented in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) — not a regression. `M3
 
 ## Gates
 
-### `M1` gate — **OPEN** (cleared; `M1`, `M2`, `M2a`, `M16`, `M17`, `M19` complete)
+### `M1` gate — **CLEARED** (`M1`, `M2`, `M2a`, `M16`, `M17`, `M19` complete)
 
 The six pre-`M1` corrections from the readiness audit are applied. Foundation work has begun:
 `M1`, `M2`, and `M2a` are **Done**, and `M16`, `M17`, `M19` have cleared `app/admin/**`.
-**The next milestone is `M3`** — its route-collision precondition (`app/admin/` must not exist)
-is satisfied, and scheduling it promptly keeps the `/admin` 404 window short.
+
+### `M3` gate — **BLOCKED on `M14`**
+
+`M3`'s `app/admin/**` route-collision precondition (from `M16`/`M17`/`M19`) is satisfied, but a second
+precondition surfaced during `M3` analysis: Payload's mount requires restructuring the app into
+Next.js's multiple-root-layouts pattern, which `app/store/**` would collide with. **`M14` (delete the
+vendor dashboard) must land first** — see [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone).
+**The next milestone is `M14`, not `M3`.** Once `M14` lands, `M3` is unblocked; scheduling it promptly
+after keeps the `/admin` 404 window short.
 
 ### `M6` gate — **BLOCKED**
 
@@ -88,7 +98,7 @@ Collection design must not start until these are decided and recorded as ADRs:
 ### Later, non-blocking
 
 - [ ] PKR formatting convention (blocks `M55`)
-- [ ] Order notifications: SMS/WhatsApp/email — **no milestone exists yet**
+- [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): store Settings global, test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step

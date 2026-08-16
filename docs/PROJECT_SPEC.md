@@ -63,5 +63,5 @@ These materially affect scope and are flagged rather than silently decided:
 2. **Delivery/shipping model**: Is shipping cost flat, free, weight-based, or city-based? Not yet defined.
 3. **Order status set**: Existing `OrderStatus` enum (`ORDER_PLACED`, `PROCESSING`, `SHIPPED`, `DELIVERED`) — confirm this is sufficient, plus whether a `CANCELLED`/`RETURNED` status is needed for COD (common for COD refusal-at-door scenarios).
 4. **Ratings/reviews**: Original app supports post-purchase ratings tied to a `userId`. Under guest checkout, does this feature stay (needs a non-account-based identity, e.g. order/email-based) or get dropped for v1?
-5. **Notifications**: Any requirement for SMS/WhatsApp/email order confirmations? Not yet specified.
+5. **Notifications**: SMS is deferred to a future phase, and email infrastructure (Resend, free tier) is decided as part of the initial production baseline ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)) — but which order-lifecycle emails, if any, are actually sent for v1, and whether WhatsApp is used, are still not specified.
 6. **Coupons**: Original app has a `Coupon` model with `forNewUser`/`forMember` targeting tied to accounts — needs rethinking under guest checkout.

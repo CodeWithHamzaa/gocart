@@ -68,7 +68,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 
 #### `/admin` route ownership
 
-`/admin` belongs to Payload in the target architecture. The inherited codebase serves its own hand-built admin from `app/admin/*` (with a hardcoded `isAdmin = true` bypass), which resolves to the same path. **The legacy admin is removed before Payload mounts** — `M16`, `M17`, and `M19` precede `M3` — so at no point do two implementations own `/admin`. See the execution order in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+`/admin` belongs to Payload in the target architecture. The inherited codebase serves its own hand-built admin from `app/admin/*` (with a hardcoded `isAdmin = true` bypass), which resolves to the same path. **The legacy admin is removed before Payload mounts** — `M16`, `M17`, and `M19` precede `M3` — so at no point do two implementations own `/admin`. **`M14` also precedes `M3`**, for an unrelated reason: `app/store/**` collides with the multiple-root-layouts restructuring Payload's mount requires, per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone). See the execution order in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 
 ### Backend / CMS
 
@@ -99,6 +99,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 - `Dockerfile` (multi-stage: deps → build → runtime) for the Next.js/Payload app.
 - `docker-compose.yml` for local dev: app + Postgres (+ maybe a volume-mounted Payload media dir or object storage stub).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
+- **Initial production infrastructure baseline is decided** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)): Cloudflare Free (DNS/proxy) in front of a single ~$10–12/month VPS running the Dockerized app and a self-hosted PostgreSQL instance, plus Resend's free tier for transactional email. COD remains the only payment method. SMS is deferred to a future phase. Backups are managed manually for the initial launch — `M54` is still the milestone that formalizes persistence/backup strategy. This baseline is chosen to stay replaceable/upgradable (e.g. VPS → managed Postgres) without an application rewrite.
 
 ## Settled structural decisions
 

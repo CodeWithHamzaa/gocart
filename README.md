@@ -8,7 +8,7 @@
 
 ---
 
-> **Status: Planning.** This repository was cloned from the open-source [GoCart](https://github.com/GreatStackDev/goCart) multi-vendor storefront and is being transformed into a single-store, admin-managed, Cash-on-Delivery platform for Pakistan. No application code has changed yet — see [docs/](./docs) for the plan.
+> **Status: Implementation in progress.** This repository was cloned from the open-source [GoCart](https://github.com/GreatStackDev/goCart) multi-vendor storefront and is being transformed into a single-store, admin-managed, Cash-on-Delivery platform for Pakistan. Foundation milestones `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` are done (local Postgres, Payload/Postgres-adapter dependencies, the TypeScript toolchain, and legacy `app/admin/**` removal); the storefront itself still runs on the inherited dummy data. `M14` is the next milestone — see [docs/TASKS.md](./docs/TASKS.md) for the full status roll-up and [docs/](./docs) for the plan.
 
 ## What this is becoming
 

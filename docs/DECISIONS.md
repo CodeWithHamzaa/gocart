@@ -285,3 +285,46 @@ Full behavior specification: [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.
 - **Faceted filtering stays Future Phase** — price, brand, rating, in-stock, sort, multi-facet. This ADR draws the boundary; it does not move it.
 - **JSON-LD on category pages is not Phase 1.** `M43` stays scoped to `Product` on product detail pages.
 - One of the `M6` gate's collection-design inputs is now settled: the `Categories` shape no longer blocks the start of data modeling.
+
+---
+
+## ADR-014: `M14` is a hard prerequisite of `M3`, not an order-independent milestone
+
+**Status**: **Accepted (2026-08-16)** — discovered during `M3` analysis, stakeholder-confirmed.
+
+**Context**: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) previously classified `M14` (delete `app/store/**`, the vendor dashboard) as having no dependencies and landing "at any point," grouped with `M15`/`M18` for narrative reasons only, distinct from `M16`/`M17`/`M19`'s hard `app/admin/**` route-collision precondition. Analysis of `M3` (scaffolding and mounting Payload inside the Next.js app) found a second precondition: mounting Payload's admin UI requires restructuring the app into Next.js's **multiple root layouts** pattern — each top-level route group (`(public)`, `(payload)`) defining its own root layout. `app/store/**`, the directory `M14` deletes, sits outside any route group and collides with that restructuring if it is still present when `M3` lands, independent of and in addition to the `app/admin/**` collision already tracked for `M16`/`M17`/`M19`.
+
+**Decision**: `M14` is promoted from "order-independent" to a **hard prerequisite of `M3`**. `M3` must not be implemented before `M14`. `M14` itself still has no prerequisites of its own and can land at any time before `M3`.
+
+**Consequences**:
+
+- [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s execution-order exception list, critical-path diagram, `M3`'s `Dependencies` line, and the "Group: Remove the multi-vendor surface" ordering note are updated to include `M14` alongside `M16`/`M17`/`M19`.
+- `M15` and `M18` are unaffected — they remain genuinely order-independent.
+- With `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` already **Done**, `M14` — not `M3` — is the next milestone to execute.
+- [TASKS.md](./TASKS.md) and [CLAUDE.md](../CLAUDE.md) are corrected to stop naming `M3` as the next milestone.
+
+---
+
+## ADR-015: Initial production infrastructure baseline
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed.
+
+**Context**: [ADR-008](#adr-008-dockerize-app-cms-and-database-for-both-dev-and-production) established that the app is Dockerized for both dev and production but left the actual hosting target open — tracked as decision `D12` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md), gating `M49`–`M59`. Order-notification channel (decision `D8`, same report) was also open, with no milestone scheduled.
+
+**Decision**: The approved initial production infrastructure baseline is:
+
+- **Cloudflare (Free plan)** — DNS and edge proxy in front of the app.
+- **A single VPS at roughly $10–12/month** — runs the Dockerized Next.js/Payload app and PostgreSQL per [ADR-002](#adr-002-postgresql-as-the-only-datastore).
+- **PostgreSQL** remains the only datastore, self-hosted on the VPS — no managed-database add-on at this stage.
+- **Resend, free tier** — transactional email.
+- **Cash on Delivery only** — no online payment gateway at launch, reaffirming [ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible).
+- **SMS notifications are deferred to a future phase.** Not part of the initial launch scope.
+- **Backups are managed manually** for the initial launch — no automated backup pipeline yet. `M54` remains the milestone that formalizes Postgres/media persistence and backup strategy.
+- **Guiding principle**: this baseline must stay replaceable/upgradable (e.g. VPS → managed Postgres, Resend → another provider, adding SMS) without requiring an application rewrite. Nothing in the application layer should hard-couple to a specific host.
+
+**Consequences**:
+
+- Partially resolves `D12` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) — the hosting target is decided; the production migration/CI mechanics (`M49`–`M59`) remain to be designed against it.
+- Partially resolves `D8` — SMS is explicitly out of scope for now rather than an open question with "no milestone exists"; email channel infrastructure (Resend) is decided, though which order-lifecycle emails are actually sent is still unspecified in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
+- `M49`–`M54` (Docker production hardening, health checks, backups) should target this baseline rather than a generic or platform-agnostic one.
+- No application code changes result from this ADR by itself — it is an infrastructure/hosting decision, not a code milestone.

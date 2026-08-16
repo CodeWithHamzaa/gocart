@@ -6,15 +6,17 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current status: planning complete, implementation not started
+## Current status: foundation milestones complete, `M14` is next
 
-Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Only documentation exists (`docs/`, `prompts/`, and this file). **No application code has been changed or migrated yet** — `M1`, the first implementation milestone, has not begun. Do not assume Payload, PostgreSQL, TypeScript, or Docker are wired up until [docs/TASKS.md](./docs/TASKS.md) records the relevant milestone as complete.
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has begun: `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` are **Done** — local Postgres, Payload/Postgres-adapter/`sharp` dependencies, the TypeScript toolchain, and the legacy `app/admin/**` surface removal have landed. **`M3` (scaffolding and mounting Payload) has *not* been implemented.** Do not assume Payload, `.ts` collections, or a mounted `/admin` exist until [docs/TASKS.md](./docs/TASKS.md) records the relevant milestone as complete.
+
+**The next milestone to execute is `M14`** (delete the vendor dashboard, `app/store/**`), not `M3`. Per [ADR-014](./docs/DECISIONS.md), `M3` analysis found that mounting Payload requires restructuring the app into Next.js's multiple-root-layouts pattern, which `app/store/**` would collide with — so `M14` is now a **hard prerequisite of `M3`**, in addition to the pre-existing `M16`/`M17`/`M19` route-collision precondition. **`M3` must not be implemented before `M14`.**
 
 ## Milestone numbering — the one authoritative sequence
 
 **`M1`–`M59` in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) is the only implementation sequence.** Always reference work by milestone ID.
 
-Phase and group names are **labels for grouping and status reporting only**. They carry no execution order and must never be used as implementation references — "start Phase 2" is not an instruction anyone can act on correctly; "start `M6`" is. Execution order is defined by each milestone's stated dependencies, summarized in MIGRATION_PLAN's execution-order section, and is **not** the same as ascending milestone ID (notably, `M16`/`M17`/`M19` run before `M3`).
+Phase and group names are **labels for grouping and status reporting only**. They carry no execution order and must never be used as implementation references — "start Phase 2" is not an instruction anyone can act on correctly; "start `M6`" is. Execution order is defined by each milestone's stated dependencies, summarized in MIGRATION_PLAN's execution-order section, and is **not** the same as ascending milestone ID (notably, `M14`/`M16`/`M17`/`M19` run before `M3` — see [ADR-014](./docs/DECISIONS.md)).
 
 ## Hard constraints (do not silently violate)
 
@@ -26,6 +28,7 @@ Phase and group names are **labels for grouping and status reporting only**. The
 - **Payload runs embedded in the Next.js app**, not as a separate service — [ADR-009](./docs/DECISIONS.md) (Accepted 2026-08-14). Payload owns `/admin`.
 - **SEO-first and mobile-first** are non-negotiable defaults for any storefront UI work — not an afterthought pass at the end.
 - **Everything must run in Docker** for both development and production.
+- **Initial production infrastructure baseline is decided** — [ADR-015](./docs/DECISIONS.md): Cloudflare Free + a single ~$10–12/month VPS running the Dockerized app and PostgreSQL + Resend free-tier email + COD. SMS is deferred to a future phase; backups are managed manually for now. Keep the application layer host-agnostic so this baseline stays replaceable/upgradable without a rewrite.
 
 ## Working agreement
 

@@ -6,6 +6,13 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **ADR-014**: `M14` is a hard prerequisite of `M3`, not an order-independent milestone — a second precondition (Next.js multiple-root-layouts restructuring) found during `M3` analysis, distinct from the existing `app/admin/**` route-collision precondition owned by `M16`/`M17`/`M19` (Accepted 2026-08-16).
+- **ADR-015**: Initial production infrastructure baseline — Cloudflare Free + ~$10–12/month VPS + self-hosted PostgreSQL + Resend free-tier email + COD only; SMS deferred to a future phase; backups managed manually at launch; baseline kept replaceable/upgradable without an application rewrite (Accepted 2026-08-16).
+
+### Changed
+
+- **Documentation synchronized with actual repository state (2026-08-16).** Corrected stale claims that implementation had "not begun" and that `M3` was "the next milestone" — `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` are **Done**; `M14` is the next milestone, and `M3` is blocked on it per ADR-014. Updated across `CLAUDE.md`, `docs/TASKS.md`, `docs/MIGRATION_PLAN.md` (execution-order section, critical-path diagram, `M3`/`M14` entries, group ordering note, summary table), `docs/ARCHITECTURE.md` (`/admin` ownership note, production-readiness section), `docs/PROJECT_SPEC.md` (notifications open question), and `docs/PHASE_1_READINESS_REPORT.md` (new post-audit correction subsection; `D8`/`D12` status updated to Partial). Audit 1's and Audit 2's original text was not edited — only status/table cells and new appended sections.
+
 - **`M27a`, `M27b`** — two new milestones covering customer-facing category browsing: `/category/[slug]` (detail + paginated product listing, parent/child navigation, marquee and breadcrumb links) and `/categories` (landing index). Decimal IDs, no renumbering of `M1`–`M59`; the plan moves from 60 to **62** milestones. Closes readiness finding `C8` — *"category browsing assumed by four milestones and built by none."*
 - **`docs/CATEGORY_REQUIREMENTS.md`** — behavior specification the two milestones implement against: routes, purpose, URL structure, parent/child behavior, product relationship, SEO requirements, empty/loading/error states, pagination expectations, out-of-scope filtering, responsive expectations, and the `Categories` field list.
 - **ADR-013**: category browsing ships in Phase 1 as dedicated slug routes with a two-level hierarchy (Accepted 2026-08-16) — dedicated routes over `/shop?category=` filtering, two-level parent/child, descendant rollup on parent pages, page-number pagination.
