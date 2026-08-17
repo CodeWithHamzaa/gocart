@@ -6,11 +6,15 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current status: Payload mounted, `M6` gate cleared — `M6`–`M13`/`M13a` are next
+## Current status: Payload data model complete — `M15`/`M18`/`M20`–`M22`+ are next
 
-Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, and `M5` are **Done**. **Payload is mounted** — `payload.config.ts` (no collections yet) is wired to Postgres, and `/admin` serves Payload's own (collection-less) admin shell, not the legacy hand-built one. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)). Do not assume any Payload **collections** exist until [docs/TASKS.md](./docs/TASKS.md) records the relevant `M6`–`M13`/`M13a` milestone as complete — `payload.config.ts` currently registers none.
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group and the full Payload data model: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, `M5`, `M6`–`M13`, and `M13a` are all **Done**. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)).
 
-**The `M6` gate is cleared** (2026-08-16): Reviews and Coupons are decided out of scope for v1, the shipping model, order status set, media storage backend, and guest `Orders` shape are all decided and recorded as [ADR-016 through ADR-021](./docs/DECISIONS.md). **The next milestones to execute are `M6`–`M13` and the new `M13a`** (Settings global) — Payload collection design may now proceed.
+**Payload collections and the Settings global now exist and are registered in `payload.config.ts`**: `Users` (admin-only auth), `Media` (local-volume uploads), `Categories` (two-level hierarchy, stable slugs), `Products`, `Orders` (guest checkout, line items, COD, full status enum), and the `Settings` global (shipping/contact config). Access control is set per `M13`: public-read/admin-write on `Products`/`Categories`/`Media`, public-create/admin-read on `Orders`. `/admin` now serves a real, collection-backed admin panel, not the collection-less shell from `M3`. **The storefront still renders exactly as inherited — no `.jsx` file has been converted to consume real Payload data yet; that starts at `M22`.**
+
+Two things carried forward from that work, tracked in [docs/TASKS.md](./docs/TASKS.md) and [docs/PHASE_1_READINESS_REPORT.md](./docs/PHASE_1_READINESS_REPORT.md):
+- `scripts/seed.ts` is implemented but unverified by direct execution in the authoring sandbox (a `tsx`/Node ESM-interop issue unrelated to the script itself) — confirm `npm run seed` works in a real environment.
+- Readiness finding `C7` (`M13`'s admin-only `Orders` read conflicts with `M36`'s future guest-lookup requirement) remains open and unresolved — `M13` was implemented exactly as specified, not as a fix for `C7`.
 
 ## Milestone numbering — the one authoritative sequence
 
@@ -42,17 +46,19 @@ Phase and group names are **labels for grouping and status reporting only**. The
 ## Repo map
 
 ```
-app/            Next.js App Router pages (public storefront, /admin, /store vendor dashboard — legacy)
-components/     React components (storefront UI, admin/, store/ subfolders)
+app/            Next.js App Router pages — app/(public)/* storefront, app/(payload)/* admin+API
+components/     React components (storefront UI)
 lib/            Redux Toolkit store and slices (cart, address, product, rating)
-prisma/         Prisma schema targeting PostgreSQL (pre-Payload; migration target, not yet wired to a client)
+collections/    Payload collection configs: Users, Media, Categories, Products, Orders
+globals/        Payload global configs: Settings (shipping/contact config)
+scripts/        Dev tooling — seed.ts populates sample categories/products
 docs/           Project spec, architecture, tasks, decisions, changelog
 prompts/        Reusable prompt templates for AI-assisted work on this repo
 ```
 
 ## Useful context for AI agents
 
-- The original app (`app/store/*`, `app/admin/approve`, `app/admin/stores`, `Store` model in `prisma/schema.prisma`) is a **multi-vendor marketplace**. The target product is **single-store**, and this is already decided — [ADR-006](./docs/DECISIONS.md) is Accepted. The multi-vendor surface is legacy to be **removed** (`M14`–`M17`, `M19`), not reconciled. Treat any doc or comment implying the question is still open as stale.
-- **The repository has no TypeScript toolchain yet** — `jsconfig.json` only, no `tsconfig.json`, no `typescript` dependency. Milestones from `M3` onward create `.ts` files; TypeScript is established first at `M2a`. Don't author `.ts` files before that milestone lands.
-- No authentication provider is currently wired into the app (no Clerk/NextAuth in `package.json`). Admin auth will come from Payload CMS v3's built-in auth once integrated.
-- Currency is currently hardcoded to `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example` — this needs to become PKR-aware for the Pakistan launch.
+- The original app was a **multi-vendor marketplace** (`app/store/*` vendor dashboard, `app/admin/approve`/`app/admin/stores` vendor approval, a `Store` model in the now-deleted `prisma/schema.prisma`). The target product is **single-store** — [ADR-006](./docs/DECISIONS.md) is Accepted. That legacy surface is fully **removed** (`M14`–`M17`, `M19`, all Done) — if you see any of those paths, something has gone wrong; they should not exist. Treat any doc or comment implying single-vs-multi-vendor is still open as stale.
+- **TypeScript is established** (`M2a`, Done) — `tsconfig.json` with `moduleResolution: "bundler"` (changed from `node` at `M3` to resolve Payload's package `exports`), `allowJs: true`. New files are `.ts`/`.tsx`; existing `.jsx` is never opportunistically converted.
+- **Admin auth is wired**: the `Users` collection (`collections/Users.ts`, `M6`/`M7`) is Payload's built-in auth, the only authenticated role in the system. No Clerk/NextAuth, no customer or vendor auth.
+- Currency is still hardcoded to `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example` — this needs to become PKR-aware for the Pakistan launch (`M55`, not yet started; the exact formatting convention is still an open question in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md)).

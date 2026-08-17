@@ -44,8 +44,21 @@ storefront renders exactly as inherited; `app/layout.jsx` was restructured into 
 (now the storefront's own root layout, per `M3`'s multiple-root-layouts requirement) with no visible
 change to rendered output.
 
-**The `M6` gate is now cleared** (see below) — `M6`–`M13` (Payload collections) plus the new `M13a`
-(Settings global) are the next milestones to execute.
+**`M6`–`M13` and `M13a` have landed.** All five collections (`Users`, `Media`, `Categories`,
+`Products`, `Orders`) and the `Settings` global are registered in `payload.config.ts`, with access
+control set per `M13` (public-read/admin-write on `Products`/`Categories`/`Media`, public-create/
+admin-read on `Orders`) and a dev seed script (`scripts/seed.ts`). `/admin` now serves a real,
+collection-backed admin panel — the "collection-less admin shell" era from `M3` is over.
+Every milestone's testing criteria in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) was verified against
+a live Postgres-backed dev server (REST + GraphQL). Two things flagged during that work:
+
+- `scripts/seed.ts` could not be executed directly via `tsx` in the authoring sandbox (a Node/tsx
+  ESM-interop bug in `@payloadcms/db-postgres`'s import chain, unrelated to the seed script itself —
+  same class of issue as `M3`'s `generate:importmap` problem). Its logic was validated indirectly via
+  equivalent REST calls; run `npm run seed` for real before relying on it.
+- `M13`'s admin-only `Orders` read is exactly as specified, and exactly what readiness finding `C7`
+  already flags as conflicting with `M36`'s future guest-order-lookup requirement. Still open — not
+  solved by this implementation, tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 
 | Milestones | Group | Status |
 |---|---|:---|
@@ -56,7 +69,7 @@ change to rendered output.
 | `M14` | Delete vendor dashboard (`app/store/**`) — **hard prerequisite of `M3`**, per [ADR-014](./DECISIONS.md) | **Done** (2026-08-16) |
 | `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile | **Done** (2026-08-16) — `M5`'s `docker build` could not be fully verified in the authoring sandbox (registry egress blocked); Dockerfile is implemented, needs a real-registry build check |
 | `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
-| `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global — **`M6` gate cleared** | Not Started |
+| `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | Not Started |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |
 | `M29` | Real search | Not Started |
@@ -80,11 +93,12 @@ The six pre-`M1` corrections from the readiness audit are applied. Foundation wo
 
 ### `M3` gate — **CLEARED** (`M14`, `M3`, `M4`, `M5` complete)
 
-`M14` landed first, clearing the multiple-root-layouts precondition per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone). `M3` then mounted Payload, `M4` retired the unwired Prisma schema, and `M5` added the dev Dockerfile. `/admin` is live (Payload's collection-less admin shell).
+`M14` landed first, clearing the multiple-root-layouts precondition per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone). `M3` then mounted Payload, `M4` retired the unwired Prisma schema, and `M5` added the dev Dockerfile. `/admin` was live at this point with Payload's collection-less admin shell — since superseded by `M6`–`M13`/`M13a` (see above), which is now a real, collection-backed panel.
 
-### `M6` gate — **CLEARED** (2026-08-16)
+### `M6` gate — **CLEARED** (2026-08-16), collection design **complete** (2026-08-17)
 
-All six decisions are made and recorded as ADRs. Collection design (`M6`–`M13`, plus the new `M13a`) may now proceed.
+All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now **Done** — see
+"Implementation status by milestone" above.
 
 - [x] **Resolved**: Reviews are out of scope for v1 → [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). `M46` executes the removal path.
 - [x] **Resolved**: Coupons are out of scope for v1 → [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1). `M47` executes the removal path.

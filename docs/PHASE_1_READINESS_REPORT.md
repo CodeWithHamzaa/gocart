@@ -235,6 +235,39 @@ accordingly. **`M6` gate is cleared** — `M6`–`M13` and `M13a` may now procee
 
 **No application code was changed by this decision set.**
 
+### ✅ Post-audit correction — `M6`–`M13`/`M13a` implemented (2026-08-17)
+
+Not a pre-`M1` correction — recorded here as implementation work completed since the `M6` gate
+cleared above. All five Payload collections (`Users`, `Media`, `Categories`, `Products`, `Orders`)
+and the `Settings` global are implemented and registered in `payload.config.ts`, with `M13`'s access
+control applied. Every milestone's stated testing criteria was verified against a live Postgres-backed
+dev server via REST and GraphQL.
+
+This closes `R4` and `R6` above (both flip from partial/scheduled to **Resolved**) and closes the
+`Categories`/`Products`/`Orders` half of what `C8` and `D11` were blocking. Two things surfaced during
+implementation that are **not** resolved by it:
+
+- **`C7` is confirmed, not fixed.** `M13`'s Orders access (admin-only read) was implemented exactly as
+  `MIGRATION_PLAN.md` specifies, which is exactly what `C7` already flagged as incompatible with
+  `M36`'s guest-order-lookup requirement. Implementing `M13` as written does not resolve `C7` — it
+  reconfirms the conflict is real. Still open, still needs a reconciling mechanism before `M36`.
+- **`scripts/seed.ts` (part of `M13`) is implemented but unverified by direct execution.** Running it
+  via `tsx` failed in the authoring sandbox with a Node 22.22/ESM-interop error inside
+  `@payloadcms/db-postgres`'s own import chain — the same class of tooling issue as the
+  `generate:importmap` problem noted during `M3`, unrelated to the seed script's logic. Its behavior
+  was validated indirectly via equivalent REST calls (creating categories, products, and media through
+  the API produced identical results to what the script does via the Local API). `npm run seed` should
+  be confirmed directly in a normal environment before being relied on.
+
+One factual correction from `M12`'s original text: "the field type would accept an added value later
+without a data migration" overstated it. Payload materializes a `select` field as a native Postgres
+`ENUM`, so adding a `paymentMethod` option later is an `ALTER TYPE ... ADD VALUE`, not literally zero
+migration — though still no data transformation/backfill. Corrected in `MIGRATION_PLAN.md`'s `M12`
+entry; `type: 'select'` remains the correct field choice.
+
+**No application code was changed by this correction pass** — the code was already committed as part of
+the `M6`–`M13a` implementation; this section documents it against the readiness audit.
+
 ## Remaining contradictions
 
 Eleven of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
@@ -281,16 +314,16 @@ D10 and D11 remain decided-in-prose but unrecorded as ADRs — still a live viol
 
 ## Remaining risks
 
-Five of Audit 1's thirteen are closed — including all three critical ones.
+Six of Audit 1's thirteen are closed — including all three critical ones.
 
 | # | Risk | Status |
 |---|---|:---:|
 | R1 | `/admin` route collision, circular `M3`↔`M17` | ✅ **Resolved** — Correction 4 |
 | R2 | No TypeScript toolchain for 12+ `.ts` milestones | ✅ **Resolved** — `M2a` |
 | R3 | `sharp` never installed | ✅ **Resolved** — folded into `M2` |
-| R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ◐ **Partial** (2026-08-16) — total/shipping/price-snapshot fields decided via [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order), for `M11` to implement; order reference/number is still undecided | Blocks `M11`/`M12` |
+| R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ✅ **Resolved** (2026-08-17) — `M11` implemented `orderNumber` (auto-generated), `orderTotal`, `shippingCost`, and a per-line-item `unitPrice` snapshot on `collections/Orders.ts`; verified via REST |
 | R5 | Out-of-stock enforcement called launch-critical, never implemented | ⚠️ Open |
-| R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-16) — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) |
+| R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-17) — implemented as `M13a`, `globals/Settings.ts`; public read, admin-only write, verified via REST |
 | R7 | No test or CI milestone in the plan | ⚠️ Open — broken pointer fixed, **gap still unscheduled** |
 | R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ✅ **Resolved** (2026-08-16) — both decisions made ahead of collection design via [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1); `M46`/`M47` now execute a decided removal rather than deciding |
 | R9 | No production `payload migrate` step | ⚠️ Open |
