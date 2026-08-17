@@ -172,6 +172,7 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 - **Category relation — cardinality is decided, not left open**: `category` is a `relationship` to `categories` with **`hasMany: false`**. A product belongs to exactly one category, the most specific one that applies (normally a child). Parent category pages get their inventory by rolling up their children (`M22`, `M27a`) rather than by admins double-filing a product under both a parent and its child. Per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy).
 - **Dependencies**: M8, M9
 - **Testing**: Create a product with a category relation and an uploaded image via `/admin`; confirm it's retrievable via REST and GraphQL. Confirm the category field accepts exactly one value.
+- **Later addition**: `M23` added an `isFeatured` checkbox to this collection ([ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking)) to back the home page's admin-curated "Best Selling" section. Additive; does not change anything above.
 - **Rollback**: Remove the collection file.
 - **Commit message**: `Add Products collection with category and media relations`
 
@@ -322,10 +323,13 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 ### M23 — Wire home page product sections to real data
 - **Goal**: Replace dummy-data-backed `LatestProducts`/`BestSelling` with real Payload data; convert what can be server-rendered for SEO.
-- **Files**: `components/LatestProducts.jsx`, `components/BestSelling.jsx`, `app/(public)/page.jsx`
+- **Files**: `components/LatestProducts.jsx`, `components/BestSelling.jsx`, `app/(public)/page.jsx`, **`components/ProductCard.jsx`** (moved here from `M46` — see below), plus `collections/Products.ts` and `lib/payload/products.ts` for the `isFeatured` field ([ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking)) and `scripts/seed.ts` to seed it
+- **`ProductCard.jsx` moved from `M46` to here.** It was listed under `M46` (reviews removal), ~23 milestones later, but it is **not optional for this milestone**: the card called `product.rating.reduce(...)` on a field real Payload products do not have (a `TypeError`, not a cosmetic issue) and passed `images[0]` — a Media *object* — where `next/image` needs a URL string. `M23` cannot render real data at all until both are fixed, so the file belongs to whichever milestone first forces the change, which is this one. `M46` retains `RatingModal.jsx`, `ProductDescription.jsx`, and `ProductDetails.jsx`.
+- **"Best selling" ranking is decided here** — [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking): admin-curated `isFeatured` flag, not a computed metric. Reviews (the dummy data's ranking basis) are out of scope per [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) and no sales aggregation exists.
 - **Dependencies**: M22
 - **Testing**: Home page renders real seeded products; no console errors; page still builds/loads under `npm run build && npm run start`.
-- **Rollback**: Revert the three files.
+- **✅ Done (2026-08-17)**. Home page is a server component (`force-dynamic`, per [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking) — admin curation must not require a redeploy, and the production build must not require a live DB). Verified against seeded data in both `npm run dev` and `npm run build && npm run start`: real product names and `/api/media/file/*` URLs appear in the **initial HTML** (server-rendered, not hydrated in); no dummy names remain; star-rating markup is gone; "Best Selling" renders `null` when nothing is flagged and updates live when `isFeatured` is toggled in `/admin` with no rebuild; no server or console errors. `/` moved from `○ Static` to `ƒ Dynamic`, and the home page's client JS shrank (2.88 kB → 1.97 kB) as the sections stopped shipping Redux.
+- **Rollback**: Revert the touched files. Note the `isFeatured` column stays in the database; it is additive and harmless if unused.
 - **Commit message**: `Wire home page product sections to real Payload data`
 
 ### M24 — Wire shop listing page to real data
@@ -564,7 +568,8 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ### M46 — Remove review submission for v1
 - **Goal**: Reviews are decided out of scope for v1 — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). Execute the removal path: delete `RatingModal.jsx` and its entry points, and strip the dummy star-rating display.
-- **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductCard.jsx`, `components/ProductDetails.jsx`
+- **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductDetails.jsx`
+- **`components/ProductCard.jsx` moved to `M23`** (2026-08-17). Its star-rating block read `product.rating`, which real Payload products do not have, so `M23` could not render real data on the home page until the block was removed — the change was forced ~23 milestones earlier than this milestone sits. Already done; nothing left here for that file.
 - **Dependencies**: M25
 - **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
 - **Rollback**: Revert the touched files.

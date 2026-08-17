@@ -19,6 +19,7 @@ export type Product = {
   images: (Media | null | number | string)[]
   category: Category | null | number | string
   inStock: boolean
+  isFeatured?: boolean | null
 }
 
 export type GetProductsOptions = {
@@ -67,6 +68,37 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Pro
   return {
     docs: result.docs as Product[],
     page: result.page ?? page,
+    totalDocs: result.totalDocs,
+    totalPages: result.totalPages,
+  }
+}
+
+/**
+ * Admin-curated products for the home page's "Best Selling" section (M23).
+ *
+ * Deliberately a curated flag rather than a computed ranking: there is no
+ * sales-count field and nothing aggregates Orders, and Reviews — the dummy
+ * data's original ranking basis — are out of scope for v1 (ADR-016). See
+ * ADR-022 for why this is curated instead of derived.
+ */
+export async function getFeaturedProducts(
+  options: Omit<GetProductsOptions, 'page'> = {},
+): Promise<ProductsResult> {
+  const { limit = 0, sort = '-createdAt' } = options
+  const payload = await getClient()
+
+  const result = await payload.find({
+    collection: 'products',
+    where: { isFeatured: { equals: true } },
+    limit,
+    sort,
+    depth: 1,
+    overrideAccess: false,
+  })
+
+  return {
+    docs: result.docs as Product[],
+    page: result.page ?? 1,
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
   }

@@ -68,5 +68,18 @@ export const Products: CollectionConfig = {
       type: 'checkbox',
       defaultValue: true,
     },
+    {
+      // Added at M23 (ADR-022). The home page's "Best Selling" section has no
+      // sales data to rank by — Reviews are out of scope (ADR-016) and nothing
+      // aggregates Orders — so the section is admin-curated rather than
+      // computed from a metric that does not exist.
+      name: 'isFeatured',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'Show this product in the home page "Best Selling" section. Curated by the admin — there is no sales-based ranking in v1.',
+      },
+    },
   ],
 }

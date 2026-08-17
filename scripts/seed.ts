@@ -100,6 +100,9 @@ async function seed() {
         images: [imgSpeaker.id],
         category: speakers.id,
         inStock: true,
+        // M23: seeds the home page's "Best Selling" section, which is
+        // admin-curated rather than computed (ADR-022).
+        isFeatured: true,
       },
     }),
     payload.create({
@@ -112,6 +115,7 @@ async function seed() {
         images: [imgHeadphones.id],
         category: headphonesCategory.id,
         inStock: true,
+        isFeatured: true,
       },
     }),
     payload.create({

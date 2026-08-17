@@ -449,3 +449,35 @@ Full behavior specification: [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.
 - `M11` proceeds exactly as already drafted; this ADR removes the silent, unrecorded assumption rather than changing the design.
 - No `Customers` collection is added to the `M6`–`M13` group.
 - Closes `D11` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+---
+
+## ADR-022: "Best Selling" is an admin-curated flag, not a computed ranking
+
+**Status**: **Accepted (2026-08-17)** — stakeholder-confirmed while executing `M23`.
+
+**Context**: The home page has a "Best Selling" section (`components/BestSelling.jsx`). Against the dummy dataset it ranked products by **review count** (`b.rating.length - a.rating.length`). Wiring it to real Payload data at `M23` exposed that this ranking has no basis in the actual system:
+
+- **Reviews do not exist.** [ADR-016](#adr-016-reviews-are-out-of-scope-for-v1) removed them from v1, and no `Reviews`/`Ratings` collection was built at `M6`–`M13`.
+- **No sales data exists either.** `Products` (`M10`) has no sales-count field, and nothing aggregates `Orders` (`M11`) into per-product totals. No milestone in the plan adds one.
+- **Even a real computation would be empty at launch.** This is a brand-new single store; on day one there are no orders to rank by, so a genuinely sales-derived "best selling" list would render empty exactly when the home page most needs content.
+
+`M23`'s own text says only "replace dummy-data-backed `LatestProducts`/`BestSelling` with real Payload data" — it does not say what the replacement should rank by. The gap was flagged at `M22` rather than silently filled.
+
+**Decision**: "Best Selling" is **admin-curated**. `Products` gains an `isFeatured` checkbox (default `false`), and `BestSelling.jsx` renders the products an admin has flagged, newest-first. It is not derived from any metric.
+
+**Rejected alternatives**:
+
+- **Sort by newest (`-createdAt`)** — no schema change, but it duplicates the "Latest Products" section directly above it on a small catalog, and labels an arbitrary list as "best selling," which is simply untrue.
+- **Sort by price or discount depth** — a fabricated ranking presented to customers as sales performance. Cheapest to build and the least honest.
+- **Drop the section entirely until real order data exists** — never misleading, and genuinely defensible; rejected because a curated section is more useful to a new store than a missing one, and the admin gains a real merchandising lever at negligible cost.
+- **Compute from `Orders`** — the "correct" long-term answer, but it needs an aggregation path no milestone owns, and would render empty at launch. Available later without discarding this work: a computed ranking can replace or supplement the flag, and `isFeatured` remains meaningful as a manual override.
+
+**Consequences**:
+
+- `collections/Products.ts` (`M10`'s file) gains an `isFeatured` checkbox. This is the only schema change `M23` makes.
+- `lib/payload/products.ts` gains `getFeaturedProducts()` alongside `getProducts()`; the "no default sort for best selling" gap recorded against `M22` is closed.
+- **`app/(public)/page.jsx` is `force-dynamic`.** Curation is only meaningful if toggling `isFeatured` in `/admin` changes the storefront without a redeploy — static prerendering at build time would freeze the section until the next deploy. This also removes the build's dependency on a reachable database, which the production image build (`M49`) could not have satisfied. SSR still satisfies [ADR-007](#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass); revisit as ISR at `M45` if caching is wanted.
+- **`BestSelling.jsx` renders nothing when no product is flagged**, rather than an empty section with a heading and a "View more" link into an unrelated list.
+- `scripts/seed.ts` flags two seeded products so a freshly seeded database produces a populated home page.
+- The section's customer-facing label is unchanged ("Best Selling"). If the stakeholder would rather it read "Featured" — arguably more accurate, since nothing is measuring sales — that is a copy decision, not a technical one, and belongs with the storefront copy pass tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) (`R12`).

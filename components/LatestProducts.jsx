@@ -1,20 +1,18 @@
-'use client'
 import React from 'react'
 import Title from './Title'
 import ProductCard from './ProductCard'
-import { useSelector } from 'react-redux'
 
-const LatestProducts = () => {
-
-    const displayQuantity = 4
-    const products = useSelector(state => state.product.list)
+// M23: server component fed by real Payload data. Sorting/limiting happens in
+// the page's query (sort: '-createdAt'), not here — previously this pulled the
+// whole dummy list out of Redux and sorted it client-side.
+const LatestProducts = ({ products = [], total = 0 }) => {
 
     return (
         <div className='px-6 my-30 max-w-6xl mx-auto'>
-            <Title title='Latest Products' description={`Showing ${products.length < displayQuantity ? products.length : displayQuantity} of ${products.length} products`} href='/shop' />
+            <Title title='Latest Products' description={`Showing ${products.length} of ${total} products`} href='/shop' />
             <div className='mt-12 grid grid-cols-2 sm:flex flex-wrap gap-6 justify-between'>
-                {products.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, displayQuantity).map((product, index) => (
-                    <ProductCard key={index} product={product} />
+                {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
                 ))}
             </div>
         </div>
