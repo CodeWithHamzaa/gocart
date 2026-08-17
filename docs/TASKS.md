@@ -60,6 +60,16 @@ a live Postgres-backed dev server (REST + GraphQL). Two things flagged during th
   already flags as conflicting with `M36`'s future guest-order-lookup requirement. Still open — not
   solved by this implementation, tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 
+**`M20`–`M21` are done (2026-08-17).** `M20`'s audit found **no custom or faked authentication
+anywhere in the application** — no middleware, no auth dependencies in `package.json`, and no
+`isAdmin`/`isSeller`-style bypass left over from the multi-vendor original (those died with `M14`/`M17`).
+Payload's `/admin` is the only authenticated surface: logged out it serves the login screen and leaks
+no collection data, while `/api/users` and `/api/orders` correctly return 403. All nine customer-facing
+routes render 200 while logged out — no login walls, no redirects. `M21` then removed the dead
+"Login" button (desktop and mobile) from `components/Navbar.jsx`; it never had a handler, and customers
+never authenticate under guest-checkout-only ([ADR-005](./DECISIONS.md)). One follow-on observation is
+recorded against `M44` — see "Later, non-blocking" below.
+
 | Milestones | Group | Status |
 |---|---|:---|
 | `M16`, `M17`, `M19` | Clear `app/admin/**` — **runs before `M3`** | **Done** (2026-08-14) |
@@ -70,7 +80,7 @@ a live Postgres-backed dev server (REST + GraphQL). Two things flagged during th
 | `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile | **Done** (2026-08-16) — `M5`'s `docker build` could not be fully verified in the authoring sandbox (registry egress blocked); Dockerfile is implemented, needs a real-registry build check |
 | `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
-| `M20`–`M21` | Confirm admin-only auth end to end | Not Started |
+| `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
@@ -114,5 +124,6 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
+- [ ] **Mobile navbar has no cart link or navigation** (found during `M21`, owned by `M44`). The navbar's only mobile-visible element was the dead Login button `M21` removed; the real nav (Home/Shop/search/Cart) is `hidden sm:flex`, so below the `sm` breakpoint the navbar is now just the logo. `M21` did not cause this — mobile never had cart access — but it is a real mobile-first gap under [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) for a market that is majority mobile. Deliberately not fixed inside `M21`, whose scope is only the Login button; recorded on `M44` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
   - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`; the store Settings global is no longer among these either — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order))*
