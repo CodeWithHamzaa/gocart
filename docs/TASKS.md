@@ -83,6 +83,15 @@ oversight — `M26` ("Remove multi-vendor 'Product by {store}' attribution") alr
 this, already depends on `M15`, and its own goal text anticipates the route being "(already-deleted)".
 Until `M26` lands, that one link 404s if clicked from a product page.
 
+**`M22` is done (2026-08-17).** `lib/payload/categories.ts` and `lib/payload/products.ts` are new
+server-side (Local API) utilities, verified against seeded data with a temporary route (deleted before
+committing) — `getProductsByCategory()`'s rollup is confirmed exact: a parent slug returns its own
+products plus every child's, a child slug returns only its own. Two things worth knowing before `M23`
+picks this up: **types are hand-written**, not generated from `payload-types.ts` (`payload
+generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`getProducts()` takes an
+explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
+by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
+
 | Milestones | Group | Status |
 |---|---|:---|
 | `M16`, `M17`, `M19` | Clear `app/admin/**` — **runs before `M3`** | **Done** (2026-08-14) |
@@ -94,7 +103,7 @@ Until `M26` lands, that one link 404s if clicked from a product page.
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22` **Done** (2026-08-17); `M23`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
@@ -138,5 +147,7 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
 - [ ] **Mobile navbar has no cart link or navigation** (found during `M21`, owned by `M44`). The navbar's only mobile-visible element was the dead Login button `M21` removed; the real nav (Home/Shop/search/Cart) is `hidden sm:flex`, so below the `sm` breakpoint the navbar is now just the logo. `M21` did not cause this — mobile never had cart access — but it is a real mobile-first gap under [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) for a market that is majority mobile. Deliberately not fixed inside `M21`, whose scope is only the Login button; recorded on `M44` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+- [ ] **"Best selling" has no defined ranking** (found during `M22`, owned by `M23`). The dummy `BestSelling.jsx` sorted by review count; Reviews are out of scope ([ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)) and no sales-count field exists on `Products` or anywhere else. `lib/payload/products.ts`'s `getProducts()` takes an explicit `sort` with no default for this case rather than inventing a fake metric. `M23` must pick a real stand-in (e.g. newest-first, or a manual `featured` flag) when it wires `BestSelling.jsx` to real data — not decided here.
+- [ ] **`payload-types.ts` cannot be generated in this sandbox** (found during `M22`). `payload generate:types` hits the same `tsx`/Node ESM-interop class of failure as `scripts/seed.ts` (`M13`) and `generate:importmap` (`M3`). `lib/payload/*.ts` use hand-written types mirroring the collections exactly as a stand-in. Confirm `payload generate:types` works in a normal environment and switch these files to the generated types when convenient — not launch-blocking, but worth doing before the type surface grows much further.
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
   - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`; the store Settings global is no longer among these either — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order))*

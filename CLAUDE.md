@@ -6,9 +6,11 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current status: multi-vendor surface fully removed — `M22`+ is next
+## Current status: data-fetching utilities exist — `M23`+ is next
 
-Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group, the full Payload data model, the auth confirmation pass, and the last of the legacy route removal: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, `M5`, `M6`–`M13`, `M13a`, `M20`, `M21`, `M15`, and `M18` are all **Done**. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)).
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group, the full Payload data model, the auth confirmation pass, the last of the legacy route removal, and the first storefront-data milestone: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, `M5`, `M6`–`M13`, `M13a`, `M20`, `M21`, `M15`, `M18`, and `M22` are all **Done**. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)).
+
+**`lib/payload/products.ts` and `lib/payload/categories.ts` now exist** (`M22`, server-side Local API utilities; `getProducts()`, `getProductById()`, `getTopLevelCategories()`, `getCategoryBySlug()`, `getProductsByCategory()` with descendant rollup). **No storefront route consumes them yet** — that starts at `M23`. Two things to know before touching them: types in both files are hand-written, not generated from `payload-types.ts` (blocked in this sandbox, see [docs/TASKS.md](./docs/TASKS.md)); and `getProducts()`'s `sort` has no default for "best selling" — there's no ranking data in the schema for it, so `M23` must choose one.
 
 **Admin-only auth is confirmed end to end** (`M20`/`M21`): Payload's `/admin` is the only authenticated surface in the application — no middleware, no auth dependency, no leftover `isAdmin`/`isSeller` bypass, and no customer-facing route that requires or fakes a login. The dead "Login" button is gone from the storefront navbar.
 
