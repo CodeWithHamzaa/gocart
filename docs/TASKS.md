@@ -21,7 +21,7 @@ Status legend: `Not Started` · `In Progress` · `Blocked` · `Done`
 - [x] **Resolved**: Payload deployment topology → [ADR-009](./DECISIONS.md), Accepted 2026-08-14 (embedded in the Next.js app)
 - [x] Phase 1 readiness audit and correction pass → [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md)
 - [x] Category-browsing audit and specification (2026-08-16) → [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md), [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy), new milestones `M27a`/`M27b`. **Closes readiness finding `C8`.**
-- [ ] Confirm the six remaining open questions in [PROJECT_SPEC.md](./PROJECT_SPEC.md) with the stakeholder — **not an `M1` blocker**; blocks `M6` and later (see the `M6` gate below)
+- [x] Confirm the `M6`-blocking open questions in [PROJECT_SPEC.md](./PROJECT_SPEC.md) with the stakeholder → [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)–[ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection), Accepted 2026-08-16. Currency (open question #1) and notifications (open question #5, partially resolved by [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)) remain open but are not `M6` blockers — see [PROJECT_SPEC.md](./PROJECT_SPEC.md)
 
 ---
 
@@ -31,17 +31,21 @@ Implementation has begun. `M1` added local development infrastructure (`docker-c
 `.env.example`), `M2` added Payload dependencies, and `M2a` added the TypeScript toolchain
 (`tsconfig.json`, `next-env.d.ts`; `jsconfig.json` retired). `M16`, `M17`, and `M19` then deleted the
 legacy admin surface — `app/admin/**` and `components/admin/**` (plus `components/OrdersAreaChart.jsx`)
-are gone, clearing `/admin` ahead of `M3`.
+are gone. `M14` then deleted the vendor dashboard (`app/store/**`, `components/store/**`), clearing the
+multiple-root-layouts precondition per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone).
 
-**`M14` — not `M3` — is the next milestone.** Per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone), `M3` analysis found that mounting Payload requires restructuring the app into Next.js's multiple-root-layouts pattern, which `app/store/**` (still present, deleted by `M14`) would collide with. `M14` is now a hard prerequisite of `M3`, alongside the pre-existing `M16`/`M17`/`M19` route-collision precondition. **`M3` must not be implemented before `M14`.**
+**`M3` has landed: Payload is mounted.** `payload.config.ts` (no collections yet) is wired to Postgres;
+`/admin` and `/api/*` are mounted inside the Next.js App Router per [ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service). `M4` then retired the unwired
+Prisma schema, and `M5` added a development Dockerfile. **`/admin` now returns Payload's
+(collection-less) admin shell**, not 404 — the interim 404 window between `M17` and `M3` is closed.
 
-**Customer-facing behavior is unchanged.** The only application code touched so far is deletion, and
-what was deleted was the hand-built admin — a surface with no real authentication (`isAdmin` was
-hardcoded `true`) that rendered only `assets/assets.js` dummy data. Nothing imports Payload, no `.jsx`
-file has been converted, and the storefront renders exactly as inherited.
+**Customer-facing behavior is still unchanged.** No `.jsx` storefront file has been converted, and the
+storefront renders exactly as inherited; `app/layout.jsx` was restructured into `app/(public)/layout.jsx`
+(now the storefront's own root layout, per `M3`'s multiple-root-layouts requirement) with no visible
+change to rendered output.
 
-**`/admin` currently returns 404.** This is the expected interim state between `M17` and `M3`,
-documented in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) — not a regression. `M3` closes it.
+**The `M6` gate is now cleared** (see below) — `M6`–`M13` (Payload collections) plus the new `M13a`
+(Settings global) are the next milestones to execute.
 
 | Milestones | Group | Status |
 |---|---|:---|
@@ -49,10 +53,10 @@ documented in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) — not a regression. `M3
 | `M1` | Foundation: Dockerized PostgreSQL for local development | **Done** (2026-08-14) |
 | `M2` | Foundation: Payload v3, Postgres adapter, `sharp` dependencies | **Done** (2026-08-14) |
 | `M2a` | Foundation: TypeScript toolchain | **Done** (2026-08-14) |
-| `M14` | Delete vendor dashboard (`app/store/**`) — **hard prerequisite of `M3`**, per [ADR-014](./DECISIONS.md) | **Not Started — next milestone** |
-| `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile — **blocked on `M14`** | Not Started |
+| `M14` | Delete vendor dashboard (`app/store/**`) — **hard prerequisite of `M3`**, per [ADR-014](./DECISIONS.md) | **Done** (2026-08-16) |
+| `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile | **Done** (2026-08-16) — `M5`'s `docker build` could not be fully verified in the authoring sandbox (registry egress blocked); Dockerfile is implemented, needs a real-registry build check |
 | `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
-| `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | Not Started |
+| `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global — **`M6` gate cleared** | Not Started |
 | `M20`–`M21` | Confirm admin-only auth end to end | Not Started |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |
 | `M29` | Real search | Not Started |
@@ -74,25 +78,20 @@ documented in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) — not a regression. `M3
 The six pre-`M1` corrections from the readiness audit are applied. Foundation work has begun:
 `M1`, `M2`, and `M2a` are **Done**, and `M16`, `M17`, `M19` have cleared `app/admin/**`.
 
-### `M3` gate — **BLOCKED on `M14`**
+### `M3` gate — **CLEARED** (`M14`, `M3`, `M4`, `M5` complete)
 
-`M3`'s `app/admin/**` route-collision precondition (from `M16`/`M17`/`M19`) is satisfied, but a second
-precondition surfaced during `M3` analysis: Payload's mount requires restructuring the app into
-Next.js's multiple-root-layouts pattern, which `app/store/**` would collide with. **`M14` (delete the
-vendor dashboard) must land first** — see [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone).
-**The next milestone is `M14`, not `M3`.** Once `M14` lands, `M3` is unblocked; scheduling it promptly
-after keeps the `/admin` 404 window short.
+`M14` landed first, clearing the multiple-root-layouts precondition per [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone). `M3` then mounted Payload, `M4` retired the unwired Prisma schema, and `M5` added the dev Dockerfile. `/admin` is live (Payload's collection-less admin shell).
 
-### `M6` gate — **BLOCKED**
+### `M6` gate — **CLEARED** (2026-08-16)
 
-Collection design must not start until these are decided and recorded as ADRs:
+All six decisions are made and recorded as ADRs. Collection design (`M6`–`M13`, plus the new `M13a`) may now proceed.
 
-- [ ] Reviews: in or out for v1 (`M46`)
-- [ ] Coupons: in or out for v1 (`M47`)
-- [ ] Shipping/delivery model — the `Orders` collection must model it
-- [ ] Order status set — is `CANCELLED`/`RETURNED` needed for COD refusal-at-door?
-- [ ] Media storage backend: local volume vs. S3-compatible
-- [ ] `Orders` shape for guests: embedded address vs. lightweight `Customers` collection
+- [x] **Resolved**: Reviews are out of scope for v1 → [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). `M46` executes the removal path.
+- [x] **Resolved**: Coupons are out of scope for v1 → [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1). `M47` executes the removal path.
+- [x] **Resolved**: Shipping/delivery model → [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order): flat rate + free-shipping threshold, both admin-configurable via a new Settings global (`M13a`), snapshotted onto each order at creation.
+- [x] **Resolved**: Order status set → [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned): adds `CONFIRMED`, `CANCELLED`, and `RETURNED` to the enum.
+- [x] **Resolved**: Media storage backend → [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor): local Docker volume for v1, Cloudflare R2 named as the designated successor.
+- [x] **Resolved**: `Orders` shape for guests → [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection): embedded address fields, no `Customers` collection. (Tracked as `D11`/blocking-`M11` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) rather than the `M6`-gate list below it — recorded here too since both sources treat it as a precondition for the `M6`–`M13` group.)
 - [x] **Resolved**: `Categories` hierarchy and category-browsing scope → [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy), Accepted 2026-08-16. `M9`'s field list, the two-level `parent` self-relation, and `Products.category` cardinality (`M10`) are settled; spec in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md)
 
 ### Later, non-blocking
@@ -101,5 +100,5 @@ Collection design must not start until these are decided and recorded as ADRs:
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
-- [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): store Settings global, test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
-  - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`)*
+- [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
+  - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`; the store Settings global is no longer among these either — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order))*

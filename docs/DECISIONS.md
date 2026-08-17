@@ -328,3 +328,124 @@ Full behavior specification: [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.
 - Partially resolves `D8` — SMS is explicitly out of scope for now rather than an open question with "no milestone exists"; email channel infrastructure (Resend) is decided, though which order-lifecycle emails are actually sent is still unspecified in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
 - `M49`–`M54` (Docker production hardening, health checks, backups) should target this baseline rather than a generic or platform-agnostic one.
 - No application code changes result from this ADR by itself — it is an infrastructure/hosting decision, not a code milestone.
+
+---
+
+## ADR-016: Reviews are out of scope for v1
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, closing decision `D3` and contradiction `C4` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+**Context**: [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) had marked Reviews **Keep ✓ + Replace ✓ + Future Phase ✓** simultaneously, and [PROJECT_SPEC.md](./PROJECT_SPEC.md) carried it as open question #4: does ratings/reviews stay for v1, and with what non-account identity model, or is it dropped? Guest checkout ([ADR-005](#adr-005-guest-checkout-no-customer-accounts)) means there is no persistent identity to key a review on. `M46` was written as a "decide, then implement whichever outcome" milestone; this ADR supplies the decision it was waiting on.
+
+**Decision**: Reviews are **out of scope for v1**. `M46` executes the removal path: delete `components/RatingModal.jsx` and its entry points, and strip the dummy star-rating display in `components/ProductCard.jsx`/`ProductDetails.jsx` (the data source itself is already removed at `M28`).
+
+**Rationale**: An open submit form with no account behind it is a spam/abuse target that needs moderation labor a low-budget V1 cannot staff ([ADR-015](#adr-015-initial-production-infrastructure-baseline)). A brand-new single store also launches with zero reviews regardless — empty review UI reads as untrustworthy rather than building trust. Forgoing `AggregateRating` structured data is an acceptable cost: [ADR-013](#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy) and `M43` already scope JSON-LD to `Product` only.
+
+**Consequences**:
+
+- `M46`'s goal changes from "decide reviews v1 scope" to "remove review submission for v1" — the decision is no longer open at that milestone.
+- [FEATURE_MATRIX.md](./FEATURE_MATRIX.md)'s Reviews row changes from **Keep + Replace + Future Phase** to **Remove (v1) + Future Phase**.
+- Reversible without a schema fight: a `Reviews` collection keyed on order reference + phone (not a `User` relation) can be added post-launch with no change to `Products` or `Orders`.
+- Closes `D3` and `C4` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md); the "No reviews" target row moves from **FAIL** (undecided) to met for v1.
+
+---
+
+## ADR-017: Coupons are out of scope for v1
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, closing decision `D2` and contradiction `C3` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+**Context**: [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marked Coupons **Keep ✓ + Replace ✓ + Future Phase ✓** simultaneously; [PROJECT_SPEC.md](./PROJECT_SPEC.md) carried it as open question #6. The inherited `Coupon` model's `forNewUser`/`forMember` targeting is meaningless under guest checkout ([ADR-005](#adr-005-guest-checkout-no-customer-accounts)) — there is no account to key "new user" or "member" off of, so only a flat code-based discount is even expressible.
+
+**Decision**: Coupons are **out of scope for v1**. `M47` executes the removal path: remove the coupon-code input from `components/OrderSummary.jsx`. (The admin coupon page was already removed at `M19`, pending this redesign.)
+
+**Rationale**: On a COD-only checkout ([ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)) there is no payment capture step, so a leaked or guessed code is pure margin loss with no per-customer usage cap possible without accounts. Pakistani single-store promotions are typically run as direct price edits or bundle pricing, which the admin can already do through the `Products` collection without a coupon engine.
+
+**Consequences**:
+
+- `M47`'s goal changes from "decide coupons v1 scope" to "remove coupon input for v1."
+- [FEATURE_MATRIX.md](./FEATURE_MATRIX.md)'s Coupons row changes from **Keep + Replace + Future Phase** to **Remove (v1) + Future Phase**.
+- **Hedge taken now at negligible cost**: `M11`'s `Orders` collection gains a nullable `discountAmount` snapshot field even with no coupon engine behind it — avoids an `Orders` schema migration if a code-based `Coupons` collection is added later.
+- Closes `D2` and `C3` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md); the "No coupons" target row moves from **FAIL** (undecided) to met for v1.
+
+---
+
+## ADR-018: Shipping model — flat rate with a free-shipping threshold, snapshotted per order
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, closing decision `D4` and part of risk `R4` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+**Context**: [PROJECT_SPEC.md](./PROJECT_SPEC.md) open question #2 left the delivery/shipping model undefined — flat, free, weight-based, or city-based. `M11`/`M12` define no shipping or total fields at all, and `M34` ("apply confirmed shipping/total calculation rules") has nothing to apply. `R4` in the readiness report separately flags that `Orders` is missing order total, shipping cost, and a per-line price snapshot.
+
+**Decision**: One nationwide **flat delivery fee**, waived above a **free-shipping threshold** — both admin-configurable via a new Payload **Settings global** (`M13a`), not hardcoded. Shipping amount, order total, and each line item's unit price are **snapshotted onto the `Order` at creation time** ("Place Order") and never recomputed from live `Settings`/`Products` afterward.
+
+**Rejected alternatives**:
+
+- **Weight-based** — requires per-product weight data entry and courier rate-card integration; more operational setup than a V1 admin can carry.
+- **City-based** — requires a city→zone table and validated city input, but Pakistani addresses are commonly free-text and inconsistently spelled, so a lookup table would mis-charge routinely.
+- **Free shipping outright** — COD return-to-origin costs are high in this market; an unconditional free-shipping policy turns every refused-at-door parcel into a pure loss with no offset.
+
+**Consequences**:
+
+- `M13a` (new milestone, Settings global) ships the admin-editable flat rate and threshold, plus store name/contact fields — also closes risk `R6` (no Settings global despite being launch scope).
+- `M11` gains `orderTotal`, `shippingCost`, and a per-line price-snapshot field on line items — closing the shipping/total half of `R4`. The price-snapshot omission was the "quiet" failure mode `R4` warned about: without it, historical orders silently re-price when a product's price is later edited.
+- `M33` (real order creation) and `M34` (shipping/total calculation) read `Settings` (`M13a`) at order-creation time only, then write the resolved numbers onto the `Order` — never a live join at render time.
+- Closes `D4` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+---
+
+## ADR-019: Order status set includes `CONFIRMED`, `CANCELLED`, and `RETURNED`
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, closing decision `D5` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+**Context**: [PROJECT_SPEC.md](./PROJECT_SPEC.md) open question #3 asked whether the inherited `OrderStatus` enum (`ORDER_PLACED`, `PROCESSING`, `SHIPPED`, `DELIVERED`) is sufficient, and whether `CANCELLED`/`RETURNED` are needed for COD refusal-at-door — flagging that for COD in Pakistan, refusal-at-door is an ordinary outcome, not an edge case. `M12` (payment/status fields) and `M38` (admin status-update flow) both need a decided enum to build against.
+
+**Decision**: The order status set is `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus two terminal states, `CANCELLED` and `RETURNED`. It is a flat, extensible enum on `Orders` (`M12`) with no state-machine/transition-validation logic in v1 — the admin selects a status from a dropdown in Payload's native admin UI (`M38`).
+
+**Rationale**:
+
+- **`CONFIRMED` is the highest-value addition for this market.** Pakistani COD stores routinely phone-confirm an order before dispatch specifically to suppress fake and duplicate orders. Without a status expressing "order exists but is not yet dispatch-approved," there is no way to hold an order back from fulfillment while it's being verified.
+- **`CANCELLED`** covers orders killed before dispatch (unreachable customer, fake order, changed mind).
+- **`RETURNED`** covers orders that came back after dispatch (refused at the door, RTO, undeliverable) — operationally distinct from `CANCELLED` because courier cost was already incurred and stock must be restored.
+- A validated state machine (e.g. forbidding `DELIVERED` → `PLACED`) is deliberately deferred as post-launch polish; a single admin manually selecting statuses does not need transition enforcement at V1's scale.
+
+**Consequences**:
+
+- `M12` builds `status` as this seven-value enum plus the existing `isPaid` boolean ([ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)), flipped when cash is collected.
+- `M38` confirms admins can move an order through this full set via Payload's native admin editing.
+- Closes `D5` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+---
+
+## ADR-020: Media storage backend is a local Docker volume for v1, with Cloudflare R2 as the designated successor
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, closing decision `D6` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+**Context**: [ARCHITECTURE.md](./ARCHITECTURE.md) listed "object storage for product media (local volume vs. S3-compatible service)" as not yet decided, blocking `M8` (Media collection) and affecting `M54` (backup/persistence strategy). [ADR-015](#adr-015-initial-production-infrastructure-baseline) has since fixed the production baseline to a single VPS running one app container.
+
+**Decision**: Product media is stored on a **local Docker volume** for v1, via Payload's local-storage adapter. **Cloudflare R2** is named as the designated successor if/when object storage is needed (free egress, free tier, already inside the [ADR-015](#adr-015-initial-production-infrastructure-baseline) stack).
+
+**Rationale**: The one real argument for object storage — independent horizontal scaling of the app tier — is not live at V1 under the single-VPS/single-container baseline. A local volume avoids a second service, an egress bill, and an extra set of credentials. Cloudflare Free (already in front of the app) caches images at the edge, absorbing most read bandwidth regardless of origin storage. Migrating later is a config-level change: `@payloadcms/storage-s3` (R2-compatible) is a swap plus a one-time file copy, not a data-model change.
+
+**Consequences**:
+
+- `M8` (Media collection) uses Payload's local-storage adapter, backed by a named Docker volume.
+- **Media now joins PostgreSQL in the manual-backup burden** ([ADR-015](#adr-015-initial-production-infrastructure-baseline)): `M54` must back up the media volume, not only the database, and its "persistent volumes" scope explicitly covers both.
+- Migrating to R2 later requires no `Media` collection schema change — only a storage-adapter config swap and a one-time copy of existing files.
+- Closes `D6` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+
+---
+
+## ADR-021: Guest orders use embedded address fields, not a `Customers` collection
+
+**Status**: **Accepted (2026-08-16)** — stakeholder-confirmed, formally recording an assumption `M11` already made silently (decision `D11` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md)).
+
+**Context**: [ARCHITECTURE.md](./ARCHITECTURE.md) listed "exact `Orders` shape for guest customers: embedded address vs. relation to a lightweight `Customers` collection without auth" as not yet decided, while `M11`'s own text already assumed embedded fields without recording why. The readiness report's process note flags this as exactly the failure mode [CLAUDE.md](../CLAUDE.md) warns against — a decision that lives only in a milestone's prose, not in `DECISIONS.md`.
+
+**Decision**: `Orders` (`M11`) store guest customer and address data as **embedded fields on the order itself** — name, phone, address, city, area — not as a relation to a separate `Customers` collection.
+
+**Rationale**: Guest checkout ([ADR-005](#adr-005-guest-checkout-no-customer-accounts)) means there is no persistent identity for a `Customers` collection to key on, and no address-reuse feature (no login, no "saved addresses") for it to serve. An embedded snapshot is also the *correct* choice independent of convenience: it preserves historical accuracy — a customer who moves house after ordering must not retroactively rewrite a past delivery record.
+
+**Consequences**:
+
+- `M11` proceeds exactly as already drafted; this ADR removes the silent, unrecorded assumption rather than changing the design.
+- No `Customers` collection is added to the `M6`–`M13` group.
+- Closes `D11` in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).

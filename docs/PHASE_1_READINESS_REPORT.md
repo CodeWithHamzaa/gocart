@@ -210,16 +210,41 @@ Not a pre-`M1` correction — recorded here as newly approved/discovered decisio
 
 **No application code was changed by either decision above.**
 
+### ✅ Post-audit correction — `M6` gate cleared: Reviews, Coupons, shipping, order status, media, guest-order shape decided (2026-08-16)
+
+Not a pre-`M1` correction — recorded here as newly approved/discovered decisions since Audit 2.
+(Audit 1's text below is preserved verbatim as history and was not edited.)
+
+All six decisions the `M6` gate was waiting on are now made and recorded as ADRs:
+
+| Decision | Outcome | ADR |
+|---|---|---|
+| Reviews in/out for v1 (`D3`) | **Out.** `M46` executes removal (delete `RatingModal.jsx` + entry points) | [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) |
+| Coupons in/out for v1 (`D2`) | **Out.** `M47` executes removal (remove coupon input from `OrderSummary.jsx`) | [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1) |
+| Shipping/delivery model (`D4`) | Flat rate + free-shipping threshold, admin-configurable via a new Settings global (`M13a`), snapshotted onto each order at creation | [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) |
+| Order status set (`D5`) | Adds `CONFIRMED`, `CANCELLED`, `RETURNED` to the enum | [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned) |
+| Media storage backend (`D6`) | Local Docker volume for v1; Cloudflare R2 named as the designated successor | [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) |
+| `Orders` shape for guests (`D11`) | Embedded address fields, no `Customers` collection — formally records what `M11` already assumed | [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection) |
+
+This also closes contradictions `C3` and `C4` (Coupons' and Reviews' conflicting dispositions are now
+a single decided disposition each) and closes risk `R6` (no store Settings global) via the new `M13a`
+milestone. `C5` ("no blog" never stated) is **unaffected** — still open, unrelated to this decision set.
+[MIGRATION_PLAN.md](./MIGRATION_PLAN.md), [TASKS.md](./TASKS.md), [PROJECT_SPEC.md](./PROJECT_SPEC.md),
+[ARCHITECTURE.md](./ARCHITECTURE.md), and [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) are updated
+accordingly. **`M6` gate is cleared** — `M6`–`M13` and `M13a` may now proceed.
+
+**No application code was changed by this decision set.**
+
 ## Remaining contradictions
 
-Nine of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
+Eleven of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 
 | # | Finding | Status | Blocks |
 |---|---|:---:|---|
 | C1 | Single-store framed as open in 3 docs | ✅ **Resolved** | — |
 | C2 | ADR-003 `Proposed` while depended upon | ✅ **Resolved** | — |
-| C3 | Coupons: four conflicting dispositions | ⚠️ **Open** | `M6` |
-| C4 | Reviews: unresolved triple-marking | ⚠️ **Open** | `M6` |
+| C3 | Coupons: four conflicting dispositions | ✅ **Resolved** (2026-08-16) — [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1) | — |
+| C4 | Reviews: unresolved triple-marking | ✅ **Resolved** (2026-08-16) — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) | — |
 | C5 | "No blog" never stated anywhere | ⚠️ **Open** | Nothing — but unstated scope in a CMS build |
 | C6 | Two conflicting phase-numbering systems | ✅ **Resolved** | — |
 | C7 | `M13` access rules forbid what `M36` requires | ⚠️ **Open** | `M13`, `M36` |
@@ -229,27 +254,26 @@ Nine of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 | C11 | FEATURE_MATRIX Sanity row misuses "Replace" | ⚠️ **Open** (cosmetic) | Nothing |
 | C12 | `M55` currency file list stale | ⚠️ **Open** (low) | `M55` |
 
-**C3, C4 and C5 remain contradictions against the stated target** ("no coupons", "no reviews",
-"no blog"). Resolving them requires stakeholder input and was explicitly outside this correction pass.
-They are now gated: [TASKS.md](./TASKS.md) blocks `M6` on the Reviews and Coupons decisions.
+**C5 remains a contradiction against the stated target** ("no blog"). `C3` and `C4` are resolved as of
+2026-08-16 — see the post-audit correction above.
 
 ## Remaining blocking decisions
 
-One of Audit 1's twelve is closed. **None blocks `M1`.**
+Seven of Audit 1's twelve are closed. **None blocks `M1`.**
 
 | # | Decision | Status | Gate |
 |---|---|:---:|---|
 | D1 | Payload deployment topology | ✅ **Resolved** — [ADR-009](./DECISIONS.md) | — |
-| D2 | Coupons in/out for v1 | ⚠️ Open | **`M6`** |
-| D3 | Reviews in/out for v1 | ⚠️ Open | **`M6`** |
-| D4 | Shipping/delivery model | ⚠️ Open | **`M6`** — `Orders` must model it |
-| D5 | Order status set (`CANCELLED`/`RETURNED` for COD) | ⚠️ Open | **`M6`** |
-| D6 | Media storage backend (local volume vs. S3) | ⚠️ Open | **`M6`** |
+| D2 | Coupons in/out for v1 | ✅ **Resolved** (2026-08-16) — [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1) | — |
+| D3 | Reviews in/out for v1 | ✅ **Resolved** (2026-08-16) — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) | — |
+| D4 | Shipping/delivery model | ✅ **Resolved** (2026-08-16) — [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) | — |
+| D5 | Order status set (`CANCELLED`/`RETURNED` for COD) | ✅ **Resolved** (2026-08-16) — [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned) | — |
+| D6 | Media storage backend (local volume vs. S3) | ✅ **Resolved** (2026-08-16) — [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) | — |
 | D7 | PKR formatting convention | ⚠️ Open | `M55` |
 | D8 | Order notifications (SMS/WhatsApp/email) | ◐ **Partial** (2026-08-16) — SMS deferred to a future phase, email infra (Resend) decided; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). WhatsApp and which emails are sent remain open, still **no milestone exists** | Unscheduled |
 | D9 | Guest order-lookup key + abuse controls | ⚠️ Open | `M13`, `M36` |
 | D10 | Cart state: Redux vs. simpler store | ⚠️ Open — `M30` assumes an answer, unrecorded | `M30` |
-| D11 | `Orders` shape: embedded vs. `Customers` collection | ⚠️ Open — `M11` assumes an answer, unrecorded | `M11` |
+| D11 | `Orders` shape: embedded vs. `Customers` collection | ✅ **Resolved** (2026-08-16) — [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection) | — |
 | D12 | Deployment target + production migration strategy | ◐ **Partial** (2026-08-16) — hosting baseline decided: Cloudflare Free + ~$10–12/mo VPS + PostgreSQL + Resend Free + COD; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). Production migration/CI mechanics still open | `M49`–`M59` |
 
 D10 and D11 remain decided-in-prose but unrecorded as ADRs — still a live violation of
@@ -257,23 +281,23 @@ D10 and D11 remain decided-in-prose but unrecorded as ADRs — still a live viol
 
 ## Remaining risks
 
-Three of Audit 1's thirteen are closed — including all three critical ones.
+Five of Audit 1's thirteen are closed — including all three critical ones.
 
 | # | Risk | Status |
 |---|---|:---:|
 | R1 | `/admin` route collision, circular `M3`↔`M17` | ✅ **Resolved** — Correction 4 |
 | R2 | No TypeScript toolchain for 12+ `.ts` milestones | ✅ **Resolved** — `M2a` |
 | R3 | `sharp` never installed | ✅ **Resolved** — folded into `M2` |
-| R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ⚠️ Open — blocks `M11`/`M12` |
+| R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ◐ **Partial** (2026-08-16) — total/shipping/price-snapshot fields decided via [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order), for `M11` to implement; order reference/number is still undecided | Blocks `M11`/`M12` |
 | R5 | Out-of-stock enforcement called launch-critical, never implemented | ⚠️ Open |
-| R6 | No store Settings global despite being launch scope | ⚠️ Open |
+| R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-16) — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) |
 | R7 | No test or CI milestone in the plan | ⚠️ Open — broken pointer fixed, **gap still unscheduled** |
-| R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ◐ **Mitigated** — the `M6` gate now forces both decisions before collection design; the milestones themselves still sit late |
+| R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ✅ **Resolved** (2026-08-16) — both decisions made ahead of collection design via [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1); `M46`/`M47` now execute a decided removal rather than deciding |
 | R9 | No production `payload migrate` step | ⚠️ Open |
 | R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ◐ **Half closed** — the database name is settled as `DATABASE_URI` by [ADR-010](./DECISIONS.md) at `M1`; the missing public base URL is still open against `M42`/`M52` |
 | R11 | `Newsletter.jsx` neither wired nor dropped | ⚠️ Open |
 | R12 | No owner for storefront copy ("Free shipping worldwide") | ⚠️ Open |
-| R13 | `next dev --turbopack` unverified against Payload v3 | ◐ **Verified at `M2`** — Turbopack boots clean on Next 15.3.9 with the Payload packages installed (nothing imports them yet). The conclusive test is `M3`, once Payload is actually mounted |
+| R13 | `next dev --turbopack` unverified against Payload v3 | ✅ **Resolved** — `M3` mounted Payload and confirmed both `npm run build` and `npm run start` serve `/admin` correctly with no server errors |
 
 **R10 deserves attention during `M1` itself**, since `M1` is the milestone that adds the variable.
 It is not a blocker — a wrong name fails loudly at `M3` — but it is free to get right now.

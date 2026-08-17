@@ -27,6 +27,8 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 - Customer accounts / customer login (guest checkout replaces this)
 - **Advanced/faceted product filtering** — price ranges, brand, rating, in-stock toggles, sort controls, multi-facet selection. **Category *browsing* is in scope and ships at launch** ([ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)); what is deferred is filter *UI* on top of it. See the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md).
 - **Multi-vendor marketplace features are permanently out of scope, not deferred** — decided (see [ADR-006](./DECISIONS.md)): no vendors, no seller dashboard, no seller registration, no vendor approval, no per-store ownership of products/orders. This platform is single-store.
+- **Product reviews/ratings** — dropped for v1, not merely deferred implementation; no non-account identity model is built to support them. See [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1).
+- **Coupons/discount codes** — dropped for v1; the account-based targeting the original app assumed has no guest-checkout equivalent. See [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1).
 
 ## Roles
 
@@ -54,14 +56,16 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 ## Resolved decisions
 
 1. ~~**Multi-vendor fate**~~ — **Resolved 2026-08-07**: single store, no vendors, no seller dashboard, no seller registration, no vendor approval. See [ADR-006](./DECISIONS.md).
+2. ~~**Delivery/shipping model**~~ — **Resolved 2026-08-16**: flat delivery fee with a free-shipping threshold, both admin-configurable via a Settings global (`M13a`) and snapshotted onto each order at creation. See [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
+3. ~~**Order status set**~~ — **Resolved 2026-08-16**: `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED` and `RETURNED`. `CONFIRMED` supports the common Pakistani-COD practice of phone-confirming an order before dispatch. See [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned).
+4. ~~**Ratings/reviews**~~ — **Resolved 2026-08-16**: dropped for v1 — no non-account identity model is built for it. `M46` removes `RatingModal` and its entry points. See [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1).
+5. ~~**Coupons**~~ — **Resolved 2026-08-16**: dropped for v1 — the account-based `forNewUser`/`forMember` targeting has no guest-checkout equivalent to rebuild against. `M47` removes the coupon-code input. See [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1).
+6. ~~**Guest `Orders` shape**~~ — **Resolved 2026-08-16**: embedded address fields on the order, not a `Customers` collection — formally records what `M11` already assumed. See [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection).
+7. ~~**Media storage backend**~~ — **Resolved 2026-08-16**: local Docker volume for v1; Cloudflare R2 named as the designated successor. See [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor).
 
 ## Open questions / assumptions to confirm with stakeholder
 
 These materially affect scope and are flagged rather than silently decided:
 
 1. **Currency**: Assumed PKR (₨) replacing the current hardcoded `$`. Needs confirmation of formatting convention (e.g. `Rs. 1,500` vs `₨1,500`).
-2. **Delivery/shipping model**: Is shipping cost flat, free, weight-based, or city-based? Not yet defined.
-3. **Order status set**: Existing `OrderStatus` enum (`ORDER_PLACED`, `PROCESSING`, `SHIPPED`, `DELIVERED`) — confirm this is sufficient, plus whether a `CANCELLED`/`RETURNED` status is needed for COD (common for COD refusal-at-door scenarios).
-4. **Ratings/reviews**: Original app supports post-purchase ratings tied to a `userId`. Under guest checkout, does this feature stay (needs a non-account-based identity, e.g. order/email-based) or get dropped for v1?
-5. **Notifications**: SMS is deferred to a future phase, and email infrastructure (Resend, free tier) is decided as part of the initial production baseline ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)) — but which order-lifecycle emails, if any, are actually sent for v1, and whether WhatsApp is used, are still not specified.
-6. **Coupons**: Original app has a `Coupon` model with `forNewUser`/`forMember` targeting tied to accounts — needs rethinking under guest checkout.
+2. **Notifications**: SMS is deferred to a future phase, and email infrastructure (Resend, free tier) is decided as part of the initial production baseline ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)) — but which order-lifecycle emails, if any, are actually sent for v1, and whether WhatsApp is used, are still not specified.

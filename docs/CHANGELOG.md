@@ -6,6 +6,18 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M6` gate cleared (2026-08-16)** — the six decisions blocking Payload collection design are made and recorded:
+  - **ADR-016**: Reviews are out of scope for v1 (`M46` executes removal).
+  - **ADR-017**: Coupons are out of scope for v1 (`M47` executes removal).
+  - **ADR-018**: Shipping model — flat rate + free-shipping threshold, admin-configurable, snapshotted onto each order at creation. Introduces new milestone **`M13a`** (Settings global), closing readiness risk `R6`.
+  - **ADR-019**: Order status set gains `CONFIRMED` (pre-dispatch phone confirmation, standard for Pakistani COD), `CANCELLED`, and `RETURNED`.
+  - **ADR-020**: Media storage backend is a local Docker volume for v1; Cloudflare R2 named as the designated successor.
+  - **ADR-021**: Guest `Orders` use embedded address fields, not a `Customers` collection — formally records what `M11` already assumed.
+  - `M8`, `M11`, `M12`, `M34`, `M38`, `M54` updated to reflect these decisions; `M46`/`M47` reframed from "decide" to "execute the decided removal." Milestone count moves from 62 to **63**.
+- **`M14`** — deleted the vendor dashboard (`app/store/**`, `components/store/**`), clearing the multiple-root-layouts precondition ahead of `M3`.
+- **`M3`** — scaffolded and mounted an empty Payload CMS v3 instance (no collections yet): `payload.config.ts` wired to Postgres via `DATABASE_URI`; `/admin` and `/api/*` mounted inside the Next.js App Router per ADR-009. Required restructuring `app/layout.jsx` into `app/(public)/layout.jsx` (Next.js's multiple-root-layouts pattern, since Payload's `RootLayout` renders its own `<html>`/`<body>`) and changing `tsconfig.json`'s `moduleResolution` from `node` to `bundler` to resolve Payload's package `exports` subpaths.
+- **`M4`** — retired the unwired `prisma/schema.prisma` and the now-empty `prisma/` directory, per ADR-003.
+- **`M5`** — added a development `Dockerfile` (single `dev` stage) and `.dockerignore`. `docker build --target dev .` could not be fully verified in the authoring sandbox (Docker Hub registry pull blocked by environment egress policy) — needs a real-registry build check.
 - **ADR-014**: `M14` is a hard prerequisite of `M3`, not an order-independent milestone — a second precondition (Next.js multiple-root-layouts restructuring) found during `M3` analysis, distinct from the existing `app/admin/**` route-collision precondition owned by `M16`/`M17`/`M19` (Accepted 2026-08-16).
 - **ADR-015**: Initial production infrastructure baseline — Cloudflare Free + ~$10–12/month VPS + self-hosted PostgreSQL + Resend free-tier email + COD only; SMS deferred to a future phase; backups managed manually at launch; baseline kept replaceable/upgradable without an application rewrite (Accepted 2026-08-16).
 

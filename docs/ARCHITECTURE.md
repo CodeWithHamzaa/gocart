@@ -73,7 +73,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 ### Backend / CMS
 
 - **Payload CMS v3** replaces the unwired Prisma layer as the system of record.
-- Collections needed (first pass, to refine in `docs/TASKS.md` once build starts): `Users` (admin-only, `auth: true`), `Products`, `Categories`, `Media`, `Orders` (with embedded/guest customer + address fields, no `User` relation), `Coupons` (optional for v1).
+- Collections needed: `Users` (admin-only, `auth: true`), `Products`, `Categories`, `Media`, `Orders` (with embedded/guest customer + address fields, no `User` relation), plus a `Settings` global (`M13a`) for shipping/contact/currency config. **No `Coupons` or `Reviews`/`Ratings` collection in v1** — both decided out of scope, per [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1).
 - **`Categories` carries a `parent` self-relation** (`hasMany: false`) supporting exactly two levels — parent → child, with a third level rejected — plus a unique, indexed, stable `slug` that backs every category URL. `Products.category` is a single relationship (`hasMany: false`) to the most specific applicable category; parent category pages roll up their children's products rather than requiring double-filing. Per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy); field list in `M9`.
 - Payload's built-in auth becomes the **only** login in the system — no separate customer or vendor auth.
 
@@ -97,7 +97,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 ### Docker / production readiness
 
 - `Dockerfile` (multi-stage: deps → build → runtime) for the Next.js/Payload app.
-- `docker-compose.yml` for local dev: app + Postgres (+ maybe a volume-mounted Payload media dir or object storage stub).
+- `docker-compose.yml` for local dev: app + Postgres + a volume-mounted Payload media directory (local Docker volume, per [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) — not an object-storage stub for v1).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
 - **Initial production infrastructure baseline is decided** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)): Cloudflare Free (DNS/proxy) in front of a single ~$10–12/month VPS running the Dockerized app and a self-hosted PostgreSQL instance, plus Resend's free tier for transactional email. COD remains the only payment method. SMS is deferred to a future phase. Backups are managed manually for the initial launch — `M54` is still the milestone that formalizes persistence/backup strategy. This baseline is chosen to stay replaceable/upgradable (e.g. VPS → managed Postgres) without an application rewrite.
 
@@ -116,13 +116,19 @@ The inherited data model (`Store`, vendor-owned `Product`/`Order`, vendor dashbo
 
 Other structural questions now settled: Payload topology ([ADR-009](./DECISIONS.md#adr-009-payload-cms-runs-embedded-inside-the-nextjs-application-not-as-a-separate-service) — embedded), Prisma retirement ([ADR-003](./DECISIONS.md#adr-003-retire-the-unwired-prisma-schema-in-favor-of-payload-managed-collections) — accepted), payment scope ([ADR-004](./DECISIONS.md) — COD only), and checkout identity ([ADR-005](./DECISIONS.md) — guest only).
 
+## Settled since the `M6` gate (2026-08-16)
+
+The `M6`-blocking decisions below are resolved — see [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) through [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection):
+
+- **Media storage**: local Docker volume for v1, not S3-compatible object storage; Cloudflare R2 named as the designated successor if horizontal scaling later requires it.
+- **Shipping/delivery model**: flat delivery fee with a free-shipping threshold, both admin-configurable via a Settings global (`M13a`) and snapshotted onto each order at creation.
+- **Order status set**: `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED` and `RETURNED`.
+- **Guest `Orders` shape**: embedded address fields, no `Customers` collection — `M11` proceeds exactly as it already assumed.
+- **Reviews and Coupons**: both out of scope for v1 — `M46`/`M47` now execute a decided removal rather than deciding.
+
 ## Not yet decided (tracked, not resolved here)
 
-These remain genuinely open. None blocks `M1`; the first three block `M6` (the start of collection design).
+These remain genuinely open. Neither blocks `M1` or `M6`.
 
-- Object storage for product media (local volume vs. S3-compatible service) under Docker — interacts with horizontal scaling, see [ADR-009](./DECISIONS.md) consequences
-- Shipping/delivery model, which the `Orders` collection must model (flat / free / weight-based / city-based)
-- Order status set — whether `CANCELLED`/`RETURNED` are needed for COD refusal-at-door
-- Exact `Orders` collection shape for guest customers (embedded address vs. relation to a lightweight `Customers` collection without auth) — `M11` currently assumes embedded
 - Whether Redux Toolkit stays for cart state or is replaced by a simpler client-side cart (e.g. localStorage + context) — `M30` currently assumes Redux + `localStorage`
-- Reviews and Coupons: in or out for v1 (`M46`, `M47`)
+- PKR currency formatting convention (blocks `M55`)

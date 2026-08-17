@@ -6,11 +6,11 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current status: foundation milestones complete, `M14` is next
+## Current status: Payload mounted, `M6` gate cleared — `M6`–`M13`/`M13a` are next
 
-Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has begun: `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` are **Done** — local Postgres, Payload/Postgres-adapter/`sharp` dependencies, the TypeScript toolchain, and the legacy `app/admin/**` surface removal have landed. **`M3` (scaffolding and mounting Payload) has *not* been implemented.** Do not assume Payload, `.ts` collections, or a mounted `/admin` exist until [docs/TASKS.md](./docs/TASKS.md) records the relevant milestone as complete.
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, and `M5` are **Done**. **Payload is mounted** — `payload.config.ts` (no collections yet) is wired to Postgres, and `/admin` serves Payload's own (collection-less) admin shell, not the legacy hand-built one. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)). Do not assume any Payload **collections** exist until [docs/TASKS.md](./docs/TASKS.md) records the relevant `M6`–`M13`/`M13a` milestone as complete — `payload.config.ts` currently registers none.
 
-**The next milestone to execute is `M14`** (delete the vendor dashboard, `app/store/**`), not `M3`. Per [ADR-014](./docs/DECISIONS.md), `M3` analysis found that mounting Payload requires restructuring the app into Next.js's multiple-root-layouts pattern, which `app/store/**` would collide with — so `M14` is now a **hard prerequisite of `M3`**, in addition to the pre-existing `M16`/`M17`/`M19` route-collision precondition. **`M3` must not be implemented before `M14`.**
+**The `M6` gate is cleared** (2026-08-16): Reviews and Coupons are decided out of scope for v1, the shipping model, order status set, media storage backend, and guest `Orders` shape are all decided and recorded as [ADR-016 through ADR-021](./docs/DECISIONS.md). **The next milestones to execute are `M6`–`M13` and the new `M13a`** (Settings global) — Payload collection design may now proceed.
 
 ## Milestone numbering — the one authoritative sequence
 

@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-62 milestones (`M1`–`M59`, plus `M2a`, `M27a`, `M27b`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+63 milestones (`M1`–`M59`, plus `M2a`, `M27a`, `M27b`, `M13a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -112,7 +112,12 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 
 ---
 
-## Group: Payload data model — `M6`–`M13`
+## Group: Payload data model — `M6`–`M13`, `M13a`
+
+> **`M6` gate cleared (2026-08-16).** Reviews, Coupons, shipping model, order status set, media storage
+> backend, and the guest `Orders` shape are decided — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)
+> through [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection).
+> This group's milestones below already reflect those decisions.
 
 ### M6 — Users collection (admin-only auth)
 - **Goal**: Create the single authenticated role in the system, per [ADR-006](./DECISIONS.md).
@@ -133,6 +138,7 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 ### M8 — Media collection
 - **Goal**: Real file upload/storage for product images and future media, replacing the client-only `URL.createObjectURL()` previews found in `add-product`/`create-store` today.
 - **Files**: `collections/Media.ts` (new), `payload.config.ts`
+- **Storage backend**: Payload's local-storage adapter, backed by a named Docker volume — **not** S3-compatible object storage, for v1. Cloudflare R2 is the designated successor if/when object storage is needed; migrating later is a storage-adapter config swap, not a schema change. Per [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor).
 - **Dependencies**: M3
 - **Testing**: Upload an image through `/admin`; confirm the file is stored and served back correctly.
 - **Rollback**: Remove the collection file and its registration.
@@ -172,16 +178,24 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 ### M11 — Orders collection with guest fields and line items
 - **Goal**: Model orders for guest checkout — embedded customer/address fields instead of a `User` relation, plus a line-items array instead of a separate join table, per [ADR-005](./DECISIONS.md).
 - **Files**: `collections/Orders.ts` (new)
+- **Guest shape — embedded, not a `Customers` collection**: name, phone, address, city, area are embedded fields on the order itself. No relation to a separate `Customers` collection. Per [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection).
+- **Fields beyond the guest address and line items** (closing the shipping/total half of readiness risk `R4`):
+  - `orderNumber` / order reference — a human-referenceable ID, distinct from Payload's internal `id`. Read by `M35` (confirmation) and `M36` (guest lookup).
+  - `orderTotal` — the resolved total at creation time.
+  - `shippingCost` — the resolved flat rate or `0` if the free-shipping threshold was met, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
+  - Each line item carries a **price snapshot** (the product's unit price at order time), not a live reference to `Products.price` — a later product price edit must not silently re-price historical orders.
+  - `discountAmount` — nullable. No coupon engine exists in v1 ([ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1)), but reserving the field now avoids an `Orders` migration if one is added later.
 - **Dependencies**: M10
-- **Testing**: Create a sample order via `/admin` with an embedded guest address and multiple line items; confirm it renders correctly with no login prompt beyond the admin's own.
+- **Testing**: Create a sample order via `/admin` with an embedded guest address and multiple line items; confirm it renders correctly with no login prompt beyond the admin's own. Confirm `orderTotal`/`shippingCost`/line-item price snapshots persist independently of the live `Products` values.
 - **Rollback**: Remove the collection file.
 - **Commit message**: `Add Orders collection with guest checkout and line-item fields`
 
 ### M12 — Payment method and status fields on Orders
 - **Goal**: Add a COD-only `paymentMethod` field (extensible enum, per [ADR-004](./DECISIONS.md)) and an order status workflow field.
 - **Files**: `collections/Orders.ts`
+- **Status set — decided, not left open**: `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED` and `RETURNED`. `CONFIRMED` exists specifically so admins can phone-confirm an order before dispatch, suppressing fake/duplicate orders — standard practice for Pakistani COD stores. `CANCELLED` (killed before dispatch) and `RETURNED` (came back after dispatch — refused at door/RTO) are operationally distinct: `RETURNED` implies courier cost was already incurred and stock must be restored. No transition-validation state machine in v1 — a flat enum, admin-selected. Per [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned).
 - **Dependencies**: M11
-- **Testing**: Confirm only `COD` is selectable in `/admin` today; confirm the field type would accept an added value later without a data migration (documented, not built).
+- **Testing**: Confirm only `COD` is selectable in `/admin` today; confirm the field type would accept an added value later without a data migration (documented, not built). Confirm all seven status values are selectable.
 - **Rollback**: Revert the field additions.
 - **Commit message**: `Add COD-only paymentMethod and status fields to Orders`
 
@@ -192,6 +206,15 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 - **Testing**: Anonymous `GET /api/products` succeeds; anonymous `POST /api/products` fails; anonymous `POST /api/orders` succeeds; anonymous `GET /api/orders` fails. Seed script populates a clean dev DB.
 - **Rollback**: Revert access functions; delete seed script.
 - **Commit message**: `Set collection access control for public storefront and guest checkout`
+
+### M13a — Settings global
+- **Goal**: A single admin-editable Payload **Global** (not a collection — one record, not a list) holding store-wide configuration, closing readiness risk `R6` (no Settings global despite launch scope).
+- **Files**: `globals/Settings.ts` (new), `payload.config.ts` (register global)
+- **Fields**: store name, contact info (phone/email/address for `M48`'s Footer cleanup), `shippingFlatRate` and `freeShippingThreshold` (both per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) — admin-configurable, read by `M33`/`M34` at order-creation time only, then snapshotted onto the order), currency-format fields for `M55` to consume.
+- **Dependencies**: M6 (admin auth must exist to secure write access; read access is public — the storefront needs shipping/contact info)
+- **Testing**: Edit shipping rate/threshold via `/admin`; confirm the values are readable via REST/Local API. Confirm anonymous write is rejected.
+- **Rollback**: Remove the global file and its registration.
+- **Commit message**: `Add Settings global for shipping, contact, and currency configuration`
 
 ---
 
@@ -413,10 +436,10 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Commit message**: `Create real orders on checkout instead of navigating to a stub page`
 
 ### M34 — Confirm shipping/total calculation rules
-- **Goal**: Wire the cart/checkout total calculation to whatever shipping model is confirmed in [PROJECT_SPEC.md](./PROJECT_SPEC.md)'s open questions (flat/free/city-based).
+- **Goal**: Wire the cart/checkout total calculation to the decided shipping model: flat rate + free-shipping threshold, both read from the `Settings` global (`M13a`) at order-creation time and snapshotted onto the order — never recomputed live. Per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
 - **Files**: `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx`
-- **Dependencies**: M33
-- **Testing**: Totals shown at checkout match the confirmed shipping rule for a sample order.
+- **Dependencies**: M33, **M13a** (reads `shippingFlatRate`/`freeShippingThreshold` from Settings)
+- **Testing**: Totals shown at checkout apply the flat rate below the threshold and `0` shipping at/above it, for a sample order.
 - **Rollback**: Revert both files.
 - **Commit message**: `Apply confirmed shipping/total calculation rules at checkout`
 
@@ -449,10 +472,10 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Commit message**: `Tune Orders admin UI for fulfillment visibility`
 
 ### M38 — Order status update flow for admin
-- **Goal**: Ensure the admin can move an order through its status workflow (Placed → Processing → Shipped → Delivered) — via Payload's native admin editing unless a dedicated view is required.
+- **Goal**: Ensure the admin can move an order through its status workflow (`PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED`/`RETURNED` — per [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned)) — via Payload's native admin editing unless a dedicated view is required.
 - **Files**: `collections/Orders.ts` (status field admin config)
 - **Dependencies**: M12, M37
-- **Testing**: Update a test order's status via `/admin`; confirm it persists and is reflected wherever order status is displayed to the guest (M36).
+- **Testing**: Update a test order's status via `/admin`, including to `CONFIRMED`, `CANCELLED`, and `RETURNED`; confirm it persists and is reflected wherever order status is displayed to the guest (M36).
 - **Rollback**: Revert config changes.
 - **Commit message**: `Enable order status updates through Payload admin`
 
@@ -529,21 +552,21 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leaning with an open identity/targeting question in [PROJECT_SPEC.md](./PROJECT_SPEC.md). These milestones resolve that ambiguity rather than assuming an outcome.
 
-### M46 — Decide Reviews v1 scope
-- **Goal**: Get an explicit stakeholder answer to the open question ("does ratings/reviews stay for v1, and with what non-account identity model, or is it dropped?") and implement whichever outcome is chosen — either a guest-safe `Reviews`/`Ratings` collection wired to `RatingModal`, or removal of `RatingModal` and its entry points entirely.
-- **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `collections/Reviews.ts` (new, only if kept)
+### M46 — Remove review submission for v1
+- **Goal**: Reviews are decided out of scope for v1 — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). Execute the removal path: delete `RatingModal.jsx` and its entry points, and strip the dummy star-rating display.
+- **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductCard.jsx`, `components/ProductDetails.jsx`
 - **Dependencies**: M25
-- **Testing**: If kept — submitting a review via `RatingModal` persists to Payload and appears on the product page. If removed — no dead entry points remain.
-- **Rollback**: Revert whichever path was taken.
-- **Commit message**: `Implement decided v1 scope for product reviews` *(adjust wording to "Remove review submission for v1" if the removal path is chosen)*
+- **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
+- **Rollback**: Revert the touched files.
+- **Commit message**: `Remove review submission for v1 (ADR-016)`
 
-### M47 — Decide Coupons v1 scope
-- **Goal**: Same pattern for coupons — either a simplified, guest-safe code-based `Coupons` collection (dropping account-based `forNewUser`/`forMember` targeting) wired into checkout, or explicit deferral with the coupon-code input removed from `OrderSummary.jsx` for v1.
-- **Files**: `components/OrderSummary.jsx`, `collections/Coupons.ts` (new, only if kept)
+### M47 — Remove coupon input for v1
+- **Goal**: Coupons are decided out of scope for v1 — [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1). Execute the removal path: remove the coupon-code input from `OrderSummary.jsx`.
+- **Files**: `components/OrderSummary.jsx`
 - **Dependencies**: M33
-- **Testing**: If kept — applying a valid seeded coupon code at checkout correctly discounts the order total. If removed — no non-functional coupon input remains in the UI.
-- **Rollback**: Revert whichever path was taken.
-- **Commit message**: `Implement decided v1 scope for checkout coupons` *(adjust wording to "Remove coupon input for v1" if the removal path is chosen)*
+- **Testing**: No non-functional coupon input remains in the checkout UI; `npm run build` succeeds.
+- **Rollback**: Revert the file.
+- **Commit message**: `Remove coupon input for v1 (ADR-017)`
 
 ### M48 — Clean up any remaining dead ends from M46/M47
 - **Goal**: Sweep for any leftover references (nav links, footer copy, unused imports) tied to whichever paths were removed in M46/M47.
@@ -601,6 +624,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ### M54 — Backup/persistence strategy for Postgres and media
 - **Goal**: Ensure Postgres data and uploaded media survive container restarts/redeploys, with a documented backup approach.
+- **Media is a local Docker volume, not object storage** ([ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor)), so it carries the same manual-backup burden as Postgres under [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline) — this milestone's persistent-volumes scope must cover both, not just the database.
 - **Files**: `docker-compose.prod.yml` (named volumes), `docs/ARCHITECTURE.md` (backup notes, if not already covered)
 - **Dependencies**: M50, M8
 - **Testing**: Stop and restart the full stack; confirm previously seeded/created data and uploaded media are still present.
@@ -666,7 +690,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M14`, `M16`, `M17`, `M19` | Remove the multi-vendor surface (`app/store/**` and admin routes) | **First — must precede `M3`** (see [ADR-014](./DECISIONS.md#adr-014-m14-is-a-hard-prerequisite-of-m3-not-an-order-independent-milestone)) |
 | `M1`, `M2`, `M2a`, `M3`, `M4`, `M5` | Foundation & tooling: Docker Postgres, Payload, TypeScript, retire Prisma | After the `M14`/`/admin` clearance above |
 | `M15`, `M18` | Remove the multi-vendor surface (remaining non-admin routes) | Any time — no dependencies |
-| `M6`–`M13` | Payload collections: Users, Media, Categories, Products, Orders | After `M3` |
+| `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | After `M3` (`M13a` after `M6`) |
 | `M20`–`M21` | Confirm admin-only auth end to end | After `M17`, `M19` |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront wired to real product/category data; category browsing routes; dummy data removed | After `M13` |
 | `M29` | Real search | After `M24` |
@@ -679,4 +703,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**62 milestones total** — `M1`–`M59` plus three decimal insertions that avoid renumbering the rest: `M2a` (TypeScript toolchain), and `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)).
+**63 milestones total** — `M1`–`M59` plus four decimal insertions that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
