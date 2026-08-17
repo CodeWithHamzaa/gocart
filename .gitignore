@@ -41,3 +41,6 @@ yarn-error.log*
 
 # payload (generated; regenerated from payload.config.ts, not hand-authored)
 /payload-types.ts
+
+# payload local media uploads (M8) — a Docker volume in prod, not committed content
+/media
