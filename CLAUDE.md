@@ -6,11 +6,13 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** and **PostgreSQL**. Full context lives in [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before making structural decisions.
 
-## Current status: Payload data model complete, auth confirmed — `M15`/`M18`/`M22`+ are next
+## Current status: multi-vendor surface fully removed — `M22`+ is next
 
-Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group, the full Payload data model, and the auth confirmation pass: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, `M5`, `M6`–`M13`, `M13a`, `M20`, and `M21` are all **Done**. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)).
+Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). Implementation has progressed through the foundation group, the full Payload data model, the auth confirmation pass, and the last of the legacy route removal: `M1`, `M2`, `M2a`, `M16`, `M17`, `M19`, `M14`, `M3`, `M4`, `M5`, `M6`–`M13`, `M13a`, `M20`, `M21`, `M15`, and `M18` are all **Done**. Prisma is retired. A dev Dockerfile exists (its `docker build` step is implemented but not fully verified — see [docs/TASKS.md](./docs/TASKS.md)).
 
 **Admin-only auth is confirmed end to end** (`M20`/`M21`): Payload's `/admin` is the only authenticated surface in the application — no middleware, no auth dependency, no leftover `isAdmin`/`isSeller` bypass, and no customer-facing route that requires or fakes a login. The dead "Login" button is gone from the storefront navbar.
+
+**No more multi-vendor routes exist anywhere in the app** (`M15`/`M18`): `create-store`, `shop/[username]`, `pricing`, and `loading` are all deleted, and their two dead Footer links are gone. One known dead link remains: `ProductDescription.jsx`'s "view store" link points at the now-deleted `/shop/[username]` — already owned by `M26`, not fixed here.
 
 **Payload collections and the Settings global now exist and are registered in `payload.config.ts`**: `Users` (admin-only auth), `Media` (local-volume uploads), `Categories` (two-level hierarchy, stable slugs), `Products`, `Orders` (guest checkout, line items, COD, full status enum), and the `Settings` global (shipping/contact config). Access control is set per `M13`: public-read/admin-write on `Products`/`Categories`/`Media`, public-create/admin-read on `Orders`. `/admin` now serves a real, collection-backed admin panel, not the collection-less shell from `M3`. **The storefront still renders exactly as inherited — no `.jsx` file has been converted to consume real Payload data yet; that starts at `M22`.**
 

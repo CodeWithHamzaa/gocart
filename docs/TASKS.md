@@ -70,6 +70,19 @@ routes render 200 while logged out — no login walls, no redirects. `M21` then 
 never authenticate under guest-checkout-only ([ADR-005](./DECISIONS.md)). One follow-on observation is
 recorded against `M44` — see "Later, non-blocking" below.
 
+**`M15`/`M18` are done (2026-08-17).** Deleted `app/(public)/create-store/page.jsx`,
+`app/(public)/shop/[username]/page.jsx`, `app/(public)/pricing/page.jsx`, and
+`app/(public)/loading/page.jsx`, and removed the two now-dead Footer links ("Create Your Store",
+"Become Plus Member") inline, per both milestones' own testing notes — `M48`'s Footer cleanup is
+too far away to leave them dead in the meantime. `components/Loading.jsx` (the shared spinner
+component those pages imported) was left in place — not in either milestone's Files list, and still a
+plain, reusable component with no dead reference of its own.
+One thing found but **not** fixed here, because it is already owned elsewhere: `ProductDescription.jsx`
+still links to `/shop/${product.store.username}`, the route `M15` just deleted. This is not an
+oversight — `M26` ("Remove multi-vendor 'Product by {store}' attribution") already exists for exactly
+this, already depends on `M15`, and its own goal text anticipates the route being "(already-deleted)".
+Until `M26` lands, that one link 404s if clicked from a product page.
+
 | Milestones | Group | Status |
 |---|---|:---|
 | `M16`, `M17`, `M19` | Clear `app/admin/**` — **runs before `M3`** | **Done** (2026-08-14) |
@@ -78,7 +91,7 @@ recorded against `M44` — see "Later, non-blocking" below.
 | `M2a` | Foundation: TypeScript toolchain | **Done** (2026-08-14) |
 | `M14` | Delete vendor dashboard (`app/store/**`) — **hard prerequisite of `M3`**, per [ADR-014](./DECISIONS.md) | **Done** (2026-08-16) |
 | `M3`, `M4`, `M5` | Foundation: scaffold Payload, retire Prisma, dev Dockerfile | **Done** (2026-08-16) — `M5`'s `docker build` could not be fully verified in the authoring sandbox (registry egress blocked); Dockerfile is implemented, needs a real-registry build check |
-| `M15`, `M18` | Remove remaining multi-vendor routes (no dependencies) | Not Started |
+| `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | Not Started |

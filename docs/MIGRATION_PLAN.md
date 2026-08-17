@@ -239,6 +239,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Files**: `app/(public)/create-store/page.jsx` (deleted), `app/(public)/shop/[username]/page.jsx` (deleted)
 - **Dependencies**: none
 - **Testing**: `npm run build` succeeds. Note that `Footer.jsx`'s "Create Your Store" link now points at a deleted route; the Footer cleanup that resolves it is `M48`, which lands much later. Removing the link inline here is preferable to leaving it dead — see the dead-link window flagged in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+- **✅ Done (2026-08-17)**. Both files deleted; `Footer.jsx`'s "Create Your Store" entry removed inline as directed. `npm run type-check` and `npm run build` both pass; `/create-store` and `/shop/[username]` verified to 404 at runtime. **One dead link remains, deliberately not fixed here**: `components/ProductDescription.jsx`'s "view store" link still points at `/shop/${product.store.username}`. Not an oversight of this milestone — `M26` already exists to remove that entire attribution block, already depends on `M15`, and its own text anticipates the route being gone. `components/Loading.jsx` (imported by both deleted pages, plus the also-deleted `M18` loading stub) was left in place — a generic shared component, not itself dead, not in this milestone's Files list.
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove vendor signup and per-vendor storefront routes`
 
@@ -265,6 +266,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Files**: `app/(public)/pricing/page.jsx` (deleted), `app/(public)/loading/page.jsx` (deleted)
 - **Dependencies**: none
 - **Testing**: `npm run build` succeeds. As with `M15`, `Footer.jsx`'s "Become Plus Member" link now points at a deleted route; `M48` is the scheduled cleanup, so remove the link inline here rather than leaving it dead.
+- **✅ Done (2026-08-17)**. Both files deleted; `Footer.jsx`'s "Become Plus Member" entry removed inline as directed. `npm run type-check` and `npm run build` both pass; `/pricing` and `/loading` verified to 404 at runtime. No other file referenced either route.
 - **Rollback**: `git revert`.
 - **Commit message**: `Remove orphaned pricing stub and vendor-redirect loading page`
 
