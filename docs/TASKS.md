@@ -92,6 +92,14 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M26` is done (2026-08-18).** Deleted the guarded store-attribution block `M25` left in
+`ProductDescription.jsx` (`{product.store && (...)}`), its now-unused imports, and its dead link to
+the already-deleted `/shop/[username]` route. With that gone, the file had no remaining client state
+(`M25` already removed the Reviews tab), so it also dropped `'use client'` and now renders as a
+server component. Verified against a live `npm run start` server: `/product/3` still renders
+correctly and the response contains no "view store", "/shop/", or "Product by" text. `/product/[id]`'s
+client JS dropped 123 kB → 120 kB First Load JS.
+
 **`M25` is done (2026-08-18).** `app/(public)/product/[productId]/page.jsx` is now an async server
 component reading `getProductById()`, calling `notFound()` for an unknown ID instead of rendering
 a blank page — matches Next's default not-found page. `force-dynamic`, same reasoning as `M23`.
@@ -140,7 +148,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M25` **Done** (2026-08-18); `M26`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M26` **Done** (2026-08-18); `M27`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |

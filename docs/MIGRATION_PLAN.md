@@ -377,6 +377,15 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Product detail page renders correctly with no broken link and no reference to a store/vendor.
 - **Rollback**: Revert the file.
 - **Commit message**: `Remove vendor attribution block from product page`
+- **✅ Done (2026-08-18)**: Deleted the guarded store-attribution block `M25` left in place
+  (`{product.store && (...)}`), its `Image`/`Link`/`ArrowRight` imports, and its `next/link` to the
+  already-deleted `/shop/[username]` route. Since `M25` had already removed the file's only client
+  state (the Reviews tab), the file also dropped `'use client'` and now renders as a server
+  component — no interactivity remains to require it, same direction as `M23`'s Redux-shedding
+  cleanup. Verified against a live `npm run start` server: `/product/3` still renders correctly
+  (name, price, category, image, description), and the response body contains no "view store",
+  "/shop/", or "Product by" text. `npm run type-check` and `npm run build` both pass;
+  `/product/[productId]`'s client JS dropped 123 kB → 120 kB First Load JS.
 
 ### M27 — Wire CategoriesMarquee to real categories
 - **Goal**: Replace the hardcoded `categories` array `CategoriesMarquee` imports from `assets/assets.js` with the real `Categories` collection. **Data source only** — the marquee's items stay non-interactive in this milestone.
