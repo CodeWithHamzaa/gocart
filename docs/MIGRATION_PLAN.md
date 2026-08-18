@@ -477,6 +477,21 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: All seeded top-level categories render with their children; every link resolves to a real category page; a parent with no children renders as a plain card without error; metadata is present and distinct; layout is correct at mobile, tablet, and desktop widths; no login required; `npm run type-check` and `npm run build` pass.
 - **Rollback**: Delete `app/(public)/categories/`. Nothing else references it.
 - **Commit message**: `Add categories landing page`
+- **✅ Done (2026-08-18)**: `app/(public)/categories/page.tsx` and `loading.tsx` added. Cards render
+  every top-level category from `M22`'s `getTopLevelCategories()` — already ordered by `displayOrder`
+  then title, matching the spec — with each child rendered as a sub-link chip. Every card and chip
+  targets `/category/[slug]`. `revalidate = 3600`, same static-by-default reasoning as `M27a`. Unlike
+  `M27a`'s detail route, **this route has no `notFound()` path** (an empty catalog renders an empty
+  state, not a 404), so it doesn't hit the `loading.tsx`/Suspense status-code conflict documented
+  there — `loading.tsx` is included here exactly as scoped, safely. Verified against a live
+  `npm run start` server: both seeded top-level categories ("Electronics & Gadgets", "Fashion" — the
+  visible set depends on what's currently seeded) render with their children as working links; `<title>
+  Categories</title>` metadata present. Also re-verified `M27a`'s product-page and marquee links to
+  `/category/[slug]` still resolve, and confirmed the temporary gap noted in `M27a`'s entry is now
+  closed: the breadcrumb's `/categories` link returns 200, and the Playwright console-error check on
+  `/category/electronics` (prefetching that link) now shows zero errors, versus one 404-fetch error
+  before this milestone. `npm run type-check` and `npm run build` both pass; `/categories` is `○`
+  Static with a 1h revalidate window.
 
 > **Deliberately unchanged by the category work**: `M24` (`/shop` stays the all-products + search listing — no `category` param is introduced, per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)'s single-canonical-URL rule), `M25`, `M28`, `M40` (the new routes are server components from birth), and `M43` (JSON-LD stays scoped to `Product` on product detail pages; category structured data is explicitly not Phase 1). These omissions are decided, not overlooked.
 

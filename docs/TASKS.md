@@ -92,6 +92,13 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M27b` is done (2026-08-18).** `/categories` lists every top-level category as a card (via `M22`'s
+`getTopLevelCategories()`, already ordered by `displayOrder` then title) with its children as sub-link
+chips, all targeting `/category/[slug]`. This route has no `notFound()` path — an empty catalog renders
+an empty state, not a 404 — so `loading.tsx` is included here safely, unlike `M27a`'s detail route.
+This also closes the temporary gap `M27a` flagged: the breadcrumb's `/categories` link now resolves
+(200, zero console errors), where it previously 404'd. Verified against a live `npm run start` server.
+
 **`M27a` is done (2026-08-18).** `/category/[slug]` now exists: parent slugs roll up their own plus
 every child's products, child slugs list only their own with a parent breadcrumb, pagination/canonical/
 `rel=prev`/`next` all ship per spec, and `generateStaticParams` + `revalidate = 3600` deliver
@@ -174,7 +181,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27a` **Done** (2026-08-18); `M27b`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27b` **Done** (2026-08-18); `M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
