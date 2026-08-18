@@ -92,6 +92,22 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M27a` is done (2026-08-18).** `/category/[slug]` now exists: parent slugs roll up their own plus
+every child's products, child slugs list only their own with a parent breadcrumb, pagination/canonical/
+`rel=prev`/`next` all ship per spec, and `generateStaticParams` + `revalidate = 3600` deliver
+static-by-default rendering. `CategoriesMarquee.jsx` and the product-page breadcrumb are now real links.
+**`loading.tsx` was deliberately dropped** — a genuine, empirically confirmed Next.js 15 App Router
+limitation: a `loading.tsx` file wraps the route in a `<Suspense>` boundary that flushes a 200 status
+before `notFound()` can run, so unknown-slug and out-of-range-page requests would incorrectly return
+200 instead of 404. Isolation testing ruled out `error.tsx`, `generateMetadata`, and the SSG/dynamic
+choice as causes — only `loading.tsx`'s presence broke it. Since crawlers never see a loading skeleton
+anyway (only real users on slow connections would), and correct 404 status codes are this milestone's
+core SEO purpose, correctness won; full details and the ruled-out alternatives are in
+[MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s `M27a` entry. Verified against a live `npm run start`
+server: parent/child rollup, a genuinely empty category (200 + empty state, tested via a temporary
+debug route since no seeded category is naturally empty), unknown slug (404), out-of-range page (404),
+and a simulated query failure (500 via `error.tsx`) all behave correctly.
+
 **`M27` is done (2026-08-18).** `CategoriesMarquee.jsx` gained `'use client'` and now fetches all
 categories from Payload's public-read REST API in a `useEffect`, replacing the hardcoded
 `assets/assets.js` array. REST rather than the `M22` Local API utilities, because the marquee is
@@ -158,7 +174,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27` **Done** (2026-08-18); `M27a`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27a` **Done** (2026-08-18); `M27b`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |

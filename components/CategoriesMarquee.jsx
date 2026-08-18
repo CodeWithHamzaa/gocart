@@ -1,16 +1,18 @@
 'use client'
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 // M27: data source only — swapped the hardcoded `categories` array from
-// assets/assets.js for the real Categories collection. Items stay inert
-// bare <button>s with no onClick/href, unchanged from before this
-// milestone; M27a is what turns them into links to /category/[slug].
+// assets/assets.js for the real Categories collection.
 //
 // This component is nested inside Hero.jsx, which is 'use client' (Hero's
 // own server-component conversion is M40's pass, not this one). A client
 // component can't use lib/payload/categories.ts's Local API, so this fetches
 // Payload's public-read REST API directly instead, per the sanctioned
 // pattern documented in lib/payload/categories.ts.
+//
+// M27a: items are now real next/link anchors to /category/[slug] — a
+// crawler can't follow a click handler, and neither can a keyboard user.
 const CategoriesMarquee = () => {
 
     const [categories, setCategories] = useState([])
@@ -37,9 +39,9 @@ const CategoriesMarquee = () => {
             <div className="absolute left-0 top-0 h-full w-20 z-10 pointer-events-none bg-gradient-to-r from-white to-transparent" />
             <div className="flex min-w-[200%] animate-[marqueeScroll_10s_linear_infinite] sm:animate-[marqueeScroll_40s_linear_infinite] group-hover:[animation-play-state:paused] gap-4" >
                 {items.map((category, index) => (
-                    <button key={`${category.id}-${index}`} className="px-5 py-2 bg-slate-100 rounded-lg text-slate-500 text-xs sm:text-sm hover:bg-slate-600 hover:text-white active:scale-95 transition-all duration-300">
+                    <Link key={`${category.id}-${index}`} href={`/category/${category.slug}`} className="px-5 py-2 bg-slate-100 rounded-lg text-slate-500 text-xs sm:text-sm hover:bg-slate-600 hover:text-white active:scale-95 transition-all duration-300">
                         {category.title}
-                    </button>
+                    </Link>
                 ))}
             </div>
             <div className="absolute right-0 top-0 h-full w-20 md:w-40 z-10 pointer-events-none bg-gradient-to-l from-white to-transparent" />

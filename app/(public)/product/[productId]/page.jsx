@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { getProductById } from "@/lib/payload/products";
@@ -19,17 +20,19 @@ export default async function Product({ params }) {
         notFound()
     }
 
-    const categoryTitle = typeof product.category === 'object' && product.category
-        ? product.category.title
+    const category = typeof product.category === 'object' && product.category
+        ? product.category
         : null
 
     return (
         <div className="mx-6">
             <div className="max-w-7xl mx-auto">
 
-                {/* Breadcrums */}
+                {/* Breadcrums — M27a: the category segment is now a real link to
+                    /category/[slug], replacing the unlinked plain text. */}
                 <div className="  text-gray-600 text-sm mt-8 mb-5">
-                    Home / Products / {categoryTitle}
+                    <Link href="/">Home</Link> / <Link href="/shop">Products</Link>
+                    {category && <> / <Link href={`/category/${category.slug}`}>{category.title}</Link></>}
                 </div>
 
                 {/* Product Details */}

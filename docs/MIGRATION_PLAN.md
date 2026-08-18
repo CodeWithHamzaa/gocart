@@ -425,6 +425,49 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: A parent slug lists its children and their rolled-up products; a child slug lists only its own with a working parent breadcrumb; a category with no products returns **200** with an empty state; an unknown slug returns **404**; `?page=2` paginates and an out-of-range page returns 404; page source contains the product grid (server-rendered, not hydrated in); marquee items and the product breadcrumb now navigate correctly; no login prompt anywhere in the flow; `npm run type-check` and `npm run build` pass.
 - **Rollback**: Delete `app/(public)/category/`; revert the two component edits. The marquee returns to inert items — its pre-`M27a` state — so no dead links are left behind.
 - **Commit message**: `Add category detail and product listing route`
+- **✅ Done (2026-08-18)**: `app/(public)/category/[slug]/page.tsx`, `not-found.tsx`, and `error.tsx`
+  added; `CategoriesMarquee.jsx`'s bare `<button>`s became `next/link` anchors to
+  `/category/[slug]`; the product-page breadcrumb (`M25`) now links its category segment.
+  `generateStaticParams` (built from `M22`'s `getTopLevelCategories()`, no new lib function needed)
+  plus `revalidate = 3600` deliver the spec's "static-by-default, revalidated" requirement.
+  Parent-slug rollup and child-slug isolation both use `M22`'s `getProductsByCategory()` directly.
+  Pagination, canonical URLs, and `rel=prev`/`next` (rendered as literal `<link>` tags in the page
+  body, which Next.js hoists into `<head>` — a documented App Router capability, not a hack) are all
+  implemented per spec.
+  - **⚠️ `loading.tsx` was deliberately dropped — spec conflict, not an oversight.** Empirical testing
+    (isolating each segment file one at a time against a live `npm run start` server) proved that
+    adding a `loading.tsx` file to this route makes `notFound()` return **HTTP 200** instead of 404,
+    for both the unknown-slug and out-of-range-page cases — confirmed independent of `error.tsx`,
+    `generateMetadata`, and the SSG/`revalidate` vs. `force-dynamic` choice; only `loading.tsx`'s
+    presence flips the result. This is a real Next.js 15 App Router limitation: `loading.tsx` wraps
+    the segment in a `<Suspense>` boundary, and Next flushes that boundary's shell with a 200 status
+    *before* the awaited page component can run `notFound()` — by the time the correct body content
+    (`not-found.tsx`) streams in, the status line is already sent and can't change. A `layout.tsx`-based
+    workaround (checking category existence outside the Suspense boundary) fixed the unknown-slug case
+    alone, but layouts don't receive `searchParams`, so it couldn't cover the out-of-range-page case —
+    and `generateMetadata` calling `notFound()` didn't help either (Next 15's metadata streams
+    independently of the body and doesn't block the shell flush). Given correct HTTP status codes are
+    this milestone's whole point (soft-404s directly undermine ADR-007's SEO-first mandate, and
+    crawlers never see a `loading.tsx` skeleton anyway — that's purely a real-user CLS concern), status
+    correctness won over the skeleton. `min-h-[70vh]` on the content wrapper still reserves layout
+    space, avoiding a hard blank-page flash. Revisit if Next.js fixes this upstream, or if `M45`'s
+    caching pass wants Partial Prerendering (which is designed to solve exactly this class of problem
+    but is experimental in this Next.js version and out of scope to enable here).
+  - **`?category=` was not added to `/shop`** — `/category/[slug]` is the single canonical URL for
+    products-by-category, per `CATEGORY_REQUIREMENTS.md`'s explicit no-duplicate-content rule.
+  - Verified against a live `npm run start` server (fresh build each time during isolation testing):
+    `/category/electronics` (parent) lists its own plus both children's products (`Bluetooth Speaker`,
+    `Wireless Headphones`); `/category/speakers` (child) lists only its own product with a working
+    parent breadcrumb link; a genuinely empty category (created and deleted via a temporary debug route
+    during verification only, per the same pattern `M22` used, since every seeded category has stock)
+    renders **200** with the empty state; an unknown slug and an out-of-range `?page=` both return a
+    real **404**; a simulated query failure (temporary forced throw, removed before committing) returns
+    **500** via `error.tsx`; canonical tag is correct on page 1; marquee links and the product
+    breadcrumb link both navigate to real category pages; no login prompt anywhere. One expected,
+    temporary gap: the breadcrumb's `/categories` link 404s until `M27b` lands (next in this same
+    session) — `Link` prefetching that URL logs a console 404 in the interim, self-resolving once
+    `M27b` ships. `npm run type-check` and `npm run build` both pass; `/category/[slug]` is `●` SSG
+    with three pre-rendered params (`electronics`, `headphones`, `speakers`).
 
 ### M27b — Categories landing page (`/categories`)
 - **Goal**: A browsable index of the whole catalog structure — every top-level category with its children — giving customers and crawlers a single entry point into category browsing.
