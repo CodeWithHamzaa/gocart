@@ -92,6 +92,17 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M24` is done (2026-08-18).** `app/(public)/shop/page.jsx` is now an async server component reading
+`getProducts()` from `lib/payload/products.ts`, matching `M23`'s precedent under
+[ADR-007](./DECISIONS.md)'s blanket SEO-first/mobile-first mandate even though `M24`'s literal text
+doesn't spell out "server component" the way `M23`'s does. The `?search=` filter is unchanged — still a
+simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data;
+`M29` remains the milestone that replaces it with a real Payload query. The "all products" back-link
+changed from an `onClick`/`router.push` handler to a plain `<Link href="/shop">`, since nothing on the
+page needs client-side interactivity anymore. Verified against a live `npm run start` server with seeded
+data: real names render, `?search=Bluetooth` includes/excludes correctly, an unmatched search renders a
+clean empty grid with no server errors. `/shop` moved `○ Static` → `ƒ Dynamic`.
+
 **`M23` is done (2026-08-17).** The home page is now a server component reading real Payload data:
 `LatestProducts` by `-createdAt`, `BestSelling` from an admin-curated `isFeatured` flag added to
 `Products` ([ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking) —
@@ -113,7 +124,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`, `M23` **Done** (2026-08-17); `M24`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M24` **Done** (2026-08-18); `M25`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |

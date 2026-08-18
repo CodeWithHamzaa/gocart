@@ -337,6 +337,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Files**: `app/(public)/shop/page.jsx`
 - **Dependencies**: M22
 - **Testing**: `/shop` lists real seeded products; existing name-based search still filters correctly against real data.
+- **✅ Done (2026-08-17)**. Converted to a server component reading `searchParams` directly (ADR-007 — SEO-first applies to all storefront UI, not just M23's) and fetching via `getProducts()`. The name filter stays a simple in-memory `.includes()` over the fetched list, unchanged in behavior from the dummy-data version — `M29` is still the milestone that replaces it with a real query. The "go back" control changed from an `onClick`+`router.push` (client-only) to a plain `<Link href="/shop">`, equivalent behavior in a server component. Verified: real product names render server-side; `?search=` correctly includes matches and excludes non-matches; a non-matching search renders a clean empty grid, not an error. `/shop` moved `○ Static` → `ƒ Dynamic`. `npm run type-check` and `npm run build` both pass.
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire shop listing page to real Payload product data`
 
