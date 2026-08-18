@@ -152,11 +152,16 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
 
 ### Later, non-blocking
 
-- [ ] PKR formatting convention (blocks `M55`)
+- [ ] PKR formatting convention (blocks `M55`) — the displayed **symbol** is fixed (`Rs. `, 2026-08-17,
+  `NEXT_PUBLIC_CURRENCY_SYMBOL` and its fallback in every consumer); comma grouping/decimal handling
+  is still open and stays with `M55`.
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
-- [ ] **Mobile navbar has no cart link or navigation** (found during `M21`, owned by `M44`). The navbar's only mobile-visible element was the dead Login button `M21` removed; the real nav (Home/Shop/search/Cart) is `hidden sm:flex`, so below the `sm` breakpoint the navbar is now just the logo. `M21` did not cause this — mobile never had cart access — but it is a real mobile-first gap under [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) for a market that is majority mobile. Deliberately not fixed inside `M21`, whose scope is only the Login button; recorded on `M44` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+- [x] ~~**Mobile navbar has no cart link or navigation**~~ — **Resolved 2026-08-17**, pulled forward from
+  `M44`. `components/Navbar.jsx` gained a mobile row (`flex sm:hidden`): a Shop link, a search toggle,
+  and a cart link with the count badge — the same badge the desktop nav already had. Verified `Rs.`/
+  cart markup render server-side under `npm run build && npm run start`.
 - [x] ~~**"Best selling" has no defined ranking**~~ — **Resolved 2026-08-17** at `M23` → [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking): admin-curated `isFeatured` flag on `Products`, not a computed metric. A sales-derived ranking remains possible later (it would need an `Orders` aggregation no milestone owns yet, and would render empty at launch regardless).
 - [ ] **`payload-types.ts` cannot be generated in this sandbox** (found during `M22`). `payload generate:types` hits the same `tsx`/Node ESM-interop class of failure as `scripts/seed.ts` (`M13`) and `generate:importmap` (`M3`). `lib/payload/*.ts` use hand-written types mirroring the collections exactly as a stand-in. Confirm `payload generate:types` works in a normal environment and switch these files to the generated types when convenient — not launch-blocking, but worth doing before the type surface grows much further.
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step

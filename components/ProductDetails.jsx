@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 const ProductDetails = ({ product }) => {
 
     const productId = product.id;
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const cart = useSelector(state => state.cart.cartItems);
     const dispatch = useDispatch();

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 const OrderSummary = ({ totalPrice, items }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const router = useRouter();
 

@@ -10,11 +10,13 @@ const Navbar = () => {
     const router = useRouter();
 
     const [search, setSearch] = useState('')
+    const [showMobileSearch, setShowMobileSearch] = useState(false)
     const cartCount = useSelector(state => state.cart.total)
 
     const handleSearch = (e) => {
         e.preventDefault()
         router.push(`/shop?search=${search}`)
+        setShowMobileSearch(false)
     }
 
     return (
@@ -48,7 +50,28 @@ const Navbar = () => {
                         </Link>
 
                     </div>
+
+                    {/* Mobile Menu — cart access was missing entirely below `sm` until this */}
+                    <div className="flex sm:hidden items-center gap-5 text-slate-600">
+                        <Link href="/shop" className="text-sm">Shop</Link>
+
+                        <button aria-label="Search" onClick={() => setShowMobileSearch((prev) => !prev)}>
+                            <Search size={20} />
+                        </button>
+
+                        <Link href="/cart" className="relative flex items-center text-slate-600">
+                            <ShoppingCart size={20} />
+                            <span className="absolute -top-2 -right-2 text-[8px] text-white bg-slate-600 size-3.5 rounded-full flex items-center justify-center">{cartCount}</span>
+                        </Link>
+                    </div>
                 </div>
+
+                {showMobileSearch && (
+                    <form onSubmit={handleSearch} className="sm:hidden flex items-center gap-2 bg-slate-100 px-4 py-2.5 rounded-full mb-4 text-sm">
+                        <Search size={16} className="text-slate-600" />
+                        <input autoFocus className="w-full bg-transparent outline-none placeholder-slate-600" type="text" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
+                    </form>
+                )}
             </div>
             <hr className="border-gray-300" />
         </nav>

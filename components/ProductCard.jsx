@@ -11,7 +11,7 @@ import React from 'react'
 //   treating the entry as a string path.
 const ProductCard = ({ product }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. '
 
     const firstImage = product.images?.[0]
     const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
