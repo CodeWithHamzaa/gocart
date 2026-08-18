@@ -621,6 +621,36 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Rollback**: Revert both files.
 - **Commit message**: `Create real orders on checkout instead of navigating to a stub page`
 
+### M33a — Enforce stock at order creation
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R5](./PHASE_1_READINESS_REPORT.md#r5--out-of-stock-enforcement-is-called-launch-critical-and-then-never-implemented):
+  `FEATURE_MATRIX.md` calls in-stock/out-of-stock enforcement *"launch-critical for COD (must not accept
+  orders for unavailable items)"*, `Products.inStock` has existed since `M10`, and yet no milestone
+  ever validated it at order creation — `M33`'s original goal and acceptance test say nothing about
+  stock. For COD specifically this is a direct cost, not a cosmetic gap: accepting an order for
+  something unavailable means a wasted dispatch attempt or a cancellation call, and failed-delivery/RTO
+  cost is already the dominant margin risk in this market (per `PROJECT_SPEC.md`'s Pakistan-market
+  context). Hiding the "Add to Cart" button for an out-of-stock product is necessary but not
+  sufficient: stock can change between when a page was rendered/cached and when "Place Order" is
+  clicked, and a client-side-only check is trivially bypassed by anyone calling the order-creation
+  endpoint directly.
+- **Goal**: At order creation, re-check every line item's `Products.inStock` **server-side**, using
+  current data at the moment of creation — never a value cached from an earlier page render or trusted
+  from the client. If any line item's product is out of stock, reject the entire order (no partial
+  orders) with a clear error identifying which product(s) failed, and create nothing.
+- **Files**: `lib/payload/orders.ts` (the order-creation function `M33` adds), `components/OrderSummary.jsx`
+  (surface the rejection — which product(s), so the customer can remove them and retry, not a generic
+  failure)
+- **Dependencies**: `M33` (the order-creation function this validates against must exist first)
+- **Testing**: Placing an order where every line item is in stock succeeds exactly as `M33` already
+  tests. Placing an order containing an out-of-stock line item is rejected **server-side** — verified
+  by calling the order-creation path directly (a script or a temporary debug route, not just clicking
+  through the UI with an already-hidden button), confirming no `Order` record is created and the
+  customer sees which product(s) blocked the order. A product going out of stock *after* the cart page
+  loaded but *before* "Place Order" is clicked is still caught (proves the check reads current data,
+  not a stale client-side value).
+- **Rollback**: Revert both files.
+- **Commit message**: `Enforce server-side stock validation at order creation`
+
 ### M34 — Confirm shipping/total calculation rules
 - **Goal**: Wire the cart/checkout total calculation to the decided shipping model: flat rate + free-shipping threshold, both read from the `Settings` global (`M13a`) at order-creation time and snapshotted onto the order — never recomputed live. Per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
 - **Files**: `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx`

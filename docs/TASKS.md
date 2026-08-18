@@ -92,6 +92,17 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**New milestone `M33a` inserted (2026-08-18)**, closing readiness risk
+[R5](./PHASE_1_READINESS_REPORT.md#r5--out-of-stock-enforcement-is-called-launch-critical-and-then-never-implemented):
+`FEATURE_MATRIX.md` calls out-of-stock enforcement launch-critical for COD, `Products.inStock` has
+existed since `M10`, and no milestone ever validated it at order creation — `M33`'s original goal and
+acceptance test say nothing about stock. `M33a` (inserted directly after `M33`, which it depends on)
+requires server-side re-validation of every line item's `inStock` at order-creation time, rejecting
+the whole order if any product is unavailable — not just hiding the "Add to Cart" button, which a
+direct API call bypasses trivially and which can't catch stock changing between page render and
+"Place Order." Design only; implementation is scheduled, not done — `M33a` depends on `M33`, which is
+Not Started.
+
 **Two pre-checkout ADRs recorded (2026-08-18), ahead of `M30`–`M36`.**
 [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) closes
 `D10`: cart state stays Redux, with `localStorage` persistence added — `M30`'s already-assumed answer,
@@ -220,7 +231,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | Not Started |
-| `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9` |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |

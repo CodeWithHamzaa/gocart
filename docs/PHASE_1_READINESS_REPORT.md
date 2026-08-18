@@ -326,7 +326,7 @@ Six of Audit 1's thirteen are closed — including all three critical ones.
 | R2 | No TypeScript toolchain for 12+ `.ts` milestones | ✅ **Resolved** — `M2a` |
 | R3 | `sharp` never installed | ✅ **Resolved** — folded into `M2` |
 | R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ✅ **Resolved** (2026-08-17) — `M11` implemented `orderNumber` (auto-generated), `orderTotal`, `shippingCost`, and a per-line-item `unitPrice` snapshot on `collections/Orders.ts`; verified via REST |
-| R5 | Out-of-stock enforcement called launch-critical, never implemented | ⚠️ Open |
+| R5 | Out-of-stock enforcement called launch-critical, never implemented | ◐ **Scheduled** (2026-08-18) — new milestone `M33a` inserted into `MIGRATION_PLAN.md`, server-side validation at order creation. Not yet implemented (depends on `M33`, which is Not Started) |
 | R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-17) — implemented as `M13a`, `globals/Settings.ts`; public read, admin-only write, verified via REST |
 | R7 | No test or CI milestone in the plan | ⚠️ Open — broken pointer fixed, **gap still unscheduled** |
 | R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ✅ **Resolved** (2026-08-16) — both decisions made ahead of collection design via [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1); `M46`/`M47` now execute a decided removal rather than deciding |
@@ -726,12 +726,15 @@ without it, historical orders silently re-price when a product's price is edited
 
 ### R5 — Out-of-stock enforcement is called launch-critical and then never implemented
 
-**Severity: HIGH**
+**Severity: HIGH**. **◐ Scheduled (2026-08-18)** — see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s new
+`M33a` entry. Not yet implemented; `M33a` depends on `M33` (order creation), which is Not Started.
 
 FEATURE_MATRIX.md:24 states basic in-stock/out-of-stock is *"launch-critical for COD (must not accept
-orders for unavailable items)"*. But M10 (Products collection) does not name a stock field, and M33
-(order creation) includes no stock validation in its goal or its acceptance test. Nothing in the plan
-enforces the matrix's own launch-critical requirement.
+orders for unavailable items)"*. `M10` did add `Products.inStock` (verified in `collections/Products.ts`),
+but `M33` (order creation) still includes no stock validation in its goal or its acceptance test — the
+matrix's own launch-critical requirement had no owner until `M33a` was inserted to close that gap:
+server-side re-validation of every line item's `inStock` at order-creation time, rejecting the whole
+order (not silently dropping items) if any product is unavailable.
 
 ### R6 — No store Settings global, despite being in launch scope
 
