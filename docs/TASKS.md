@@ -92,6 +92,30 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M28` is done (2026-08-18) — the `M22`–`M28` storefront-data group is now fully complete.**
+`assets/assets.js` and all its imported placeholder images are deleted, along with
+`lib/features/product/productSlice.js` and `lib/features/rating/ratingSlice.js`; `lib/store.js` is
+trimmed to `cart` + `address`. **This milestone's stated premise — "every storefront consumer has
+been re-pointed" — was false**, and one of the gaps it hid was a real, already-live bug: `/cart`
+resolved line items against the now-deleted dummy `productSlice`, which nothing had populated with
+real data since `M23`–`M25` gave every reachable product a real Payload ID — **the cart has been
+silently dropping every item added from a real product page since `M25` shipped.** Fixed by fetching
+real products via REST (`GET /api/products?limit=0&depth=1`, the same client-component pattern
+`CategoriesMarquee.jsx` uses), not deferred: no milestone in `M30`–`M36` explicitly owns this fix.
+Four smaller gaps also surfaced and were resolved: `OrderItem.jsx`'s star-rating block (read the
+now-deleted `ratingSlice`, forced-fixed here — `M46`'s file list is corrected to note it should have
+included this file from the start); `OurSpec.jsx` and `addressSlice.js`'s small non-product data
+literals inlined into their sole consumers; `orders/page.jsx`'s dummy order data inlined image-free
+(that page stays fully dummy until `M36`'s real guest lookup — out of scope to fix further here);
+`Hero.jsx`'s three now-deleted hero images replaced with gradient placeholders (this milestone's own
+file list already committed to deleting those images). Full details, including exactly which files
+were affected and why, are in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s `M28` entry. Verified against
+a live `npm run start` server: all seven storefront routes return 200, and a real headless-Chromium
+browser check (Playwright, client-side navigation to preserve Redux state across the SPA) confirms
+adding a real product to cart now renders it correctly — name, category, price, quantity, total, and
+image — where it previously showed "Your cart is empty." `npm run type-check` and `npm run build`
+both pass.
+
 **`M27b` is done (2026-08-18).** `/categories` lists every top-level category as a card (via `M22`'s
 `getTopLevelCategories()`, already ordered by `displayOrder` then title) with its children as sub-link
 chips, all targeting `/category/[slug]`. This route has no `notFound()` path — an empty catalog renders
@@ -181,7 +205,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27b` **Done** (2026-08-18); `M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |

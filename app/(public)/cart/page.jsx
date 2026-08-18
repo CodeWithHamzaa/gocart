@@ -8,12 +8,22 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+// M28: previously resolved cart line items against `state.product.list`,
+// a Redux slice populated only from the dummy dataset (`productSlice.js`,
+// deleted this milestone). That was already broken for every product a
+// customer could actually reach — /shop, /product, and category pages have
+// linked real Payload product IDs since M23–M25, which never matched the
+// dummy list's `prod_N` IDs, so the cart silently dropped every real item.
+// Fixed by fetching real products via Payload's public REST API (a client
+// component can't use the Local API — same sanctioned pattern
+// CategoriesMarquee.jsx uses, M27) instead of carrying real-data fetching
+// forward as a second, unrelated milestone.
 export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
-    
+
     const { cartItems } = useSelector(state => state.cart);
-    const products = useSelector(state => state.product.list);
+    const [products, setProducts] = useState([]);
 
     const dispatch = useDispatch();
 
@@ -24,7 +34,7 @@ export default function Cart() {
         setTotalPrice(0);
         const cartArray = [];
         for (const [key, value] of Object.entries(cartItems)) {
-            const product = products.find(product => product.id === key);
+            const product = products.find(product => String(product.id) === key);
             if (product) {
                 cartArray.push({
                     ...product,
@@ -39,6 +49,19 @@ export default function Cart() {
     const handleDeleteItemFromCart = (productId) => {
         dispatch(deleteItemFromCart({ productId }))
     }
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch('/api/products?limit=0&depth=1', { signal: controller.signal })
+            .then((res) => res.json())
+            .then((data) => setProducts(data.docs || []))
+            .catch((error) => {
+                if (error.name !== 'AbortError') console.error(error)
+            });
+
+        return () => controller.abort();
+    }, []);
 
     useEffect(() => {
         if (products.length > 0) {
@@ -66,15 +89,20 @@ export default function Cart() {
                         </thead>
                         <tbody>
                             {
-                                cartArray.map((item, index) => (
+                                cartArray.map((item, index) => {
+                                    const firstImage = item.images?.[0]
+                                    const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
+                                    const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
+
+                                    return (
                                     <tr key={index} className="space-x-2">
                                         <td className="flex gap-3 my-4">
                                             <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                <Image src={item.images[0]} className="h-14 w-auto" alt="" width={45} height={45} />
+                                                {imageUrl && <Image src={imageUrl} className="h-14 w-auto" alt="" width={45} height={45} />}
                                             </div>
                                             <div>
                                                 <p className="max-sm:text-sm">{item.name}</p>
-                                                <p className="text-xs text-slate-500">{item.category}</p>
+                                                <p className="text-xs text-slate-500">{categoryTitle}</p>
                                                 <p>{currency}{item.price}</p>
                                             </div>
                                         </td>
@@ -88,7 +116,8 @@ export default function Cart() {
                                             </button>
                                         </td>
                                     </tr>
-                                ))
+                                    )
+                                })
                             }
                         </tbody>
                     </table>

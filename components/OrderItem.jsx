@@ -1,17 +1,17 @@
 'use client'
 import Image from "next/image";
 import { DotIcon } from "lucide-react";
-import { useSelector } from "react-redux";
-import Rating from "./Rating";
-import { useState } from "react";
-import RatingModal from "./RatingModal";
 
+// M28: the star-rating/"Rate Product" block is removed — it read
+// `state.rating`, whose only source (`ratingSlice.js`) is deleted this
+// milestone (Reviews are out of scope for v1, ADR-016). This is the same
+// forced pull-forward `ProductCard.jsx`/`ProductDetails.jsx` got at
+// M23/M25: M46's file list should have included this file too — it never
+// did, and this is where that gap surfaced. Nothing left for M46 to strip
+// from OrderItem.jsx.
 const OrderItem = ({ order }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
-    const [ratingModal, setRatingModal] = useState(null);
-
-    const { ratings } = useSelector(state => state.rating);
 
     return (
         <>
@@ -21,24 +21,20 @@ const OrderItem = ({ order }) => {
                         {order.orderItems.map((item, index) => (
                             <div key={index} className="flex items-center gap-4">
                                 <div className="w-20 aspect-square bg-slate-100 flex items-center justify-center rounded-md">
-                                    <Image
-                                        className="h-14 w-auto"
-                                        src={item.product.images[0]}
-                                        alt="product_img"
-                                        width={50}
-                                        height={50}
-                                    />
+                                    {item.product.images?.[0] && (
+                                        <Image
+                                            className="h-14 w-auto"
+                                            src={item.product.images[0]}
+                                            alt="product_img"
+                                            width={50}
+                                            height={50}
+                                        />
+                                    )}
                                 </div>
                                 <div className="flex flex-col justify-center text-sm">
                                     <p className="font-medium text-slate-600 text-base">{item.product.name}</p>
                                     <p>{currency}{item.price} Qty : {item.quantity} </p>
                                     <p className="mb-1">{new Date(order.createdAt).toDateString()}</p>
-                                    <div>
-                                        {ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId)
-                                            ? <Rating value={ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId).rating} />
-                                            : <button onClick={() => setRatingModal({ orderId: order.id, productId: item.product.id })} className={`text-green-500 hover:bg-green-50 transition ${order.status !== "DELIVERED" && 'hidden'}`}>Rate Product</button>
-                                        }</div>
-                                    {ratingModal && <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />}
                                 </div>
                             </div>
                         ))}

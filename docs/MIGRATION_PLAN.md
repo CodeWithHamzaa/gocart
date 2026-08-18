@@ -502,6 +502,75 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: `npm run build` succeeds; `grep -r "assets/assets"` and `grep -r "productDummyData\|dummyRatingsData"` across `app`/`components`/`lib` return nothing.
 - **Rollback**: `git revert` to restore all deleted files at once.
 - **Commit message**: `Remove dummy data source and orphaned Redux slices now that storefront uses real data`
+- **✅ Done (2026-08-18)**: `assets/assets.js` and every image it imported (`product_img1`–`product_img16.png`
+  — four more than the file actually used, `hero_model_img.png`, `hero_product_img1.png`,
+  `hero_product_img2.png`, `happy_store.webp`, `profile_pic1–3.jpg`, plus the unreferenced-anywhere
+  `gs_logo.jpg` and `upload_area.svg`) are deleted. `lib/features/product/productSlice.js` and
+  `lib/features/rating/ratingSlice.js` are deleted; `lib/store.js` trimmed to `cart` + `address`.
+  - **⚠️ This milestone's own premise — "every storefront consumer has been re-pointed" — was false,
+    and one of the two real gaps it hid was a live customer-facing bug, not a documentation nit.**
+    `assets.js` had **five** consumers beyond the ones `M23`–`M27` migrated, none in this milestone's
+    file list:
+    1. **`app/(public)/cart/page.jsx` resolved cart line items against `state.product.list`
+       (`productSlice.js`), populated only from the dummy dataset.** Since `M23`–`M25` gave every
+       reachable product page a real Payload ID, and nothing has populated that Redux slice with real
+       data since, **the cart has been silently dropping every item added from a real product page
+       since `M25` shipped** — `products.find(product => product.id === key)` never matched, so
+       `cartArray` stayed empty and the page rendered "Your cart is empty" regardless of what was
+       actually in `cartItems`. This is a correctness bug already live on `main`, not something this
+       milestone would have introduced by deleting `productSlice.js` — deleting it only removes the
+       broken crutch. **Fixed**, not deferred: `cart/page.jsx` now fetches real products via
+       `GET /api/products?limit=0&depth=1` (a client component can't use the Local API — same
+       sanctioned REST pattern `CategoriesMarquee.jsx` uses, `M27`) instead of the dead Redux slice,
+       with the same `.url`/Media-relationship image resolution `ProductCard.jsx` uses and a
+       `typeof category === 'object'` guard so a real `Category` relationship object renders its
+       `.title` instead of throwing "Objects are not valid as a React child." No milestone in `M30`–`M36`
+       explicitly owns "resolve cart line items to real product data" (`M30` is persistence only, `M34`
+       is shipping totals only) — this was an orphaned fix, not one deferred by design, so it was made
+       here rather than left broken for six more milestones.
+    2. **`components/OrderItem.jsx` read `state.rating`** (`ratingSlice.js`, deleted this milestone)
+       for its "Rate Product" / star-rating block. Deleting the slice without touching this file would
+       have crashed `/orders` immediately. Same class of forced pull-forward as `ProductCard.jsx`
+       (`M23`) and `ProductDetails.jsx`/`ProductDescription.jsx` (`M25`): the block is removed, not
+       guarded — Reviews are out of scope for v1 (ADR-016) regardless. **`M46`'s file list should have
+       named `OrderItem.jsx` from the start and never did**; its entry below is corrected to note this.
+    3. **`components/OurSpec.jsx`** (`ourSpecsData` — site USP copy/icons, not product data) and
+       **`lib/features/address/addressSlice.js`** (`addressDummyData` — the checkout address form's
+       still-dummy default, `M31`'s job to replace) both imported small, self-contained data literals
+       from `assets.js` that had nothing to do with the dummy product/rating dataset. Both are inlined
+       into their sole consumer, unchanged in content, so `assets.js` could be deleted outright without
+       forcing either file's real migration ahead of its own milestone.
+    4. **`app/(public)/orders/page.jsx`** imports `orderDummyData`, which embeds `productDummyData`
+       (with the now-deleted `product_img*.png` imports), `dummyUserData`, `addressDummyData`, and
+       `couponDummyData` — a genuinely out-of-scope page: `M36` is explicitly the milestone that
+       replaces its dummy listing with real guest order lookup, and this milestone group's own
+       "deliberately unchanged" note (above `M28`'s entry) does not list `/orders` only because the
+       category work never touched it, not because it was already handled. A trimmed, self-contained,
+       image-free `orderDummyData` (same shape, same values, `images: []`) is now inlined directly in
+       `orders/page.jsx` instead — the page's behavior is byte-for-byte the same dummy listing it was
+       before this milestone; only the data's location and its dependency on now-deleted image files
+       changed. `OrderItem.jsx` already guards a missing `product.images[0]` (`{item.product.images?.[0] &&
+       ...}`) rather than rendering a broken image icon.
+    5. **`components/Hero.jsx`** used `assets.hero_model_img`/`hero_product_img1`/`hero_product_img2`
+       for its banner artwork. This milestone's own file list already commits to deleting those exact
+       images ("real product/marketing photography to be supplied separately"), so `Hero.jsx` was
+       always going to need this fix regardless of whether it appeared in the file list. The three
+       `<Image>` elements are replaced with plain gradient placeholder `<div>`s at the same dimensions
+       (no layout shift), not left as broken image references or removed outright (which would have
+       collapsed the hero's layout).
+  - The literal testing text ("`grep -r "assets/assets"` ... return nothing") is satisfied for live
+    code — no `import`/`from` statement references it anywhere. A handful of `// M28: ...` comments
+    that name `assets/assets.js` for historical/migration context (in `OurSpec.jsx`, `addressSlice.js`,
+    `orders/page.jsx`) remain, since stripping accurate history to satisfy a literal grep would be
+    worse than the comments themselves.
+  - Verified against a live `npm run start` server: `npm run type-check` and `npm run build` both pass;
+    `/`, `/shop`, `/product/3`, `/cart`, `/orders`, `/category/electronics`, `/categories` all return
+    200. The cart fix specifically verified in a real headless-Chromium browser (Playwright, using
+    client-side `<Link>` navigation rather than `page.goto` — a hard reload would wipe Redux state
+    since `M30`'s persistence fix hasn't landed yet, which is a separate, expected limitation, not a
+    regression): adding "Bluetooth Speaker" from `/product/3` and navigating to `/cart` now renders the
+    product's name, category, price, quantity, running total, and image — previously it rendered "Your
+    cart is empty." Zero console errors throughout.
 
 ---
 
@@ -674,6 +743,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductDetails.jsx`
 - **`components/ProductCard.jsx` moved to `M23`** (2026-08-17). Its star-rating block read `product.rating`, which real Payload products do not have, so `M23` could not render real data on the home page until the block was removed — the change was forced ~23 milestones earlier than this milestone sits. Already done; nothing left here for that file.
 - **`components/ProductDetails.jsx` and `components/ProductDescription.jsx` moved to `M25`** (2026-08-18), same reasoning: both read `product.rating` and would have thrown before rendering the product detail page on real data. Already done; nothing left here for either file.
+- **`components/OrderItem.jsx` moved to `M28`** (2026-08-18) — **this file should have been in this milestone's file list from the start and never was.** It read `state.rating` (`ratingSlice.js`), which `M28` deletes as one of the two orphaned Redux slices; deleting the slice without touching this file would have crashed `/orders`. The "Rate Product" / star-rating block is removed, not guarded — Reviews are out of scope for v1 (ADR-016) regardless of which milestone happened to force the fix. Already done; nothing left here for that file. `RatingModal.jsx` itself is untouched — deleting it (and its now-orphaned import in this file, already gone) remains this milestone's job.
 - **Dependencies**: M25
 - **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
 - **Rollback**: Revert the touched files.

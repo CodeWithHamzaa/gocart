@@ -1,6 +1,15 @@
 import React from 'react'
 import Title from './Title'
-import { ourSpecsData } from '@/assets/assets'
+import { ClockFadingIcon, HeadsetIcon, SendIcon } from 'lucide-react'
+
+// M28: inlined from assets/assets.js — site content (not product data), the
+// only remaining consumer, so it moves with the component rather than
+// surviving in a file otherwise deleted for holding dummy product data.
+const ourSpecsData = [
+    { title: "Free Shipping", description: "Enjoy fast, free delivery on every order no conditions, just reliable doorstep.", icon: SendIcon, accent: '#05DF72' },
+    { title: "7 Days easy Return", description: "Change your mind? No worries. Return any item within 7 days.", icon: ClockFadingIcon, accent: '#FF8904' },
+    { title: "24/7 Customer Support", description: "We're here for you. Get expert help with our customer support.", icon: HeadsetIcon, accent: '#A684FF' }
+]
 
 const OurSpecs = () => {
 
