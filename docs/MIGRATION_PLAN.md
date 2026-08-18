@@ -348,6 +348,27 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Visiting `/product/[id]` for a seeded product renders correct name/price/images; a non-existent ID renders a proper not-found state instead of a blank page.
 - **Rollback**: Revert the three files.
 - **Commit message**: `Wire product detail page to real Payload product data`
+- **✅ Done (2026-08-18)**: `page.jsx` converted to an async server component reading `getProductById()`
+  (already implemented at `M22`), calling `notFound()` when it returns `null` — matches Next.js's
+  default not-found page, satisfying the milestone's testing requirement without a custom
+  `not-found.jsx`. `force-dynamic` set for the same reason as `M23`'s home page (admin price/stock
+  edits must show without a redeploy; the production build at `M49` cannot assume a reachable
+  database). **`ProductDetails.jsx` and `ProductDescription.jsx`'s star-rating UI moved from `M46`
+  into `M25`**, the same class of forced pull-forward as `ProductCard.jsx` at `M23`: both read
+  `product.rating`, which real products don't have, and would have thrown before rendering —
+  `M46`'s entry is updated to note there is nothing left in these two files for it to strip.
+  `ProductDescription.jsx`'s Reviews tab is removed outright (not just guarded), since it existed
+  solely to render that same missing field and Reviews are out of scope for v1 (ADR-016). Image
+  handling for both files switched to resolving Media relationships' `.url` field, mirroring
+  `ProductCard.jsx`'s `M23` fix — `images[0]`/`image` were never valid URL strings for real products.
+  The store-attribution block in `ProductDescription.jsx` is left in place but guarded
+  (`{product.store && (...)}`) rather than deleted: real products have no `store` relationship so it
+  now renders nothing, but the actual deletion (and its now-dead `/shop/[username]` link) stays
+  `M26`'s job as scoped, since it isn't a render-blocking fix. Verified against a live `npm run start`
+  server with seeded data: `/product/3` renders the correct name ("Bluetooth Speaker"), price, category
+  ("Speakers"), and image, with no "Reviews" text and no server-side errors; `/product/99999` (a
+  non-existent ID) returns a real HTTP 404 via Next's default not-found page. `npm run type-check` and
+  `npm run build` both pass; `/product/[productId]` moved `○ Static` → `ƒ Dynamic`.
 
 ### M26 — Remove multi-vendor "Product by {store}" attribution
 - **Goal**: Now that products aren't vendor-owned, drop the store-attribution block and its link to the (already-deleted) per-vendor storefront.
@@ -571,6 +592,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Goal**: Reviews are decided out of scope for v1 — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). Execute the removal path: delete `RatingModal.jsx` and its entry points, and strip the dummy star-rating display.
 - **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductDetails.jsx`
 - **`components/ProductCard.jsx` moved to `M23`** (2026-08-17). Its star-rating block read `product.rating`, which real Payload products do not have, so `M23` could not render real data on the home page until the block was removed — the change was forced ~23 milestones earlier than this milestone sits. Already done; nothing left here for that file.
+- **`components/ProductDetails.jsx` and `components/ProductDescription.jsx` moved to `M25`** (2026-08-18), same reasoning: both read `product.rating` and would have thrown before rendering the product detail page on real data. Already done; nothing left here for either file.
 - **Dependencies**: M25
 - **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
 - **Rollback**: Revert the touched files.

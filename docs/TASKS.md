@@ -92,6 +92,22 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M25` is done (2026-08-18).** `app/(public)/product/[productId]/page.jsx` is now an async server
+component reading `getProductById()`, calling `notFound()` for an unknown ID instead of rendering
+a blank page — matches Next's default not-found page. `force-dynamic`, same reasoning as `M23`.
+**The star-rating UI in `ProductDetails.jsx` and `ProductDescription.jsx` moved from `M46` into
+`M25`**, the same forced pull-forward `ProductCard.jsx` got at `M23`: both read `product.rating`,
+which real products don't have, and would have thrown before rendering — `M46` now has nothing left
+to strip from either file. `ProductDescription.jsx`'s Reviews tab is removed outright, not just
+guarded, since it existed only to render that missing field and Reviews are out of scope for v1
+(ADR-016). Both files' image handling switched to resolving Media relationships' `.url`, mirroring
+`ProductCard.jsx`'s `M23` fix. The store-attribution block is guarded (`product.store &&`), not
+deleted — real products have no `store` relationship so it renders nothing, but the actual deletion
+and its dead `/shop/[username]` link stay `M26`'s job as scoped. Verified against a live
+`npm run start` server: `/product/3` renders the correct name, price, category, and image with no
+"Reviews" text and no server errors; `/product/99999` returns a real HTTP 404. `/product/[productId]`
+moved `○ Static` → `ƒ Dynamic`.
+
 **`M24` is done (2026-08-18).** `app/(public)/shop/page.jsx` is now an async server component reading
 `getProducts()` from `lib/payload/products.ts`, matching `M23`'s precedent under
 [ADR-007](./DECISIONS.md)'s blanket SEO-first/mobile-first mandate even though `M24`'s literal text
@@ -124,7 +140,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M24` **Done** (2026-08-18); `M25`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M25` **Done** (2026-08-18); `M26`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
