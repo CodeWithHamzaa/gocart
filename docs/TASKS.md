@@ -92,6 +92,16 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**`M27` is done (2026-08-18).** `CategoriesMarquee.jsx` gained `'use client'` and now fetches all
+categories from Payload's public-read REST API in a `useEffect`, replacing the hardcoded
+`assets/assets.js` array. REST rather than the `M22` Local API utilities, because the marquee is
+nested inside `Hero.jsx` — itself `'use client'`, whose own server-component conversion is `M40`'s
+job — and a client component can't call the Local API; this is the fallback path
+`lib/payload/categories.ts` already documents. Items stay inert bare `<button>`s, unchanged from
+today; `M27a` still owns turning them into links. Verified in a real headless-Chromium browser
+(Playwright) against a live `npm run start` server: the marquee renders the three seeded categories
+("Electronics & Gadgets", "Headphones", "Speakers") with zero console errors.
+
 **`M26` is done (2026-08-18).** Deleted the guarded store-attribution block `M25` left in
 `ProductDescription.jsx` (`{product.store && (...)}`), its now-unused imports, and its dead link to
 the already-deleted `/shop/[username]` route. With that gone, the file had no remaining client state
@@ -148,7 +158,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M26` **Done** (2026-08-18); `M27`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`–`M27` **Done** (2026-08-18); `M27a`–`M28` Not Started |
 | `M29` | Real search | Not Started |
 | `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
 | `M37`–`M39` | Admin order fulfillment | Not Started |

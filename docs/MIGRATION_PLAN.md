@@ -395,6 +395,20 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Marquee renders the seeded categories from `M9`/`M13` instead of the hardcoded six; items remain non-interactive, unchanged from today; no console errors.
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire category marquee to real Payload categories`
+- **✅ Done (2026-08-18)**: `CategoriesMarquee.jsx` gained `'use client'` and now fetches all categories
+  from Payload's public-read REST API (`GET /api/categories?limit=0&sort=displayOrder,title&depth=0`)
+  in a `useEffect`, replacing the hardcoded `assets/assets.js` array. **REST, not the `M22` Local API
+  utilities** — `CategoriesMarquee` is nested inside `Hero.jsx`, which is `'use client'` (`Hero`'s own
+  server-component conversion is `M40`'s pass, out of this milestone's scope), and a client component
+  can't call Payload's Local API. This is exactly the fallback path `lib/payload/categories.ts`'s own
+  header comment already documents for client components. Items are unchanged bare `<button>`s — no
+  `onClick`, no `href` — preserving today's inert behavior exactly, per the corrected acceptance test
+  above; `M27a` still owns turning them into links. Verified in a real headless-Chromium browser
+  (Playwright, `page.goto` + `waitForTimeout` against a live `npm run start` server with seeded data,
+  since the fetch runs client-side after hydration and won't appear in a `curl`'d response): the
+  marquee renders "Electronics & Gadgets", "Headphones", "Speakers" (the three seeded categories, each
+  repeated 4× by the existing loop-duplication), with zero console or page errors. `npm run type-check`
+  and `npm run build` both pass.
 
 ### M27a — Category detail and product listing route (`/category/[slug]`)
 - **Goal**: Build the customer-facing category page the storefront has never had — a server-rendered, slug-based, publicly browsable listing of a category's products, with parent/child navigation and pagination. Implements [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy).
