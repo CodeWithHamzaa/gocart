@@ -92,6 +92,27 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**Four production-prep milestones inserted (2026-08-18)**, closing the remaining pre-production
+readiness gaps before the `M49`–`M59` groups start:
+- **`M52a` — Run Payload migrations as an explicit production deploy step** (closes `R9`): `payload
+  migrate` runs before the app serves traffic, schema auto-push disabled in production, a failed
+  migration blocks the deploy. Inserted into the Docker group after `M52` (secrets).
+- **`M48a` — Remove non-functional Newsletter signup** (closes `R11`): `Newsletter.jsx`'s form has no
+  submit handler and silently discards input — same defect class as the dead Login button (`M21`) and
+  dead coupon input (`M47`). Kept separate from `M48` since that milestone's scope is explicitly
+  leftover references *from `M46`/`M47`*, not unrelated dead UI.
+- **`M55a` — Storefront copy correctness pass** (closes `R12`): wires `Footer.jsx`'s contact display to
+  the already-built `Settings` global (`M13a`) instead of a hardcoded US phone/address, and removes
+  `ProductDetails.jsx`'s false "Free shipping worldwide" claim. Inserted after `M55` (currency).
+- **`M56a` — Golden-path E2E test and CI pipeline** (closes `R7`): one deliberately minimal Playwright
+  test (browse → product → cart → checkout → order created) plus a CI job, sequenced after `M56` (the
+  last functional milestone the golden path touches) and before `M57`'s manual regression pass, so the
+  automated test gives that pass something to lean on afterward rather than replacing it.
+
+All four are design/scheduling only — `MIGRATION_PLAN.md`, `PHASE_1_READINESS_REPORT.md`'s R7/R9/R11/R12
+rows and detail sections, and this file are updated; none are implemented yet, and each depends on
+milestones that are themselves Not Started.
+
 **New milestone `M33a` inserted (2026-08-18)**, closing readiness risk
 [R5](./PHASE_1_READINESS_REPORT.md#r5--out-of-stock-enforcement-is-called-launch-critical-and-then-never-implemented):
 `FEATURE_MATRIX.md` calls out-of-stock enforcement launch-critical for COD, `Products.inStock` has
@@ -235,9 +256,9 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
-| `M46`–`M48` | Reviews/Coupons: decide and land minimal v1 scope | Not Started |
-| `M49`–`M54` | Docker production hardening, health checks, backups | Not Started |
-| `M55`–`M56` | PKR currency, Pakistani address/phone validation | Not Started |
+| `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | Not Started — `M48a` inserted (2026-08-18) to close `R11` (dead Newsletter form) |
+| `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
+| `M55`–`M56` (incl. new `M55a`, `M56a`) | PKR currency, Pakistani address/phone validation | Not Started — `M55a` inserted to close `R12` (storefront copy correctness); `M56a` inserted to close `R7` (golden-path E2E + CI) (both 2026-08-18) |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
 
 ---

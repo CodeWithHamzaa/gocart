@@ -797,6 +797,26 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the specific cleanup commit.
 - **Commit message**: `Clean up references to deferred/removed reviews and coupons functionality`
 
+### M48a — Remove non-functional Newsletter signup
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R11](./PHASE_1_READINESS_REPORT.md#r11--newsletterjsx-is-left-in-limbo):
+  `Newsletter.jsx`'s form has no submit handler at all — it silently discards whatever a customer
+  types, the same defect class (a `toast.promise` wrapped around nothing, or in this case not even
+  that) that the dead Login button (`M21`) and the dead coupon input (`M47`) were removed for. No
+  milestone wired it to a real subscribe mechanism or dropped it. Kept separate from `M48` rather than
+  folded into it, since `M48`'s own scope is explicitly leftover references *from `M46`/`M47`* —
+  `Newsletter.jsx` is unrelated to Reviews/Coupons and deserves its own commit, not scope creep into a
+  differently-scoped cleanup milestone.
+- **Goal**: Remove the non-functional newsletter signup form. There is no email-marketing plan or
+  provider decided for v1 (Resend's free tier, per ADR-015, is transactional email — order
+  confirmations, not marketing lists) — revisit if/when one exists, as new, real functionality, not by
+  resurrecting this form.
+- **Files**: `components/Newsletter.jsx` (deleted), `app/(public)/page.jsx` (remove the import/usage)
+- **Dependencies**: none
+- **Testing**: No newsletter form renders anywhere on the storefront; `npm run build` succeeds; no dead
+  import remains.
+- **Rollback**: `git revert` to restore both files.
+- **Commit message**: `Remove non-functional newsletter signup form`
+
 ---
 
 ## Group: Dockerization & production readiness — `M49`–`M54`
@@ -835,6 +855,25 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the two files.
 - **Commit message**: `Document production environment and secrets configuration`
 
+### M52a — Run Payload migrations as an explicit production deploy step
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R9](./PHASE_1_READINESS_REPORT.md#r9--no-production-database-migration-step):
+  development relies on Payload's schema auto-push (`next dev`), which is not appropriate for
+  production — `M50` (compose), `M52` (secrets), `M53` (health checks), and `M59` (deploy runbook)
+  never named an explicit migration step, so the first production deploy would have improvised its
+  schema strategy against a real database.
+- **Goal**: Production deploys run `payload migrate` as an explicit step — before the app starts
+  serving traffic — with schema auto-push disabled in the production build/runtime. A failed migration
+  must block the deploy, not silently fall through to a stale or partially-migrated schema.
+- **Files**: `docker-compose.prod.yml` (a migration step/init container ahead of the app service, or an
+  entrypoint script that runs migrations then execs the server), `docs/DEPLOYMENT.md`/`docs/ARCHITECTURE.md`
+  (document the migration workflow so `M59`'s runbook doesn't improvise it either)
+- **Dependencies**: `M50` (compose), `M52` (`DATABASE_URI`/secrets available to run migrations against)
+- **Testing**: Deploying against a database one schema version behind actually migrates rather than
+  silently pushing or skipping; a deliberately broken migration blocks the app from starting rather
+  than starting against a mismatched schema.
+- **Rollback**: Revert the compose/entrypoint changes.
+- **Commit message**: `Run Payload database migrations as an explicit production deploy step`
+
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
 - **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
@@ -871,6 +910,60 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: Submitting an invalid Pakistani phone number/address is rejected with a clear message; a valid one succeeds.
 - **Rollback**: Revert both files.
 - **Commit message**: `Add Pakistani address and phone format validation to guest checkout`
+
+### M55a — Storefront copy correctness pass
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R12](./PHASE_1_READINESS_REPORT.md#r12--no-milestone-owns-storefront-copy-correctness):
+  verified still live in the repo — `Footer.jsx` shows a US phone number, a `.com` example email, and a
+  San Francisco address; `ProductDetails.jsx` promises **"Free shipping worldwide,"** false under
+  ADR-018's flat-rate, Pakistan-only shipping model; `Hero.jsx` had a hardcoded `$4.90` (the currency
+  symbol itself was fixed ahead of `M24`, but the copy around it — "worldwide," non-Pakistani framing —
+  was not in scope of that one-line fix). Only `M44` (mobile audit) and `M55` (currency formatting)
+  touch these files, and neither is scoped to copy correctness. For a market where customers are
+  already wary of online scams, foreign contact details and false shipping claims on a Pakistani COD
+  store read as a fraud signal, not a cosmetic nit — worth fixing before any real traffic, not after.
+- **Goal**: Replace fake/foreign placeholder copy with real values. Wire `Footer.jsx`'s contact display
+  to the `Settings` global's `contactPhone`/`contactEmail`/`contactAddress` fields (`M13a` already built
+  these; nothing has read them yet). Remove `ProductDetails.jsx`'s "Free shipping worldwide" claim,
+  replacing it with copy that matches the actual flat-rate/free-threshold model (ADR-018) — read from
+  `Settings`, not hardcoded, so an admin changing the threshold doesn't leave the storefront claiming
+  something false.
+- **Files**: `components/Footer.jsx`, `components/ProductDetails.jsx`, `lib/payload/settings.ts` (new,
+  mirroring the `lib/payload/products.ts`/`categories.ts` pattern — a server-side Local API reader for
+  the `Settings` global)
+- **Dependencies**: `M13a` (the `Settings` global and its fields already exist), `M55` (currency
+  formatting should land first so this pass isn't fixing copy around a value that's about to reformat)
+- **Testing**: `grep -r "example.com\|+1-212\|94102\|worldwide"` across `components/` returns nothing;
+  Footer's displayed contact info matches whatever is configured in `/admin`'s Settings; changing the
+  admin-configured phone/email/address updates the storefront without a redeploy.
+- **Rollback**: Revert all three files.
+- **Commit message**: `Replace placeholder contact info and false shipping claims with real Settings-backed copy`
+
+### M56a — Golden-path E2E test and CI pipeline
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R7](./PHASE_1_READINESS_REPORT.md#r7--no-test-or-ci-milestone-exists-in-59):
+  no test framework and no CI pipeline exist anywhere in the 59-milestone plan, which means `M57`, the
+  end-to-end regression pass over a total rewrite of every data path in the application, would otherwise
+  run with **zero automated safety net** beneath it — entirely manual, one-time, and never re-run again
+  after launch. Deliberately minimal by design, not a full test pyramid: a v1 COD storefront's actual
+  risk is a broken money path, not missing unit-test coverage.
+- **Goal**: One Playwright end-to-end test covering the golden path — browse → product detail → add to
+  cart → guest checkout → COD order created — running against a seeded database, plus a CI job (GitHub
+  Actions, matching this repo's host) that runs `npm run type-check`, `npm run build`, and that test on
+  every push/PR. Playwright is already available in this environment (confirmed while verifying `M27`'s
+  and `M27a`'s client-rendered content this session), so no new tool needs introducing.
+  - **The route/component set this test depends on**: `/`, `/shop`, `/product/[id]`, `/cart`,
+    `/category/[slug]`, checkout (`M31`–`M33`, `M33a`'s stock enforcement). Sequenced after `M56` (last
+    of the pre-launch functional milestones) so the golden path this test walks is the real, final one —
+    an E2E test written mid-sequence would need rewriting as each subsequent milestone changed the flow
+    it exercises.
+- **Files**: `e2e/golden-path.spec.ts` (new), `playwright.config.ts` (new), `.github/workflows/ci.yml` (new)
+- **Dependencies**: `M33a` (order creation must actually validate stock for the test to exercise a real
+  order), `M56` (last functional milestone the golden path touches)
+- **Testing**: The golden-path test passes locally against a freshly seeded database; the CI job runs
+  and passes on a pushed branch; a deliberately broken golden-path step (e.g. reverting `M33`
+  temporarily) makes both the local test and the CI job fail, proving the test actually exercises the
+  flow rather than trivially passing.
+- **Rollback**: Revert/delete the three new files.
+- **Commit message**: `Add golden-path E2E test and CI pipeline`
 
 ---
 

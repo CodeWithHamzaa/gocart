@@ -328,12 +328,12 @@ Six of Audit 1's thirteen are closed — including all three critical ones.
 | R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ✅ **Resolved** (2026-08-17) — `M11` implemented `orderNumber` (auto-generated), `orderTotal`, `shippingCost`, and a per-line-item `unitPrice` snapshot on `collections/Orders.ts`; verified via REST |
 | R5 | Out-of-stock enforcement called launch-critical, never implemented | ◐ **Scheduled** (2026-08-18) — new milestone `M33a` inserted into `MIGRATION_PLAN.md`, server-side validation at order creation. Not yet implemented (depends on `M33`, which is Not Started) |
 | R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-17) — implemented as `M13a`, `globals/Settings.ts`; public read, admin-only write, verified via REST |
-| R7 | No test or CI milestone in the plan | ⚠️ Open — broken pointer fixed, **gap still unscheduled** |
+| R7 | No test or CI milestone in the plan | ◐ **Scheduled** (2026-08-18) — new milestone `M56a` inserted, one Playwright golden-path E2E test + a CI job. Not yet implemented (depends on `M33a`, `M56`, both Not Started) |
 | R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ✅ **Resolved** (2026-08-16) — both decisions made ahead of collection design via [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1); `M46`/`M47` now execute a decided removal rather than deciding |
-| R9 | No production `payload migrate` step | ⚠️ Open |
+| R9 | No production `payload migrate` step | ◐ **Scheduled** (2026-08-18) — new milestone `M52a` inserted, explicit migration step before the app serves traffic. Not yet implemented (depends on `M50`, `M52`, both Not Started) |
 | R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ◐ **Half closed** — the database name is settled as `DATABASE_URI` by [ADR-010](./DECISIONS.md) at `M1`; the missing public base URL is still open against `M42`/`M52` |
-| R11 | `Newsletter.jsx` neither wired nor dropped | ⚠️ Open |
-| R12 | No owner for storefront copy ("Free shipping worldwide") | ⚠️ Open |
+| R11 | `Newsletter.jsx` neither wired nor dropped | ◐ **Scheduled** (2026-08-18) — new milestone `M48a` inserted, removes the non-functional form. Not yet implemented |
+| R12 | No owner for storefront copy ("Free shipping worldwide") | ◐ **Scheduled** (2026-08-18) — new milestone `M55a` inserted, wires `Footer.jsx`/`ProductDetails.jsx` to real `Settings`-global copy. Not yet implemented (depends on `M13a`, done; `M55`, Not Started) |
 | R13 | `next dev --turbopack` unverified against Payload v3 | ✅ **Resolved** — `M3` mounted Payload and confirmed both `npm run build` and `npm run start` serve `/admin` correctly with no server errors |
 
 **R10 deserves attention during `M1` itself**, since `M1` is the milestone that adds the variable.
@@ -749,14 +749,18 @@ implicitly need somewhere for this to live.
 
 ### R7 — No test or CI milestone exists in 59
 
-**Severity: HIGH**
+**Severity: HIGH**. **◐ Scheduled (2026-08-18)** — see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s new
+`M56a` entry. Not yet implemented; depends on `M33a` and `M56`, both Not Started.
 
 MIGRATION_PLAN:12 defers the question — *"No test framework exists yet — see Phase 12"* — and Phase 12
 (M49–M54) is Dockerization, containing no such milestone. Searching all 59: no test framework, no CI
 pipeline. REPOSITORY_ANALYSIS.md:177 flags *"No tests, no CI"* as existing debt.
 
 Consequence: **M57**, the end-to-end regression pass over a 59-milestone rewrite of every data path in
-the application, is entirely manual with no automated safety net beneath it.
+the application, was entirely manual with no automated safety net beneath it. `M56a` adds one
+deliberately minimal Playwright golden-path test (browse → product → cart → checkout → order created)
+plus a CI job, run before `M57` rather than instead of it — the automated test doesn't replace the
+manual pass, it gives it something to lean on afterward.
 
 ### R8 — Decision milestones sit downstream of the code they invalidate
 
@@ -771,11 +775,14 @@ Decisions belong before the code they constrain, not after.
 
 ### R9 — No production database migration step
 
-**Severity: MEDIUM**
+**Severity: MEDIUM**. **◐ Scheduled (2026-08-18)** — see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s new
+`M52a` entry. Not yet implemented; depends on `M50` and `M52`, both Not Started.
 
 Payload's Postgres adapter requires an explicit migration step for production deployments (development
 mode's schema push is not appropriate there). M50 (compose), M52 (secrets), M53 (health checks), and M59
-(deploy runbook) never mention it. The first production deploy will improvise its schema strategy.
+(deploy runbook) never mentioned it — `M52a` is now the explicit owner: `payload migrate` runs before
+the app serves traffic, schema auto-push is disabled in production, and a failed migration blocks the
+deploy rather than starting the app against a stale or partial schema.
 
 ### R10 — Environment variable drift
 
@@ -789,21 +796,25 @@ mode's schema push is not appropriate there). M50 (compose), M52 (secrets), M53 
 
 ### R11 — `Newsletter.jsx` is left in limbo
 
-**Severity: MEDIUM**
+**Severity: MEDIUM**. **◐ Scheduled (2026-08-18)** — see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s new
+`M48a` entry. Not yet implemented.
 
 REPOSITORY_ANALYSIS.md:238 classifies it MODIFY — *"Form has no submit handler at all today — either wire
-to a real subscribe mechanism or drop"*. No milestone does either. It ships as a form that silently
-discards input: precisely the defect class (`toast.promise` over an empty handler) that this entire
-migration exists to eliminate.
+to a real subscribe mechanism or drop"*. No milestone did either — `M48a` drops it: no email-marketing
+plan or provider is decided for v1, and reviving a silently-discarding form is worse than removing it,
+same reasoning already applied to the dead Login button (`M21`) and the dead coupon input (`M47`).
 
 ### R12 — No milestone owns storefront copy correctness
 
-**Severity: MEDIUM**
+**Severity: MEDIUM**. **◐ Scheduled (2026-08-18)** — see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s new
+`M55a` entry. Not yet implemented; depends on `M55` (currency), Not Started — `M13a`'s `Settings`
+global, which `M55a` reads from, is already Done.
 
 REPOSITORY_ANALYSIS.md:245 flags `ProductDetails.jsx`'s *"Free shipping worldwide"* — false for a
 Pakistan-only COD store, and a COD-specific liability since customers can refuse delivery at the door
 over a shipping charge they were promised wouldn't exist. Only M44 (mobile audit) and M55 (currency)
-touch these files, and neither is scoped to copy. REPOSITORY_ANALYSIS.md:234-235 flags the same for
+touch these files, and neither is scoped to copy — `M55a` is. Also verified still live: `Footer.jsx`'s
+US phone number, `.com` example email, and San Francisco address. REPOSITORY_ANALYSIS.md:234-235 flags the same for
 `Footer.jsx` contact details and `Hero.jsx`'s hardcoded "$4.90".
 
 ### R13 — Turbopack dev script unverified against Payload v3
