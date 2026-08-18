@@ -590,6 +590,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 ### M30 — Fix cart persistence
 - **Goal**: The cart is currently in-memory-only and empties on refresh — a real problem with no account to recover it from. Persist it (e.g. `localStorage`).
+- **Decided**: [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) (2026-08-18) — Redux stays; `localStorage` persistence is added to the existing slice, not a state-library swap. Closes readiness finding [D10](./PHASE_1_READINESS_REPORT.md#d10--cart-state-mechanism).
 - **Files**: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
 - **Dependencies**: none — independent of all Payload work; may land at any point in the sequence.
 - **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
@@ -638,9 +639,10 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 ### M36 — Guest order lookup
 - **Goal**: Since there are no accounts, "My Orders" needs a non-account lookup mechanism (e.g. order ID + phone/email), replacing the current dummy-data table.
+- **Decided**: [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only) (2026-08-18) — a dedicated server action/route taking `(orderNumber, phone)`, returning exactly one order, rate-limited by IP. `Orders`' `M13` collection access (admin-read-only) does **not** change; the lookup uses `overrideAccess: true` internally, server-side only. Closes readiness findings [C7](./PHASE_1_READINESS_REPORT.md#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires) and [D9](./PHASE_1_READINESS_REPORT.md#d9--guest-order-lookup-key-and-abuse-controls).
 - **Files**: `app/(public)/orders/page.jsx`, `components/OrderItem.jsx`, `lib/payload/orders.ts`
 - **Dependencies**: M33, M35
-- **Testing**: Look up a real placed order by its lookup key; confirm correct data renders and an incorrect key is rejected without leaking other customers' orders.
+- **Testing**: A correct `(orderNumber, phone)` pair returns exactly that order; a wrong phone with a correct order number returns nothing; the lookup endpoint is rate-limited by IP (repeated bad attempts get throttled, not silently retried forever); anonymous `GET /api/orders`/`GET /api/orders/[id]` still fail per `M13`'s original acceptance test, confirming collection access itself was never relaxed.
 - **Rollback**: Revert the three files.
 - **Commit message**: `Add guest order lookup by order reference`
 

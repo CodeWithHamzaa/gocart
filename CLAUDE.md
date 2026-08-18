@@ -26,7 +26,7 @@ Planning and documentation are **Done** (see [docs/TASKS.md](./docs/TASKS.md)). 
 
 Two things carried forward from earlier work, tracked in [docs/TASKS.md](./docs/TASKS.md) and [docs/PHASE_1_READINESS_REPORT.md](./docs/PHASE_1_READINESS_REPORT.md):
 - `scripts/seed.ts` is implemented but unverified by direct execution in the authoring sandbox (a `tsx`/Node ESM-interop issue unrelated to the script itself) — confirm `npm run seed` works in a real environment.
-- Readiness finding `C7` (`M13`'s admin-only `Orders` read conflicts with `M36`'s future guest-lookup requirement) remains open and unresolved — `M13` was implemented exactly as specified, not as a fix for `C7`.
+- Readiness finding `C7` (`M13`'s admin-only `Orders` read conflicts with `M36`'s future guest-lookup requirement) is **resolved as a design decision** — [ADR-024](./docs/DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only): a dedicated `(orderNumber, phone)` lookup, `Orders`' collection access unchanged. Implementation is still `M36`'s job.
 
 ## Milestone numbering — the one authoritative sequence
 

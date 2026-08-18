@@ -92,6 +92,19 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**Two pre-checkout ADRs recorded (2026-08-18), ahead of `M30`–`M36`.**
+[ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) closes
+`D10`: cart state stays Redux, with `localStorage` persistence added — `M30`'s already-assumed answer,
+now recorded rather than living only in `MIGRATION_PLAN.md`'s prose.
+[ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only)
+closes `C7` and `D9` together: guest order lookup is a dedicated `(orderNumber, phone)` server
+action/route, rate-limited by IP, that never relaxes `Orders`' `M13` collection-level access —
+resolving the conflict the readiness report flagged between `M13`'s admin-only read and `M36`'s
+guest-lookup requirement without the "improvised fix" the report warned would leak customer data
+(opening collection read). Both ADRs update `M30`'s and `M36`'s `MIGRATION_PLAN.md` entries and the
+corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
+milestones remain Not Started.
+
 **`M28` is done (2026-08-18) — the `M22`–`M28` storefront-data group is now fully complete.**
 `assets/assets.js` and all its imported placeholder images are deleted, along with
 `lib/features/product/productSlice.js` and `lib/features/rating/ratingSlice.js`; `lib/store.js` is
@@ -207,7 +220,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | Not Started |
-| `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
+| `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9` |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |

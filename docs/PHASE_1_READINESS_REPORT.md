@@ -247,10 +247,12 @@ This closes `R4` and `R6` above (both flip from partial/scheduled to **Resolved*
 `Categories`/`Products`/`Orders` half of what `C8` and `D11` were blocking. Two things surfaced during
 implementation that are **not** resolved by it:
 
-- **`C7` is confirmed, not fixed.** `M13`'s Orders access (admin-only read) was implemented exactly as
-  `MIGRATION_PLAN.md` specifies, which is exactly what `C7` already flagged as incompatible with
-  `M36`'s guest-order-lookup requirement. Implementing `M13` as written does not resolve `C7` — it
-  reconfirms the conflict is real. Still open, still needs a reconciling mechanism before `M36`.
+- **`C7` was confirmed, not fixed, at the time `M13` was implemented** — `M13`'s Orders access
+  (admin-only read) matched `MIGRATION_PLAN.md` exactly, reconfirming rather than resolving the
+  conflict `C7` flagged. **Since resolved**: [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only)
+  (2026-08-18) records the reconciling mechanism — a dedicated `(orderNumber, phone)` lookup, rate
+  limited by IP, with `M13`'s collection access left unchanged. Implementation is still `M36`'s job;
+  this closes the *design* gap, not the code.
 - **`scripts/seed.ts` (part of `M13`) is implemented but unverified by direct execution.** Running it
   via `tsx` failed in the authoring sandbox with a Node 22.22/ESM-interop error inside
   `@payloadcms/db-postgres`'s own import chain — the same class of tooling issue as the
@@ -280,7 +282,7 @@ Eleven of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 | C4 | Reviews: unresolved triple-marking | ✅ **Resolved** (2026-08-16) — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1) | — |
 | C5 | "No blog" never stated anywhere | ⚠️ **Open** | Nothing — but unstated scope in a CMS build |
 | C6 | Two conflicting phase-numbering systems | ✅ **Resolved** | — |
-| C7 | `M13` access rules forbid what `M36` requires | ⚠️ **Open** | `M13`, `M36` |
+| C7 | `M13` access rules forbid what `M36` requires | ✅ **Resolved** (2026-08-18) — [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only) | — |
 | C8 | Category browsing assumed by 4 milestones, built by none | ✅ **Resolved** (2026-08-16) | — |
 | C9 | `M39` cites wrong dependency | ✅ **Resolved** | — |
 | C10 | `M15`/`M18` Footer reference | ◐ **Partial** — pointer fixed to `M48`; the dead-link window until `M48` remains a scheduling gap | Nothing |
@@ -304,13 +306,15 @@ Seven of Audit 1's twelve are closed. **None blocks `M1`.**
 | D6 | Media storage backend (local volume vs. S3) | ✅ **Resolved** (2026-08-16) — [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) | — |
 | D7 | PKR formatting convention | ⚠️ Open | `M55` |
 | D8 | Order notifications (SMS/WhatsApp/email) | ◐ **Partial** (2026-08-16) — SMS deferred to a future phase, email infra (Resend) decided; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). WhatsApp and which emails are sent remain open, still **no milestone exists** | Unscheduled |
-| D9 | Guest order-lookup key + abuse controls | ⚠️ Open | `M13`, `M36` |
-| D10 | Cart state: Redux vs. simpler store | ⚠️ Open — `M30` assumes an answer, unrecorded | `M30` |
+| D9 | Guest order-lookup key + abuse controls | ✅ **Resolved** (2026-08-18) — [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only): `(orderNumber, phone)`, IP rate-limited | — |
+| D10 | Cart state: Redux vs. simpler store | ✅ **Resolved** (2026-08-18) — [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) | — |
 | D11 | `Orders` shape: embedded vs. `Customers` collection | ✅ **Resolved** (2026-08-16) — [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection) | — |
 | D12 | Deployment target + production migration strategy | ◐ **Partial** (2026-08-16) — hosting baseline decided: Cloudflare Free + ~$10–12/mo VPS + PostgreSQL + Resend Free + COD; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). Production migration/CI mechanics still open | `M49`–`M59` |
 
-D10 and D11 remain decided-in-prose but unrecorded as ADRs — still a live violation of
-[CLAUDE.md](../CLAUDE.md)'s working agreement, and scheduled in [TASKS.md](./TASKS.md).
+D10 and D11 were once decided-in-prose but unrecorded as ADRs — both are now recorded
+([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)
+for D11, [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added)
+for D10), closing that violation of [CLAUDE.md](../CLAUDE.md)'s working agreement.
 
 ## Remaining risks
 
@@ -508,16 +512,19 @@ multi-vendor question.
 
 ### C7 — M13's access-control rules forbid exactly what M36 requires
 
-**Severity: HIGH** — security-relevant
+**Severity: HIGH** — security-relevant. **✅ Resolved (2026-08-18)** — see
+[ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only).
 
 - **M13:128** sets Orders access to public-create/admin-read and asserts as an acceptance test:
   *"anonymous `GET /api/orders` fails"*
 - **M36:330-336** requires guest order lookup by order reference, with no account, from the public storefront
 
-Both are correct in isolation and mutually exclusive as written. No milestone defines the reconciling
-mechanism (a scoped lookup endpoint, field-level access, or a signed token). Absent an explicit design,
-the likely improvised fix is relaxing Orders read access — which leaks every customer's name, phone,
-and address.
+Both are correct in isolation and mutually exclusive as written. No milestone defined the reconciling
+mechanism (a scoped lookup endpoint, field-level access, or a signed token) — until ADR-024: a
+dedicated `(orderNumber, phone)` server action, `overrideAccess: true` used only server-side inside
+that one scoped query, IP rate-limited, with `M13`'s collection-level access rule left untouched.
+`M13`'s original acceptance test (anonymous `GET /api/orders` fails) remains true and becomes part of
+`M36`'s testing criteria too, to prove the fix didn't relax collection access as a side effect.
 
 ### C8 — Category browsing is assumed by four milestones and built by none
 
@@ -632,13 +639,16 @@ Currently neither decided nor planned.
 
 #### D9 — Guest order-lookup key and abuse controls
 
-See [C7](#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires). What identifies a guest order
-holder, and what prevents enumeration?
+**✅ Resolved (2026-08-18)** — see [C7](#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires)
+and [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only).
+The identifying key is `(orderNumber, phone)`; enumeration is blunted by IP rate limiting on the
+lookup endpoint.
 
 #### D10 — Cart state mechanism
 
-ARCHITECTURE.md:86 lists "Redux Toolkit vs. a simpler client-side cart" as undecided. **M30 silently
-assumes Redux + `localStorage`.**
+**✅ Resolved (2026-08-18)** — see [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added).
+ARCHITECTURE.md:86 listed "Redux Toolkit vs. a simpler client-side cart" as undecided; `M30`'s silent
+assumption (Redux + `localStorage`) is now the recorded decision, not an unrecorded one.
 
 #### D11 — Orders shape for guest customers
 
