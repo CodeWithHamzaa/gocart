@@ -481,3 +481,54 @@ Full behavior specification: [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.
 - **`BestSelling.jsx` renders nothing when no product is flagged**, rather than an empty section with a heading and a "View more" link into an unrelated list.
 - `scripts/seed.ts` flags two seeded products so a freshly seeded database produces a populated home page.
 - The section's customer-facing label is unchanged ("Best Selling"). If the stakeholder would rather it read "Featured" — arguably more accurate, since nothing is measuring sales — that is a copy decision, not a technical one, and belongs with the storefront copy pass tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) (`R12`).
+
+---
+
+## ADR-023: Cart state stays Redux, with `localStorage` persistence added
+
+**Status**: **Accepted (2026-08-18)** — recorded ahead of `M30`, closing readiness finding [D10](./PHASE_1_READINESS_REPORT.md#d10--cart-state-mechanism).
+
+**Context**: `ARCHITECTURE.md` lists "Redux Toolkit vs. a simpler client-side cart" as an open question. `M30`'s text ("Fix cart persistence... e.g. `localStorage`") already silently assumes Redux stays and only persistence is added — but that assumption was never recorded as a decision, which is exactly the failure mode `CLAUDE.md`'s working agreement exists to prevent ("don't let decisions live only in chat history").
+
+The actual, verified bug `M30` exists to fix is narrower than "which state library": `lib/features/cart/cartSlice.js` has no persistence layer at all, so `cartItems` resets to `{}` on every page refresh — verified by reading the slice (no `localStorage` read/write anywhere) and confirmed live while testing `M28`'s cart fix (a hard `page.goto` reload wiped the cart; client-side `<Link>` navigation within the same session did not). That is a real, launch-blocking defect for a store where customers browse, get distracted, and come back. It is not evidence that Redux itself is wrong.
+
+**Decision**: Keep Redux Toolkit as the cart's state container. Add `localStorage` persistence: hydrate `cartSlice`'s initial state from `localStorage` on load, and write back on every mutation (`app/StoreProvider.js` and `cartSlice.js`, per `M30`'s existing file list).
+
+**Rejected alternatives**:
+
+- **Swap to React Context** — no functional gain. Redux is already wired throughout the storefront (`cart`, `address` slices; `StoreProvider.js`), works correctly today except for persistence, and a swap would touch every cart-reading component (`Navbar.jsx`, `cart/page.jsx`, `Counter.jsx`, `OrderSummary.jsx`) for a state-management preference, not a bug fix. Pure churn.
+- **Swap to Zustand or another lightweight store** — same reasoning: smaller boilerplate is a real advantage in a greenfield project, but this isn't one: this codebase's actual gap is a missing persistence layer, which is a five-line addition to the existing Redux slice, not a reason to re-architect state management for the whole storefront.
+- **Server-side cart (a `Cart`/session record in Payload)** — the correct model for an authenticated multi-device cart, but guest checkout with no accounts (ADR-005) means there is no stable identity to key a server cart on besides a cookie-based session ID, which reintroduces most of the complexity `localStorage` avoids for a single-device, no-login shopper. Worth reconsidering only if a future phase adds accounts.
+
+**Consequences**:
+
+- `lib/features/cart/cartSlice.js` gains `localStorage` read on `initialState` and a write after every reducer mutation (or a single `subscribe` in `StoreProvider.js` — implementation detail for `M30` to choose).
+- Cart survives refresh and closing/reopening the tab; it does not sync across devices or browsers, since there is no account to key it on. Acceptable for v1 — see rejected alternatives.
+- No `.jsx`/`.tsx` component outside `lib/features/cart/cartSlice.js` and `app/StoreProvider.js` needs to change: every existing `useSelector(state => state.cart...)` call keeps working unmodified.
+- `M28`'s cart-data-resolution fix (real products via REST) and this persistence fix are independent and already compose correctly — verified: `M28`'s Playwright check used client-side navigation specifically because persistence hadn't landed yet, not because of any interaction between the two fixes.
+
+---
+
+## ADR-024: Guest order lookup via a dedicated `(orderNumber, phone)` endpoint — `Orders` collection access stays admin-only
+
+**Status**: **Accepted (2026-08-18)** — recorded ahead of the `M30`–`M36` checkout group, closing readiness finding [C7](./PHASE_1_READINESS_REPORT.md#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires). Implementation is `M36`'s job; this ADR records the mechanism so `M36` isn't improvised.
+
+**Context**: `M13` set `Orders` access to public-create/admin-read, with an explicit acceptance test that anonymous `GET /api/orders` must fail — correctly implemented and verified working (`M6`–`M13a`'s completion notes). `M36` requires guest order lookup ("My Orders" with no account) from the public storefront. Both are individually correct and, as originally specified, mutually exclusive: nothing in `M13` or `M36` names the reconciling mechanism. The readiness report's own risk assessment is blunt about the likely failure mode absent a decision: *"the likely improvised fix is relaxing Orders read access — which leaks every customer's name, phone, and address"* — a real risk given `Orders` (`M11`) embeds guest name/phone/address directly on each document (ADR-021), so open collection read would be a customer-data leak, not a cosmetic issue.
+
+**Decision**: Guest order lookup is a **dedicated server action or route handler**, not a relaxation of `Orders`' collection-level read access. It accepts exactly two inputs — `orderNumber` and `phone` — and returns exactly one order (or nothing) when both match; it never lists, searches, or enumerates orders. `Orders`' collection access rule from `M13` (admin-read-only) does not change. The endpoint calls Payload's Local API with `overrideAccess: true` internally (server-side only, never exposed to the client), scoped to a single `where: { orderNumber: { equals }, guestPhone: { equals } }` query — the same pattern this session already used for `M27a`'s temporary empty-category verification route, applied permanently here. The endpoint is rate-limited by IP to blunt brute-force enumeration of order numbers.
+
+Phone is the right second factor: it's already a required field on every guest order (`M11`), every COD customer provides one (a delivery contact number is non-negotiable for COD dispatch), and order numbers alone are guessable (`GC-<timestamp>-<random>` per `M11`'s format) — a single factor would let anyone who sees an order-confirmation screenshot, or guesses a nearby order number, pull up a stranger's name, address, and order history.
+
+**Rejected alternatives**:
+
+- **Relax `Orders` collection read access to public** — the exact leak this ADR exists to prevent: every field on every order (name, phone, full address, line items) becomes fetchable by anyone who can guess or enumerate an ID, with no rate limiting Payload's default REST/GraphQL layer provides out of the box.
+- **Order number alone, no second factor** — insufficient: order numbers are visible in URLs, screenshots, and printed slips, and are not intended to be secret. A single-factor lookup is a lookup-by-guessable-ID, not authentication.
+- **Signed/opaque lookup token emailed or SMS'd at order time** — stronger than phone-based lookup in isolation, but adds a hard dependency on working email/SMS delivery at the exact moment a customer most needs a fallback (they're trying to check an order status, possibly because something already went wrong), and SMS is explicitly deferred to a future phase (ADR-015). Reasonable as a *second, additive* channel once `D8`'s order-confirmation email (Resend) ships, not as the only mechanism for launch.
+- **Full guest accounts (email/password)** — directly contradicts ADR-005 (guest checkout, no accounts) and would be the largest possible scope increase to solve a lookup problem.
+
+**Consequences**:
+
+- `M36`'s file list (`app/(public)/orders/page.jsx`, `components/OrderItem.jsx`, `lib/payload/orders.ts`) is unchanged; this ADR specifies *how* `lib/payload/orders.ts`'s lookup function must be scoped, not new files.
+- `M13`'s `Orders` access rule needs no change and no revisit — this ADR is the reconciling mechanism the readiness report asked for, not a reason to reopen `M13`.
+- Rate-limiting the lookup endpoint is now part of `M36`'s definition of done, not an optional hardening pass — added to its acceptance criteria.
+- Closes `C7` and `D9` (guest order-lookup key + abuse controls) together, since `D9`'s question ("what identifies a guest order holder, and what prevents enumeration") is answered by the same design: `(orderNumber, phone)` plus IP rate limiting.

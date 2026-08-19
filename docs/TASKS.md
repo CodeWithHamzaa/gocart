@@ -92,6 +92,143 @@ generate:types` hits the same sandbox `tsx` issue as `scripts/seed.ts`), and **`
 explicit `sort` with no default for "best selling"** — there is no sales-count or review field to rank
 by in the current schema, so `M23` must choose a stand-in sort when it wires `BestSelling.jsx`.
 
+**Four production-prep milestones inserted (2026-08-18)**, closing the remaining pre-production
+readiness gaps before the `M49`–`M59` groups start:
+- **`M52a` — Run Payload migrations as an explicit production deploy step** (closes `R9`): `payload
+  migrate` runs before the app serves traffic, schema auto-push disabled in production, a failed
+  migration blocks the deploy. Inserted into the Docker group after `M52` (secrets).
+- **`M48a` — Remove non-functional Newsletter signup** (closes `R11`): `Newsletter.jsx`'s form has no
+  submit handler and silently discards input — same defect class as the dead Login button (`M21`) and
+  dead coupon input (`M47`). Kept separate from `M48` since that milestone's scope is explicitly
+  leftover references *from `M46`/`M47`*, not unrelated dead UI.
+- **`M55a` — Storefront copy correctness pass** (closes `R12`): wires `Footer.jsx`'s contact display to
+  the already-built `Settings` global (`M13a`) instead of a hardcoded US phone/address, and removes
+  `ProductDetails.jsx`'s false "Free shipping worldwide" claim. Inserted after `M55` (currency).
+- **`M56a` — Golden-path E2E test and CI pipeline** (closes `R7`): one deliberately minimal Playwright
+  test (browse → product → cart → checkout → order created) plus a CI job, sequenced after `M56` (the
+  last functional milestone the golden path touches) and before `M57`'s manual regression pass, so the
+  automated test gives that pass something to lean on afterward rather than replacing it.
+
+All four are design/scheduling only — `MIGRATION_PLAN.md`, `PHASE_1_READINESS_REPORT.md`'s R7/R9/R11/R12
+rows and detail sections, and this file are updated; none are implemented yet, and each depends on
+milestones that are themselves Not Started.
+
+**New milestone `M33a` inserted (2026-08-18)**, closing readiness risk
+[R5](./PHASE_1_READINESS_REPORT.md#r5--out-of-stock-enforcement-is-called-launch-critical-and-then-never-implemented):
+`FEATURE_MATRIX.md` calls out-of-stock enforcement launch-critical for COD, `Products.inStock` has
+existed since `M10`, and no milestone ever validated it at order creation — `M33`'s original goal and
+acceptance test say nothing about stock. `M33a` (inserted directly after `M33`, which it depends on)
+requires server-side re-validation of every line item's `inStock` at order-creation time, rejecting
+the whole order if any product is unavailable — not just hiding the "Add to Cart" button, which a
+direct API call bypasses trivially and which can't catch stock changing between page render and
+"Place Order." Design only; implementation is scheduled, not done — `M33a` depends on `M33`, which is
+Not Started.
+
+**Two pre-checkout ADRs recorded (2026-08-18), ahead of `M30`–`M36`.**
+[ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) closes
+`D10`: cart state stays Redux, with `localStorage` persistence added — `M30`'s already-assumed answer,
+now recorded rather than living only in `MIGRATION_PLAN.md`'s prose.
+[ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only)
+closes `C7` and `D9` together: guest order lookup is a dedicated `(orderNumber, phone)` server
+action/route, rate-limited by IP, that never relaxes `Orders`' `M13` collection-level access —
+resolving the conflict the readiness report flagged between `M13`'s admin-only read and `M36`'s
+guest-lookup requirement without the "improvised fix" the report warned would leak customer data
+(opening collection read). Both ADRs update `M30`'s and `M36`'s `MIGRATION_PLAN.md` entries and the
+corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
+milestones remain Not Started.
+
+**`M28` is done (2026-08-18) — the `M22`–`M28` storefront-data group is now fully complete.**
+`assets/assets.js` and all its imported placeholder images are deleted, along with
+`lib/features/product/productSlice.js` and `lib/features/rating/ratingSlice.js`; `lib/store.js` is
+trimmed to `cart` + `address`. **This milestone's stated premise — "every storefront consumer has
+been re-pointed" — was false**, and one of the gaps it hid was a real, already-live bug: `/cart`
+resolved line items against the now-deleted dummy `productSlice`, which nothing had populated with
+real data since `M23`–`M25` gave every reachable product a real Payload ID — **the cart has been
+silently dropping every item added from a real product page since `M25` shipped.** Fixed by fetching
+real products via REST (`GET /api/products?limit=0&depth=1`, the same client-component pattern
+`CategoriesMarquee.jsx` uses), not deferred: no milestone in `M30`–`M36` explicitly owns this fix.
+Four smaller gaps also surfaced and were resolved: `OrderItem.jsx`'s star-rating block (read the
+now-deleted `ratingSlice`, forced-fixed here — `M46`'s file list is corrected to note it should have
+included this file from the start); `OurSpec.jsx` and `addressSlice.js`'s small non-product data
+literals inlined into their sole consumers; `orders/page.jsx`'s dummy order data inlined image-free
+(that page stays fully dummy until `M36`'s real guest lookup — out of scope to fix further here);
+`Hero.jsx`'s three now-deleted hero images replaced with gradient placeholders (this milestone's own
+file list already committed to deleting those images). Full details, including exactly which files
+were affected and why, are in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s `M28` entry. Verified against
+a live `npm run start` server: all seven storefront routes return 200, and a real headless-Chromium
+browser check (Playwright, client-side navigation to preserve Redux state across the SPA) confirms
+adding a real product to cart now renders it correctly — name, category, price, quantity, total, and
+image — where it previously showed "Your cart is empty." `npm run type-check` and `npm run build`
+both pass.
+
+**`M27b` is done (2026-08-18).** `/categories` lists every top-level category as a card (via `M22`'s
+`getTopLevelCategories()`, already ordered by `displayOrder` then title) with its children as sub-link
+chips, all targeting `/category/[slug]`. This route has no `notFound()` path — an empty catalog renders
+an empty state, not a 404 — so `loading.tsx` is included here safely, unlike `M27a`'s detail route.
+This also closes the temporary gap `M27a` flagged: the breadcrumb's `/categories` link now resolves
+(200, zero console errors), where it previously 404'd. Verified against a live `npm run start` server.
+
+**`M27a` is done (2026-08-18).** `/category/[slug]` now exists: parent slugs roll up their own plus
+every child's products, child slugs list only their own with a parent breadcrumb, pagination/canonical/
+`rel=prev`/`next` all ship per spec, and `generateStaticParams` + `revalidate = 3600` deliver
+static-by-default rendering. `CategoriesMarquee.jsx` and the product-page breadcrumb are now real links.
+**`loading.tsx` was deliberately dropped** — a genuine, empirically confirmed Next.js 15 App Router
+limitation: a `loading.tsx` file wraps the route in a `<Suspense>` boundary that flushes a 200 status
+before `notFound()` can run, so unknown-slug and out-of-range-page requests would incorrectly return
+200 instead of 404. Isolation testing ruled out `error.tsx`, `generateMetadata`, and the SSG/dynamic
+choice as causes — only `loading.tsx`'s presence broke it. Since crawlers never see a loading skeleton
+anyway (only real users on slow connections would), and correct 404 status codes are this milestone's
+core SEO purpose, correctness won; full details and the ruled-out alternatives are in
+[MIGRATION_PLAN.md](./MIGRATION_PLAN.md)'s `M27a` entry. Verified against a live `npm run start`
+server: parent/child rollup, a genuinely empty category (200 + empty state, tested via a temporary
+debug route since no seeded category is naturally empty), unknown slug (404), out-of-range page (404),
+and a simulated query failure (500 via `error.tsx`) all behave correctly.
+
+**`M27` is done (2026-08-18).** `CategoriesMarquee.jsx` gained `'use client'` and now fetches all
+categories from Payload's public-read REST API in a `useEffect`, replacing the hardcoded
+`assets/assets.js` array. REST rather than the `M22` Local API utilities, because the marquee is
+nested inside `Hero.jsx` — itself `'use client'`, whose own server-component conversion is `M40`'s
+job — and a client component can't call the Local API; this is the fallback path
+`lib/payload/categories.ts` already documents. Items stay inert bare `<button>`s, unchanged from
+today; `M27a` still owns turning them into links. Verified in a real headless-Chromium browser
+(Playwright) against a live `npm run start` server: the marquee renders the three seeded categories
+("Electronics & Gadgets", "Headphones", "Speakers") with zero console errors.
+
+**`M26` is done (2026-08-18).** Deleted the guarded store-attribution block `M25` left in
+`ProductDescription.jsx` (`{product.store && (...)}`), its now-unused imports, and its dead link to
+the already-deleted `/shop/[username]` route. With that gone, the file had no remaining client state
+(`M25` already removed the Reviews tab), so it also dropped `'use client'` and now renders as a
+server component. Verified against a live `npm run start` server: `/product/3` still renders
+correctly and the response contains no "view store", "/shop/", or "Product by" text. `/product/[id]`'s
+client JS dropped 123 kB → 120 kB First Load JS.
+
+**`M25` is done (2026-08-18).** `app/(public)/product/[productId]/page.jsx` is now an async server
+component reading `getProductById()`, calling `notFound()` for an unknown ID instead of rendering
+a blank page — matches Next's default not-found page. `force-dynamic`, same reasoning as `M23`.
+**The star-rating UI in `ProductDetails.jsx` and `ProductDescription.jsx` moved from `M46` into
+`M25`**, the same forced pull-forward `ProductCard.jsx` got at `M23`: both read `product.rating`,
+which real products don't have, and would have thrown before rendering — `M46` now has nothing left
+to strip from either file. `ProductDescription.jsx`'s Reviews tab is removed outright, not just
+guarded, since it existed only to render that missing field and Reviews are out of scope for v1
+(ADR-016). Both files' image handling switched to resolving Media relationships' `.url`, mirroring
+`ProductCard.jsx`'s `M23` fix. The store-attribution block is guarded (`product.store &&`), not
+deleted — real products have no `store` relationship so it renders nothing, but the actual deletion
+and its dead `/shop/[username]` link stay `M26`'s job as scoped. Verified against a live
+`npm run start` server: `/product/3` renders the correct name, price, category, and image with no
+"Reviews" text and no server errors; `/product/99999` returns a real HTTP 404. `/product/[productId]`
+moved `○ Static` → `ƒ Dynamic`.
+
+**`M24` is done (2026-08-18).** `app/(public)/shop/page.jsx` is now an async server component reading
+`getProducts()` from `lib/payload/products.ts`, matching `M23`'s precedent under
+[ADR-007](./DECISIONS.md)'s blanket SEO-first/mobile-first mandate even though `M24`'s literal text
+doesn't spell out "server component" the way `M23`'s does. The `?search=` filter is unchanged — still a
+simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data;
+`M29` remains the milestone that replaces it with a real Payload query. The "all products" back-link
+changed from an `onClick`/`router.push` handler to a plain `<Link href="/shop">`, since nothing on the
+page needs client-side interactivity anymore. Verified against a live `npm run start` server with seeded
+data: real names render, `?search=Bluetooth` includes/excludes correctly, an unmatched search renders a
+clean empty grid with no server errors. `/shop` moved `○ Static` → `ƒ Dynamic`.
+
 **`M23` is done (2026-08-17).** The home page is now a server component reading real Payload data:
 `LatestProducts` by `-createdAt`, `BestSelling` from an admin-curated `isFeatured` flag added to
 `Products` ([ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking) —
@@ -113,15 +250,15 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M15`, `M18` | Remove remaining multi-vendor routes | **Done** (2026-08-17) — leaves one dead link, already owned by `M26` |
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
-| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | `M22`, `M23` **Done** (2026-08-17); `M24`–`M28` Not Started |
+| `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | Not Started |
-| `M30`–`M36` | Cart persistence, guest checkout, real COD order creation | Not Started |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
-| `M46`–`M48` | Reviews/Coupons: decide and land minimal v1 scope | Not Started |
-| `M49`–`M54` | Docker production hardening, health checks, backups | Not Started |
-| `M55`–`M56` | PKR currency, Pakistani address/phone validation | Not Started |
+| `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | Not Started — `M48a` inserted (2026-08-18) to close `R11` (dead Newsletter form) |
+| `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
+| `M55`–`M56` (incl. new `M55a`, `M56a`) | PKR currency, Pakistani address/phone validation | Not Started — `M55a` inserted to close `R12` (storefront copy correctness); `M56a` inserted to close `R7` (golden-path E2E + CI) (both 2026-08-18) |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
 
 ---
@@ -152,11 +289,16 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
 
 ### Later, non-blocking
 
-- [ ] PKR formatting convention (blocks `M55`)
+- [ ] PKR formatting convention (blocks `M55`) — the displayed **symbol** is fixed (`Rs. `, 2026-08-17,
+  `NEXT_PUBLIC_CURRENCY_SYMBOL` and its fallback in every consumer); comma grouping/decimal handling
+  is still open and stays with `M55`.
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
 - [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
-- [ ] **Mobile navbar has no cart link or navigation** (found during `M21`, owned by `M44`). The navbar's only mobile-visible element was the dead Login button `M21` removed; the real nav (Home/Shop/search/Cart) is `hidden sm:flex`, so below the `sm` breakpoint the navbar is now just the logo. `M21` did not cause this — mobile never had cart access — but it is a real mobile-first gap under [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) for a market that is majority mobile. Deliberately not fixed inside `M21`, whose scope is only the Login button; recorded on `M44` in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+- [x] ~~**Mobile navbar has no cart link or navigation**~~ — **Resolved 2026-08-17**, pulled forward from
+  `M44`. `components/Navbar.jsx` gained a mobile row (`flex sm:hidden`): a Shop link, a search toggle,
+  and a cart link with the count badge — the same badge the desktop nav already had. Verified `Rs.`/
+  cart markup render server-side under `npm run build && npm run start`.
 - [x] ~~**"Best selling" has no defined ranking**~~ — **Resolved 2026-08-17** at `M23` → [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking): admin-curated `isFeatured` flag on `Products`, not a computed metric. A sales-derived ranking remains possible later (it would need an `Orders` aggregation no milestone owns yet, and would render empty at launch regardless).
 - [ ] **`payload-types.ts` cannot be generated in this sandbox** (found during `M22`). `payload generate:types` hits the same `tsx`/Node ESM-interop class of failure as `scripts/seed.ts` (`M13`) and `generate:importmap` (`M3`). `lib/payload/*.ts` use hand-written types mirroring the collections exactly as a stand-in. Confirm `payload generate:types` works in a normal environment and switch these files to the generated types when convenient — not launch-blocking, but worth doing before the type surface grows much further.
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step

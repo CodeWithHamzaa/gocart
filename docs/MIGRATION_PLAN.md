@@ -337,6 +337,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Files**: `app/(public)/shop/page.jsx`
 - **Dependencies**: M22
 - **Testing**: `/shop` lists real seeded products; existing name-based search still filters correctly against real data.
+- **✅ Done (2026-08-17)**. Converted to a server component reading `searchParams` directly (ADR-007 — SEO-first applies to all storefront UI, not just M23's) and fetching via `getProducts()`. The name filter stays a simple in-memory `.includes()` over the fetched list, unchanged in behavior from the dummy-data version — `M29` is still the milestone that replaces it with a real query. The "go back" control changed from an `onClick`+`router.push` (client-only) to a plain `<Link href="/shop">`, equivalent behavior in a server component. Verified: real product names render server-side; `?search=` correctly includes matches and excludes non-matches; a non-matching search renders a clean empty grid, not an error. `/shop` moved `○ Static` → `ƒ Dynamic`. `npm run type-check` and `npm run build` both pass.
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire shop listing page to real Payload product data`
 
@@ -347,6 +348,27 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Visiting `/product/[id]` for a seeded product renders correct name/price/images; a non-existent ID renders a proper not-found state instead of a blank page.
 - **Rollback**: Revert the three files.
 - **Commit message**: `Wire product detail page to real Payload product data`
+- **✅ Done (2026-08-18)**: `page.jsx` converted to an async server component reading `getProductById()`
+  (already implemented at `M22`), calling `notFound()` when it returns `null` — matches Next.js's
+  default not-found page, satisfying the milestone's testing requirement without a custom
+  `not-found.jsx`. `force-dynamic` set for the same reason as `M23`'s home page (admin price/stock
+  edits must show without a redeploy; the production build at `M49` cannot assume a reachable
+  database). **`ProductDetails.jsx` and `ProductDescription.jsx`'s star-rating UI moved from `M46`
+  into `M25`**, the same class of forced pull-forward as `ProductCard.jsx` at `M23`: both read
+  `product.rating`, which real products don't have, and would have thrown before rendering —
+  `M46`'s entry is updated to note there is nothing left in these two files for it to strip.
+  `ProductDescription.jsx`'s Reviews tab is removed outright (not just guarded), since it existed
+  solely to render that same missing field and Reviews are out of scope for v1 (ADR-016). Image
+  handling for both files switched to resolving Media relationships' `.url` field, mirroring
+  `ProductCard.jsx`'s `M23` fix — `images[0]`/`image` were never valid URL strings for real products.
+  The store-attribution block in `ProductDescription.jsx` is left in place but guarded
+  (`{product.store && (...)}`) rather than deleted: real products have no `store` relationship so it
+  now renders nothing, but the actual deletion (and its now-dead `/shop/[username]` link) stays
+  `M26`'s job as scoped, since it isn't a render-blocking fix. Verified against a live `npm run start`
+  server with seeded data: `/product/3` renders the correct name ("Bluetooth Speaker"), price, category
+  ("Speakers"), and image, with no "Reviews" text and no server-side errors; `/product/99999` (a
+  non-existent ID) returns a real HTTP 404 via Next's default not-found page. `npm run type-check` and
+  `npm run build` both pass; `/product/[productId]` moved `○ Static` → `ƒ Dynamic`.
 
 ### M26 — Remove multi-vendor "Product by {store}" attribution
 - **Goal**: Now that products aren't vendor-owned, drop the store-attribution block and its link to the (already-deleted) per-vendor storefront.
@@ -355,6 +377,15 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Product detail page renders correctly with no broken link and no reference to a store/vendor.
 - **Rollback**: Revert the file.
 - **Commit message**: `Remove vendor attribution block from product page`
+- **✅ Done (2026-08-18)**: Deleted the guarded store-attribution block `M25` left in place
+  (`{product.store && (...)}`), its `Image`/`Link`/`ArrowRight` imports, and its `next/link` to the
+  already-deleted `/shop/[username]` route. Since `M25` had already removed the file's only client
+  state (the Reviews tab), the file also dropped `'use client'` and now renders as a server
+  component — no interactivity remains to require it, same direction as `M23`'s Redux-shedding
+  cleanup. Verified against a live `npm run start` server: `/product/3` still renders correctly
+  (name, price, category, image, description), and the response body contains no "view store",
+  "/shop/", or "Product by" text. `npm run type-check` and `npm run build` both pass;
+  `/product/[productId]`'s client JS dropped 123 kB → 120 kB First Load JS.
 
 ### M27 — Wire CategoriesMarquee to real categories
 - **Goal**: Replace the hardcoded `categories` array `CategoriesMarquee` imports from `assets/assets.js` with the real `Categories` collection. **Data source only** — the marquee's items stay non-interactive in this milestone.
@@ -364,6 +395,20 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Marquee renders the seeded categories from `M9`/`M13` instead of the hardcoded six; items remain non-interactive, unchanged from today; no console errors.
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire category marquee to real Payload categories`
+- **✅ Done (2026-08-18)**: `CategoriesMarquee.jsx` gained `'use client'` and now fetches all categories
+  from Payload's public-read REST API (`GET /api/categories?limit=0&sort=displayOrder,title&depth=0`)
+  in a `useEffect`, replacing the hardcoded `assets/assets.js` array. **REST, not the `M22` Local API
+  utilities** — `CategoriesMarquee` is nested inside `Hero.jsx`, which is `'use client'` (`Hero`'s own
+  server-component conversion is `M40`'s pass, out of this milestone's scope), and a client component
+  can't call Payload's Local API. This is exactly the fallback path `lib/payload/categories.ts`'s own
+  header comment already documents for client components. Items are unchanged bare `<button>`s — no
+  `onClick`, no `href` — preserving today's inert behavior exactly, per the corrected acceptance test
+  above; `M27a` still owns turning them into links. Verified in a real headless-Chromium browser
+  (Playwright, `page.goto` + `waitForTimeout` against a live `npm run start` server with seeded data,
+  since the fetch runs client-side after hydration and won't appear in a `curl`'d response): the
+  marquee renders "Electronics & Gadgets", "Headphones", "Speakers" (the three seeded categories, each
+  repeated 4× by the existing loop-duplication), with zero console or page errors. `npm run type-check`
+  and `npm run build` both pass.
 
 ### M27a — Category detail and product listing route (`/category/[slug]`)
 - **Goal**: Build the customer-facing category page the storefront has never had — a server-rendered, slug-based, publicly browsable listing of a category's products, with parent/child navigation and pagination. Implements [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy).
@@ -380,6 +425,49 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: A parent slug lists its children and their rolled-up products; a child slug lists only its own with a working parent breadcrumb; a category with no products returns **200** with an empty state; an unknown slug returns **404**; `?page=2` paginates and an out-of-range page returns 404; page source contains the product grid (server-rendered, not hydrated in); marquee items and the product breadcrumb now navigate correctly; no login prompt anywhere in the flow; `npm run type-check` and `npm run build` pass.
 - **Rollback**: Delete `app/(public)/category/`; revert the two component edits. The marquee returns to inert items — its pre-`M27a` state — so no dead links are left behind.
 - **Commit message**: `Add category detail and product listing route`
+- **✅ Done (2026-08-18)**: `app/(public)/category/[slug]/page.tsx`, `not-found.tsx`, and `error.tsx`
+  added; `CategoriesMarquee.jsx`'s bare `<button>`s became `next/link` anchors to
+  `/category/[slug]`; the product-page breadcrumb (`M25`) now links its category segment.
+  `generateStaticParams` (built from `M22`'s `getTopLevelCategories()`, no new lib function needed)
+  plus `revalidate = 3600` deliver the spec's "static-by-default, revalidated" requirement.
+  Parent-slug rollup and child-slug isolation both use `M22`'s `getProductsByCategory()` directly.
+  Pagination, canonical URLs, and `rel=prev`/`next` (rendered as literal `<link>` tags in the page
+  body, which Next.js hoists into `<head>` — a documented App Router capability, not a hack) are all
+  implemented per spec.
+  - **⚠️ `loading.tsx` was deliberately dropped — spec conflict, not an oversight.** Empirical testing
+    (isolating each segment file one at a time against a live `npm run start` server) proved that
+    adding a `loading.tsx` file to this route makes `notFound()` return **HTTP 200** instead of 404,
+    for both the unknown-slug and out-of-range-page cases — confirmed independent of `error.tsx`,
+    `generateMetadata`, and the SSG/`revalidate` vs. `force-dynamic` choice; only `loading.tsx`'s
+    presence flips the result. This is a real Next.js 15 App Router limitation: `loading.tsx` wraps
+    the segment in a `<Suspense>` boundary, and Next flushes that boundary's shell with a 200 status
+    *before* the awaited page component can run `notFound()` — by the time the correct body content
+    (`not-found.tsx`) streams in, the status line is already sent and can't change. A `layout.tsx`-based
+    workaround (checking category existence outside the Suspense boundary) fixed the unknown-slug case
+    alone, but layouts don't receive `searchParams`, so it couldn't cover the out-of-range-page case —
+    and `generateMetadata` calling `notFound()` didn't help either (Next 15's metadata streams
+    independently of the body and doesn't block the shell flush). Given correct HTTP status codes are
+    this milestone's whole point (soft-404s directly undermine ADR-007's SEO-first mandate, and
+    crawlers never see a `loading.tsx` skeleton anyway — that's purely a real-user CLS concern), status
+    correctness won over the skeleton. `min-h-[70vh]` on the content wrapper still reserves layout
+    space, avoiding a hard blank-page flash. Revisit if Next.js fixes this upstream, or if `M45`'s
+    caching pass wants Partial Prerendering (which is designed to solve exactly this class of problem
+    but is experimental in this Next.js version and out of scope to enable here).
+  - **`?category=` was not added to `/shop`** — `/category/[slug]` is the single canonical URL for
+    products-by-category, per `CATEGORY_REQUIREMENTS.md`'s explicit no-duplicate-content rule.
+  - Verified against a live `npm run start` server (fresh build each time during isolation testing):
+    `/category/electronics` (parent) lists its own plus both children's products (`Bluetooth Speaker`,
+    `Wireless Headphones`); `/category/speakers` (child) lists only its own product with a working
+    parent breadcrumb link; a genuinely empty category (created and deleted via a temporary debug route
+    during verification only, per the same pattern `M22` used, since every seeded category has stock)
+    renders **200** with the empty state; an unknown slug and an out-of-range `?page=` both return a
+    real **404**; a simulated query failure (temporary forced throw, removed before committing) returns
+    **500** via `error.tsx`; canonical tag is correct on page 1; marquee links and the product
+    breadcrumb link both navigate to real category pages; no login prompt anywhere. One expected,
+    temporary gap: the breadcrumb's `/categories` link 404s until `M27b` lands (next in this same
+    session) — `Link` prefetching that URL logs a console 404 in the interim, self-resolving once
+    `M27b` ships. `npm run type-check` and `npm run build` both pass; `/category/[slug]` is `●` SSG
+    with three pre-rendered params (`electronics`, `headphones`, `speakers`).
 
 ### M27b — Categories landing page (`/categories`)
 - **Goal**: A browsable index of the whole catalog structure — every top-level category with its children — giving customers and crawlers a single entry point into category browsing.
@@ -389,6 +477,21 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: All seeded top-level categories render with their children; every link resolves to a real category page; a parent with no children renders as a plain card without error; metadata is present and distinct; layout is correct at mobile, tablet, and desktop widths; no login required; `npm run type-check` and `npm run build` pass.
 - **Rollback**: Delete `app/(public)/categories/`. Nothing else references it.
 - **Commit message**: `Add categories landing page`
+- **✅ Done (2026-08-18)**: `app/(public)/categories/page.tsx` and `loading.tsx` added. Cards render
+  every top-level category from `M22`'s `getTopLevelCategories()` — already ordered by `displayOrder`
+  then title, matching the spec — with each child rendered as a sub-link chip. Every card and chip
+  targets `/category/[slug]`. `revalidate = 3600`, same static-by-default reasoning as `M27a`. Unlike
+  `M27a`'s detail route, **this route has no `notFound()` path** (an empty catalog renders an empty
+  state, not a 404), so it doesn't hit the `loading.tsx`/Suspense status-code conflict documented
+  there — `loading.tsx` is included here exactly as scoped, safely. Verified against a live
+  `npm run start` server: both seeded top-level categories ("Electronics & Gadgets", "Fashion" — the
+  visible set depends on what's currently seeded) render with their children as working links; `<title>
+  Categories</title>` metadata present. Also re-verified `M27a`'s product-page and marquee links to
+  `/category/[slug]` still resolve, and confirmed the temporary gap noted in `M27a`'s entry is now
+  closed: the breadcrumb's `/categories` link returns 200, and the Playwright console-error check on
+  `/category/electronics` (prefetching that link) now shows zero errors, versus one 404-fetch error
+  before this milestone. `npm run type-check` and `npm run build` both pass; `/categories` is `○`
+  Static with a 1h revalidate window.
 
 > **Deliberately unchanged by the category work**: `M24` (`/shop` stays the all-products + search listing — no `category` param is introduced, per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)'s single-canonical-URL rule), `M25`, `M28`, `M40` (the new routes are server components from birth), and `M43` (JSON-LD stays scoped to `Product` on product detail pages; category structured data is explicitly not Phase 1). These omissions are decided, not overlooked.
 
@@ -399,6 +502,75 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: `npm run build` succeeds; `grep -r "assets/assets"` and `grep -r "productDummyData\|dummyRatingsData"` across `app`/`components`/`lib` return nothing.
 - **Rollback**: `git revert` to restore all deleted files at once.
 - **Commit message**: `Remove dummy data source and orphaned Redux slices now that storefront uses real data`
+- **✅ Done (2026-08-18)**: `assets/assets.js` and every image it imported (`product_img1`–`product_img16.png`
+  — four more than the file actually used, `hero_model_img.png`, `hero_product_img1.png`,
+  `hero_product_img2.png`, `happy_store.webp`, `profile_pic1–3.jpg`, plus the unreferenced-anywhere
+  `gs_logo.jpg` and `upload_area.svg`) are deleted. `lib/features/product/productSlice.js` and
+  `lib/features/rating/ratingSlice.js` are deleted; `lib/store.js` trimmed to `cart` + `address`.
+  - **⚠️ This milestone's own premise — "every storefront consumer has been re-pointed" — was false,
+    and one of the two real gaps it hid was a live customer-facing bug, not a documentation nit.**
+    `assets.js` had **five** consumers beyond the ones `M23`–`M27` migrated, none in this milestone's
+    file list:
+    1. **`app/(public)/cart/page.jsx` resolved cart line items against `state.product.list`
+       (`productSlice.js`), populated only from the dummy dataset.** Since `M23`–`M25` gave every
+       reachable product page a real Payload ID, and nothing has populated that Redux slice with real
+       data since, **the cart has been silently dropping every item added from a real product page
+       since `M25` shipped** — `products.find(product => product.id === key)` never matched, so
+       `cartArray` stayed empty and the page rendered "Your cart is empty" regardless of what was
+       actually in `cartItems`. This is a correctness bug already live on `main`, not something this
+       milestone would have introduced by deleting `productSlice.js` — deleting it only removes the
+       broken crutch. **Fixed**, not deferred: `cart/page.jsx` now fetches real products via
+       `GET /api/products?limit=0&depth=1` (a client component can't use the Local API — same
+       sanctioned REST pattern `CategoriesMarquee.jsx` uses, `M27`) instead of the dead Redux slice,
+       with the same `.url`/Media-relationship image resolution `ProductCard.jsx` uses and a
+       `typeof category === 'object'` guard so a real `Category` relationship object renders its
+       `.title` instead of throwing "Objects are not valid as a React child." No milestone in `M30`–`M36`
+       explicitly owns "resolve cart line items to real product data" (`M30` is persistence only, `M34`
+       is shipping totals only) — this was an orphaned fix, not one deferred by design, so it was made
+       here rather than left broken for six more milestones.
+    2. **`components/OrderItem.jsx` read `state.rating`** (`ratingSlice.js`, deleted this milestone)
+       for its "Rate Product" / star-rating block. Deleting the slice without touching this file would
+       have crashed `/orders` immediately. Same class of forced pull-forward as `ProductCard.jsx`
+       (`M23`) and `ProductDetails.jsx`/`ProductDescription.jsx` (`M25`): the block is removed, not
+       guarded — Reviews are out of scope for v1 (ADR-016) regardless. **`M46`'s file list should have
+       named `OrderItem.jsx` from the start and never did**; its entry below is corrected to note this.
+    3. **`components/OurSpec.jsx`** (`ourSpecsData` — site USP copy/icons, not product data) and
+       **`lib/features/address/addressSlice.js`** (`addressDummyData` — the checkout address form's
+       still-dummy default, `M31`'s job to replace) both imported small, self-contained data literals
+       from `assets.js` that had nothing to do with the dummy product/rating dataset. Both are inlined
+       into their sole consumer, unchanged in content, so `assets.js` could be deleted outright without
+       forcing either file's real migration ahead of its own milestone.
+    4. **`app/(public)/orders/page.jsx`** imports `orderDummyData`, which embeds `productDummyData`
+       (with the now-deleted `product_img*.png` imports), `dummyUserData`, `addressDummyData`, and
+       `couponDummyData` — a genuinely out-of-scope page: `M36` is explicitly the milestone that
+       replaces its dummy listing with real guest order lookup, and this milestone group's own
+       "deliberately unchanged" note (above `M28`'s entry) does not list `/orders` only because the
+       category work never touched it, not because it was already handled. A trimmed, self-contained,
+       image-free `orderDummyData` (same shape, same values, `images: []`) is now inlined directly in
+       `orders/page.jsx` instead — the page's behavior is byte-for-byte the same dummy listing it was
+       before this milestone; only the data's location and its dependency on now-deleted image files
+       changed. `OrderItem.jsx` already guards a missing `product.images[0]` (`{item.product.images?.[0] &&
+       ...}`) rather than rendering a broken image icon.
+    5. **`components/Hero.jsx`** used `assets.hero_model_img`/`hero_product_img1`/`hero_product_img2`
+       for its banner artwork. This milestone's own file list already commits to deleting those exact
+       images ("real product/marketing photography to be supplied separately"), so `Hero.jsx` was
+       always going to need this fix regardless of whether it appeared in the file list. The three
+       `<Image>` elements are replaced with plain gradient placeholder `<div>`s at the same dimensions
+       (no layout shift), not left as broken image references or removed outright (which would have
+       collapsed the hero's layout).
+  - The literal testing text ("`grep -r "assets/assets"` ... return nothing") is satisfied for live
+    code — no `import`/`from` statement references it anywhere. A handful of `// M28: ...` comments
+    that name `assets/assets.js` for historical/migration context (in `OurSpec.jsx`, `addressSlice.js`,
+    `orders/page.jsx`) remain, since stripping accurate history to satisfy a literal grep would be
+    worse than the comments themselves.
+  - Verified against a live `npm run start` server: `npm run type-check` and `npm run build` both pass;
+    `/`, `/shop`, `/product/3`, `/cart`, `/orders`, `/category/electronics`, `/categories` all return
+    200. The cart fix specifically verified in a real headless-Chromium browser (Playwright, using
+    client-side `<Link>` navigation rather than `page.goto` — a hard reload would wipe Redux state
+    since `M30`'s persistence fix hasn't landed yet, which is a separate, expected limitation, not a
+    regression): adding "Bluetooth Speaker" from `/product/3` and navigating to `/cart` now renders the
+    product's name, category, price, quantity, running total, and image — previously it rendered "Your
+    cart is empty." Zero console errors throughout.
 
 ---
 
@@ -418,6 +590,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 ### M30 — Fix cart persistence
 - **Goal**: The cart is currently in-memory-only and empties on refresh — a real problem with no account to recover it from. Persist it (e.g. `localStorage`).
+- **Decided**: [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) (2026-08-18) — Redux stays; `localStorage` persistence is added to the existing slice, not a state-library swap. Closes readiness finding [D10](./PHASE_1_READINESS_REPORT.md#d10--cart-state-mechanism).
 - **Files**: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
 - **Dependencies**: none — independent of all Payload work; may land at any point in the sequence.
 - **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
@@ -448,6 +621,36 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Rollback**: Revert both files.
 - **Commit message**: `Create real orders on checkout instead of navigating to a stub page`
 
+### M33a — Enforce stock at order creation
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R5](./PHASE_1_READINESS_REPORT.md#r5--out-of-stock-enforcement-is-called-launch-critical-and-then-never-implemented):
+  `FEATURE_MATRIX.md` calls in-stock/out-of-stock enforcement *"launch-critical for COD (must not accept
+  orders for unavailable items)"*, `Products.inStock` has existed since `M10`, and yet no milestone
+  ever validated it at order creation — `M33`'s original goal and acceptance test say nothing about
+  stock. For COD specifically this is a direct cost, not a cosmetic gap: accepting an order for
+  something unavailable means a wasted dispatch attempt or a cancellation call, and failed-delivery/RTO
+  cost is already the dominant margin risk in this market (per `PROJECT_SPEC.md`'s Pakistan-market
+  context). Hiding the "Add to Cart" button for an out-of-stock product is necessary but not
+  sufficient: stock can change between when a page was rendered/cached and when "Place Order" is
+  clicked, and a client-side-only check is trivially bypassed by anyone calling the order-creation
+  endpoint directly.
+- **Goal**: At order creation, re-check every line item's `Products.inStock` **server-side**, using
+  current data at the moment of creation — never a value cached from an earlier page render or trusted
+  from the client. If any line item's product is out of stock, reject the entire order (no partial
+  orders) with a clear error identifying which product(s) failed, and create nothing.
+- **Files**: `lib/payload/orders.ts` (the order-creation function `M33` adds), `components/OrderSummary.jsx`
+  (surface the rejection — which product(s), so the customer can remove them and retry, not a generic
+  failure)
+- **Dependencies**: `M33` (the order-creation function this validates against must exist first)
+- **Testing**: Placing an order where every line item is in stock succeeds exactly as `M33` already
+  tests. Placing an order containing an out-of-stock line item is rejected **server-side** — verified
+  by calling the order-creation path directly (a script or a temporary debug route, not just clicking
+  through the UI with an already-hidden button), confirming no `Order` record is created and the
+  customer sees which product(s) blocked the order. A product going out of stock *after* the cart page
+  loaded but *before* "Place Order" is clicked is still caught (proves the check reads current data,
+  not a stale client-side value).
+- **Rollback**: Revert both files.
+- **Commit message**: `Enforce server-side stock validation at order creation`
+
 ### M34 — Confirm shipping/total calculation rules
 - **Goal**: Wire the cart/checkout total calculation to the decided shipping model: flat rate + free-shipping threshold, both read from the `Settings` global (`M13a`) at order-creation time and snapshotted onto the order — never recomputed live. Per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
 - **Files**: `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx`
@@ -466,9 +669,10 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 
 ### M36 — Guest order lookup
 - **Goal**: Since there are no accounts, "My Orders" needs a non-account lookup mechanism (e.g. order ID + phone/email), replacing the current dummy-data table.
+- **Decided**: [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only) (2026-08-18) — a dedicated server action/route taking `(orderNumber, phone)`, returning exactly one order, rate-limited by IP. `Orders`' `M13` collection access (admin-read-only) does **not** change; the lookup uses `overrideAccess: true` internally, server-side only. Closes readiness findings [C7](./PHASE_1_READINESS_REPORT.md#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires) and [D9](./PHASE_1_READINESS_REPORT.md#d9--guest-order-lookup-key-and-abuse-controls).
 - **Files**: `app/(public)/orders/page.jsx`, `components/OrderItem.jsx`, `lib/payload/orders.ts`
 - **Dependencies**: M33, M35
-- **Testing**: Look up a real placed order by its lookup key; confirm correct data renders and an incorrect key is rejected without leaking other customers' orders.
+- **Testing**: A correct `(orderNumber, phone)` pair returns exactly that order; a wrong phone with a correct order number returns nothing; the lookup endpoint is rate-limited by IP (repeated bad attempts get throttled, not silently retried forever); anonymous `GET /api/orders`/`GET /api/orders/[id]` still fail per `M13`'s original acceptance test, confirming collection access itself was never relaxed.
 - **Rollback**: Revert the three files.
 - **Commit message**: `Add guest order lookup by order reference`
 
@@ -570,6 +774,8 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Goal**: Reviews are decided out of scope for v1 — [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1). Execute the removal path: delete `RatingModal.jsx` and its entry points, and strip the dummy star-rating display.
 - **Files**: `components/RatingModal.jsx`, `components/ProductDescription.jsx`, `components/ProductDetails.jsx`
 - **`components/ProductCard.jsx` moved to `M23`** (2026-08-17). Its star-rating block read `product.rating`, which real Payload products do not have, so `M23` could not render real data on the home page until the block was removed — the change was forced ~23 milestones earlier than this milestone sits. Already done; nothing left here for that file.
+- **`components/ProductDetails.jsx` and `components/ProductDescription.jsx` moved to `M25`** (2026-08-18), same reasoning: both read `product.rating` and would have thrown before rendering the product detail page on real data. Already done; nothing left here for either file.
+- **`components/OrderItem.jsx` moved to `M28`** (2026-08-18) — **this file should have been in this milestone's file list from the start and never was.** It read `state.rating` (`ratingSlice.js`), which `M28` deletes as one of the two orphaned Redux slices; deleting the slice without touching this file would have crashed `/orders`. The "Rate Product" / star-rating block is removed, not guarded — Reviews are out of scope for v1 (ADR-016) regardless of which milestone happened to force the fix. Already done; nothing left here for that file. `RatingModal.jsx` itself is untouched — deleting it (and its now-orphaned import in this file, already gone) remains this milestone's job.
 - **Dependencies**: M25
 - **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
 - **Rollback**: Revert the touched files.
@@ -590,6 +796,26 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: `npm run build` succeeds; manual click-through finds no dead links or references to removed functionality.
 - **Rollback**: Revert the specific cleanup commit.
 - **Commit message**: `Clean up references to deferred/removed reviews and coupons functionality`
+
+### M48a — Remove non-functional Newsletter signup
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R11](./PHASE_1_READINESS_REPORT.md#r11--newsletterjsx-is-left-in-limbo):
+  `Newsletter.jsx`'s form has no submit handler at all — it silently discards whatever a customer
+  types, the same defect class (a `toast.promise` wrapped around nothing, or in this case not even
+  that) that the dead Login button (`M21`) and the dead coupon input (`M47`) were removed for. No
+  milestone wired it to a real subscribe mechanism or dropped it. Kept separate from `M48` rather than
+  folded into it, since `M48`'s own scope is explicitly leftover references *from `M46`/`M47`* —
+  `Newsletter.jsx` is unrelated to Reviews/Coupons and deserves its own commit, not scope creep into a
+  differently-scoped cleanup milestone.
+- **Goal**: Remove the non-functional newsletter signup form. There is no email-marketing plan or
+  provider decided for v1 (Resend's free tier, per ADR-015, is transactional email — order
+  confirmations, not marketing lists) — revisit if/when one exists, as new, real functionality, not by
+  resurrecting this form.
+- **Files**: `components/Newsletter.jsx` (deleted), `app/(public)/page.jsx` (remove the import/usage)
+- **Dependencies**: none
+- **Testing**: No newsletter form renders anywhere on the storefront; `npm run build` succeeds; no dead
+  import remains.
+- **Rollback**: `git revert` to restore both files.
+- **Commit message**: `Remove non-functional newsletter signup form`
 
 ---
 
@@ -629,6 +855,25 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the two files.
 - **Commit message**: `Document production environment and secrets configuration`
 
+### M52a — Run Payload migrations as an explicit production deploy step
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R9](./PHASE_1_READINESS_REPORT.md#r9--no-production-database-migration-step):
+  development relies on Payload's schema auto-push (`next dev`), which is not appropriate for
+  production — `M50` (compose), `M52` (secrets), `M53` (health checks), and `M59` (deploy runbook)
+  never named an explicit migration step, so the first production deploy would have improvised its
+  schema strategy against a real database.
+- **Goal**: Production deploys run `payload migrate` as an explicit step — before the app starts
+  serving traffic — with schema auto-push disabled in the production build/runtime. A failed migration
+  must block the deploy, not silently fall through to a stale or partially-migrated schema.
+- **Files**: `docker-compose.prod.yml` (a migration step/init container ahead of the app service, or an
+  entrypoint script that runs migrations then execs the server), `docs/DEPLOYMENT.md`/`docs/ARCHITECTURE.md`
+  (document the migration workflow so `M59`'s runbook doesn't improvise it either)
+- **Dependencies**: `M50` (compose), `M52` (`DATABASE_URI`/secrets available to run migrations against)
+- **Testing**: Deploying against a database one schema version behind actually migrates rather than
+  silently pushing or skipping; a deliberately broken migration blocks the app from starting rather
+  than starting against a mismatched schema.
+- **Rollback**: Revert the compose/entrypoint changes.
+- **Commit message**: `Run Payload database migrations as an explicit production deploy step`
+
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
 - **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
@@ -665,6 +910,60 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: Submitting an invalid Pakistani phone number/address is rejected with a clear message; a valid one succeeds.
 - **Rollback**: Revert both files.
 - **Commit message**: `Add Pakistani address and phone format validation to guest checkout`
+
+### M55a — Storefront copy correctness pass
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R12](./PHASE_1_READINESS_REPORT.md#r12--no-milestone-owns-storefront-copy-correctness):
+  verified still live in the repo — `Footer.jsx` shows a US phone number, a `.com` example email, and a
+  San Francisco address; `ProductDetails.jsx` promises **"Free shipping worldwide,"** false under
+  ADR-018's flat-rate, Pakistan-only shipping model; `Hero.jsx` had a hardcoded `$4.90` (the currency
+  symbol itself was fixed ahead of `M24`, but the copy around it — "worldwide," non-Pakistani framing —
+  was not in scope of that one-line fix). Only `M44` (mobile audit) and `M55` (currency formatting)
+  touch these files, and neither is scoped to copy correctness. For a market where customers are
+  already wary of online scams, foreign contact details and false shipping claims on a Pakistani COD
+  store read as a fraud signal, not a cosmetic nit — worth fixing before any real traffic, not after.
+- **Goal**: Replace fake/foreign placeholder copy with real values. Wire `Footer.jsx`'s contact display
+  to the `Settings` global's `contactPhone`/`contactEmail`/`contactAddress` fields (`M13a` already built
+  these; nothing has read them yet). Remove `ProductDetails.jsx`'s "Free shipping worldwide" claim,
+  replacing it with copy that matches the actual flat-rate/free-threshold model (ADR-018) — read from
+  `Settings`, not hardcoded, so an admin changing the threshold doesn't leave the storefront claiming
+  something false.
+- **Files**: `components/Footer.jsx`, `components/ProductDetails.jsx`, `lib/payload/settings.ts` (new,
+  mirroring the `lib/payload/products.ts`/`categories.ts` pattern — a server-side Local API reader for
+  the `Settings` global)
+- **Dependencies**: `M13a` (the `Settings` global and its fields already exist), `M55` (currency
+  formatting should land first so this pass isn't fixing copy around a value that's about to reformat)
+- **Testing**: `grep -r "example.com\|+1-212\|94102\|worldwide"` across `components/` returns nothing;
+  Footer's displayed contact info matches whatever is configured in `/admin`'s Settings; changing the
+  admin-configured phone/email/address updates the storefront without a redeploy.
+- **Rollback**: Revert all three files.
+- **Commit message**: `Replace placeholder contact info and false shipping claims with real Settings-backed copy`
+
+### M56a — Golden-path E2E test and CI pipeline
+- **New milestone, inserted 2026-08-18** — closes readiness risk [R7](./PHASE_1_READINESS_REPORT.md#r7--no-test-or-ci-milestone-exists-in-59):
+  no test framework and no CI pipeline exist anywhere in the 59-milestone plan, which means `M57`, the
+  end-to-end regression pass over a total rewrite of every data path in the application, would otherwise
+  run with **zero automated safety net** beneath it — entirely manual, one-time, and never re-run again
+  after launch. Deliberately minimal by design, not a full test pyramid: a v1 COD storefront's actual
+  risk is a broken money path, not missing unit-test coverage.
+- **Goal**: One Playwright end-to-end test covering the golden path — browse → product detail → add to
+  cart → guest checkout → COD order created — running against a seeded database, plus a CI job (GitHub
+  Actions, matching this repo's host) that runs `npm run type-check`, `npm run build`, and that test on
+  every push/PR. Playwright is already available in this environment (confirmed while verifying `M27`'s
+  and `M27a`'s client-rendered content this session), so no new tool needs introducing.
+  - **The route/component set this test depends on**: `/`, `/shop`, `/product/[id]`, `/cart`,
+    `/category/[slug]`, checkout (`M31`–`M33`, `M33a`'s stock enforcement). Sequenced after `M56` (last
+    of the pre-launch functional milestones) so the golden path this test walks is the real, final one —
+    an E2E test written mid-sequence would need rewriting as each subsequent milestone changed the flow
+    it exercises.
+- **Files**: `e2e/golden-path.spec.ts` (new), `playwright.config.ts` (new), `.github/workflows/ci.yml` (new)
+- **Dependencies**: `M33a` (order creation must actually validate stock for the test to exercise a real
+  order), `M56` (last functional milestone the golden path touches)
+- **Testing**: The golden-path test passes locally against a freshly seeded database; the CI job runs
+  and passes on a pushed branch; a deliberately broken golden-path step (e.g. reverting `M33`
+  temporarily) makes both the local test and the CI job fail, proving the test actually exercises the
+  flow rather than trivially passing.
+- **Rollback**: Revert/delete the three new files.
+- **Commit message**: `Add golden-path E2E test and CI pipeline`
 
 ---
 
