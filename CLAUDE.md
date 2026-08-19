@@ -34,6 +34,27 @@ Two things carried forward from earlier work, tracked in [docs/TASKS.md](./docs/
 
 Phase and group names are **labels for grouping and status reporting only**. They carry no execution order and must never be used as implementation references — "start Phase 2" is not an instruction anyone can act on correctly; "start `M6`" is. Execution order is defined by each milestone's stated dependencies, summarized in MIGRATION_PLAN's execution-order section, and is **not** the same as ascending milestone ID (notably, `M14`/`M16`/`M17`/`M19` run before `M3` — see [ADR-014](./docs/DECISIONS.md)).
 
+## Who does the work — the AI engineering team
+
+Day-to-day engineering runs through a **development-time** team defined in
+[.claude/](./.claude/): an **Engineering Manager** orchestrating seven specialists
+(Product, Architecture, UI/UX, Full-Stack, QA, Security/Performance, DevOps/Release),
+with **human approval required before anything merges or deploys**.
+
+- Start here: [.claude/README.md](./.claude/README.md)
+- Pipeline and gates: [.claude/docs/WORKFLOW.md](./.claude/docs/WORKFLOW.md), [.claude/docs/GATES.md](./.claude/docs/GATES.md)
+- House style and the do-not-touch list: [.claude/docs/CONVENTIONS.md](./.claude/docs/CONVENTIONS.md)
+- Commands: `/milestone <id>`, `/milestone-dryrun <id>`, `/team-status`, `/write-adr`, `/escalate`
+
+**This file remains the constitution**, `MIGRATION_PLAN.md` remains the authoritative
+roadmap, and its milestone IDs remain the only units of work. The team *executes* that
+system; it does not replace it.
+
+**The team is build-time only.** Production GoCart must never depend on Claude,
+Anthropic APIs, MCP, AI agents, AI prompts, or `.claude/` — deleting that directory must
+leave a fully working application. This is absolute; see
+[.claude/docs/NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md).
+
 ## Hard constraints (do not silently violate)
 
 - **Cash on Delivery only.** Do not add other payment gateways to the active checkout flow. The architecture must stay extensible for online payments later (see [docs/DECISIONS.md](./docs/DECISIONS.md)), but nothing beyond COD ships now.
@@ -44,6 +65,7 @@ Phase and group names are **labels for grouping and status reporting only**. The
 - **Payload runs embedded in the Next.js app**, not as a separate service — [ADR-009](./docs/DECISIONS.md) (Accepted 2026-08-14). Payload owns `/admin`.
 - **SEO-first and mobile-first** are non-negotiable defaults for any storefront UI work — not an afterthought pass at the end.
 - **Everything must run in Docker** for both development and production.
+- **No AI dependency in the shipped product.** The AI engineering team is development-time tooling only. Never add an AI/LLM package, provider key, prompt, or `.claude/` import to application code — see [.claude/docs/NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md).
 - **Initial production infrastructure baseline is decided** — [ADR-015](./docs/DECISIONS.md): Cloudflare Free + a single ~$10–12/month VPS running the Dockerized app and PostgreSQL + Resend free-tier email + COD. SMS is deferred to a future phase; backups are managed manually for now. Keep the application layer host-agnostic so this baseline stays replaceable/upgradable without a rewrite.
 
 ## Working agreement

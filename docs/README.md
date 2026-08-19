@@ -13,9 +13,14 @@ Detailed, living documentation for the GoCart Pakistan transformation. Root-leve
 | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) | **The authoritative implementation sequence** — milestones `M1`–`M59` plus `M2a`, `M27a`, `M27b` |
 | [TASKS.md](./TASKS.md) | Status roll-up and gates (status only — order lives in the migration plan) |
 | [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) | Readiness audits gating the start of implementation |
+| [AI_TEAM_READINESS_REPORT.md](./AI_TEAM_READINESS_REPORT.md) | Development-time AI engineering team: architecture, roles, gates, permissions, `M29` dry run |
 | [CHANGELOG.md](./CHANGELOG.md) | Notable changes over time |
 
 **Referencing convention**: cite work by milestone ID (`M12`), never by phase or group number.
 Group names are labels for reporting only and carry no execution order.
 
 Keep these updated as the project moves — stale docs are worse than no docs.
+
+The **development-time AI engineering team** that executes this plan lives in
+[`.claude/`](../.claude/), not here. It is build-time tooling only and is never a
+runtime dependency of the shipped application.

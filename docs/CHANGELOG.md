@@ -6,6 +6,41 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **AI engineering team foundation (2026-08-19)** — added `.claude/`, a **development-time**
+  engineering system: eight roles (Engineering Manager orchestrating Product, Architecture,
+  UI/UX, Full-Stack, QA, Security/Performance, and DevOps/Release), five slash commands
+  (`/milestone`, `/milestone-dryrun`, `/team-status`, `/write-adr`, `/escalate`), six process
+  documents (workflow, roles, gates, parallelism, conventions, production-AI isolation), and a
+  permissions file that denies destructive Git/Docker operations and gates pushes, installs,
+  seeds, and migrations behind an explicit ask. `CLAUDE.md` remains the constitution,
+  `MIGRATION_PLAN.md` remains the authoritative roadmap, and its milestone IDs remain the only
+  units of work — the team executes that system rather than replacing it. **No application code
+  was changed and no application functionality was touched**; `package.json` is untouched.
+  Human approval is required before any merge or deploy. Full account, including the classification
+  of every previously identified blocker and an `M29` dry run, in
+  [AI_TEAM_READINESS_REPORT.md](./AI_TEAM_READINESS_REPORT.md).
+
+- **`CONTRIBUTING.md` rewritten (2026-08-19)** — the inherited GreatStack guide actively solicited
+  "Vendor Dashboard", "Vendor Onboarding", "Vendor Profiles", and multi-vendor cart contributions,
+  all of which [ADR-006](./DECISIONS.md) puts permanently out of scope, and the root `README.md`
+  endorsed it as still applying. Replaced with a single-store guide carrying the hard constraints,
+  the real setup steps, the honest state of the verification gates, and an explicit "Out of scope"
+  table citing ADR-004/005/006/016/017. This was the highest-severity contradiction in the
+  repository for any contributor or agent that read it first.
+
+- **Root `README.md` status corrected (2026-08-19)** — it still claimed `M14` was the next milestone
+  and that "the storefront itself still runs on the inherited dummy data", both false since `M28`.
+  Now states `M1`–`M28` Done with `M29` next, gives working setup instructions, and records that
+  `npm run lint` is broken and no test framework exists yet.
+
+- **`.claude/` excluded from Docker images (2026-08-19)** — the `Dockerfile` copies the build context
+  with `COPY . .`, so development-time AI tooling would have been baked into every image. Added to
+  `.dockerignore`. No runtime dependency existed either way, but the shipped image must not carry it.
+
+- **`prompts/` retired in favor of `.claude/commands/` (2026-08-19)** — the directory was created for
+  AI prompt templates and never populated. Its README now points at `.claude/commands/` and
+  `.claude/agents/`, removing the second competing home for the same thing.
+
 - **Currency symbol fixed to `Rs. `** (2026-08-17) — `.env.example`'s `NEXT_PUBLIC_CURRENCY_SYMBOL` and the hardcoded `|| '$'` fallback in `ProductCard.jsx`, `Hero.jsx`, `OrderSummary.jsx`, `OrderItem.jsx`, `ProductDetails.jsx`, and `app/(public)/cart/page.jsx` all changed from `$` to `Rs. `. Full PKR formatting (comma grouping, decimals) stays with `M55`; this only fixes the symbol shown everywhere right now.
 - **Mobile navbar cart/search access restored** (2026-08-17, pulled forward from `M44`). `components/Navbar.jsx` gained a `flex sm:hidden` row — Shop link, search toggle, cart link with count badge — closing the gap where the mobile navbar had nothing but the logo after `M21` removed the dead Login button.
 
