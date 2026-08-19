@@ -7,3 +7,7 @@ node_modules
 npm-debug.log*
 .DS_Store
 *.tsbuildinfo
+
+# AI engineering team — development-time tooling, never part of a runtime image.
+# See .claude/docs/NO_PRODUCTION_AI.md
+.claude

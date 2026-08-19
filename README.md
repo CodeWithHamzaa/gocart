@@ -8,7 +8,7 @@
 
 ---
 
-> **Status: Implementation in progress.** This repository was cloned from the open-source [GoCart](https://github.com/GreatStackDev/goCart) multi-vendor storefront and is being transformed into a single-store, admin-managed, Cash-on-Delivery platform for Pakistan. Foundation milestones `M1`, `M2`, `M2a`, `M16`, `M17`, and `M19` are done (local Postgres, Payload/Postgres-adapter dependencies, the TypeScript toolchain, and legacy `app/admin/**` removal); the storefront itself still runs on the inherited dummy data. `M14` is the next milestone — see [docs/TASKS.md](./docs/TASKS.md) for the full status roll-up and [docs/](./docs) for the plan.
+> **Status: Implementation in progress.** This repository was cloned from the open-source [GoCart](https://github.com/GreatStackDev/goCart) multi-vendor storefront and is being transformed into a single-store, admin-managed, Cash-on-Delivery platform for Pakistan. **Milestones `M1`–`M28` are Done** — the foundation, the full Payload CMS v3 + PostgreSQL data model, removal of the entire multi-vendor surface, admin-only auth, and the whole storefront now reading real Payload data (home, shop, product, category, categories, cart). `M29` (real product search) is next. `/orders` is the one deliberate exception and stays dummy until `M36`'s guest order lookup. See [docs/TASKS.md](./docs/TASKS.md) for the full status roll-up and [docs/](./docs) for the plan.
 
 ## What this is becoming
 
@@ -33,13 +33,33 @@ Start here, in order:
 
 ## Original project
 
-This codebase started from the GreatStack **GoCart** open-source multi-vendor storefront (Next.js + Tailwind CSS + Redux Toolkit + Prisma). Its `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `LICENSE.md` still apply to this repository.
+This codebase started from the GreatStack **GoCart** open-source multi-vendor storefront (Next.js + Tailwind CSS + Redux Toolkit + Prisma). `LICENSE.md` and `CODE_OF_CONDUCT.md` carry over unchanged. **`CONTRIBUTING.md` has been rewritten** for this project — the original solicited vendor dashboards and multi-vendor features that [ADR-006](./docs/DECISIONS.md) puts permanently out of scope. Prisma has been retired ([ADR-003](./docs/DECISIONS.md)); Payload CMS v3 is the system of record.
 
 ## Getting started
 
-Local setup instructions will be added once the Payload CMS v3 + PostgreSQL integration lands (see [docs/TASKS.md](./docs/TASKS.md)). In the meantime, the original Next.js app still runs with:
-
 ```bash
+docker compose up -d postgres   # PostgreSQL (M1)
+cp .env.example .env            # set DATABASE_URI and a real PAYLOAD_SECRET
 npm install
 npm run dev
 ```
+
+The storefront runs at `http://localhost:3000` and the Payload admin panel at
+`http://localhost:3000/admin`. Run `npm run seed` for development data.
+
+`npm run build` and `npm run type-check` are the two working verification gates.
+`npm run lint` is currently broken (no ESLint dependency or config is installed), and
+there is no test framework yet — one Playwright golden-path test plus CI is scheduled
+as `M56a`.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
+
+## Building GoCart
+
+Day-to-day engineering runs through a development-time AI engineering team defined in
+[.claude/](./.claude/) — eight roles under an Engineering Manager, with human approval
+required before anything merges.
+
+**This is build-time tooling only.** The shipped application has no AI, Claude,
+Anthropic, MCP, or agent dependency of any kind, and builds and runs with `.claude/`
+deleted. See [.claude/docs/NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md).

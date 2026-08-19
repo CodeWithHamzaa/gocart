@@ -1,5 +1,18 @@
 # prompts/
 
-Reusable prompt templates for working on GoCart with an AI coding agent (e.g. Claude Code) — things like "scaffold a Payload collection," "write an ADR," "review a PR against DECISIONS.md."
+> **Superseded.** Reusable agent workflows now live in **[`.claude/commands/`](../.claude/commands/)**
+> as slash commands, and role definitions in **[`.claude/agents/`](../.claude/agents/)**.
 
-Empty for now. Add one file per prompt, named for what it does (e.g. `add-payload-collection.md`, `write-adr.md`).
+This directory was created as a home for AI prompt templates and was never populated.
+It is kept only as a pointer so nobody adds a second, competing location.
+
+Where things went:
+
+| Original intent | Now lives at |
+|---|---|
+| "Scaffold a Payload collection" | `.claude/agents/fullstack-engineer.md` |
+| "Write an ADR" | `.claude/commands/write-adr.md` |
+| "Review a PR against DECISIONS.md" | `.claude/agents/software-architect.md` |
+
+**Do not add prompt files here.** Add a slash command to `.claude/commands/` or extend
+the relevant role in `.claude/agents/`.

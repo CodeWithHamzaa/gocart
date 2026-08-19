@@ -44,3 +44,7 @@ yarn-error.log*
 
 # payload local media uploads (M8) — a Docker volume in prod, not committed content
 /media
+
+# AI engineering team (development-time only) — shared config IS committed;
+# per-developer overrides are not. See .claude/docs/NO_PRODUCTION_AI.md
+.claude/settings.local.json
