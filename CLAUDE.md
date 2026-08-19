@@ -55,19 +55,6 @@ Phase and group names are **labels for grouping and status reporting only**. The
 - **Prefer editing over rewriting.** This codebase has real history (see `git log`) — don't blow away working code to "start clean."
 - When requirements conflict with what's in the existing GreatStack GoCart codebase (e.g. multi-vendor data model vs. single-store target), **surface the conflict rather than guessing** which one wins.
 
-## Repo map
-
-```
-app/            Next.js App Router pages — app/(public)/* storefront, app/(payload)/* admin+API
-components/     React components (storefront UI)
-lib/            Redux Toolkit store and slices (cart, address); lib/payload/* Local API data utilities
-collections/    Payload collection configs: Users, Media, Categories, Products, Orders
-globals/        Payload global configs: Settings (shipping/contact config)
-scripts/        Dev tooling — seed.ts populates sample categories/products
-docs/           Project spec, architecture, tasks, decisions, changelog
-prompts/        Reusable prompt templates for AI-assisted work on this repo
-```
-
 ## Useful context for AI agents
 
 - The original app was a **multi-vendor marketplace** (`app/store/*` vendor dashboard, `app/admin/approve`/`app/admin/stores` vendor approval, a `Store` model in the now-deleted `prisma/schema.prisma`). The target product is **single-store** — [ADR-006](./docs/DECISIONS.md) is Accepted. That legacy surface is fully **removed** (`M14`–`M17`, `M19`, all Done) — if you see any of those paths, something has gone wrong; they should not exist. Treat any doc or comment implying single-vs-multi-vendor is still open as stale.
