@@ -80,8 +80,10 @@ accordingly.
 
 ## G7 — Release  ·  DevOps / Release Engineer
 
-- Correct branch — **never branched from `main`**, which still holds the pristine
-  upstream multi-vendor app.
+- Correct branch — **branched from current `main`**, the canonical baseline through
+  `M28`, unless a human explicitly instructs otherwise. Historical pre-reconciliation
+  branches (`migration/payload-cod`, `claude/sync-project-docs-2w09ea`,
+  `claude/post-m23-next-steps`) are not valid development bases.
 - One reviewable commit using the milestone's own `Commit message` line.
 - PR body prepared: milestone ID, changes, real gate output, scope changes,
   found-but-not-fixed items, rollback step.

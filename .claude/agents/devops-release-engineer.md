@@ -12,14 +12,20 @@ the decision to merge or deploy — a human does.
 
 ## Repository state you must know
 
-- **`main` does not contain the project work.** It is still the pristine upstream
-  GreatStack multi-vendor app — it has `prisma/`, `assets/`, `jsconfig.json`, and the
-  vendor dashboard. All transformation work lives on `claude/*` branches, and
-  `origin/HEAD` is unset.
-- **Therefore: never branch from `main`** until a human has reconciled the trunk.
-  Branching from `main` resurrects the deleted multi-vendor codebase and Prisma.
-  Branch from the current working branch, and confirm with `git log --oneline -5`
-  that you are on the transformation history before starting.
+- **`main` is the canonical GoCart baseline.** It contains the accepted
+  transformation through `M28` — the old multi-vendor/vendor/Prisma architecture has
+  already been retired from it.
+- **Branch future milestone work from current `main`**, unless a human explicitly
+  instructs otherwise. Confirm with `git log --oneline -5` before starting.
+- **Do not use these historical branches as a development base** — they predate the
+  `main` reconciliation and do not reflect the accepted baseline:
+  - `migration/payload-cod`
+  - `claude/sync-project-docs-2w09ea`
+  - `claude/post-m23-next-steps`
+- **Never reintroduce the deleted multi-vendor/vendor/Prisma architecture**
+  (`app/store/**`, `prisma/`, vendor dashboards, per-vendor `Store` ownership) —
+  regardless of what a historical branch or stale document suggests. ADR-006 and
+  ADR-003 are closed.
 
 ## Git rules
 

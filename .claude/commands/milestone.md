@@ -18,8 +18,10 @@ Work through this in order. Do not skip ahead, and do not implement before G0–
   Do **not** infer readiness from ascending ID order.
 - Check `git branch -a` and `docs/TASKS.md` for existing work on `$1`.
 - Read every file on the `Files` line, plus the files that import them.
-- **Confirm you are not on a branch derived from `main`** — `main` still holds the
-  pristine upstream multi-vendor app.
+- **Confirm your branch is derived from current `main`**, unless explicitly instructed
+  otherwise — `main` is the canonical baseline through `M28`. Do not use
+  `migration/payload-cod`, `claude/sync-project-docs-2w09ea`, or
+  `claude/post-m23-next-steps` as a development base; they predate the reconciliation.
 
 If a dependency is not met, **stop and report which one blocks.**
 
