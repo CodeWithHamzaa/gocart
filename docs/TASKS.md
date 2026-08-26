@@ -140,6 +140,25 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M29` is done (2026-08-26).** `/shop`'s search is now a real Payload query instead of an in-memory
+`.includes()` filter: `getProducts()` (`lib/payload/products.ts`) gains an optional `search` option,
+applied as `where: { name: { contains: trimmedSearch } } }` only when non-empty. Contract locked ahead
+of implementation in [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only)
+— case-insensitive substring match on `name` only, `description` deliberately excluded — after
+empirically confirming Payload's `contains` maps to Postgres `ILIKE` (raw `LIKE '%lamp%'` returns 0
+rows against seeded data; `ILIKE`/`contains` both return 1), closing the dry run's highest-rated risk
+of a silent case-sensitivity regression. `app/(public)/shop/page.jsx` drops its `filteredProducts`
+in-memory filter entirely and passes `search` straight through. Verified against a live
+`npm run start` server with seeded data: no-params returns the full listing (4), a seeded name search
+returns exact matches case-insensitively (`Lamp`/`lamp`/`LAMP`/`lAmP` all → 1, `smart` → 2), a
+mid-string substring matches, a non-matching term renders an empty grid at HTTP 200 (not an error), an
+empty search string behaves as no search, and — confirming the name-only contract — searching `sleek`
+(a word every seeded product's *description* shares) returns zero results. The home page's other
+`getProducts()` call (`{ sort: '-createdAt', limit: 4 }`, no `search`) is unaffected — its `where`
+clause stays `undefined`, identical to before. `/shop` remains `ƒ Dynamic`; `npm run type-check` and
+`npm run build` both pass. `npm run lint` and the Docker registry-egress gap were explicitly out of
+scope and remain as documented.
+
 **`M28` is done (2026-08-18) — the `M22`–`M28` storefront-data group is now fully complete.**
 `assets/assets.js` and all its imported placeholder images are deleted, along with
 `lib/features/product/productSlice.js` and `lib/features/rating/ratingSlice.js`; `lib/store.js` is
@@ -225,8 +244,8 @@ moved `○ Static` → `ƒ Dynamic`.
 `getProducts()` from `lib/payload/products.ts`, matching `M23`'s precedent under
 [ADR-007](./DECISIONS.md)'s blanket SEO-first/mobile-first mandate even though `M24`'s literal text
 doesn't spell out "server component" the way `M23`'s does. The `?search=` filter is unchanged — still a
-simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data;
-`M29` remains the milestone that replaces it with a real Payload query. The "all products" back-link
+simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data
+at the time — `M29` (below) is the milestone that replaced it with a real Payload query. The "all products" back-link
 changed from an `onClick`/`router.push` handler to a plain `<Link href="/shop">`, since nothing on the
 page needs client-side interactivity anymore. Verified against a live `npm run start` server with seeded
 data: real names render, `?search=Bluetooth` includes/excludes correctly, an unmatched search renders a
@@ -254,7 +273,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
-| `M29` | Real search | Not Started |
+| `M29` | Real search | **Done** (2026-08-26) |
 | `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |

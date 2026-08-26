@@ -583,6 +583,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Search for a seeded product name returns correct results; search for a non-matching term returns an empty state, not an error.
 - **Rollback**: Revert both files.
 - **Commit message**: `Replace client-side array search with real product query`
+- **✅ Done (2026-08-26)**. Search semantics locked ahead of implementation as [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only) — case-insensitive substring match on `name` only, using Payload's `contains` operator, verified empirically to map to Postgres `ILIKE`. `getProducts()` gained an optional `search` parameter applying `where: { name: { contains: search } } }`; `shop/page.jsx` passes it straight through instead of filtering the fetched array. Verified against a live `npm run start` server with seeded data: exact/case-varied/mid-string matches all correct, non-matching term renders an empty grid at HTTP 200, empty search returns the full listing, and a description-only term correctly returns nothing (confirming `description` is excluded). The home page's unrelated `getProducts()` call is unaffected. `npm run type-check` and `npm run build` both pass; `/shop` stays `ƒ Dynamic`.
 
 ---
 

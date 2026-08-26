@@ -5,20 +5,13 @@ import { getProducts } from "@/lib/payload/products"
 
 // M24: server component reading real Payload data (ADR-007 — SEO-first is a
 // non-negotiable default for storefront UI, not a later pass). The name
-// filter stays a simple in-memory .includes() over the fetched list, exactly
-// as it worked against the dummy Redux data — M29 is the milestone that
-// replaces this with a real Payload query.
+// filter is a real Payload query (M29, ADR-025 — case-insensitive substring
+// match on `name` only), not an in-memory filter over the full listing.
 export default async function Shop({ searchParams }) {
 
     const { search } = await searchParams
 
-    const { docs: products } = await getProducts()
-
-    const filteredProducts = search
-        ? products.filter(product =>
-            product.name.toLowerCase().includes(search.toLowerCase())
-        )
-        : products;
+    const { docs: products } = await getProducts({ search })
 
     return (
         <div className="min-h-[70vh] mx-6">
@@ -33,7 +26,7 @@ export default async function Shop({ searchParams }) {
                     )}
                 </h1>
                 <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
-                    {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+                    {products.map((product) => <ProductCard key={product.id} product={product} />)}
                 </div>
             </div>
         </div>

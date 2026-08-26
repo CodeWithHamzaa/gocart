@@ -45,6 +45,22 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M29` — real product search (2026-08-26)** — `/shop`'s search is now a database query, not an
+  in-memory `.includes()` filter over the fetched array. `lib/payload/products.ts`'s `getProducts()`
+  gains an optional `search` option, applied as `where: { name: { contains: trimmedSearch } } }` only
+  when non-empty; `app/(public)/shop/page.jsx` passes `search` straight through and no longer filters
+  client-side. The contract — case-insensitive substring match on `name` only — is locked in
+  [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only),
+  written *before* implementation after empirically confirming Payload's `contains` operator maps to
+  Postgres `ILIKE` (retiring the dry run's highest-rated risk: a naive port to raw `LIKE` would have
+  silently broken every mixed-case search, and no existing gate would have caught it). Verified
+  against a live `npm run start` server with real seeded data across ten cases — exact/lower/upper/
+  mixed case, mid-string substring, multi-match, non-match (HTTP 200, empty grid, not an error), empty
+  search string (full listing), and a `description`-only term correctly returning nothing. The home
+  page's separate `getProducts()` call is unaffected. `npm run type-check` and `npm run build` both
+  pass; `/shop` stays `ƒ Dynamic`. `npm run lint` and the Docker registry-egress gap were explicitly
+  out of scope for this milestone and remain as previously documented.
+
 - **AI engineering team foundation (2026-08-19)** — added `.claude/`, a **development-time**
   engineering system: eight roles (Engineering Manager orchestrating Product, Architecture,
   UI/UX, Full-Stack, QA, Security/Performance, and DevOps/Release), five slash commands
