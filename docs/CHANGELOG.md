@@ -4,6 +4,45 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- **`scripts/seed.ts` runs successfully for the first time (2026-08-26)** — clearing `M29`'s
+  prerequisites established a real development environment and, in doing so, found that the seed
+  had **two** independent defects, neither of them the cause the documentation had recorded. The
+  standing explanation — "a `tsx`/Node ESM-interop issue in the authoring sandbox, unrelated to the
+  script" — was wrong on both counts: it was not sandbox-specific, and part of it *was* the script.
+  - **Root cause 1 — module resolution.** `package.json` declared no `"type"`, so Node treated every
+    project `.ts` file as CommonJS, while `payload@3.88.0` ships `"type": "module"` ESM containing
+    top-level await. Three separate entry points failed on this: `npm run seed`
+    (`Cannot destructure property 'loadEnvConfig'`), `node --import tsx/esm`, and Payload's own CLI
+    (`ERR_REQUIRE_ASYNC_MODULE` on `payload.config.ts`). Fixed by adding `"type": "module"`; all
+    tracked `.js` files were already ESM, so nothing else needed changing. **This also unblocks
+    `payload generate:types`**, which had never run for the same reason — `payload-types.ts` now
+    generates (541 lines) and confirms the hand-written mirrors in `lib/payload/products.ts` and
+    `lib/payload/categories.ts` are accurate.
+  - **Root cause 2 — stale `assets/` path.** `readAsset()` read four PNGs from `assets/`, which
+    `M28` (`8c20d4f`) deleted along with the dummy dataset, so the seed threw `ENOENT` before
+    creating anything. `Products.images` is `required: true`, so the images could not simply be
+    dropped; `readAsset()` now generates a placeholder PNG with `sharp` (already a dependency),
+    keeping its signature and all four call sites unchanged. The seed no longer depends on a
+    directory that does not exist.
+  - **A third, latent defect surfaced by the fix.** With `payload-types.ts` finally generated,
+    `npm run type-check` failed: `Categories.slug` is `required: true` but is filled in by the
+    collection's `beforeValidate` hook, which TypeScript cannot see, so all five category creates
+    were missing a required field. Runtime was always correct; only the type-level error was hidden,
+    and only because the types had never been generated. The seed now passes each `slug` explicitly —
+    values identical to what `slugify()` derives, verified by re-seeding from an empty database and
+    diffing the result.
+  - Verified end to end against real PostgreSQL: `npm run seed` exits 0 and produces exactly the
+    4 products, 5 categories (correct two-level hierarchy and slugs), and 4 media records the script
+    specifies, with files written to `media/`. `npm run type-check` and `npm run build` both pass
+    (15/15 pages; `/shop` still `ƒ Dynamic`). `npm run lint` remains broken and untouched.
+  - **Not verified: the Docker path.** `docker compose up -d postgres` cannot pull
+    `postgres:17-alpine` — the egress policy answers 403 to `production.cloudfront.docker.com`.
+    The daemon itself starts fine. Verification used a native PostgreSQL 16.13 instance on the same
+    `DATABASE_URI`, so **"everything runs in Docker" remains unproven for the database service**, and
+    the pinned image version is untested. This is an environment-access gap, not a code defect.
+
 ### Added
 
 - **AI engineering team foundation (2026-08-19)** — added `.claude/`, a **development-time**

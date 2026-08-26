@@ -532,3 +532,53 @@ Phone is the right second factor: it's already a required field on every guest o
 - `M13`'s `Orders` access rule needs no change and no revisit — this ADR is the reconciling mechanism the readiness report asked for, not a reason to reopen `M13`.
 - Rate-limiting the lookup endpoint is now part of `M36`'s definition of done, not an optional hardening pass — added to its acceptance criteria.
 - Closes `C7` and `D9` (guest order-lookup key + abuse controls) together, since `D9`'s question ("what identifies a guest order holder, and what prevents enumeration") is answered by the same design: `(orderNumber, phone)` plus IP rate limiting.
+
+---
+
+## ADR-025: `M29` product search is a case-insensitive `contains` match on `name` only
+
+**Status**: **Accepted (2026-08-26)** — stakeholder-confirmed while clearing `M29`'s prerequisites.
+
+**Context**: `M29` replaces `/shop`'s in-memory filter with a real database query. Its plan entry states the goal ("replace with a real query against Payload/Postgres so it scales past a handful of seeded products") and its `Testing` line requires that a seeded product name returns results and a non-matching term returns an empty state rather than an error. It does **not** say which fields the query covers, nor whether the replacement must remain case-insensitive — a gap raised as a `D`-class finding during `M29`'s dry run.
+
+The gap mattered because the behaviour being replaced is case-insensitive by construction:
+
+```js
+product.name.toLowerCase().includes(search.toLowerCase())   // app/(public)/shop/page.jsx
+```
+
+PostgreSQL's `LIKE` is case-**sensitive**, so a naive port would have silently regressed every mixed-case search — the highest-rated risk on the dry run, and one that no existing gate would have caught (`npm run lint` is broken, and there are no automated tests until `M56a`).
+
+The operator's behaviour was therefore verified empirically against real seeded data in PostgreSQL rather than assumed. Payload's `contains` maps to `ILIKE '%…%'`:
+
+| Probe | Result |
+|---|---|
+| raw SQL `name LIKE '%lamp%'` | 0 rows |
+| raw SQL `name ILIKE '%lamp%'` | 1 row |
+| Payload `where[name][contains]=lamp` | 1 row — therefore `ILIKE` |
+| `Lamp` / `lamp` / `LAMP` / `lAmP` | 1 each |
+| `able Lam` (mid-string) | 1 — substring, not prefix |
+| `smart` / `SMART` | 2 each |
+| `zzzznomatch` | 0 rows, no error |
+| empty string | full listing |
+
+Each result matches the live pre-`M29` `/shop` baseline exactly, including HTTP 200 on the no-match case.
+
+**Decision**: `M29`'s search is a **case-insensitive substring match on `Products.name` only**, implemented with Payload's **`contains`** operator. `description` is not searched.
+
+**Rejected alternatives**:
+
+- **`name` + `description` via a `where[or]` clause** — verified to work, and a plausible future improvement, but it changes result sets in ways the milestone never specified: every seeded product shares the phrase "with a sleek design", so a description search returns near-everything on the current catalogue. Widening recall is a product decision with no acceptance criteria behind it, and `M29` is a like-for-like replacement of the query mechanism, not a relevance change.
+- **`like` operator** — behaves identically here (also `ILIKE` under this adapter), but `contains` states the substring intent directly; `like` invites the reader to assume SQL `LIKE` semantics, which is exactly the case-sensitivity trap this ADR exists to close.
+- **`equals`** — exact, case-sensitive whole-string matching. Confirmed by probe to return 0 for `Lamp` and 0 for `modern table lamp`. A search box that only matches the complete product name is not a search box.
+- **Full-text search (`tsvector`/`pg_trgm`)** — the right answer at a catalogue size this store does not have. It needs an index migration, a ranking decision, and a milestone that owns it; none exist. `contains` is replaceable by it later without changing the route's contract.
+
+**Consequences**:
+
+- `lib/payload/products.ts` gains an optional `search` on `GetProductsOptions`, applied as `where: { name: { contains: search } }`. The hand-written `GetProductsOptions` type must be updated by hand — `payload-types.ts` mirrors collections, not utility options.
+- `app/(public)/shop/page.jsx` passes `search` through to `getProducts()` instead of filtering the fetched array. Filtering moves to the database.
+- **Existing callers must stay unaffected.** `getProducts()` is also called by `app/(public)/page.jsx` (`{ sort: '-createdAt', limit: 4 }`) with no `search`; omitting it must continue to return the unfiltered listing.
+- **An empty search string behaves as no search** (verified: returns the full listing), so `/shop?search=` renders the complete catalogue rather than an empty state.
+- `/shop` must remain server-rendered (`ƒ Dynamic` in the build output). Moving the filter into the query must not turn it into a client-side fetch — [ADR-007](#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) applies.
+- Searching `description` later is additive and needs no rework of this decision — it becomes a `where[or]` clause and a new acceptance criterion.
+- Closes the `D`-class search-semantics finding raised in `M29`'s dry run.

@@ -52,10 +52,13 @@ collection-backed admin panel — the "collection-less admin shell" era from `M3
 Every milestone's testing criteria in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) was verified against
 a live Postgres-backed dev server (REST + GraphQL). Two things flagged during that work:
 
-- `scripts/seed.ts` could not be executed directly via `tsx` in the authoring sandbox (a Node/tsx
-  ESM-interop bug in `@payloadcms/db-postgres`'s import chain, unrelated to the seed script itself —
-  same class of issue as `M3`'s `generate:importmap` problem). Its logic was validated indirectly via
-  equivalent REST calls; run `npm run seed` for real before relying on it.
+- ~~`scripts/seed.ts` could not be executed directly via `tsx`~~ — **resolved 2026-08-26.**
+  `npm run seed` runs successfully and produces the expected 4 products / 5 categories / 4 media.
+  The diagnosis above was wrong: it was not a sandbox bug and not confined to
+  `@payloadcms/db-postgres`. `package.json` declared no `"type": "module"`, so project `.ts` files
+  loaded as CommonJS while Payload v3 ships ESM with top-level await; separately, `readAsset()` still
+  read images from the `assets/` directory `M28` deleted. Both fixed — see
+  [CHANGELOG.md](./CHANGELOG.md).
 - `M13`'s admin-only `Orders` read is exactly as specified, and exactly what readiness finding `C7`
   already flags as conflicting with `M36`'s future guest-order-lookup requirement. Still open — not
   solved by this implementation, tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
@@ -300,6 +303,6 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
   and a cart link with the count badge — the same badge the desktop nav already had. Verified `Rs.`/
   cart markup render server-side under `npm run build && npm run start`.
 - [x] ~~**"Best selling" has no defined ranking**~~ — **Resolved 2026-08-17** at `M23` → [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking): admin-curated `isFeatured` flag on `Products`, not a computed metric. A sales-derived ranking remains possible later (it would need an `Orders` aggregation no milestone owns yet, and would render empty at launch regardless).
-- [ ] **`payload-types.ts` cannot be generated in this sandbox** (found during `M22`). `payload generate:types` hits the same `tsx`/Node ESM-interop class of failure as `scripts/seed.ts` (`M13`) and `generate:importmap` (`M3`). `lib/payload/*.ts` use hand-written types mirroring the collections exactly as a stand-in. Confirm `payload generate:types` works in a normal environment and switch these files to the generated types when convenient — not launch-blocking, but worth doing before the type surface grows much further.
+- [ ] **Switch `lib/payload/*.ts` to the generated `payload-types.ts`** (found during `M22`; blocker cleared 2026-08-26). `payload generate:types` **now works** — the failure was `package.json` missing `"type": "module"`, not a sandbox bug, and the Payload CLI as a whole was affected. Generated output confirms the hand-written mirrors in `lib/payload/products.ts` and `lib/payload/categories.ts` are accurate, so nothing is broken today; switching them over remains open and is not owned by a milestone. Note that generating the file also surfaces real type errors that were previously invisible — one such error in `scripts/seed.ts` was fixed at the same time. Not launch-blocking, but worth doing before the type surface grows much further.
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
   - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`; the store Settings global is no longer among these either — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order))*
