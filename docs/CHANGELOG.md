@@ -45,6 +45,33 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M30` — cart persistence across page reloads (2026-08-26)** — the cart no longer empties on
+  refresh. `lib/features/cart/cartSlice.js` gains a `hydrateCart` reducer that replaces `cartItems`
+  wholesale and recomputes `total` from it, rather than trusting a persisted total — so a stored total
+  can never drift from the items it actually matches. `app/StoreProvider.js` dispatches `hydrateCart`
+  from `localStorage` **inside a `useEffect`, after mount** rather than during initial state: the
+  navbar's cart badge (`state.cart.total`) is server-rendered on every storefront route via the shared
+  layout, so hydrating synchronously would mismatch the server's always-empty HTML against the client's
+  restored state. A `store.subscribe` callback persists `cartItems` on every mutation — `clearCart`
+  needed no special case, since it writes `{}` like any other mutation. Both the read and write paths
+  are wrapped in `try`/`catch`, and the read path validates each entry (rejects non-objects, arrays, and
+  non-positive/non-integer quantities), so corrupted or inaccessible storage degrades to an empty cart
+  instead of crashing every route `StoreProvider` wraps. Implemented per
+  [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added), recorded
+  ahead of time so this milestone would not have to reopen "which state library" — Redux stays, only
+  persistence was added, and no component outside the two changed files needed touching, as the ADR
+  predicted. `lib/store.js` was deliberately left out of scope by choosing the `subscribe` approach over
+  a `preloadedState` one. Verified with a scripted headless-Chromium session (17 checks) against a live
+  `npm run start` server with seeded data: items survive a hard reload with zero hydration-mismatch
+  console warnings; malformed JSON, a non-object value, and an array in storage all degrade to an empty
+  cart with no crash; deleting all items via the cart page's real delete control clears storage to `{}`
+  and stays empty after a further reload; and a directly-seeded `{"1": 2, "2": 3}` hydrates to a navbar
+  badge of `5`, confirming the total is derived, not trusted. `npm run type-check` and `npm run build`
+  both pass; `/cart`, `/categories`, and `/orders` remain `○ Static`. Also corrected two stale
+  `docs/TASKS.md` entries ("Guest order-lookup key…" and "Cart state mechanism…") that were already
+  resolved by ADR-024/ADR-023 on 2026-08-18 but never checked off — a `C`-class doc-drift finding this
+  milestone's own dry run caught.
+
 - **`M29` — real product search (2026-08-26)** — `/shop`'s search is now a database query, not an
   in-memory `.includes()` filter over the fetched array. `lib/payload/products.ts`'s `getProducts()`
   gains an optional `search` option, applied as `where: { name: { contains: trimmedSearch } } }` only

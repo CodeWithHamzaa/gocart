@@ -140,6 +140,32 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M30` is done (2026-08-26).** The cart survives a page reload for the first time — `lib/features/cart/cartSlice.js`
+gains a `hydrateCart` reducer that replaces `cartItems` wholesale and **recomputes `total` from it**
+rather than trusting a persisted value, so a stored total can never drift from the items it should
+match. `app/StoreProvider.js` reads `localStorage` and dispatches `hydrateCart` **inside a `useEffect`,
+after mount** — not during initial state — because Navbar's cart badge (`state.cart.total`) is
+server-rendered on every storefront route via the shared layout, and hydrating synchronously would
+mismatch the server's always-empty HTML against the client's restored state. A `store.subscribe`
+callback persists `cartItems` on every mutation, including `clearCart` (no special case needed — it
+writes `{}` like any other mutation). Both the read and write paths are wrapped in `try`/`catch`, and
+the read path validates shape per-entry (rejects non-objects, arrays, and non-positive/non-integer
+quantities) rather than trusting the whole stored blob, so corrupted storage degrades to an empty cart
+instead of breaking every route `StoreProvider` wraps. Implemented per [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added),
+recorded ahead of time specifically so this milestone would not have to reopen "which state library" —
+Redux stays, only persistence was added; no component outside the two files above needed a change, as
+the ADR predicted. `lib/store.js` was deliberately left untouched by choosing the `subscribe` approach
+over a `preloadedState` one. Verified with a scripted headless-Chromium session against a live
+`npm run start` server with seeded data (17 checks): items survive a hard reload with no
+hydration-mismatch console warnings; malformed JSON, a non-object value, and an array in storage all
+degrade to an empty cart with no crash; deleting all items via the cart page's real delete control
+clears storage to `{}` and stays empty after a further reload; and a directly-seeded
+`{"1": 2, "2": 3}` hydrates to a navbar badge of `5`, confirming `total` is derived, not trusted.
+`npm run type-check` and `npm run build` both pass; `/cart`, `/categories`, and `/orders` remain
+`○ Static`, confirming no hydration mismatch was introduced. Corrected two stale entries in "Later,
+non-blocking" below while here — both had already been resolved by ADR-023/ADR-024 on 2026-08-18 but
+were never checked off, a `C`-class doc-drift finding this milestone's own dry run caught.
+
 **`M29` is done (2026-08-26).** `/shop`'s search is now a real Payload query instead of an in-memory
 `.includes()` filter: `getProducts()` (`lib/payload/products.ts`) gains an optional `search` option,
 applied as `where: { name: { contains: trimmedSearch } } }` only when non-empty. Contract locked ahead
@@ -274,7 +300,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30` Done** (2026-08-26); `M31`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
@@ -315,8 +341,8 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
   `NEXT_PUBLIC_CURRENCY_SYMBOL` and its fallback in every consumer); comma grouping/decimal handling
   is still open and stays with `M55`.
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
-- [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
-- [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
+- [x] ~~Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)~~ — **Resolved 2026-08-18** → [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only). Left listed here in error after the ADR landed; caught during `M30`'s dry run. Implementation is still `M36`'s job.
+- [x] ~~Cart state mechanism: Redux vs. simpler client-side store~~ — **Resolved 2026-08-18** → [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added): Redux stays, `localStorage` persistence added. Left listed here in error after the ADR landed; caught during `M30`'s dry run. **Implemented 2026-08-26** as `M30` itself.
 - [x] ~~**Mobile navbar has no cart link or navigation**~~ — **Resolved 2026-08-17**, pulled forward from
   `M44`. `components/Navbar.jsx` gained a mobile row (`flex sm:hidden`): a Shop link, a search toggle,
   and a cart link with the count badge — the same badge the desktop nav already had. Verified `Rs.`/

@@ -597,6 +597,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
 - **Rollback**: Revert both files.
 - **Commit message**: `Persist cart state across page reloads`
+- **✅ Done (2026-08-26)**. `cartSlice.js` gained a `hydrateCart` reducer that recomputes `total` from the restored `cartItems` rather than persisting `total` directly. `StoreProvider.js` hydrates from `localStorage` inside a `useEffect` (after mount, avoiding an SSR/client hydration mismatch on the server-rendered navbar badge) and persists via `store.subscribe` on every mutation, including `clearCart`. Both directions are guarded against malformed/absent storage. Verified with a scripted headless-Chromium session against a live `npm run start` server: cart survives a reload, corrupted storage (malformed JSON / non-object / array) degrades to an empty cart with no crash, `clearCart` empties storage and stays empty after reload, and a directly-seeded cart hydrates to the correct derived total. `lib/store.js` was not touched. `npm run type-check` and `npm run build` both pass.
 
 ### M31 — Redesign guest address capture
 - **Goal**: `AddressModal`'s submit handler currently does nothing. Wire it to real guest-checkout address capture with Pakistani address field conventions (phone-first, city/area), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
