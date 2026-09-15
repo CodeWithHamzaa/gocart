@@ -45,6 +45,32 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M31` — real guest address capture, Pakistani fields (2026-08-26)** — `AddressModal.jsx`'s submit
+  handler did nothing before this; it just closed the modal. It now captures `name`, `phone`, `email`,
+  `address`, `city`, `area` (phone ordered ahead of email, per the milestone's "phone-first" goal) and
+  dispatches `addAddress` — a reducer that already existed in `lib/features/address/addressSlice.js`
+  (added at `M28` in anticipation of this milestone) but had never been called. The field set matches
+  `collections/Orders.ts`'s embedded guest-address fields exactly
+  ([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)),
+  so `M33` can map it straight onto an order with no translation layer later. `email` is kept on the
+  form by explicit stakeholder decision even though `Orders` has no email column today — captured
+  against a possible future order-notification use rather than dropped and re-added later. `phone`
+  gets an 11-digit, leading-zero HTML5 pattern (`03XXXXXXXXX`) with a descriptive validation message.
+  **Scope note, stakeholder-approved**: `components/OrderSummary.jsx` was pulled in alongside
+  `AddressModal.jsx` — its two address-display lines referenced `.state`/`.zip`, fields the new form no
+  longer produces, and would have shown a newly submitted address with blank fields on every field the
+  removed columns used to fill. Both lines now read `.address`/`.area`/`.city` instead. **Found but not
+  fixed**: the dummy seed address (`addressDummyData`, `lib/features/address/addressSlice.js:5-16`, not
+  on this milestone's Files line) still uses the old shape and now renders as `"John Doe, , , New York"`
+  in the dropdown — blank fields, not literal "undefined" text (React silently drops `undefined` JSX
+  interpolations; this corrects an assumption from the milestone's own dry run, which had predicted the
+  word "undefined" would appear). Verified with a scripted headless-Chromium session (18 checks) against
+  a live `npm run start` server with seeded data: correct field set and order, no leftover
+  `state`/`zip`/`country` inputs, a submitted address appears in `OrderSummary`'s dropdown and renders
+  correctly when selected, required-field and phone-pattern validation both work (a 5-digit number fails,
+  `03001234567` passes), and two addresses added in one session both persist. `npm run type-check` and
+  `npm run build` both pass; `/cart` remains `○ Static`.
+
 - **`M30` — cart persistence across page reloads (2026-08-26)** — the cart no longer empties on
   refresh. `lib/features/cart/cartSlice.js` gains a `hydrateCart` reducer that replaces `cartItems`
   wholesale and recomputes `total` from it, rather than trusting a persisted total — so a stored total

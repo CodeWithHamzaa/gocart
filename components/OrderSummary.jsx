@@ -47,7 +47,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 {
                     selectedAddress ? (
                         <div className='flex gap-2 items-center'>
-                            <p>{selectedAddress.name}, {selectedAddress.city}, {selectedAddress.state}, {selectedAddress.zip}</p>
+                            <p>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
                             <SquarePenIcon onClick={() => setSelectedAddress(null)} className='cursor-pointer' size={18} />
                         </div>
                     ) : (
@@ -58,7 +58,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                                         <option value="">Select Address</option>
                                         {
                                             addressList.map((address, index) => (
-                                                <option key={index} value={index}>{address.name}, {address.city}, {address.state}, {address.zip}</option>
+                                                <option key={index} value={index}>{address.name}, {address.address}, {address.area}, {address.city}</option>
                                             ))
                                         }
                                     </select>

@@ -140,6 +140,33 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M31` is done (2026-08-26).** `AddressModal.jsx`'s submit handler did nothing before this — it just
+closed the modal. It now captures a real Pakistani guest-checkout address (`name`, `phone`, `email`,
+`address`, `city`, `area` — phone ordered ahead of email, per the milestone's "phone-first" goal) and
+dispatches it via `addAddress`, a reducer that already existed in `lib/features/address/addressSlice.js`
+(added at `M28` in anticipation of this milestone) but had never been called. The field set matches
+`collections/Orders.ts`'s embedded guest-address fields exactly ([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)),
+so `M33` can map it straight onto an order later with no translation layer. `email` is kept on the form
+even though `Orders` has no email column today — a deliberate stakeholder call, captured now against a
+possible future order-notification use rather than dropped and re-added later. `phone` gets an 11-digit,
+leading-zero HTML5 pattern (`03XXXXXXXXX`) with a descriptive validation message.
+**Scope note**: `components/OrderSummary.jsx` was pulled in alongside `AddressModal.jsx`, one file beyond
+the milestone's own list — its two address-display lines (`selectedAddress.state`/`.zip`, the dropdown
+option text) referenced fields the new form no longer produces. Left unfixed, a selected new-style
+address would have displayed with blank fields on every field the removed `state`/`zip` columns used to
+fill. Both lines now read `.address`/`.area`/`.city` instead — a stakeholder-approved excursion, the same
+class of pull-forward as `M23`'s `ProductCard.jsx`. **Found but not fixed, left for later**: the dummy
+seed address (`addressDummyData`, `lib/features/address/addressSlice.js:5-16`) still uses the old
+`street`/`state`/`zip`/`country` shape and is not on this milestone's Files line; it now renders in the
+address dropdown as `"John Doe, , , New York"` — blank, not broken (React silently drops `undefined`
+JSX interpolations rather than printing the string "undefined", confirmed empirically during QA, correcting
+an assumption from this milestone's own dry run). Verified with a scripted headless-Chromium session (18
+checks) against a live `npm run start` server with seeded data: all six fields present and correctly
+ordered, no leftover `state`/`zip`/`country` inputs, a submitted address appears in `OrderSummary`'s
+dropdown and renders correctly when selected (no "undefined" anywhere), required-field and phone-pattern
+validation both work (a 5-digit number fails, `03001234567` passes), and two addresses added in one
+session both persist. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
+
 **`M30` is done (2026-08-26).** The cart survives a page reload for the first time — `lib/features/cart/cartSlice.js`
 gains a `hydrateCart` reducer that replaces `cartItems` wholesale and **recomputes `total` from it**
 rather than trusting a persisted value, so a stored total can never drift from the items it should
@@ -300,7 +327,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30` Done** (2026-08-26); `M31`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31` Done** (2026-08-26); `M32`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
