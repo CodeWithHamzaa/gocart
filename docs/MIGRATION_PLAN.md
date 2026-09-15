@@ -615,6 +615,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Checkout UI shows COD only, no radio group needed.
 - **Rollback**: Revert the file.
 - **Commit message**: `Remove non-functional Stripe option from checkout UI (COD-only for launch)`
+- **✅ Done (2026-08-26)**. Both radio inputs removed (not just Stripe's — a single always-true option has no business being a radio group, per the Testing line). COD now renders as a plain `"Cash on Delivery (COD)"` label. `paymentMethod` changed from `useState` to a plain `const` — nothing can set it to anything else anymore. [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s Consequences line already specified this exact outcome; no open decision existed. Verified with a scripted headless-Chromium session against a live `npm run start` server: no "Stripe" text anywhere, zero radio inputs, COD still shown, "Place Order" still navigates to `/orders`. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
 
 ### M33 — Real order creation on "Place Order"
 - **Goal**: Replace the `router.push('/orders')` stub with an actual `POST` to the `Orders` collection, using the cart contents and guest address.

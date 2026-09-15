@@ -45,6 +45,25 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M32` — Stripe option removed from checkout UI (2026-08-26)** — `components/OrderSummary.jsx` had a
+  fully-wired Stripe radio button (`onChange`, `checked`) that never did anything: no payment gateway
+  has ever existed anywhere in the codebase.
+  [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s
+  Consequences line already specified the exact target — *"Checkout UI shows COD as the only option
+  (not a disabled placeholder for others, to avoid confusing customers)"* — so this milestone had no
+  open decision to make; it was UI catching up to a decision the data model already enforces
+  (`collections/Orders.ts`'s `paymentMethod` field is a `select` with exactly one option, `'COD'`). Per
+  the Testing line ("no radio group needed"), **both** radio inputs are gone, not just Stripe's — a
+  single always-true option has no business being a radio group. COD now renders as a plain
+  `"Cash on Delivery (COD)"` label. `paymentMethod` changed from `useState('COD')` to a plain
+  `const paymentMethod = 'COD'`: nothing can set it to anything else anymore, so the setter was dead
+  weight; the constant stays, declared but not yet read within this file, for `M33` to consume when it
+  builds the real order. Verified with a scripted headless-Chromium session against a live
+  `npm run start` server with seeded data: no "Stripe" text anywhere on the page, zero
+  `<input type="radio">` elements, COD still shown, and "Place Order" still navigates to `/orders`
+  unaffected. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`, client JS
+  dropped slightly (4.35 kB → 4.25 kB) from the removed radio-group logic.
+
 - **`M31` — real guest address capture, Pakistani fields (2026-08-26)** — `AddressModal.jsx`'s submit
   handler did nothing before this; it just closed the modal. It now captures `name`, `phone`, `email`,
   `address`, `city`, `area` (phone ordered ahead of email, per the milestone's "phone-first" goal) and

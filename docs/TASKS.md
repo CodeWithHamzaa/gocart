@@ -140,6 +140,23 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M32` is done (2026-08-26).** The non-functional Stripe radio button is gone from
+`components/OrderSummary.jsx` — it was fully wired (`onChange`, `checked`) but no payment gateway has
+ever existed anywhere in the codebase, so it presented a choice that didn't work. [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s
+Consequences line already specified the exact outcome word for word — *"Checkout UI shows COD as the
+only option (not a disabled placeholder for others, to avoid confusing customers)"* — so this milestone
+had no open decision to make; it was UI catching up to a decision the data model already enforces
+(`collections/Orders.ts`'s `paymentMethod` field is a `select` with exactly one option, `'COD'`). Per
+the Testing line ("no radio group needed"), both radio inputs are removed, not just Stripe's — a single
+always-true option has no business being a radio button. COD is now a plain `"Cash on Delivery (COD)"`
+label. `paymentMethod` changed from `useState('COD')` to a plain `const paymentMethod = 'COD'`: nothing
+can set it to anything else anymore, so the setter was dead weight; the constant itself stays, declared
+but not yet read within this file, for `M33` to consume when it builds the real order. Verified with a
+scripted headless-Chromium session against a live `npm run start` server with seeded data: no "Stripe"
+text anywhere on the page, zero `<input type="radio">` elements, COD still shown, and "Place Order"
+still navigates to `/orders` unaffected. `npm run type-check` and `npm run build` both pass; `/cart`
+remains `○ Static`, client JS dropped slightly (4.35 kB → 4.25 kB) from the removed radio-group logic.
+
 **`M31` is done (2026-08-26).** `AddressModal.jsx`'s submit handler did nothing before this — it just
 closed the modal. It now captures a real Pakistani guest-checkout address (`name`, `phone`, `email`,
 `address`, `city`, `area` — phone ordered ahead of email, per the milestone's "phone-first" goal) and
@@ -327,7 +344,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31` Done** (2026-08-26); `M32`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); `M33`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
