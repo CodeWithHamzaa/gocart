@@ -1,168 +1,41 @@
-# GoCart — Project Code Dump
-Full directory tree and source of every code/config file in the repository.
+# GoCart Pakistan — Project Context, Part 3 of 3: Source Code
 
-**Generated:** 2026-09-15 · **Branch:** `claude/gocart-ai-team-setup-b9el6y`
+> **This is part 3 of a 3-part project dump.** Upload all three for full context.
+>
+> | Part | Contents |
+> |---|---|
+> | **1 — Overview & Structure** | Orientation brief (what the project is, its current state, constraints, known issues) + full directory tree |
+> | **2 — Documentation** | All 37 Markdown documents: spec, architecture, 25 ADRs, the 68-milestone roadmap, status, changelog, readiness reports, AI-team process docs |
+> | **3 — Source Code** *(this file)* | All 65 code and config files |
+>
+> **Read Part 1 first** — it states the project's actual current state and flags three places
+> where the checked-in documentation contradicts the code.
 
-**Excluded:** `node_modules/`, `.git/`, `.next/`, build output, binary assets (`media/*.png`, `app/favicon.ico`), `package-lock.json`, `tsconfig.tsbuildinfo`, and `.env` (contains a real `PAYLOAD_SECRET` and database URI — `.env.example` is included instead).
+### Essential context, if you only have this file
 
-**Markdown documentation** (`docs/*.md`, `.claude/**/*.md`, `CLAUDE.md`, `README.md`) appears in the tree but is not inlined — this dump is source code only.
+**GoCart** is an open-source multi-vendor Next.js marketplace being transformed into a
+**production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, on
+**Payload CMS v3** (embedded in the Next.js app) + **PostgreSQL**.
 
----
-
-## 1. Directory Structure
-
-```
-gocart/
-├── .claude/
-│   ├── agents/
-│   │   ├── devops-release-engineer.md
-│   │   ├── engineering-manager.md
-│   │   ├── fullstack-engineer.md
-│   │   ├── product-manager.md
-│   │   ├── qa-engineer.md
-│   │   ├── security-performance-engineer.md
-│   │   ├── software-architect.md
-│   │   └── uiux-designer.md
-│   ├── commands/
-│   │   ├── escalate.md
-│   │   ├── milestone-dryrun.md
-│   │   ├── milestone.md
-│   │   ├── team-status.md
-│   │   └── write-adr.md
-│   ├── docs/
-│   │   ├── CONVENTIONS.md
-│   │   ├── EXECUTION_POLICY.md
-│   │   ├── GATES.md
-│   │   ├── NO_PRODUCTION_AI.md
-│   │   ├── PARALLELISM.md
-│   │   ├── ROLES.md
-│   │   └── WORKFLOW.md
-│   ├── README.md
-│   └── settings.json
-├── app/
-│   ├── (payload)/
-│   │   ├── admin/
-│   │   │   ├── [[...segments]]/
-│   │   │   │   └── page.tsx
-│   │   │   └── importMap.js
-│   │   ├── api/
-│   │   │   ├── [...slug]/
-│   │   │   │   └── route.ts
-│   │   │   ├── graphql/
-│   │   │   │   └── route.ts
-│   │   │   └── graphql-playground/
-│   │   │       └── route.ts
-│   │   └── layout.tsx
-│   ├── (public)/
-│   │   ├── cart/
-│   │   │   └── page.jsx
-│   │   ├── categories/
-│   │   │   ├── loading.tsx
-│   │   │   └── page.tsx
-│   │   ├── category/
-│   │   │   └── [slug]/
-│   │   │       ├── error.tsx
-│   │   │       ├── not-found.tsx
-│   │   │       └── page.tsx
-│   │   ├── orders/
-│   │   │   └── page.jsx
-│   │   ├── product/
-│   │   │   └── [productId]/
-│   │   │       └── page.jsx
-│   │   ├── shop/
-│   │   │   └── page.jsx
-│   │   ├── layout.jsx
-│   │   └── page.jsx
-│   ├── favicon.ico  (not inlined)
-│   ├── globals.css
-│   └── StoreProvider.js
-├── collections/
-│   ├── Categories.ts
-│   ├── Media.ts
-│   ├── Orders.ts
-│   ├── Products.ts
-│   └── Users.ts
-├── components/
-│   ├── AddressModal.jsx
-│   ├── Banner.jsx
-│   ├── BestSelling.jsx
-│   ├── CategoriesMarquee.jsx
-│   ├── Counter.jsx
-│   ├── Footer.jsx
-│   ├── Hero.jsx
-│   ├── LatestProducts.jsx
-│   ├── Loading.jsx
-│   ├── Navbar.jsx
-│   ├── Newsletter.jsx
-│   ├── OrderItem.jsx
-│   ├── OrderSummary.jsx
-│   ├── OurSpec.jsx
-│   ├── PageTitle.jsx
-│   ├── ProductCard.jsx
-│   ├── ProductDescription.jsx
-│   ├── ProductDetails.jsx
-│   ├── Rating.jsx
-│   ├── RatingModal.jsx
-│   └── Title.jsx
-├── docs/
-│   ├── AI_TEAM_READINESS_REPORT.md
-│   ├── ARCHITECTURE.md
-│   ├── CATEGORY_REQUIREMENTS.md
-│   ├── CHANGELOG.md
-│   ├── DECISIONS.md
-│   ├── FEATURE_MATRIX.md
-│   ├── MIGRATION_PLAN.md
-│   ├── PHASE_1_READINESS_REPORT.md
-│   ├── PROJECT_SPEC.md
-│   ├── README.md
-│   ├── REPOSITORY_ANALYSIS.md
-│   └── TASKS.md
-├── globals/
-│   └── Settings.ts
-├── lib/
-│   ├── features/
-│   │   ├── address/
-│   │   │   └── addressSlice.js
-│   │   └── cart/
-│   │       └── cartSlice.js
-│   ├── payload/
-│   │   ├── categories.ts
-│   │   └── products.ts
-│   └── store.js
-├── media/
-│   ├── product_img1.png  (not inlined)
-│   ├── product_img2.png  (not inlined)
-│   ├── product_img3.png  (not inlined)
-│   └── product_img4.png  (not inlined)
-├── prompts/
-│   └── README.md
-├── scripts/
-│   └── seed.ts
-├── .dockerignore
-├── .env  (not inlined)
-├── .env.example
-├── .gitignore
-├── CLAUDE.md
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── docker-compose.yml
-├── Dockerfile
-├── LICENSE.md
-├── next-env.d.ts
-├── next.config.mjs
-├── package-lock.json  (not inlined)
-├── package.json
-├── payload-types.ts
-├── payload.config.ts
-├── postcss.config.mjs
-├── README.md
-├── tsconfig.json
-└── tsconfig.tsbuildinfo  (not inlined)
-```
+- Work is tracked as **68 numbered milestones** in `docs/MIGRATION_PLAN.md`. **36 are done;
+  `M33` is next.** Milestone IDs are the only unit of work; execution order comes from each
+  milestone's stated dependencies, not from ascending ID.
+- **Hard constraints:** COD only · guest checkout mandatory · admin-only auth · single store
+  (no vendors) · PostgreSQL only · SEO-first and mobile-first · everything in Docker · no AI
+  dependency in the shipped product.
+- **⚠️ `CLAUDE.md` is stale** — it claims `M1`–`M28` are done and that `/shop` search is an
+  in-memory filter. `M29`–`M32` shipped on 2026-08-26 and search is a real Payload query.
+  `docs/TASKS.md` and `docs/CHANGELOG.md` are the reliable status sources.
+- **Biggest functional gap:** "Place Order" writes nothing to the database — it only
+  navigates. That is `M33`.
+- **Verification gaps:** no test framework exists, `npm run lint` is broken (no ESLint
+  config), and `docker build` has never completed.
 
 ---
 
-## 2. Source Files (65 files)
+## 3. Source Code (65 files)
+
+Full content of every code and config file. Excludes `.env` (contains a real `PAYLOAD_SECRET` and database URI — `.env.example` is included instead), `package-lock.json`, build caches, and binary assets.
 
 ### Root
 
@@ -393,7 +266,7 @@ export default withPayload(nextConfig)
 
 #### `payload-types.ts`
 
-> Auto-generated by `payload generate:types` (git-ignored). Included for schema reference.
+> Auto-generated by `payload generate:types` (git-ignored). Included as the clearest statement of the data model.
 
 ```typescript
 /* tslint:disable */
