@@ -41,6 +41,7 @@
       "Bash(npx payload migrate:*)",
       "Bash(docker compose up:*)",
       "Bash(docker compose down:*)",
+      "Bash(git reset --hard:*)",
       "Bash(docker build:*)"
     ],
     "deny": [
@@ -48,7 +49,6 @@
       "Bash(git push -f:*)",
       "Bash(git push origin main:*)",
       "Bash(git push origin HEAD:main:*)",
-      "Bash(git reset --hard:*)",
       "Bash(git clean -fd:*)",
       "Bash(git clean -fdx:*)",
       "Bash(git branch -D:*)",
