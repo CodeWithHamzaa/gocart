@@ -582,3 +582,64 @@ Each result matches the live pre-`M29` `/shop` baseline exactly, including HTTP 
 - `/shop` must remain server-rendered (`ƒ Dynamic` in the build output). Moving the filter into the query must not turn it into a client-side fetch — [ADR-007](#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) applies.
 - Searching `description` later is additive and needs no rework of this decision — it becomes a `where[or]` clause and a new acceptance criterion.
 - Closes the `D`-class search-semantics finding raised in `M29`'s dry run.
+
+---
+
+## ADR-026: Orders are created only by a server-side function — `Orders` collection `create` access closes to admins
+
+**Status**: **Proposed (2026-10-09)** — **awaiting human approval; not Accepted.** This changes authorization on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action, and it reverses `M13`'s acceptance criterion *"anonymous `POST /api/orders` succeeds"*. It does **not** supersede an Accepted ADR (see *Relationship to existing ADRs*). `M33` must not start until this is Accepted, Amended, or Rejected by a human.
+
+**Context**: `M13` set `Orders` to public-create/admin-read so that guest checkout (ADR-005) could write an order without an account, and verified exactly that: anonymous `POST /api/orders` succeeds, anonymous `GET /api/orders` fails. `M33`'s goal, as written, is *"an actual `POST` to the `Orders` collection, using the cart contents and guest address"* — i.e. the browser calls the collection endpoint directly. That combination was verified to be unsafe against a live server on 2026-10-09, during `M33`'s dry run:
+
+| Probe (anonymous, no cookie) | Result |
+|---|---|
+| `POST /api/orders` with `items[0].unitPrice: 1` for a product priced `2900`, `orderTotal: 1` | **200** — order created, stored at the client's price |
+| Same response body | Contained the **full embedded `Products` document** (`depth` populated), not just an order reference |
+| `GET /api/orders`, `GET /api/users` | 403 (correct; unchanged) |
+
+Every field the order stores is therefore client-controlled: `unitPrice`, `orderTotal`, `shippingCost`, `discountAmount`, `status`, `isPaid`, and even `orderNumber` (the generator only runs when the field is absent). This defeats the purpose of three existing decisions:
+
+- **ADR-018** says shipping, total, and each line's unit price are *"snapshotted onto the Order at creation time"* from `Settings` and `Products`. A snapshot of whatever the client sent is not a snapshot of the store's prices.
+- **`M33a` / readiness risk R5** requires stock to be re-validated server-side at order creation. A check that lives only in the Next.js UI is bypassed by calling the collection endpoint, which still exists after `M33` ships.
+- **COD economics** (`PROJECT_SPEC.md`): an order costs a dispatch attempt whether or not it is real. An open, unauthenticated create endpoint with no validation and no rate limit is a free way to generate fake orders and to mark them `DELIVERED` / `isPaid: true`.
+
+`M13`'s access rule was correct for the scope `M13` had — the plan said nothing then about who computes the numbers. This ADR records the decision `M33` cannot make by itself.
+
+**Decision**: Order creation moves behind a **server-side function**; the `Orders` collection stops accepting public creates.
+
+1. **The only public path to create an order** is a function in `lib/payload/orders.ts` (server-only, Local API, per the existing `lib/payload/*` boundary), invoked from a **Next.js server action**. The server action file lives outside `lib/payload/` (for example under `app/(public)/cart/`) because `lib/payload/*` is imported by server code only and must not carry `'use server'` exports for the client.
+2. **The caller supplies only two things**: the cart lines (`productId`, `quantity`) and the guest name/phone/address/city/area (ADR-021). Everything else is derived on the server at the moment of creation:
+   - `unitPrice` from the current `Products.price`; `orderTotal` and `shippingCost` from those prices and the `Settings` flat rate and free-shipping threshold, per ADR-018;
+   - `paymentMethod: 'COD'`, `status: 'PLACED'`, `isPaid: false` (ADR-004, ADR-019);
+   - `orderNumber` from the existing generator.
+   The function writes with `overrideAccess: true`, **after** its own validation — never the other way around.
+3. **`Orders.access.create` becomes admin-only** (`Boolean(user)`), matching `update`/`delete`. Anonymous `POST /api/orders` and the GraphQL `createOrder` mutation return 403. Admins can still create an order by hand in `/admin`. Read, update, and delete rules are unchanged.
+4. **Validation is part of the function, not the UI.** At minimum: lines are non-empty; each `productId` exists; `quantity` is an integer between 1 and a documented upper bound (value chosen by `M33`); duplicate lines are merged; required guest fields are present and the phone matches the existing `0[0-9]{10}` shape. Any failure rejects the **whole** order and creates nothing (this is also the seam `M33a` plugs the stock check into). Full Pakistani address/phone validation stays with `M56`.
+5. **The response is minimal.** The function returns the new `orderNumber` and the resolved totals — not the stored document. Errors name the failing product(s) or field, and no error or log line carries the customer's name, phone, or address.
+6. **Creation is rate-limited by IP**, using the same mechanism `M36` must build for the lookup endpoint (ADR-024). Whichever of the two milestones lands first builds it as a shared helper. An in-process limiter is acceptable under ADR-015's single-VPS baseline and must be revisited if the app ever runs as more than one instance.
+7. **The client guards against double submission** (disabled button while the action is in flight). This is a UX protection, not a correctness one; the server is the authority.
+
+**Rejected alternatives**:
+
+- **Keep public create and recompute in a collection hook** (`beforeValidate`/`beforeChange` overwriting prices, totals, and status). Technically sufficient for tampering, but it leaves the unauthenticated endpoint and its GraphQL twin open for spam; hides business rules (stock, shipping, price lookup) inside a hook that also runs for legitimate admin edits; cannot return a clear "these products are unavailable" error to the shopper; and returns the stored document to anonymous callers unless response shaping is added separately. It answers "can they lie about the price" and leaves the other three problems.
+- **Keep public create and field-level access** on `status`, `isPaid`, `unitPrice`, etc. Payload field access can stop a field being *set*, but `unitPrice` and `orderTotal` are legitimately written at creation, so the only fully safe configuration is "no field may be set by the public" — which is this ADR's decision, reached the long way round.
+- **Status quo (`M33` as written) plus `M33a`'s stock check in the UI.** Leaves every field client-controlled. Rejected on the evidence in the table above.
+- **A custom route handler instead of a server action.** Equivalent in capability and acceptable if a server action proves unsuitable. Not the default because a server action gets Next.js's built-in same-origin check, whereas a route handler needs its own CSRF/origin handling for a state-changing request.
+- **A server-issued signed "quote" the client echoes back at checkout.** Prevents price drift between cart and order, but needs key management, expiry, and a replay story for a store whose entire catalogue is fetched fresh by the server at order time anyway. The cart page may show a stale price; the server charges the current one and tells the shopper the final total.
+- **CAPTCHA / bot challenge at checkout.** A reasonable additive control if spam appears after launch; not required to close the price-tampering and public-write problems, and it adds a third-party dependency (ADR-015's baseline has none). Deferred, not rejected.
+
+**Relationship to existing ADRs**:
+
+- **ADR-024 (Accepted)** is not contradicted and is **not edited**. It fixes `Orders`' *read* access as admin-only and says `M13`'s access rule *"needs no change and no revisit"* for the purpose of guest **lookup**; this ADR changes only `create`, which ADR-024 does not decide. Reading both together: read stays admin-only (ADR-024), create becomes admin-only (this ADR), and the public interacts with orders solely through two purpose-built server functions — create (this ADR) and lookup (ADR-024).
+- **ADR-018, ADR-004, ADR-019, ADR-021, ADR-005** are implemented as written; this ADR is what makes ADR-018's snapshot guarantee enforceable.
+- **Erratum, for a human to apply — not applied here:** ADR-024's lookup query is written against `guestPhone`, but the `Orders` field is named `phone` (`collections/Orders.ts`). `M36` should use `phone`.
+
+**Consequences**:
+
+- **`M13`'s Testing line changes in one place**: *"anonymous `POST /api/orders` succeeds"* becomes *"fails (403)"*. The other `M13` criteria stand. On acceptance, `MIGRATION_PLAN.md`'s `M13` entry gets a dated annotation, and `M33`'s goal is reworded from "a `POST` to the `Orders` collection" to "create an order through a server-side function".
+- **`M33`'s scope grows beyond its `Files` line** (`components/OrderSummary.jsx`, `lib/payload/orders.ts`): it also changes `collections/Orders.ts` (the access rule) and adds a server action file. Its Rollback line must cover the access change too, not just the two files.
+- **Nothing in the storefront calls `POST /api/orders` today** (the Place Order handler is a navigation stub), so closing it breaks no existing consumer. `scripts/seed.ts` uses the Local API, whose default is to bypass access control; this should be re-confirmed by running `npm run seed` as part of `M33`'s verification.
+- **`M33a`** (stock enforcement), **`M34`** (shipping display), **`M35`** (confirmation), and **`M36`** (lookup) all build on this one function. Its return shape is the contract they consume; it should not return the stored document.
+- **`G6` gains a concrete test**: anonymous `POST /api/orders` and the GraphQL `createOrder` mutation are refused, while a valid cart submitted through the server action creates exactly one order whose prices match the database regardless of what the client sent.
+- **The `lib/payload/orders.ts` types are hand-written**, mirroring the collection (house convention until `payload-types.ts` is adopted).
+- **New open item tracked as `R14`** in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): `Orders` accepted client-controlled prices and status from anonymous callers. Closed by this ADR once Accepted and implemented by `M33`.
