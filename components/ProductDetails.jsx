@@ -28,7 +28,12 @@ const ProductDetails = ({ product }) => {
     const images = product.images.map((image) => typeof image === 'string' ? image : image?.url).filter(Boolean)
     const [mainImage, setMainImage] = useState(images[0]);
 
+    // Fail closed, matching the server's stock check in createOrder: only an
+    // explicit inStock === true is purchasable (false or null -> Out of Stock).
+    const outOfStock = product.inStock !== true;
+
     const addToCartHandler = () => {
+        if (outOfStock) return;
         dispatch(addToCart({ productId }))
     }
 
@@ -58,16 +63,24 @@ const ProductDetails = ({ product }) => {
                 </div>
                 <div className="flex items-end gap-5 mt-10">
                     {
-                        cart[productId] && (
+                        !outOfStock && cart[productId] && (
                             <div className="flex flex-col gap-3">
                                 <p className="text-lg text-slate-800 font-semibold">Quantity</p>
                                 <Counter productId={productId} />
                             </div>
                         )
                     }
-                    <button onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition">
-                        {!cart[productId] ? 'Add to Cart' : 'View Cart'}
-                    </button>
+                    {
+                        outOfStock ? (
+                            <button disabled aria-disabled="true" className="bg-slate-300 text-slate-500 px-10 py-3 text-sm font-medium rounded cursor-not-allowed">
+                                Out of Stock
+                            </button>
+                        ) : (
+                            <button onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition">
+                                {!cart[productId] ? 'Add to Cart' : 'View Cart'}
+                            </button>
+                        )
+                    }
                 </div>
                 <hr className="border-gray-300 my-5" />
                 <div className="flex flex-col gap-4 text-slate-500">

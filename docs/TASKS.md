@@ -145,7 +145,7 @@ fetch that supplies prices and **fails closed** (only an explicit `true` is purc
 rejects the whole order with `OUT_OF_STOCK` and the blocking product names, and `OrderSummary.jsx` tells the
 customer which products to remove. Closes readiness risk R5. Verified by QA on a live server, including a product
 flipped out of stock *after* the cart loaded. The storefront still lets customers *add* an out-of-stock product to
-the cart (found, not fixed — see [CHANGELOG.md](./CHANGELOG.md)).
+the cart — **fixed the same day** by an owner-requested patch (see [CHANGELOG.md](./CHANGELOG.md)).
 
 **`M33` is done (2026-10-09).** "Place Order" now creates a real `Order` through a server action
 (`app/(public)/cart/actions.ts`) calling `createOrder` in `lib/payload/orders.ts`, implementing
