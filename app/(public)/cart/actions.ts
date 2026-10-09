@@ -1,6 +1,6 @@
 'use server'
 
-import { headers } from 'next/headers'
+import { getClientIp } from '@/lib/client-ip'
 import { createOrder } from '@/lib/payload/orders'
 import type { CreateOrderInput, CreateOrderResult } from '@/lib/payload/orders'
 import { rateLimit } from '@/lib/rate-limit'
@@ -16,19 +16,6 @@ const ORDER_WINDOW_MS = 15 * 60 * 1000
 export type PlaceOrderResult =
   | CreateOrderResult
   | { ok: false; code: 'RATE_LIMITED'; message: string }
-
-// Trusting cf-connecting-ip / x-forwarded-for is only safe once the origin is
-// firewalled to Cloudflare (tracked for M49-M52); otherwise a caller can set these
-// headers and the first X-Forwarded-For entry is client-controlled.
-// Truncated defensively: a legitimate IPv6 address is at most 45 characters.
-async function getClientIp(): Promise<string> {
-  const h = await headers()
-  const cf = h.get('cf-connecting-ip')?.trim()
-  if (cf) return cf.slice(0, 64)
-  const forwarded = h.get('x-forwarded-for')?.split(',')[0]?.trim()
-  if (forwarded) return forwarded.slice(0, 64)
-  return 'unknown'
-}
 
 export async function placeOrder(input: CreateOrderInput): Promise<PlaceOrderResult> {
   const ip = await getClientIp()
