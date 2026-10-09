@@ -1,4 +1,4 @@
-import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react';
+import { PlusIcon, SquarePenIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import AddressModal from './AddressModal';
 import { useDispatch, useSelector } from 'react-redux';
@@ -21,8 +21,6 @@ const OrderSummary = ({ totalPrice, items }) => {
     // paymentMethod itself (ADR-026), so nothing is sent from here.
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressModal, setShowAddressModal] = useState(false);
-    const [couponCodeInput, setCouponCodeInput] = useState('');
-    const [coupon, setCoupon] = useState('');
     const [placing, setPlacing] = useState(false);
     // M33 (pulled forward from M34): shipping settings via Payload's public REST API.
     // null = loading or failed; Place Order stays disabled rather than show a wrong total.
@@ -58,11 +56,6 @@ const OrderSummary = ({ totalPrice, items }) => {
         ? (totalPrice >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.shippingFlatRate)
         : null;
     const grandTotal = shipping === null ? null : totalPrice + shipping;
-
-    const handleCouponCode = async (event) => {
-        event.preventDefault();
-        
-    }
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
@@ -172,32 +165,16 @@ const OrderSummary = ({ totalPrice, items }) => {
                     <div className='flex flex-col gap-1 text-slate-400'>
                         <p>Subtotal:</p>
                         <p>Shipping:</p>
-                        {coupon && <p>Coupon:</p>}
                     </div>
                     <div className='flex flex-col gap-1 font-medium text-right'>
                         <p>{currency}{totalPrice.toLocaleString()}</p>
                         <p>{shipping === null ? '...' : (shipping === 0 ? 'Free' : `${currency}${shipping.toLocaleString()}`)}</p>
-                        {coupon && <p>{`-${currency}${(coupon.discount / 100 * totalPrice).toFixed(2)}`}</p>}
                     </div>
                 </div>
-                {
-                    !coupon ? (
-                        <form onSubmit={e => toast.promise(handleCouponCode(e), { loading: 'Checking Coupon...' })} className='flex justify-center gap-3 mt-3'>
-                            <input onChange={(e) => setCouponCodeInput(e.target.value)} value={couponCodeInput} type="text" placeholder='Coupon Code' className='border border-slate-400 p-1.5 rounded w-full outline-none' />
-                            <button className='bg-slate-600 text-white px-3 rounded hover:bg-slate-800 active:scale-95 transition-all'>Apply</button>
-                        </form>
-                    ) : (
-                        <div className='w-full flex items-center justify-center gap-2 text-xs mt-2'>
-                            <p>Code: <span className='font-semibold ml-1'>{coupon.code.toUpperCase()}</span></p>
-                            <p>{coupon.description}</p>
-                            <XIcon size={18} onClick={() => setCoupon('')} className='hover:text-red-700 transition cursor-pointer' />
-                        </div>
-                    )
-                }
             </div>
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
-                <p className='font-medium text-right'>{grandTotal === null ? '...' : `${currency}${coupon ? (grandTotal - (coupon.discount / 100 * totalPrice)).toFixed(2) : grandTotal.toLocaleString()}`}</p>
+                <p className='font-medium text-right'>{grandTotal === null ? '...' : `${currency}${grandTotal.toLocaleString()}`}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-slate-400 pb-2'>

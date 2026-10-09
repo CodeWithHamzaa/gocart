@@ -1,6 +1,5 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-import Newsletter from "@/components/Newsletter";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
 import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
@@ -8,7 +7,7 @@ import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
 // M23: server component — the product sections are fetched through Payload's
 // Local API and rendered into the initial HTML, so their content is crawlable
 // (ADR-007) instead of appearing only after client hydration. The remaining
-// 'use client' directives on this page's other children (Hero, Newsletter,
+// 'use client' directives on this page's other children (Hero,
 // OurSpecs) are M40's pass, not this milestone's.
 
 // Rendered per request rather than prerendered at build time. Two reasons:
@@ -32,7 +31,6 @@ export default async function Home() {
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} />
             <OurSpecs />
-            <Newsletter />
         </div>
     );
 }

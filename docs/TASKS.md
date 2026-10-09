@@ -140,6 +140,14 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M46`, `M47`, `M48`, `M48a` are done (2026-10-09), run as one fast-track batch** under the owner's scope-based QA rule
+([GATES.md](../.claude/docs/GATES.md)): frontend-only deletions, so lint and type-check only, no build, no database. Removed: the orphaned
+review components (`Rating.jsx`, `RatingModal.jsx`; ADR-016), the dead coupon state/input/branches in `OrderSummary.jsx` (ADR-017), the
+non-functional Newsletter form, and — found by `M48`'s sweep — the site-wide promo banner that advertised "20% OFF" and copied a coupon code
+(`NEW20`) that nothing honors. Scoped QA used a DB-free dev server with mocked network responses. **Not verified (needs a database):** the home
+page render without the Newsletter section and the other DB-backed routes. Other false customer-facing claims were found and are tracked for `M55a`
+(see [CHANGELOG.md](./CHANGELOG.md)).
+
 **`M36` is done (2026-10-09).** `/orders` is now a real guest order lookup (no dummy data): the guest enters an order number and
 the phone number they ordered with; a server action (`app/(public)/orders/actions.ts`) rate-limits **before** any query and
 `lookupOrder` (`lib/payload/orders.ts`) returns exactly one order's whitelisted fields or an identical "not found" for any mismatch,
@@ -380,7 +388,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
-| `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | Not Started — `M48a` inserted (2026-08-18) to close `R11` (dead Newsletter form) |
+| `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
 | `M55`–`M56` (incl. new `M55a`, `M56a`) | PKR currency, Pakistani address/phone validation | Not Started — `M55a` inserted to close `R12` (storefront copy correctness); `M56a` inserted to close `R7` (golden-path E2E + CI) (both 2026-08-18) |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |

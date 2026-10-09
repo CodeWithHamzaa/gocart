@@ -1,7 +1,6 @@
 import { Outfit } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
-import Banner from "@/components/Banner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "../globals.css";
@@ -19,7 +18,6 @@ export default function PublicLayout({ children }) {
             <body className={`${outfit.className} antialiased`}>
                 <StoreProvider>
                     <Toaster />
-                    <Banner />
                     <Navbar />
                     {children}
                     <Footer />

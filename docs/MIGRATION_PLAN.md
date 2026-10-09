@@ -789,6 +789,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: No dead entry points remain; no star-rating UI references the removed dummy rating data; `npm run build` succeeds.
 - **Rollback**: Revert the touched files.
 - **Commit message**: `Remove review submission for v1 (ADR-016)`
+- **✅ Done (2026-10-09)**, in the fast-track cleanup batch. `Rating.jsx` and `RatingModal.jsx` were already orphaned (no importers) and are deleted; the star-rating code in `ProductCard`/`ProductDetails`/`ProductDescription` had been removed earlier (`M23`/`M25`).
 
 ### M47 — Remove coupon input for v1
 - **Goal**: Coupons are decided out of scope for v1 — [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1). Execute the removal path: remove the coupon-code input from `OrderSummary.jsx`.
@@ -797,6 +798,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: No non-functional coupon input remains in the checkout UI; `npm run build` succeeds.
 - **Rollback**: Revert the file.
 - **Commit message**: `Remove coupon input for v1 (ADR-017)`
+- **✅ Done (2026-10-09)**. All coupon state, handler, markup and total-line branches removed from `OrderSummary.jsx`; shipping/total logic and order placement untouched. Verified with a DB-free dev server and mocked network responses.
 
 ### M48 — Clean up any remaining dead ends from M46/M47
 - **Goal**: Sweep for any leftover references (nav links, footer copy, unused imports) tied to whichever paths were removed in M46/M47.
@@ -805,6 +807,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: `npm run build` succeeds; manual click-through finds no dead links or references to removed functionality.
 - **Rollback**: Revert the specific cleanup commit.
 - **Commit message**: `Clean up references to deferred/removed reviews and coupons functionality`
+- **✅ Done (2026-10-09)**. The sweep found one real leftover: `components/Banner.jsx`, rendered on every page by `app/(public)/layout.jsx`, advertised "Get 20% OFF on Your First Order!" and copied the non-existent coupon code `NEW20` — deleted with its layout usage (coupons are out of scope, ADR-017). Footer copy was **not** changed here: its dead links and fake contact details belong to `M55a`.
 
 ### M48a — Remove non-functional Newsletter signup
 - **New milestone, inserted 2026-08-18** — closes readiness risk [R11](./PHASE_1_READINESS_REPORT.md#r11--newsletterjsx-is-left-in-limbo):
@@ -825,6 +828,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
   import remains.
 - **Rollback**: `git revert` to restore both files.
 - **Commit message**: `Remove non-functional newsletter signup form`
+- **✅ Done (2026-10-09)**. `Newsletter.jsx` deleted and removed from the home page (closes readiness risk `R11`).
 
 ---
 
