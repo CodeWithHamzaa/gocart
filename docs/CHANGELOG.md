@@ -18,6 +18,27 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M36` — guest order lookup (2026-10-09), per [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only).**
+  `/orders` is a real lookup form (no dummy data): order number + the phone used when ordering. `lookupOrderAction` (`app/(public)/orders/actions.ts`) rate-limits
+  **before** any query; `lookupOrder` (`lib/payload/orders.ts`) validates both inputs as strict strings, runs one `find` on order number + phone with
+  `overrideAccess: true` (server-side only), and returns exactly one order's whitelisted fields (items with names/quantities/prices, totals, status, createdAt, payment,
+  delivery details; no ids) or an **identical** `NOT_FOUND` for any mismatch (wrong phone, unknown number, another order's phone). `Orders` collection access is unchanged (admin-read only).
+  The page is `noindex`, never puts the order number or phone in a URL, and is prefilled from the tab's last order (`sessionStorage`). `components/OrderItem.jsx` was rewritten to the real
+  order shape (covering the substance of `M39`). `lib/client-ip.ts` now holds the shared client-IP helper used by order placement and lookup.
+  - **Owner-approved rate limits:** 20 lookups/hour per IP (every request counts) and **5 failed lookups/hour per order number**; successful lookups and malformed phones do not count. The per-order
+    counter uses `createBucketLimiter` (`lib/rate-limit.ts`): a fixed 65,536-bucket store keyed by HMAC with a per-process secret that **never evicts live entries** (security review M1: the shared LRU limiter
+    could be flooded to reset a victim's counter), reserving a slot before the query (no parallel-burst bypass) and refunding it unless the result is `NOT_FOUND`. Owner-accepted trade-off: someone who knows
+    an order number can use up its 5 failed attempts for an hour; the admin and the confirmation page remain available.
+  - **Scope notes:** files beyond the plan line are `lib/payload/orders.ts`, `lib/client-ip.ts`, `lib/rate-limit.ts`, `app/(public)/cart/actions.ts` (imports the shared IP helper), `app/(public)/orders/{actions.ts,page.tsx,OrderLookup.tsx}`, `components/OrderItem.jsx` (the old `orders/page.jsx` is deleted).
+  - **Verified (QA, two rounds on a live server with a database, full gates per the owner):** lookup returns exactly the matched order (exact key set); wrong-phone and unknown-number results are byte-identical;
+    injection-style and wildcard inputs give `INVALID_INPUT`, never an error or data; 5 failed lookups → the 6th is blocked even with the correct phone and the blocked attempts never reach the database;
+    15 successful lookups don't consume the cap; 10 malformed phones don't consume it; 30 parallel wrong-phone lookups → exactly 5 reach the database; after a 5,000-fake-order-number flood from unique IPs a victim's
+    counter still holds; the per-IP cap is 20 and counts every request; anonymous `/api/orders` and GraphQL access still denied; no customer data in server or Postgres (default-level) logs; UI correct on mobile and desktop with
+    text-only rendering of hostile names; M33/M33a/M35 regression. A full G6 security review found **no Blocker** (access control, injection, enumeration, caching all pass).
+  - **Not verified:** that a `SERVER_ERROR` leaves the per-order counter untouched (QA could not provoke one; it is correct by reading the code); the per-IP limit behind a real proxy/Cloudflare; no automated tests exist.
+  - **Launch-blocking (recorded in `MIGRATION_PLAN.md`'s `M52` entry):** client-IP headers are only trustworthy once the origin is firewalled to Cloudflare; without it the per-IP limits on placement and lookup can be bypassed.
+  - **Found, not fixed:** colliding order numbers share a counter (rare at 65,536 buckets) and a flood can only make lookups stricter, never looser; the per-IP limiter still uses the evicting shared map (a flood from many IPs could reset IP counters); lookup shows the live product name, so a renamed product appears renamed on old orders;
+    the form's `pattern` rejects a phone with a leading space client-side; ADR-024's text says `guestPhone` but the field is `phone` (erratum for the owner to apply); `depth: 1` loads whole product documents to read one name.
 - **`M35` — order confirmation page (2026-10-09), per [ADR-027](./DECISIONS.md#adr-027-m35-order-confirmation-is-rendered-from-the-placeorder-response-held-in-sessionstorage--no-server-read-of-orders).**
   `/order-confirmation` (client-rendered, `noindex`) shows the order number with a copy button, the server-priced items,
   subtotal / shipping (`Free` when 0) / total, delivery details, and Cash on Delivery. It is fed by the `placeOrder` response held in

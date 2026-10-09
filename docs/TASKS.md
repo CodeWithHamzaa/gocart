@@ -145,8 +145,8 @@ the phone number they ordered with; a server action (`app/(public)/orders/action
 `lookupOrder` (`lib/payload/orders.ts`) returns exactly one order's whitelisted fields or an identical "not found" for any mismatch,
 per [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only).
 `Orders` collection access is unchanged (admin-read only). Owner-approved limits: 20 lookups/hour per IP and 5 **failed** lookups/hour per
-order number (successful lookups are free), the latter on a fixed-size, non-evicting bucket store. Round-1 QA on a live server and a
-full security review passed; re-verification of the final limiter changes (bucket store, failures-only counting) was still in progress when this entry was first committed — see CHANGELOG for the final result. **Launch dependency:** the per-IP limit trusts client-IP headers, so the origin must be firewalled to Cloudflare before
+order number (successful lookups are free), the latter on a fixed-size, non-evicting bucket store. Verified by QA on a live server (two rounds, including the final limiter) and a
+full security review; details in CHANGELOG. **Launch dependency:** the per-IP limit trusts client-IP headers, so the origin must be firewalled to Cloudflare before
 launch (`M49`–`M52`); closes readiness findings `C7` and `D9` in implementation.
 
 **`M35` is done (2026-10-09).** After Place Order the guest lands on `/order-confirmation` showing the real order:
