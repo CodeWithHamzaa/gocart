@@ -140,6 +140,15 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M36` is done (2026-10-09).** `/orders` is now a real guest order lookup (no dummy data): the guest enters an order number and
+the phone number they ordered with; a server action (`app/(public)/orders/actions.ts`) rate-limits **before** any query and
+`lookupOrder` (`lib/payload/orders.ts`) returns exactly one order's whitelisted fields or an identical "not found" for any mismatch,
+per [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only).
+`Orders` collection access is unchanged (admin-read only). Owner-approved limits: 20 lookups/hour per IP and 5 **failed** lookups/hour per
+order number (successful lookups are free), the latter on a fixed-size, non-evicting bucket store. Verified by QA on a live server (two rounds, including the final limiter) and a
+full security review; details in CHANGELOG. **Launch dependency:** the per-IP limit trusts client-IP headers, so the origin must be firewalled to Cloudflare before
+launch (`M49`–`M52`); closes readiness findings `C7` and `D9` in implementation.
+
 **`M35` is done (2026-10-09).** After Place Order the guest lands on `/order-confirmation` showing the real order:
 order number (with a copy button), server-priced lines, subtotal / shipping / total, delivery details, and Cash on
 Delivery. Per [ADR-027](./DECISIONS.md#adr-027-m35-order-confirmation-is-rendered-from-the-placeorder-response-held-in-sessionstorage--no-server-read-of-orders)
@@ -367,7 +376,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); **`M33`, `M33a`, `M35` Done** (2026-10-09); `M34`, `M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); **`M33`, `M33a`, `M35`, `M36` Done** (2026-10-09); `M34` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |

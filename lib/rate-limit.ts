@@ -3,6 +3,8 @@
 // In-process state is acceptable under ADR-015's single-VPS baseline; it must be
 // revisited (shared store) if the app ever runs as more than one instance.
 
+import { createHmac, randomBytes } from 'node:crypto'
+
 type Options = {
   limit: number
   windowMs: number
@@ -67,4 +69,60 @@ export function rateLimit(rawKey: string, { limit, windowMs }: Options): RateLim
   if (hits.size >= MAX_KEYS) evictOldestUntilBelowCap()
   hits.set(key, { stamps: recent, windowMs })
   return { allowed: true, retryAfterSec: 0 }
+}
+
+// --- Bucket limiter (M36, security review M1) ---------------------------------------
+// rateLimit above evicts the oldest keys once its Map is full, so a flood of distinct
+// keys could push a victim's key out and reset its counter. That is unacceptable for
+// the per-order-number lookup cap (it protects against phone guessing). This limiter
+// hashes keys into a FIXED number of buckets with a per-process secret HMAC, so memory
+// is hard-bounded and live entries are never evicted. Accepted trade-offs: colliding
+// keys share a counter (rare at 65,536 buckets), and an attacker cannot choose
+// collisions because the secret is random. A flood can only make lookups MORE
+// restricted, never less.
+
+const BUCKET_SECRET = randomBytes(32)
+
+export type BucketLimiter = {
+  reserve: (key: string) => { allowed: boolean }
+  release: (key: string) => void
+}
+
+export function createBucketLimiter({
+  buckets = 65536,
+  limit,
+  windowMs,
+}: {
+  buckets?: number
+  limit: number
+  windowMs: number
+}): BucketLimiter {
+  const state = new Map<number, number[]>()
+
+  const indexFor = (key: string): number =>
+    createHmac('sha256', BUCKET_SECRET).update(key).digest().readUInt32BE(0) % buckets
+
+  return {
+    // Synchronous, so concurrent requests cannot interleave between check and count.
+    reserve(key) {
+      const index = indexFor(key)
+      const now = Date.now()
+      const live = (state.get(index) ?? []).filter((stamp) => now - stamp < windowMs)
+      if (live.length >= limit) {
+        state.set(index, live)
+        return { allowed: false }
+      }
+      live.push(now)
+      state.set(index, live)
+      return { allowed: true }
+    },
+    // Refund the most recent reservation.
+    release(key) {
+      const index = indexFor(key)
+      const stamps = state.get(index)
+      if (!stamps) return
+      stamps.pop()
+      if (stamps.length === 0) state.delete(index)
+    },
+  }
 }

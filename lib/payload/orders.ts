@@ -291,3 +291,130 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     return fail('SERVER_ERROR', 'We could not place your order. Please try again.')
   }
 }
+
+// M36: guest order lookup by (orderNumber, phone) — ADR-024. Server-only; reachable
+// from the client only through the lookupOrderAction server action, which rate-limits
+// first. Two-factor on purpose: the order number alone never reveals anything, and a
+// wrong phone is indistinguishable from an unknown number (no existence oracle).
+// Uses the `phone` field (ADR-024's text says guestPhone; the collection field is
+// `phone`). Never lists or enumerates; returns only the fields named below.
+
+const ORDER_NUMBER_PATTERN = /^GC-[0-9A-Z]+-[0-9A-F]{8}$/
+
+export type LookupOrderErrorCode = 'INVALID_INPUT' | 'NOT_FOUND' | 'SERVER_ERROR'
+
+export type LookupOrderView = {
+  orderNumber: string
+  status: string
+  createdAt: string
+  paymentMethod: string
+  isPaid: boolean
+  items: { name: string; quantity: number; unitPrice: number }[]
+  subtotal: number
+  shippingCost: number
+  orderTotal: number
+  delivery: { name: string; phone: string; address: string; city: string; area?: string }
+}
+
+export type LookupOrderResult =
+  | { ok: true; order: LookupOrderView }
+  | { ok: false; code: LookupOrderErrorCode; message: string }
+
+const INVALID_INPUT_MESSAGE =
+  'Enter your order number (like GC-XXXXXXXX-XXXXXXXX) and the 11-digit phone number you ordered with.'
+
+/** Normalised order number if it is well-formed, else null. Pure; no DB access. */
+export function normalizeOrderNumber(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toUpperCase()
+  return ORDER_NUMBER_PATTERN.test(normalized) ? normalized : null
+}
+
+function normalizePhone(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return PHONE_PATTERN.test(trimmed) ? trimmed : null
+}
+
+export async function lookupOrder(input: {
+  orderNumber: unknown
+  phone: unknown
+}): Promise<LookupOrderResult> {
+  const raw: unknown = input
+  const orderNumber = normalizeOrderNumber(isRecord(raw) ? raw.orderNumber : undefined)
+  const phone = normalizePhone(isRecord(raw) ? raw.phone : undefined)
+  if (!orderNumber || !phone) {
+    return { ok: false, code: 'INVALID_INPUT', message: INVALID_INPUT_MESSAGE }
+  }
+
+  try {
+    const payload = await getPayload({ config })
+    const found = await payload.find({
+      collection: 'orders',
+      where: { and: [{ orderNumber: { equals: orderNumber } }, { phone: { equals: phone } }] },
+      limit: 1,
+      depth: 1,
+      pagination: false,
+      overrideAccess: true,
+    })
+
+    const doc = found.docs[0] as unknown as Record<string, unknown> | undefined
+    if (!doc) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message:
+          'We could not find an order with those details. Check the order number and the phone number you used when ordering.',
+      }
+    }
+
+    const rawItems = Array.isArray(doc.items) ? (doc.items as Record<string, unknown>[]) : []
+    const items = rawItems.map((line) => {
+      const product = line.product
+      const name =
+        isRecord(product) && typeof product.name === 'string' && product.name ? product.name : 'Product'
+      return {
+        name,
+        quantity: Number(line.quantity),
+        unitPrice: Number(line.unitPrice),
+      }
+    })
+    const round2 = (x: number) => Math.round(x * 100) / 100
+    const subtotal = round2(items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0))
+    const area = typeof doc.area === 'string' && doc.area ? doc.area : undefined
+
+    return {
+      ok: true,
+      order: {
+        orderNumber: String(doc.orderNumber),
+        status: String(doc.status),
+        createdAt: String(doc.createdAt),
+        paymentMethod: String(doc.paymentMethod),
+        isPaid: doc.isPaid === true,
+        items,
+        subtotal,
+        shippingCost: Number(doc.shippingCost),
+        orderTotal: Number(doc.orderTotal),
+        delivery: {
+          name: String(doc.name),
+          phone: String(doc.phone),
+          address: String(doc.address),
+          city: String(doc.city),
+          ...(area ? { area } : {}),
+        },
+      },
+    }
+  } catch (error) {
+    // Fixed message + error class/code only; never input, message, or stack.
+    const err = error as { name?: unknown; code?: unknown } | null
+    console.error('[lookupOrder] failed', {
+      name: typeof err?.name === 'string' ? err.name : 'UnknownError',
+      code: typeof err?.code === 'string' ? err.code : undefined,
+    })
+    return {
+      ok: false,
+      code: 'SERVER_ERROR',
+      message: 'We could not look up your order right now. Please try again.',
+    }
+  }
+}
