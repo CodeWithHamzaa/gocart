@@ -678,3 +678,45 @@ The data the confirmation screen needs is nearly all already in the browser: the
 - Hand-written types in `lib/payload/orders.ts` must gain `items` by hand; the not-found state links to `/orders`, which stays dummy data until `M36`.
 - A guest who opens the confirmation in a second tab or device sees the not-found state by design. Acceptable: the order exists and is recoverable through `M36`.
 - Closes no readiness-report finding. Note it in `M35`'s entry context; `MIGRATION_PLAN.md` is not edited here.
+
+---
+
+## ADR-028: Order identity and price-snapshot fields are immutable after creation — field-level access
+
+**Status**: **Accepted (2026-10-09)** — explicitly approved by the project owner (the human at `G8`) in session. It is an authorization change on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action. It **narrows** access: after this ADR an admin can no longer change four fields that were previously editable. It refines ADR-018 (the snapshot is "never recomputed") and protects ADR-024 (the guest lookup key). It reverses no Accepted ADR.
+
+**Context**: QA of `M37`/`M38` found that `orderNumber` is read-only **in the admin UI only** (`admin.readOnly: true`). The API does not honour that flag: an admin session sending a REST `PATCH` changed it, and the new value persisted (verified: `GC-CHANGED-00000000`). That matters because the order number is half of the guest lookup key (`orderNumber` + `phone`, ADR-024) and is printed and shown to customers on the confirmation screen (ADR-027). Changing it silently breaks the reference the guest holds, and lookup stops finding the order.
+
+The price fields have a related problem. `items[].unitPrice`, `orderTotal`, and `shippingCost` are the snapshot of what the customer was quoted and will pay at the door (ADR-018, written by `createOrder` per ADR-026). They were plain editable inputs, and their own descriptions admit that editing one never recalculates the others. An accidental edit therefore desynchronises the order with no warning, on a COD order where the amount on the sheet is the amount the courier collects.
+
+**Decision**: Add field-level access `update: () => false` (create left unchanged) to four fields in `collections/Orders.ts`:
+
+1. `orderNumber`
+2. `items[].unitPrice`
+3. `orderTotal`
+4. `shippingCost`
+
+These fields can be set **only at creation** — by `createOrder` through the Local API (ADR-026), or by an admin creating an order by hand in `/admin` — and are immutable through REST, GraphQL, and the admin UI afterwards. Collection-level access is unchanged (admin-only create, read, update, delete, as in ADR-026). `status`, `isPaid`, the customer and address fields, and the remaining fields stay editable, so the ADR-019 workflow is untouched. `discountAmount`, reserved for a future coupon engine (ADR-017), is not touched.
+
+**Rejected alternatives**:
+
+- **`admin.readOnly` only (the status quo for `orderNumber`).** A UI hint, not access control; it does not protect the API. This is the verified defect.
+- **A `beforeChange` immutability hook** that rejects or reverts changes. Works, but hides the rule in imperative code and still renders the field as editable in the admin UI, inviting an edit that then fails or is silently discarded. Field access is declarative, enforced on every transport, and lets Payload render the field read-only itself.
+- **Leave the fields editable.** Accepts accidental desynchronisation of the snapshot and breakage of the guest lookup key. Rejected on the evidence above.
+- **Make all of `Orders` read-only after creation.** Admins must still correct a delivery address or phone typo and move the order through its statuses (ADR-019); this over-corrects.
+
+**Relationship to existing ADRs**:
+
+- **ADR-018 (Accepted)** is not edited. This ADR is what makes its "never recomputed afterward" guarantee hold against admin edits, as ADR-026 made the creation-time snapshot hold against client input.
+- **ADR-024 (Accepted)** is not edited; its `(orderNumber, phone)` lookup is unchanged. This ADR protects half of its key from being altered after the guest has been given it. `phone` stays editable by design (typo correction).
+- **ADR-026, ADR-019, ADR-017** are implemented as written; collection access, the status set, and `discountAmount` are not changed.
+
+**Consequences**:
+
+- If an amount genuinely has to change after a phone confirmation, the admin sets the order to `CANCELLED` and creates a replacement order by hand in `/admin`. Creation stays allowed, so this path remains open.
+- **Open item for the owner — not decided here:** `items[].quantity` and `items[].product` remain editable, so an admin can still desynchronise line items from the now-locked `orderTotal`. The two options are to lock `items` entirely, or to add a recalculation hook. Recommended for the owner's decision; if taken, it needs its own ADR or an amendment proposal.
+- The admin UI renders the four locked fields read-only; Payload derives this from field access, so `admin.readOnly` on `orderNumber` becomes redundant (it may stay).
+- No schema or migration change — access is configuration.
+- The hand-written types in `lib/payload/orders.ts` are unaffected (no field is added, removed, or retyped).
+- **Verification requirement for the implementing milestone:** anonymous and admin REST and GraphQL updates of each of the four fields leave the stored values unchanged; create still works (both `createOrder` and a hand-made admin order); `status` and `isPaid` updates still work; and the guest lookup (`M36`) still finds the order by `(orderNumber, phone)`.
+- Closes no readiness-report finding.
