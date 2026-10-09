@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Out-of-stock products can no longer be added to the cart from the product page (2026-10-09, owner-requested patch following `M33a`).**
+  `components/ProductDetails.jsx` treats anything other than an explicit `inStock === true` (so `false` and `null`) as out of
+  stock: the button is disabled and reads "Out of Stock", the quantity counter is hidden, and the click handler is guarded.
+  In-stock products are unchanged. The server-side check in `createOrder` (`M33a`) remains the authority.
+  - **Verified (QA, live server):** in-stock add/view-cart flow unchanged; `false` and SQL `NULL` both show a disabled
+    "Out of Stock" button with no "Add to Cart" text and no counter, and forced clicks leave the cart untouched; a product already in the
+    cart that goes out of stock shows "Out of Stock" and Place Order is still rejected server-side with no order created; no console errors, mobile and desktop.
+  - **Found, not fixed:** the `+` button on `/cart` (`components/Counter.jsx`) can still raise the quantity of an out-of-stock item that is already in the
+    cart (rejected at checkout). The `/shop` cards show no stock indicator.
+
 ### Added
 
 - **`M33a` — server-side stock enforcement at order creation (2026-10-09).** `createOrder` (`lib/payload/orders.ts`)
@@ -17,8 +29,7 @@ All notable changes to this project are documented here. Format loosely follows 
     (fails closed); stock flipped to out-of-stock *after* `/cart` loaded → error toast, cart kept, no order, and succeeds
     once restored; M33 regression (double-click → one order, anonymous create still 403); no PII in logs.
   - **Found, not fixed:**
-    - The storefront still lets customers add an out-of-stock product to the cart (`/product/<id>` shows "Add to Cart" and
-      no stock text; no component reads `inStock`). They learn at Place Order. Not owned by a milestone — candidate for `M44`/`M48`-era UI work.
+    - ~~The storefront still lets customers add an out-of-stock product to the cart~~ — fixed the same day, see "Fixed" above.
     - Stock is read and the order written without a row lock (milliseconds apart); there is no quantity-based inventory, only a boolean.
     - Low (Security/Performance review): if a product name were ever a non-string the toast would read "Out of stock: , ."; `Products.name` is a required text field, so this is cosmetic. Per-unit inventory counts, if ever added, would need an atomic decrement.
   - **Security/Performance review (read-only):** no Blocker or High findings; fail-closed confirmed (missing/null/non-boolean `inStock` all blocked), no bypass via duplicate or normalised ids, the `OUT_OF_STOCK` response exposes only id and name (already public via `GET /api/products`), toast text is escaped, no new query or logging.
