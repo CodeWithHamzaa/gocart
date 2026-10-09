@@ -25,8 +25,10 @@ export const Orders: CollectionConfig = {
   slug: 'orders',
   admin: {
     useAsTitle: 'orderNumber',
-    defaultColumns: ['orderNumber', 'name', 'orderTotal', 'status', 'isPaid', 'createdAt'],
+    defaultColumns: ['orderNumber', 'name', 'phone', 'city', 'orderTotal', 'status', 'isPaid', 'createdAt'],
+    listSearchableFields: ['orderNumber', 'name', 'phone', 'city'],
   },
+  defaultSort: '-createdAt',
   access: {
     create: ({ req: { user } }) => Boolean(user),
     read: ({ req: { user } }) => Boolean(user),
@@ -96,7 +98,7 @@ export const Orders: CollectionConfig = {
           min: 0,
           admin: {
             description:
-              "Price snapshot at order time — independent of the live Products.price, so a later price edit never re-prices this order.",
+              "Price snapshot at order time — independent of the live Products.price, so a later price edit never re-prices this order. Editing it does not recalculate the order total.",
           },
         },
       ],
@@ -106,6 +108,10 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       min: 0,
+      admin: {
+        description:
+          'Snapshot taken when the order was placed (ADR-018). Editing it does NOT recalculate any other field.',
+      },
     },
     {
       name: 'shippingCost',
@@ -114,7 +120,8 @@ export const Orders: CollectionConfig = {
       min: 0,
       defaultValue: 0,
       admin: {
-        description: 'Resolved flat rate or 0 if the free-shipping threshold was met (ADR-018).',
+        description:
+          'Resolved flat rate, or 0 if the free-shipping threshold was met (ADR-018). Snapshot taken when the order was placed; editing it does NOT recalculate any other field.',
       },
     },
     {
@@ -141,12 +148,22 @@ export const Orders: CollectionConfig = {
       name: 'isPaid',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Cash on Delivery: tick this when the cash has been collected (it is NOT set automatically when the order is marked Delivered).',
+      },
     },
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'PLACED',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Move the order forward as it is fulfilled. Any status can be set from any other (no state machine, ADR-019). The customer sees this status when they look up their order.',
+      },
       // Flat, admin-selected enum — no transition-validation state machine in v1 (ADR-019).
       options: [
         { label: 'Placed', value: 'PLACED' },

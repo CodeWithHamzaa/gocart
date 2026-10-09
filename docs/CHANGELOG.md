@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Changed
+
+- **Admin verification batch — `M34`, `M37`, `M38`, `M39` (2026-10-09).**
+  - `M37` / `M38`: `collections/Orders.ts` got **admin-UI configuration only** (no access, field, hook or schema change; `pg_dump --schema-only` is identical before and after): admin search now matches order number, **name, phone and city** (it previously matched only the order number, so a customer could not be found); default columns now include phone and city; explicit newest-first sort; `status` and `isPaid` moved to the sidebar beside Save with guidance (any status can follow any other, ADR-019; for Cash on Delivery tick Is Paid when the cash is collected — it is not set automatically); the snapshot fields (`unitPrice`, `orderTotal`, `shippingCost`) say that editing them does not recalculate anything.
+  - `M34`: no new code — the shipping rule and the checkout display landed with `M33`; recorded as done with the earlier QA evidence. `M39`: delivered inside `M36`.
+  - **Verified (QA, live server, DB-backed, desktop + mobile):** `type-check`, `lint`, `build` pass; schema identical; anonymous order access still 403 and logged-out `/admin` shows only the login; list columns, search hits and misses for all four fields, status filter; status flow PLACED → CONFIRMED → PROCESSING → SHIPPED → DELIVERED, CANCELLED and RETURNED each saved through the UI, persisted after reload, and shown to the guest by `lookupOrder` and `/orders`; order placement and the out-of-stock toast unchanged; no customer data in server logs.
+  - **Open decisions for the owner (not done):**
+    1. `orderNumber` is read-only in the admin UI but an admin can still change it through the REST API, which would break a guest's saved reference. Locking it needs field-level access (an authorization change) or an immutability hook.
+    2. `unitPrice` / `orderTotal` / `shippingCost` remain editable (an admin may need to correct a total after a phone confirmation); making them read-only would remove that.
+  - **Found, not fixed:** on a phone Payload stacks sidebar fields at the bottom, so Status and Is Paid sit far from Save on narrow screens; an admin typo in the phone locks the guest out of lookup (admin-error risk); `isPaid` is manual; the items rows are titled "Item 01" (product name is inside the row) — a product-name row label needs a custom admin component; money columns have no currency formatting; no automated tests exist.
+
 ### Removed
 
 - **Dead-UI cleanup batch — `M46`, `M47`, `M48`, `M48a` (2026-10-09), run under the owner's fast-track rule** (frontend-only deletions: lint + type-check, no build, no database).

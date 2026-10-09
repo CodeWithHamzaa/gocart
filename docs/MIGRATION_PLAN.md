@@ -665,6 +665,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Totals shown at checkout apply the flat rate below the threshold and `0` shipping at/above it, for a sample order.
 - **Rollback**: Revert both files.
 - **Commit message**: `Apply confirmed shipping/total calculation rules at checkout`
+- **✅ Done (2026-10-09) — no separate commit.** The rule is implemented in `createOrder` (`lib/payload/orders.ts`: `shippingCost = subtotal >= freeShippingThreshold ? 0 : shippingFlatRate`, both read from `Settings` at order time and snapshotted onto the order) from `M33`, and the checkout display (`OrderSummary.jsx` fetches the same two Settings values; `Free` when shipping is `0`) was pulled forward at the same time. Verified in `M33`'s QA (boundaries 2999 / 3000, rate 0 and 350, price-change snapshot) and the cleanup batch's scoped QA with mocked Settings. `app/(public)/cart/page.jsx` needed no change.
 
 ### M35 — Order confirmation flow
 - **Goal**: After a successful COD order, show a real confirmation (order number, summary) instead of the current dummy `/orders` listing.
@@ -696,6 +697,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Place a few test orders; confirm an admin can see, open, and read full details of each in `/admin`.
 - **Rollback**: Revert any admin UI config tweaks made.
 - **Commit message**: `Tune Orders admin UI for fulfillment visibility`
+- **✅ Done (2026-10-09)**. QA first evaluated the admin as-is, then `collections/Orders.ts` was tuned with **admin-UI configuration only**: `admin.listSearchableFields` (order number, name, phone, city — search previously matched only the order number), `admin.defaultColumns` (phone and city added), `defaultSort: '-createdAt'`, and snapshot-field descriptions. Verified on a live admin: schema byte-identical (`pg_dump --schema-only` before/after), access unchanged, search/filters/sort work on desktop and mobile.
 
 ### M38 — Order status update flow for admin
 - **Goal**: Ensure the admin can move an order through its status workflow (`PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED`/`RETURNED` — per [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned)) — via Payload's native admin editing unless a dedicated view is required.
@@ -704,6 +706,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Update a test order's status via `/admin`, including to `CONFIRMED`, `CANCELLED`, and `RETURNED`; confirm it persists and is reflected wherever order status is displayed to the guest (M36).
 - **Rollback**: Revert config changes.
 - **Commit message**: `Enable order status updates through Payload admin`
+- **✅ Done (2026-10-09)**. Payload's native editing already supported the workflow; the config now puts `status` and `isPaid` in the sidebar next to Save with guidance text (any status can follow any other, ADR-019; for COD tick Is Paid when the cash is collected — it is not set automatically). Verified through the UI: PLACED → CONFIRMED → PROCESSING → SHIPPED → DELIVERED, CANCELLED and RETURNED each saved, persisted after reload, and were shown correctly to the guest by `lookupOrder` and the `/orders` page. Not done (owner decisions): locking `orderNumber` at the API level.
 
 ### M39 — Align OrderItem component to the real Orders schema
 - **Goal**: `OrderItem.jsx` currently assumes the dummy order shape; align it to the real `Orders` collection shape from `M11`/`M12`.
@@ -712,6 +715,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Guest order lookup (M36) renders order line items correctly with no shape mismatches.
 - **Rollback**: Revert the file.
 - **Commit message**: `Align OrderItem component to real Orders collection schema`
+- **✅ Done (2026-10-09) — delivered inside `M36`** (no separate commit): `components/OrderItem.jsx` was rewritten to the real lookup result shape (lines, totals, status badge for all seven statuses, delivery details, Paid/Unpaid) and verified by `M36`'s QA.
 
 ---
 
