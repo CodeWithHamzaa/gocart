@@ -62,9 +62,9 @@ npm run build          # MUST pass
 |---|---|
 | `npm run type-check` | ✅ Available |
 | `npm run build` | ✅ Available |
-| `npm run lint` | ❌ **Broken** — `next lint` with no ESLint dependency and no config. **Must not be reported as passing.** |
+| `npm run lint` | ✅ Available since 2026-10-09 (`eslint.config.mjs`, `next/core-web-vitals`). Report its real output |
 | Automated tests | ❌ **None exist.** `M56a` schedules one Playwright golden-path test + CI; it depends on `M33a` and `M56`, both Not Started |
-| CI | ❌ **None.** No `.github/workflows/` |
+| CI | ◐ `.github/workflows/ci.yml` runs `npm ci`, type-check and lint only — **not `build`** (needs a reachable database, `M49`) and no tests |
 
 Until those are repaired, **manual verification is the only regression net.** Treat it
 accordingly.

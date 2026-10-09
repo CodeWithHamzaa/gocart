@@ -19,7 +19,7 @@ makes them explicit so every role applies the same ones.
   `import type` for type-only imports.
 - Existing `.jsx` files keep their inherited formatting. Do not reformat a file you
   are not otherwise changing.
-- No ESLint or Prettier config exists. Match the surrounding file.
+- ESLint (`next/core-web-vitals`) is configured; no Prettier config exists. Match the surrounding file.
 
 ## Comment headers
 
@@ -96,10 +96,10 @@ Left in place at `M15`/`M18` as a generic reusable component. Not dead code.
 There is no sales or review data to rank by. ADR-022 chose admin curation over a
 fabricated proxy metric. Do not invent a ranking.
 
-### `npm run lint` is broken — known, not yet repaired
+### `npm run lint` works (repaired 2026-10-09)
 
-`next lint` with no ESLint dependency and no config. **Never report it as passing.**
-Repair is a tracked blocker, not a side fix.
+`eslint.config.mjs` extends `next/core-web-vitals`. Run it and report its real output; it is a
+style/correctness check, not a substitute for QA's live verification.
 
 ---
 

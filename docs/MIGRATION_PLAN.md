@@ -209,6 +209,7 @@ Items the [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) marks **Future Phase only** (
 - **⚠️ `scripts/seed.ts` execution note**: `npx tsx scripts/seed.ts` failed in the authoring sandbox with a Node 22.22/`tsx` ESM-interop error inside `@payloadcms/db-postgres`'s import chain (same class of issue as `M3`'s `generate:importmap` problem) — unrelated to the script's own logic, which was instead validated via equivalent REST calls. Confirm `npm run seed` directly in a real environment before relying on it.
 - **Rollback**: Revert access functions; delete seed script.
 - **Commit message**: `Set collection access control for public storefront and guest checkout`
+- **⚠️ Amended by [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins) (Accepted 2026-10-09)**: the *"anonymous `POST /api/orders` succeeds"* criterion above is historical — `Orders.create` is admin-only as of `M33`, and guests create orders through a server-side function instead. The other criteria stand.
 
 ### M13a — Settings global
 - **Goal**: A single admin-editable Payload **Global** (not a collection — one record, not a list) holding store-wide configuration, closing readiness risk `R6` (no Settings global despite launch scope).
@@ -618,11 +619,11 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **✅ Done (2026-08-26)**. Both radio inputs removed (not just Stripe's — a single always-true option has no business being a radio group, per the Testing line). COD now renders as a plain `"Cash on Delivery (COD)"` label. `paymentMethod` changed from `useState` to a plain `const` — nothing can set it to anything else anymore. [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s Consequences line already specified this exact outcome; no open decision existed. Verified with a scripted headless-Chromium session against a live `npm run start` server: no "Stripe" text anywhere, zero radio inputs, COD still shown, "Place Order" still navigates to `/orders`. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
 
 ### M33 — Real order creation on "Place Order"
-- **Goal**: Replace the `router.push('/orders')` stub with an actual `POST` to the `Orders` collection, using the cart contents and guest address.
-- **Files**: `components/OrderSummary.jsx`, `lib/payload/orders.ts` (new)
+- **Goal**: Replace the `router.push('/orders')` stub with real order creation, using the cart contents and guest address. **Per [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins) (Accepted 2026-10-09) this is a server action calling a server-side function that derives prices, shipping, totals, and status itself — not a client `POST` to the `Orders` collection**, whose `create` access is closed to admins.
+- **Files**: `components/OrderSummary.jsx`, `lib/payload/orders.ts` (new); **per ADR-026 also** `collections/Orders.ts` (`create` access), `app/(public)/cart/actions.ts` (new server action), `lib/rate-limit.ts` (new, shared with `M36`)
 - **Dependencies**: M13, M30, M31, M32
-- **Testing**: Add items, fill address, place order; confirm a real `Order` record appears in `/admin` with correct line items, total, and `paymentMethod: COD`.
-- **Rollback**: Revert both files.
+- **Testing**: Add items, fill address, place order; confirm a real `Order` record appears in `/admin` with correct line items, total, and `paymentMethod: COD`. **Also (ADR-026):** anonymous `POST /api/orders` and the GraphQL `createOrder` mutation are refused; a tampered client price/total/status is ignored; invalid carts and guest details create nothing; creation is rate-limited by IP.
+- **Rollback**: Revert the files above, **including the `Orders.create` access change**.
 - **Commit message**: `Create real orders on checkout instead of navigating to a stub page`
 
 ### M33a — Enforce stock at order creation

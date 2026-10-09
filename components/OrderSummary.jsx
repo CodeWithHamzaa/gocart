@@ -1,26 +1,60 @@
 import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import AddressModal from './AddressModal';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { clearCart } from '@/lib/features/cart/cartSlice';
+import { placeOrder } from '@/app/(public)/cart/actions';
 
 const OrderSummary = ({ totalPrice, items }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
-    const router = useRouter();
+    const dispatch = useDispatch();
 
     const addressList = useSelector(state => state.address.list);
 
-    // M32: COD is the only payment method for launch (ADR-004) — Orders.paymentMethod
-    // itself only accepts 'COD' (collections/Orders.ts). No longer user-selectable
-    // state; kept as a plain value for M33 to read when it builds the real order.
-    const paymentMethod = 'COD';
+    // M32: COD is the only payment method for launch (ADR-004). M33: the server sets
+    // paymentMethod itself (ADR-026), so nothing is sent from here.
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [couponCodeInput, setCouponCodeInput] = useState('');
     const [coupon, setCoupon] = useState('');
+    const [placing, setPlacing] = useState(false);
+    // M33 (pulled forward from M34): shipping settings via Payload's public REST API.
+    // null = loading or failed; Place Order stays disabled rather than show a wrong total.
+    const [shippingSettings, setShippingSettings] = useState(null);
+    const [settingsFailed, setSettingsFailed] = useState(false);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch('/api/globals/settings', { signal: controller.signal })
+            .then((res) => {
+                if (!res.ok) throw new Error('settings request failed');
+                return res.json();
+            })
+            .then((data) => {
+                if (typeof data.shippingFlatRate === 'number' && typeof data.freeShippingThreshold === 'number') {
+                    setShippingSettings({
+                        shippingFlatRate: data.shippingFlatRate,
+                        freeShippingThreshold: data.freeShippingThreshold,
+                    });
+                } else {
+                    setSettingsFailed(true);
+                }
+            })
+            .catch((error) => {
+                if (error.name !== 'AbortError') setSettingsFailed(true);
+            });
+
+        return () => controller.abort();
+    }, []);
+
+    const shipping = shippingSettings
+        ? (totalPrice >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.shippingFlatRate)
+        : null;
+    const grandTotal = shipping === null ? null : totalPrice + shipping;
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
@@ -30,7 +64,45 @@ const OrderSummary = ({ totalPrice, items }) => {
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
 
-        router.push('/orders')
+        if (placing) return;
+        if (!items || items.length === 0) {
+            toast.error('Your cart is empty.');
+            return;
+        }
+        if (!selectedAddress) {
+            toast.error('Please select or add a delivery address.');
+            return;
+        }
+
+        setPlacing(true);
+        try {
+            const result = await placeOrder({
+                items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+                customer: {
+                    name: selectedAddress.name,
+                    phone: selectedAddress.phone,
+                    address: selectedAddress.address,
+                    city: selectedAddress.city,
+                    area: selectedAddress.area,
+                },
+            });
+
+            if (result.ok) {
+                dispatch(clearCart());
+                toast.success(
+                    `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${currency}${result.orderTotal.toLocaleString()}. Please save this order number - together with your phone number it is how you look up your order.`,
+                    { duration: 20000 }
+                );
+            } else if (result.code === 'UNKNOWN_PRODUCT') {
+                toast.error(`Some items in your cart are no longer available. ${result.message}`);
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            toast.error('We could not place your order. Please try again.');
+        } finally {
+            setPlacing(false);
+        }
     }
 
     return (
@@ -74,7 +146,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                     </div>
                     <div className='flex flex-col gap-1 font-medium text-right'>
                         <p>{currency}{totalPrice.toLocaleString()}</p>
-                        <p>Free</p>
+                        <p>{shipping === null ? '...' : (shipping === 0 ? 'Free' : `${currency}${shipping.toLocaleString()}`)}</p>
                         {coupon && <p>{`-${currency}${(coupon.discount / 100 * totalPrice).toFixed(2)}`}</p>}
                     </div>
                 </div>
@@ -95,9 +167,14 @@ const OrderSummary = ({ totalPrice, items }) => {
             </div>
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
-                <p className='font-medium text-right'>{currency}{coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)).toFixed(2) : totalPrice.toLocaleString()}</p>
+                <p className='font-medium text-right'>{grandTotal === null ? '...' : `${currency}${coupon ? (grandTotal - (coupon.discount / 100 * totalPrice)).toFixed(2) : grandTotal.toLocaleString()}`}</p>
             </div>
-            <button onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all'>Place Order</button>
+            {shippingSettings === null && (
+                <p className='text-xs text-slate-400 pb-2'>
+                    {settingsFailed ? 'Could not load shipping charges. Please refresh the page.' : 'Calculating shipping...'}
+                </p>
+            )}
+            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
 
             {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} />}
 
