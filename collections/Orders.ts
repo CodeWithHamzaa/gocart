@@ -121,7 +121,7 @@ export const Orders: CollectionConfig = {
       defaultValue: 0,
       admin: {
         description:
-          'Snapshot taken when the order was placed (ADR-018). Editing it does NOT recalculate any other field.',
+          'Resolved flat rate, or 0 if the free-shipping threshold was met (ADR-018). Snapshot taken when the order was placed; editing it does NOT recalculate any other field.',
       },
     },
     {
@@ -148,12 +148,22 @@ export const Orders: CollectionConfig = {
       name: 'isPaid',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Cash on Delivery: tick this when the cash has been collected (it is NOT set automatically when the order is marked Delivered).',
+      },
     },
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'PLACED',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Move the order forward as it is fulfilled. Any status can be set from any other (no state machine, ADR-019). The customer sees this status when they look up their order.',
+      },
       // Flat, admin-selected enum — no transition-validation state machine in v1 (ADR-019).
       options: [
         { label: 'Placed', value: 'PLACED' },
