@@ -21,6 +21,8 @@ const MAX_CITY = 100
 const MAX_AREA = 100
 const PHONE_PATTERN = /^0[0-9]{10}$/
 const ID_PATTERN = /^\d+$/
+// Products.id is a Postgres integer; anything above this cannot exist.
+const MAX_PRODUCT_ID = 2147483647
 
 export type CreateOrderInput = {
   items: { productId: string | number; quantity: number }[]
@@ -110,7 +112,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         { productIds: [id] },
       )
     }
-    const normalizedId = String(Number(id))
+    // Strip leading zeros on the string; Number() would mangle huge ids ('1e+21').
+    const normalizedId = id.replace(/^0+(?=\d)/, '')
     merged.set(normalizedId, (merged.get(normalizedId) ?? 0) + quantity)
   }
   for (const [id, quantity] of merged) {
@@ -121,6 +124,16 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         { productIds: [id] },
       )
     }
+  }
+
+  // Ids beyond the integer column range cannot exist; reject before any DB query.
+  const outOfRange = [...merged.keys()].filter(
+    (id) => id.length > 10 || Number(id) > MAX_PRODUCT_ID,
+  )
+  if (outOfRange.length > 0) {
+    return fail('UNKNOWN_PRODUCT', 'Some items in your cart are no longer available.', {
+      productIds: outOfRange,
+    })
   }
 
   // --- Customer ---
@@ -209,7 +222,14 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
 
     return { ok: true, orderNumber, subtotal, shippingCost, orderTotal }
-  } catch {
+  } catch (error) {
+    // Log only the error class and code: Postgres/Payload messages can embed row
+    // data (guest name/phone/address), so never log message, stack, or input.
+    const err = error as { name?: unknown; code?: unknown } | null
+    console.error('[createOrder] failed', {
+      name: typeof err?.name === 'string' ? err.name : 'UnknownError',
+      code: typeof err?.code === 'string' ? err.code : undefined,
+    })
     return fail('SERVER_ERROR', 'We could not place your order. Please try again.')
   }
 }
