@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Removed
+
+- **Dead-UI cleanup batch — `M46`, `M47`, `M48`, `M48a` (2026-10-09), run under the owner's fast-track rule** (frontend-only deletions: lint + type-check, no build, no database).
+  - `M46`: deleted the orphaned `components/Rating.jsx` and `components/RatingModal.jsx` (reviews are out of scope, ADR-016).
+  - `M47`: removed all coupon state, the input/Apply form, the applied-code display and the discount branches from `components/OrderSummary.jsx` (ADR-017). Shipping/total logic and order placement are untouched.
+  - `M48a`: deleted `components/Newsletter.jsx` (a form that discarded input) and its home-page usage; closes readiness risk R11.
+  - `M48`: the sweep found `components/Banner.jsx`, shown on **every** page, advertising "Get 20% OFF on Your First Order!" with a button that copied the non-existent coupon code `NEW20`. Deleted with its layout usage — it was a false offer in a store with no coupon engine.
+  - **Verified:** `npm run lint` and `npm run type-check` pass; grep finds no remaining references; scoped QA on a DB-free dev server with mocked network responses (mobile + desktop): no coupon UI on `/cart`, shipping and totals correct at both sides of the free-shipping threshold, Place Order gating and the address modal still work, no promo banner on any page, `/orders` and `/order-confirmation` render, no console or hydration errors; `git diff` shows `lib/`, the cart/orders actions and `collections/` unchanged.
+  - **Not verified (needs a database, skipped by the owner's rule):** the home page render without the Newsletter section; `/shop`, `/product/*`, `/category/*`.
+  - **Found, not fixed — false customer-facing claims for `M55a`:** `Hero.jsx` "Free Shipping on Orders Above $50!" (wrong currency, contradicts the Settings threshold); `OurSpec.jsx` "free delivery on every order no conditions"; `ProductDetails.jsx` "Free shipping worldwide", "100% Secured Payment" and "Trusted by top brands"; `Footer.jsx` fake contact details (`+1-212-456-7890`, `contact@example.com`, swapped icons) and dead links to `/`.
+
 ### Fixed
 
 - **Out-of-stock products can no longer be added to the cart from the product page (2026-10-09, owner-requested patch following `M33a`).**
