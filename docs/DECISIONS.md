@@ -643,3 +643,38 @@ Every field the order stores is therefore client-controlled: `unitPrice`, `order
 - **`G6` gains a concrete test**: anonymous `POST /api/orders` and the GraphQL `createOrder` mutation are refused, while a valid cart submitted through the server action creates exactly one order whose prices match the database regardless of what the client sent.
 - **The `lib/payload/orders.ts` types are hand-written**, mirroring the collection (house convention until `payload-types.ts` is adopted).
 - **New open item tracked as `R14`** in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): `Orders` accepted client-controlled prices and status from anonymous callers. Closed by this ADR once Accepted and implemented by `M33`.
+
+---
+
+## ADR-027: `M35` order confirmation is rendered from the `placeOrder` response held in `sessionStorage` — no server read of `Orders`
+
+**Status**: **Accepted (2026-10-09)** — it implements ADR-024 and ADR-026 without reversing either and changes no authorization. The only contract change is one additive field on `createOrder`'s result (see *Decision*, point 2).
+
+**Context**: `M33` shipped `placeOrder` (ADR-026) with a deliberately minimal result — order number and totals — and the Place Order handler currently surfaces it as a toast. `M35` must show the guest a real confirmation after Place Order. The obvious implementation, a route such as `/order-confirmation/[orderId]` that loads the order server-side, collides with two Accepted decisions: `Orders` read access is admin-only (ADR-024, unchanged by ADR-026), and ADR-024 explicitly rejects lookup by order number alone because order numbers are visible in URLs and screenshots and are guessable. A confirmation route keyed by order number or id, reading `Orders` with `overrideAccess: true`, is exactly that single-factor lookup, serving a stranger's name, phone, and address to anyone who guesses a nearby value.
+
+The data the confirmation screen needs is nearly all already in the browser: the guest typed their own delivery details, and `placeOrder` returns the order number and totals. The one missing piece is the authoritative per-line breakdown (product name, quantity, the server-snapshotted unit price), which the cart cannot supply reliably because the server may have charged a different price than the cart displayed (ADR-026).
+
+**Decision**: The confirmation page is rendered from the `placeOrder` **response**, carried to the next page in `sessionStorage`, and never from a read of `Orders`.
+
+1. **No server-side read keyed by order number or id.** There is no `/order-confirmation/[orderId]` (or `[orderNumber]`) route. Nothing on the confirmation path reads `Orders`.
+2. **`createOrder`'s success result is extended, and only extended, with** `items: { name: string; quantity: number; unitPrice: number }[]` — the authoritative server-priced lines. Product names are public catalogue data and `unitPrice` is the snapshot just written. The result still never contains the stored document, the customer's phone or address, any order id, or anything else beyond order number, totals, and `items`. ADR-026's "returns only the order number and totals" is amended by `items` and nothing more. The `placeOrder` return type in `app/(public)/cart/actions.ts` follows automatically.
+3. **The client persists the result immediately on success.** It writes `{ orderNumber, items, subtotal, shippingCost, orderTotal, delivery details, placedAt }` to `sessionStorage` under a namespaced key (for example `gocart:last-order`), then navigates to the fixed route `/order-confirmation` with **no id in the URL**. Delivery details come from the form state the guest already holds; they are not returned by the server.
+4. **`/order-confirmation` is a client-rendered page** that reads that entry and performs **no network reads of order data**. It is marked `noindex` (ADR-007 applies to the catalogue, not to a per-visitor transactional screen). If the entry is absent, malformed, or expired — a different device or tab, or the tab was closed — it renders a friendly "we couldn't find a recent order in this browser" state pointing to guest order lookup (`/orders`, `M36`) and `/shop`.
+5. **`sessionStorage`, not `localStorage`, is deliberate.** It is per-tab and cleared when the tab closes, so the guest's name, phone, and address do not linger on shared or family devices, while the confirmation still survives a reload. Keeping the order number after the tab closes is `M36`'s job (lookup by order number and phone), not this page's.
+6. **Stored data is untrusted input.** The page shape-validates the parsed entry (types, finite non-negative numbers, array of well-formed lines, plausible `placedAt`) before rendering and falls back to the not-found state on any mismatch. Rendering relies on React's escaping; nothing is injected as HTML.
+
+**Rejected alternatives**:
+
+- **Server-side `/order-confirmation/[orderId]` reading `Orders` with `overrideAccess`.** Leaks guest PII to anyone holding or guessing the id or order number, and is the single-factor lookup ADR-024 rejects. Disqualifying.
+- **A signed or opaque confirmation token in the URL.** Workable and secure, but it needs key management and expiry for what is a one-time screen, and `M36` already covers the revisit case. Could be added later as an additive channel without reworking this decision.
+- **A cookie-based server session for guests.** Introduces server-side session state for anonymous users, contradicts ADR-005's no-account stance in spirit, and complicates caching of otherwise static responses.
+- **`localStorage`.** Survives tab close, which is precisely the problem: name, phone, and address linger on shared devices indefinitely.
+- **Toast only (the `M33` status quo).** Lost on reload, no itemised summary, and unsuitable for a COD customer who needs the order number and amount due at the door.
+
+**Consequences**:
+
+- Files affected beyond `M35`'s plan line: `lib/payload/orders.ts` (result shape gains `items`), `components/OrderSummary.jsx` (store the result and navigate instead of the long toast), and a new `app/(public)/order-confirmation` page (new file, `.tsx`).
+- ADR-024 and ADR-026 are **not edited**. Read stays admin-only, create stays server-function-only, and the `(orderNumber, phone)` lookup remains `M36`'s sole revisit path. The additive `items` field is the only contract change and exposes nothing not already public or already held by the client.
+- Hand-written types in `lib/payload/orders.ts` must gain `items` by hand; the not-found state links to `/orders`, which stays dummy data until `M36`.
+- A guest who opens the confirmation in a second tab or device sees the not-found state by design. Acceptable: the order exists and is recoverable through `M36`.
+- Closes no readiness-report finding. Note it in `M35`'s entry context; `MIGRATION_PLAN.md` is not edited here.
