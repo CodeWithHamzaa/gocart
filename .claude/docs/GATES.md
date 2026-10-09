@@ -69,6 +69,36 @@ npm run build          # MUST pass
 Until those are repaired, **manual verification is the only regression net.** Treat it
 accordingly.
 
+## Smart Execution & Scope-Based QA — owner override (2026-10-09)
+
+**Authority:** the project owner (the human at G8) directed this on 2026-10-09 to cut cycle time. It **overrides the
+"every gate, every milestone" reading of G4/G5 below** for the cases listed here, and nothing else. Pull requests that satisfy
+it may be opened and merged under the owner's standing authorization once the checks named below pass and CI is green.
+
+**Classify the change first.** *Scoped* = minor UI, text, or a localized component fix that touches no server code,
+shared type, or configuration. *Full* = anything else.
+
+1. **Incremental checks (scoped changes).** Run `eslint <changed files>` first, then `npm run type-check`.
+   `tsc` cannot be pointed at individual files while also using `tsconfig.json`, so type-checking stays project-wide;
+   it takes seconds, and CI runs it and lint on every PR. **Skip the full `npm run build`** unless a shared type or
+   configuration (`tsconfig.json`, `next.config.mjs`, `payload.config.ts`, `package.json`, ESLint config) changed.
+2. **Targeted QA.** Do **not** start the throwaway PostgreSQL unless the change touches backend logic, API endpoints, access control, or the
+   schema. Frontend-only work is verified against the running app with mocked or seeded browser state (e.g. `sessionStorage` /
+   `localStorage` entries, intercepted requests) and static UI checks.
+3. **Batch tightly related small items** (same files or same user-visible flow) into one change, and run QA and build **once at the end**,
+   not after each micro-step.
+4. **Fast-fail order.** Lint → type-check → logic checks → only then the full build or any database-dependent QA. Stop at the first failure.
+
+**These are never relaxed — always run the full gates (build, live-server QA with a database, and a G6 review):**
+order creation or lookup; `Orders` or any collection's access control; rate limiting; authentication; schema or migrations;
+anything handling PII (names, phones, addresses); shared types and configuration; dependency changes; and any new or
+changed ADR-level behaviour. A scoped classification is the Engineering Manager's call and must be stated in the PR body together with
+which checks were skipped and why. When in doubt, classify as *Full*.
+
+Skipped checks are reported as **skipped by the owner's rule**, never as passed.
+
+---
+
 ## G6 — Security / Performance  ·  Security / Performance Engineer
 
 - Access control unchanged unless the milestone explicitly owns changing it.
