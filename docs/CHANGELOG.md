@@ -18,6 +18,22 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M35` — order confirmation page (2026-10-09), per [ADR-027](./DECISIONS.md#adr-027-m35-order-confirmation-is-rendered-from-the-placeorder-response-held-in-sessionstorage--no-server-read-of-orders).**
+  `/order-confirmation` (client-rendered, `noindex`) shows the order number with a copy button, the server-priced items,
+  subtotal / shipping (`Free` when 0) / total, delivery details, and Cash on Delivery. It is fed by the `placeOrder` response held in
+  `sessionStorage` (`gocart:last-order`), so no route reads `Orders` by order number (ADR-024 unchanged). `createOrder`'s success result gains
+  `items: {name, quantity, unitPrice}[]` (public names and the snapshot price; nothing else). `lib/order-confirmation.ts` shape-validates storage
+  (order-number pattern, ranges, 24-hour expiry); anything invalid shows a friendly not-found state linking to `/orders` and `/shop`. If storage
+  is unavailable the old long toast is shown and the guest is not redirected. The copy states no call, SMS, email or delivery time, because none exist.
+  - **Scope notes:** files beyond the plan line are `lib/payload/orders.ts`, `lib/order-confirmation.ts` and `components/OrderSummary.jsx` (all named by ADR-027).
+  - **Verified (QA, live server):** happy path on mobile and desktop for charged and free shipping (price changed after adding to cart shows the server snapshot),
+    reload keeps the order, a new browser context shows the not-found state, 13 malformed or expired storage cases fall back safely, an HTML-looking product name
+    renders as text, `noindex, nofollow`, no order-data network request, anonymous order reads/creates still 403, storage-blocked fallback, and
+    the M33/M33a regression (out-of-stock, double-click, rate limit). No automated tests exist.
+  - **Review:** no separate Security/Performance run (owner's scope-based QA rule); the diff adds only public catalogue data to the response and reads only
+    the client's own `sessionStorage`.
+  - **Found, not fixed:** `readLastOrder` does not check that total = subtotal + shipping (a guest can only alter their own confirmation view). The confirmation
+    page's "check order status" link goes to `/orders`, which stays dummy data until `M36`. The cart page can flash "Your cart is empty" for a moment before navigation.
 - **`M33a` — server-side stock enforcement at order creation (2026-10-09).** `createOrder` (`lib/payload/orders.ts`)
   checks every line's `Products.inStock` using the same query that supplies prices (never client or cached values) and
   fails closed: only `inStock === true` is purchasable. Any unavailable line rejects the whole order — nothing is
