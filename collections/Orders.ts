@@ -36,11 +36,15 @@ export const Orders: CollectionConfig = {
     delete: ({ req: { user } }) => Boolean(user),
   },
   fields: [
+    // ADR-028: orderNumber and the price-snapshot fields (items[].unitPrice, orderTotal,
+    // shippingCost) are set only at creation; field-level update access is closed on
+    // every transport. Collection-level access is unchanged.
     {
       name: 'orderNumber',
       type: 'text',
       unique: true,
       index: true,
+      access: { update: () => false },
       admin: {
         readOnly: true,
         description: 'Human-referenceable order reference, distinct from the internal id.',
@@ -96,9 +100,10 @@ export const Orders: CollectionConfig = {
           type: 'number',
           required: true,
           min: 0,
+          access: { update: () => false },
           admin: {
             description:
-              "Price snapshot at order time — independent of the live Products.price, so a later price edit never re-prices this order. Editing it does not recalculate the order total.",
+              "Price snapshot at order time — independent of the live Products.price, so a later price edit never re-prices this order. Cannot be edited after the order is created (ADR-028); to change an amount, cancel the order and create a replacement.",
           },
         },
       ],
@@ -108,9 +113,10 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       min: 0,
+      access: { update: () => false },
       admin: {
         description:
-          'Snapshot taken when the order was placed (ADR-018). Editing it does NOT recalculate any other field.',
+          'Snapshot taken when the order was placed (ADR-018). Cannot be edited after the order is created (ADR-028); to change an amount, cancel the order and create a replacement.',
       },
     },
     {
@@ -119,9 +125,10 @@ export const Orders: CollectionConfig = {
       required: true,
       min: 0,
       defaultValue: 0,
+      access: { update: () => false },
       admin: {
         description:
-          'Resolved flat rate, or 0 if the free-shipping threshold was met (ADR-018). Snapshot taken when the order was placed; editing it does NOT recalculate any other field.',
+          'Resolved flat rate, or 0 if the free-shipping threshold was met (ADR-018). Snapshot taken when the order was placed. Cannot be edited after the order is created (ADR-028); to change an amount, cancel the order and create a replacement.',
       },
     },
     {
