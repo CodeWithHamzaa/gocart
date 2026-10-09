@@ -656,6 +656,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
   not a stale client-side value).
 - **Rollback**: Revert both files.
 - **Commit message**: `Enforce server-side stock validation at order creation`
+- **✅ Done (2026-10-09)**. Implemented at the seam `M33` left in `createOrder`: stock is read from the same `payload.find` as prices, fail-closed (`inStock !== true` is unavailable), whole-order rejection with a new `OUT_OF_STOCK` code carrying `unavailable: [{id, name}]`; `OrderSummary.jsx` shows one toast naming the blocked products and keeps the cart. No scope excursions. Verified by QA against a live server: direct calls (all in stock, one/mixed/multiple out of stock, unknown + out-of-stock, `inStock = NULL` fails closed), stock flipped after the cart loaded, M33 regression, no PII in logs.
 
 ### M34 — Confirm shipping/total calculation rules
 - **Goal**: Wire the cart/checkout total calculation to the decided shipping model: flat rate + free-shipping threshold, both read from the `Settings` global (`M13a`) at order-creation time and snapshotted onto the order — never recomputed live. Per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).

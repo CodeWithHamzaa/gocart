@@ -140,6 +140,13 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M33a` is done (2026-10-09).** `createOrder` now re-checks every line's `Products.inStock` from the same
+fetch that supplies prices and **fails closed** (only an explicit `true` is purchasable); any unavailable line
+rejects the whole order with `OUT_OF_STOCK` and the blocking product names, and `OrderSummary.jsx` tells the
+customer which products to remove. Closes readiness risk R5. Verified by QA on a live server, including a product
+flipped out of stock *after* the cart loaded. The storefront still lets customers *add* an out-of-stock product to
+the cart (found, not fixed — see [CHANGELOG.md](./CHANGELOG.md)).
+
 **`M33` is done (2026-10-09).** "Place Order" now creates a real `Order` through a server action
 (`app/(public)/cart/actions.ts`) calling `createOrder` in `lib/payload/orders.ts`, implementing
 [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins)
@@ -353,7 +360,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); **`M33` Done** (2026-10-09); `M33a`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); **`M33`, `M33a` Done** (2026-10-09); `M34`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
