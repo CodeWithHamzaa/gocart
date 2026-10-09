@@ -9,6 +9,9 @@ import config from '@payload-config'
 // and a single failure rejects the whole order. Writes use overrideAccess: true
 // because Orders.access.create is admin-only; that is safe only because everything
 // is validated first. Returns just the order number and totals, never the stored doc.
+// M33a: stock is enforced here too — every line's Products.inStock is checked from the
+// same fetch that supplies prices, failing closed, and any unavailable line rejects
+// the whole order.
 //
 // Types are hand-written, not generated — same reasoning as products.ts.
 
@@ -41,6 +44,7 @@ export type CreateOrderErrorCode =
   | 'INVALID_ITEM'
   | 'INVALID_QUANTITY'
   | 'UNKNOWN_PRODUCT'
+  | 'OUT_OF_STOCK'
   | 'INVALID_CUSTOMER'
   | 'SERVER_ERROR'
 
@@ -52,6 +56,7 @@ export type CreateOrderResult =
       message: string
       field?: string
       productIds?: string[]
+      unavailable?: { id: string; name: string }[]
     }
 
 type Failure = Extract<CreateOrderResult, { ok: false }>
@@ -59,7 +64,11 @@ type Failure = Extract<CreateOrderResult, { ok: false }>
 function fail(
   code: CreateOrderErrorCode,
   message: string,
-  extra: { field?: string; productIds?: string[] } = {},
+  extra: {
+    field?: string
+    productIds?: string[]
+    unavailable?: { id: string; name: string }[]
+  } = {},
 ): Failure {
   return { ok: false, code, message, ...extra }
 }
@@ -174,8 +183,18 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     })
 
     const priceById = new Map<string, number>()
-    for (const doc of found.docs as { id: number | string; price: number }[]) {
+    const stockById = new Map<string, { inStock: unknown; name: string }>()
+    for (const doc of found.docs as {
+      id: number | string
+      price: number
+      inStock?: unknown
+      name?: unknown
+    }[]) {
       priceById.set(String(doc.id), doc.price)
+      stockById.set(String(doc.id), {
+        inStock: doc.inStock,
+        name: typeof doc.name === 'string' ? doc.name : '',
+      })
     }
     const missing = ids.filter((id) => !priceById.has(id))
     if (missing.length > 0) {
@@ -184,7 +203,17 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       })
     }
 
-    // M33a: stock check goes here (after products are fetched, before any write).
+    // M33a: stock check, from the products fetched above (never client values).
+    // Fail closed: only an explicit inStock === true is purchasable.
+    const unavailable = ids
+      .filter((id) => stockById.get(id)?.inStock !== true)
+      .map((id) => ({ id, name: stockById.get(id)?.name ?? '' }))
+    if (unavailable.length > 0) {
+      return fail('OUT_OF_STOCK', 'Some items in your cart are out of stock.', {
+        productIds: unavailable.map((u) => u.id),
+        unavailable,
+      })
+    }
 
     const settings = (await payload.findGlobal({ slug: 'settings', depth: 0 })) as {
       shippingFlatRate: number
