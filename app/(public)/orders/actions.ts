@@ -11,11 +11,12 @@ import { rateLimit } from '@/lib/rate-limit'
 // Two limits: per IP, and per order number. The per-order cap blunts phone guessing
 // against a known order number (an attacker rotating IPs would otherwise get unlimited
 // tries). The accepted trade-off: someone who knows an order number can burn its
-// attempts for an hour; the admin and the confirmation page remain available.
+// 5 attempts for an hour (owner-approved trade-off, 2026-10-09); the admin and the
+// confirmation page remain available.
 
-const IP_LIMIT = 10
-const IP_WINDOW_MS = 15 * 60 * 1000
-const ORDER_LIMIT = 10
+const IP_LIMIT = 20
+const IP_WINDOW_MS = 60 * 60 * 1000
+const ORDER_LIMIT = 5
 const ORDER_WINDOW_MS = 60 * 60 * 1000
 
 export type LookupOrderActionResult =
