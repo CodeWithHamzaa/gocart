@@ -93,6 +93,8 @@ const OrderSummary = ({ totalPrice, items }) => {
                     `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${currency}${result.orderTotal.toLocaleString()}. Please save this order number - together with your phone number it is how you look up your order.`,
                     { duration: 20000 }
                 );
+            } else if (result.code === 'OUT_OF_STOCK' && result.unavailable?.length) {
+                toast.error(`Out of stock: ${result.unavailable.map((p) => p.name).join(', ')}. Please remove them from your cart and try again.`);
             } else {
                 toast.error(result.message);
             }

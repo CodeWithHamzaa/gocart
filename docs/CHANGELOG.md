@@ -6,6 +6,23 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M33a` — server-side stock enforcement at order creation (2026-10-09).** `createOrder` (`lib/payload/orders.ts`)
+  checks every line's `Products.inStock` using the same query that supplies prices (never client or cached values) and
+  fails closed: only `inStock === true` is purchasable. Any unavailable line rejects the whole order — nothing is
+  written — with a new `OUT_OF_STOCK` code and `unavailable: [{id, name}]` (public catalogue data only).
+  `components/OrderSummary.jsx` shows one error toast naming the blocked products and keeps the cart. Unknown-product
+  rejection still takes precedence. Closes readiness risk R5. No scope excursions.
+  - **Verified (QA, live server, throwaway PostgreSQL 16):** `type-check`, `lint`, `build` pass; direct `createOrder`
+    calls for all-in-stock, one/mixed/multiple out-of-stock, unknown + out-of-stock, and a product with `in_stock = NULL`
+    (fails closed); stock flipped to out-of-stock *after* `/cart` loaded → error toast, cart kept, no order, and succeeds
+    once restored; M33 regression (double-click → one order, anonymous create still 403); no PII in logs.
+  - **Found, not fixed:**
+    - The storefront still lets customers add an out-of-stock product to the cart (`/product/<id>` shows "Add to Cart" and
+      no stock text; no component reads `inStock`). They learn at Place Order. Not owned by a milestone — candidate for `M44`/`M48`-era UI work.
+    - Stock is read and the order written without a row lock (milliseconds apart); there is no quantity-based inventory, only a boolean.
+    - Low (Security/Performance review): if a product name were ever a non-string the toast would read "Out of stock: , ."; `Products.name` is a required text field, so this is cosmetic. Per-unit inventory counts, if ever added, would need an atomic decrement.
+  - **Security/Performance review (read-only):** no Blocker or High findings; fail-closed confirmed (missing/null/non-boolean `inStock` all blocked), no bypass via duplicate or normalised ids, the `OUT_OF_STOCK` response exposes only id and name (already public via `GET /api/products`), toast text is escaped, no new query or logging.
+
 - **`M33` — real guest order creation (2026-10-09).** Implements [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins).
   - `lib/payload/orders.ts` (`createOrder`), `app/(public)/cart/actions.ts` (`placeOrder` server action),
     `lib/rate-limit.ts` (in-process sliding window, shared with `M36`), `Orders.create` → admin-only,
