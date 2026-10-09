@@ -140,6 +140,12 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
 
+**`M34`, `M37`, `M38`, `M39` are done (2026-10-09) — the admin verification batch.**
+- `M34` needed no further code: the shipping rule (flat rate below the free-shipping threshold, `0` at or above it, both read from the `Settings` global and snapshotted onto the order) landed in `createOrder` with `M33`, and the checkout display was pulled forward into `OrderSummary.jsx` at the same time. It was verified at both sides of the threshold in `M33`'s QA and again in the cleanup batch's scoped QA.
+- `M37`/`M38`: QA evaluated the admin as it stood (an admin could already run fulfilment; the weak spot was search) and `collections/Orders.ts` got **admin-UI configuration only** — no access, field, hook or schema change (the database schema is byte-identical to before): search by order number, name, phone and city; phone and city in the default columns; an explicit newest-first sort; Status and Is Paid in the sidebar by the Save button with guidance (Cash on Delivery: tick Is Paid when the cash is collected); snapshot-field notes. All seven statuses persist through the UI and the guest lookup shows each one.
+- `M39`: `OrderItem.jsx` was aligned to the real order shape inside `M36`.
+- Open owner decisions are in [CHANGELOG.md](./CHANGELOG.md) (locking `orderNumber` at the API level; whether price/total fields should be read-only).
+
 **`M46`, `M47`, `M48`, `M48a` are done (2026-10-09), run as one fast-track batch** under the owner's scope-based QA rule
 ([GATES.md](../.claude/docs/GATES.md)): frontend-only deletions, so lint and type-check only, no build, no database. Removed: the orphaned
 review components (`Rating.jsx`, `RatingModal.jsx`; ADR-016), the dead coupon state/input/branches in `OrderSummary.jsx` (ADR-017), the
@@ -384,8 +390,8 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
 | `M29` | Real search | **Done** (2026-08-26) |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); **`M33`, `M33a`, `M35`, `M36` Done** (2026-10-09); `M34` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
-| `M37`–`M39` | Admin order fulfillment | Not Started |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **Done** (2026-08-26 for `M30`–`M32`; 2026-10-09 for `M33`, `M33a`, `M34`, `M35`, `M36`) — real orders with server-side pricing/shipping/stock checks, confirmation page, rate-limited guest lookup; cart-state ([ADR-023](./DECISIONS.md)), guest-lookup ([ADR-024](./DECISIONS.md)), order-creation ([ADR-026](./DECISIONS.md)) and confirmation ([ADR-027](./DECISIONS.md)) decisions recorded |
+| `M37`–`M39` | Admin order fulfillment | **Done** (2026-10-09) — `/admin` order list/search/status workflow tuned and verified; `M39` was delivered inside `M36` |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
