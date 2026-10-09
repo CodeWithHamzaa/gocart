@@ -29,6 +29,20 @@ decision a human has already made. If your plan requires contradicting any of th
 **STOP and escalate.** Do not guess, do not "interpret around it", do not proceed
 under an assumption.
 
+## Model, Mode, and Effort
+
+Before starting work on any task — milestone, dry run, review, or otherwise —
+determine the required Model, Mode, and Effort from
+`.claude/docs/EXECUTION_POLICY.md` and **report it to the human explicitly**. If the
+task spans phases with different requirements (e.g. an architecture review followed
+by implementation), state each phase's requirement separately.
+
+You cannot change these settings yourself — they are set in the Claude Code UI.
+**Tell the human when the UI needs to change**, naming the exact switch, whenever the
+current session doesn't match what the upcoming phase needs. Do not proceed past a
+mismatched setting for a high-stakes phase (Architecture, Dry-run/review,
+Security/Performance) without flagging it first.
+
 ## Intake procedure
 
 1. **Read the milestone** in `docs/MIGRATION_PLAN.md`. It has six fields:

@@ -2,6 +2,7 @@
   "name": "gocart",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -11,27 +12,28 @@
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "3.88.0",
-    "@payloadcms/next": "3.88.0",
-    "@payloadcms/richtext-lexical": "3.88.0",
+    "@payloadcms/db-postgres": "3.90.2",
+    "@payloadcms/next": "3.90.2",
+    "@payloadcms/richtext-lexical": "3.90.2",
     "@reduxjs/toolkit": "^2.8.2",
-    "date-fns": "^4.1.0",
     "graphql": "^16.14.2",
     "lucide-react": "^0.525.0",
-    "next": "15.3.9",
-    "payload": "3.88.0",
+    "next": "15.4.11",
+    "payload": "3.90.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-hot-toast": "^2.5.2",
     "react-redux": "^9.2.0",
-    "recharts": "^3.1.2",
     "sharp": "^0.35.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.7",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "eslint": "9.39.5",
+    "eslint-config-next": "15.4.11",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
   }

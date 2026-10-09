@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-63 milestones (`M1`–`M59`, plus `M2a`, `M27a`, `M27b`, `M13a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+68 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -583,6 +583,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Search for a seeded product name returns correct results; search for a non-matching term returns an empty state, not an error.
 - **Rollback**: Revert both files.
 - **Commit message**: `Replace client-side array search with real product query`
+- **✅ Done (2026-08-26)**. Search semantics locked ahead of implementation as [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only) — case-insensitive substring match on `name` only, using Payload's `contains` operator, verified empirically to map to Postgres `ILIKE`. `getProducts()` gained an optional `search` parameter applying `where: { name: { contains: search } } }`; `shop/page.jsx` passes it straight through instead of filtering the fetched array. Verified against a live `npm run start` server with seeded data: exact/case-varied/mid-string matches all correct, non-matching term renders an empty grid at HTTP 200, empty search returns the full listing, and a description-only term correctly returns nothing (confirming `description` is excluded). The home page's unrelated `getProducts()` call is unaffected. `npm run type-check` and `npm run build` both pass; `/shop` stays `ƒ Dynamic`.
 
 ---
 
@@ -596,6 +597,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Add items to cart, refresh the page, confirm the cart still shows the same items.
 - **Rollback**: Revert both files.
 - **Commit message**: `Persist cart state across page reloads`
+- **✅ Done (2026-08-26)**. `cartSlice.js` gained a `hydrateCart` reducer that recomputes `total` from the restored `cartItems` rather than persisting `total` directly. `StoreProvider.js` hydrates from `localStorage` inside a `useEffect` (after mount, avoiding an SSR/client hydration mismatch on the server-rendered navbar badge) and persists via `store.subscribe` on every mutation, including `clearCart`. Both directions are guarded against malformed/absent storage. Verified with a scripted headless-Chromium session against a live `npm run start` server: cart survives a reload, corrupted storage (malformed JSON / non-object / array) degrades to an empty cart with no crash, `clearCart` empties storage and stays empty after reload, and a directly-seeded cart hydrates to the correct derived total. `lib/store.js` was not touched. `npm run type-check` and `npm run build` both pass.
 
 ### M31 — Redesign guest address capture
 - **Goal**: `AddressModal`'s submit handler currently does nothing. Wire it to real guest-checkout address capture with Pakistani address field conventions (phone-first, city/area), per [PROJECT_SPEC.md](./PROJECT_SPEC.md).
@@ -604,6 +606,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Fill out the form, submit, confirm the address is available to the checkout flow that consumes it (verified together with M33).
 - **Rollback**: Revert the file.
 - **Commit message**: `Wire guest address form to real checkout state with Pakistani address fields`
+- **✅ Done (2026-08-26)**. Field set is now `name`, `phone`, `email`, `address`, `city`, `area` — phone ordered ahead of email, matching `collections/Orders.ts`'s embedded guest-address fields exactly ([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)). `email` is kept per stakeholder decision even though `Orders` has no email column today. `handleSubmit` now dispatches the pre-existing, previously-unused `addAddress` reducer instead of just closing the modal. Phone gets an HTML5 pattern (`03XXXXXXXXX`). **Scope excursion, stakeholder-approved**: `components/OrderSummary.jsx`'s two address-display lines referenced the removed `state`/`zip` fields and were fixed alongside — left as-is they would have shown blank fields for every newly submitted address. The still-present dummy seed address (`lib/features/address/addressSlice.js`, not on this milestone's Files line) now displays with blank fields rather than its old US-shaped ones — found, not fixed. Verified with a scripted headless-Chromium session (18 checks) against a live `npm run start` server: correct field set/order, submitted address appears and renders correctly in `OrderSummary`'s dropdown with no "undefined", required and phone-pattern validation both work, multiple additions persist in one session. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
 
 ### M32 — Remove the Stripe option from checkout UI
 - **Goal**: COD is the only payment method for launch, per [ADR-004](./DECISIONS.md); the Stripe radio button was never functional and shouldn't be presented as a choice.
@@ -612,6 +615,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Checkout UI shows COD only, no radio group needed.
 - **Rollback**: Revert the file.
 - **Commit message**: `Remove non-functional Stripe option from checkout UI (COD-only for launch)`
+- **✅ Done (2026-08-26)**. Both radio inputs removed (not just Stripe's — a single always-true option has no business being a radio group, per the Testing line). COD now renders as a plain `"Cash on Delivery (COD)"` label. `paymentMethod` changed from `useState` to a plain `const` — nothing can set it to anything else anymore. [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s Consequences line already specified this exact outcome; no open decision existed. Verified with a scripted headless-Chromium session against a live `npm run start` server: no "Stripe" text anywhere, zero radio inputs, COD still shown, "Place Order" still navigates to `/orders`. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
 
 ### M33 — Real order creation on "Place Order"
 - **Goal**: Replace the `router.push('/orders')` stub with an actual `POST` to the `Orders` collection, using the cart contents and guest address.
@@ -1017,4 +1021,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**63 milestones total** — `M1`–`M59` plus four decimal insertions that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**68 milestones total** — `M1`–`M59` plus nine decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).

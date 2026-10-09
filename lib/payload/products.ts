@@ -34,6 +34,13 @@ export type GetProductsOptions = {
    * which wires BestSelling.jsx, must choose and pass an explicit sort.
    */
   sort?: string | string[]
+  /**
+   * Case-insensitive substring match on `name` only — ADR-025. A falsy or
+   * whitespace-only value is treated as no search (returns the unfiltered
+   * listing), matching the pre-M29 in-memory filter's behavior for an empty
+   * search string.
+   */
+  search?: string
 }
 
 export type ProductsResult = {
@@ -48,16 +55,21 @@ async function getClient() {
 }
 
 /**
- * Products, optionally sorted/paginated. Powers the home page sections
- * (M23) and the shop listing (M24) — callers choose sort/limit for their
- * own purpose (e.g. sort: '-createdAt', limit: 4 for "latest").
+ * Products, optionally sorted/paginated/searched. Powers the home page
+ * sections (M23) and the shop listing (M24/M29) — callers choose
+ * sort/limit for their own purpose (e.g. sort: '-createdAt', limit: 4 for
+ * "latest"), and `search` for the shop page's product-name query (M29,
+ * ADR-025 — case-insensitive substring match on `name` only).
  */
 export async function getProducts(options: GetProductsOptions = {}): Promise<ProductsResult> {
-  const { limit = 0, page = 1, sort } = options
+  const { limit = 0, page = 1, sort, search } = options
   const payload = await getClient()
+
+  const trimmedSearch = search?.trim()
 
   const result = await payload.find({
     collection: 'products',
+    where: trimmedSearch ? { name: { contains: trimmedSearch } } : undefined,
     limit,
     page,
     sort,

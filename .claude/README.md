@@ -19,6 +19,7 @@ Eight roles, one orchestrator, human approval before anything merges.
     ├── GATES.md             Gate definitions + human-approval actions
     ├── PARALLELISM.md       When two milestones may run at once
     ├── CONVENTIONS.md       House style + the do-not-touch list
+    ├── EXECUTION_POLICY.md  Recommended Model + Mode + Effort by task type
     └── NO_PRODUCTION_AI.md  The production-isolation guarantee
 ```
 

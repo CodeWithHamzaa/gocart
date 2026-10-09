@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto'
 import type { CollectionConfig } from 'payload'
 
 // M11: orders for guest checkout — embedded customer/address fields instead of a
@@ -16,7 +17,9 @@ import type { CollectionConfig } from 'payload'
 
 function generateOrderNumber(): string {
   const timestampPart = Date.now().toString(36).toUpperCase()
-  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase()
+  // Cryptographically random suffix — order numbers are half of the guest lookup
+  // key (ADR-024), so they must not be predictable from the timestamp.
+  const randomPart = randomBytes(4).toString('hex').toUpperCase()
   return `GC-${timestampPart}-${randomPart}`
 }
 

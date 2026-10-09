@@ -1,20 +1,36 @@
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import sharp from 'sharp'
 import { getPayload } from 'payload'
 import config from '../payload.config'
 
 // M13: seed a handful of dev records — parent/child categories with products —
-// so later milestones (M22+) have real data to build against. Reuses existing
-// placeholder images from assets/ (still present; removed later at M28) rather
-// than fabricating new ones.
+// so later milestones (M22+) have real data to build against.
+//
+// This originally read placeholder images from assets/, but M28 (8c20d4f) deleted
+// that directory along with the dummy dataset, which left the seed failing with
+// ENOENT before it created anything. Products.images is required, so the images
+// cannot simply be dropped — each record now gets a generated placeholder instead,
+// so the seed no longer depends on a directory that does not exist.
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+// One shade per placeholder so the four seeded products stay distinguishable in /admin.
+const placeholderColours = [
+  { r: 203, g: 213, b: 225 },
+  { r: 148, g: 163, b: 184 },
+  { r: 100, g: 116, b: 139 },
+  { r: 71, g: 85, b: 105 },
+]
 
 async function readAsset(name: string) {
-  const filePath = path.resolve(dirname, '../assets', name)
-  const data = fs.readFileSync(filePath)
+  // Asset names are product_img1.png … product_img4.png; fall back to the first
+  // shade if a caller ever passes a name without a number.
+  const position = Number(name.match(/\d+/)?.[0] ?? 1)
+  const background = placeholderColours[(position - 1) % placeholderColours.length]
+
+  const data = await sharp({
+    create: { width: 512, height: 512, channels: 3, background },
+  })
+    .png()
+    .toBuffer()
+
   return {
     data,
     mimetype: 'image/png',
@@ -51,29 +67,42 @@ async function seed() {
     }),
   ])
 
+  // slug is required on Categories and is normally filled in by the collection's
+  // beforeValidate hook, which TypeScript cannot see — so the seed sets it
+  // explicitly. Values are identical to what slugify() derives from each title.
   const electronics = await payload.create({
     collection: 'categories',
-    data: { title: 'Electronics', description: 'Gadgets and smart devices.', displayOrder: 1 },
+    data: {
+      title: 'Electronics',
+      slug: 'electronics',
+      description: 'Gadgets and smart devices.',
+      displayOrder: 1,
+    },
   })
 
   const speakers = await payload.create({
     collection: 'categories',
-    data: { title: 'Speakers', parent: electronics.id, displayOrder: 1 },
+    data: { title: 'Speakers', slug: 'speakers', parent: electronics.id, displayOrder: 1 },
   })
 
   const headphonesCategory = await payload.create({
     collection: 'categories',
-    data: { title: 'Headphones', parent: electronics.id, displayOrder: 2 },
+    data: { title: 'Headphones', slug: 'headphones', parent: electronics.id, displayOrder: 2 },
   })
 
   const fashion = await payload.create({
     collection: 'categories',
-    data: { title: 'Fashion', description: 'Watches and accessories.', displayOrder: 2 },
+    data: {
+      title: 'Fashion',
+      slug: 'fashion',
+      description: 'Watches and accessories.',
+      displayOrder: 2,
+    },
   })
 
   const watches = await payload.create({
     collection: 'categories',
-    data: { title: 'Watches', parent: fashion.id, displayOrder: 1 },
+    data: { title: 'Watches', slug: 'watches', parent: fashion.id, displayOrder: 1 },
   })
 
   await Promise.all([

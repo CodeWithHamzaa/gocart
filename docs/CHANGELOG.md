@@ -4,7 +4,154 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Changed
+
+- **Doctor fix pass (2026-10-09)** — project-resume health pass before `M33`.
+  - **Dependencies:** `payload` and all `@payloadcms/*` packages `3.88.0` → `3.90.2`; `next` `15.3.9` →
+    `15.4.11`. This clears Payload's critical field-access-bypass advisory (audit: 24 → 20 findings,
+    critical 2 → 1). `next@15.4.11` is the newest Next that `@payloadcms/next@3.90.2` allows on 15.x
+    (its peer range excludes 15.5.x). **Residual:** the remaining critical `next` advisory is only
+    fixed in 15.5.x / 16.3+, so closing it needs a Next 16 upgrade — tracked as a decision, not done here.
+    `package-lock.json` was regenerated because the old lock pinned every Payload sub-package at 3.88.
+  - Removed unused dependencies `recharts` and `date-fns` (zero imports since the admin dashboard was deleted).
+  - **Tooling:** added `eslint.config.mjs` (`next/core-web-vitals`) — `npm run lint` previously dropped into
+    an interactive setup prompt. Added `.github/workflows/ci.yml` running type-check and lint. `build` is
+    deliberately not in CI yet: `generateStaticParams` on `/category/[slug]` needs a reachable database at
+    build time (to be addressed with the production Docker work, `M49`).
+  - **Hardening:** `payload.config.ts` now throws at runtime if `PAYLOAD_SECRET` is missing in production
+    (build phase exempt); order numbers use `crypto.randomBytes` instead of `Math.random`.
+  - Docs: milestone totals corrected to 68; `CLAUDE.md` status brought up to `M32`.
+  - Verified against a throwaway PostgreSQL 16: `npm run seed`, `npm run build`, and HTTP smoke of every
+    storefront route, `/admin`, and the access rules (`/api/users`, `/api/orders` → 403 anonymous).
+
+### Fixed
+
+- **`scripts/seed.ts` runs successfully for the first time (2026-08-26)** — clearing `M29`'s
+  prerequisites established a real development environment and, in doing so, found that the seed
+  had **two** independent defects, neither of them the cause the documentation had recorded. The
+  standing explanation — "a `tsx`/Node ESM-interop issue in the authoring sandbox, unrelated to the
+  script" — was wrong on both counts: it was not sandbox-specific, and part of it *was* the script.
+  - **Root cause 1 — module resolution.** `package.json` declared no `"type"`, so Node treated every
+    project `.ts` file as CommonJS, while `payload@3.88.0` ships `"type": "module"` ESM containing
+    top-level await. Three separate entry points failed on this: `npm run seed`
+    (`Cannot destructure property 'loadEnvConfig'`), `node --import tsx/esm`, and Payload's own CLI
+    (`ERR_REQUIRE_ASYNC_MODULE` on `payload.config.ts`). Fixed by adding `"type": "module"`; all
+    tracked `.js` files were already ESM, so nothing else needed changing. **This also unblocks
+    `payload generate:types`**, which had never run for the same reason — `payload-types.ts` now
+    generates (541 lines) and confirms the hand-written mirrors in `lib/payload/products.ts` and
+    `lib/payload/categories.ts` are accurate.
+  - **Root cause 2 — stale `assets/` path.** `readAsset()` read four PNGs from `assets/`, which
+    `M28` (`8c20d4f`) deleted along with the dummy dataset, so the seed threw `ENOENT` before
+    creating anything. `Products.images` is `required: true`, so the images could not simply be
+    dropped; `readAsset()` now generates a placeholder PNG with `sharp` (already a dependency),
+    keeping its signature and all four call sites unchanged. The seed no longer depends on a
+    directory that does not exist.
+  - **A third, latent defect surfaced by the fix.** With `payload-types.ts` finally generated,
+    `npm run type-check` failed: `Categories.slug` is `required: true` but is filled in by the
+    collection's `beforeValidate` hook, which TypeScript cannot see, so all five category creates
+    were missing a required field. Runtime was always correct; only the type-level error was hidden,
+    and only because the types had never been generated. The seed now passes each `slug` explicitly —
+    values identical to what `slugify()` derives, verified by re-seeding from an empty database and
+    diffing the result.
+  - Verified end to end against real PostgreSQL: `npm run seed` exits 0 and produces exactly the
+    4 products, 5 categories (correct two-level hierarchy and slugs), and 4 media records the script
+    specifies, with files written to `media/`. `npm run type-check` and `npm run build` both pass
+    (15/15 pages; `/shop` still `ƒ Dynamic`). `npm run lint` remains broken and untouched.
+  - **Not verified: the Docker path.** `docker compose up -d postgres` cannot pull
+    `postgres:17-alpine` — the egress policy answers 403 to `production.cloudfront.docker.com`.
+    The daemon itself starts fine. Verification used a native PostgreSQL 16.13 instance on the same
+    `DATABASE_URI`, so **"everything runs in Docker" remains unproven for the database service**, and
+    the pinned image version is untested. This is an environment-access gap, not a code defect.
+
 ### Added
+
+- **`M32` — Stripe option removed from checkout UI (2026-08-26)** — `components/OrderSummary.jsx` had a
+  fully-wired Stripe radio button (`onChange`, `checked`) that never did anything: no payment gateway
+  has ever existed anywhere in the codebase.
+  [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s
+  Consequences line already specified the exact target — *"Checkout UI shows COD as the only option
+  (not a disabled placeholder for others, to avoid confusing customers)"* — so this milestone had no
+  open decision to make; it was UI catching up to a decision the data model already enforces
+  (`collections/Orders.ts`'s `paymentMethod` field is a `select` with exactly one option, `'COD'`). Per
+  the Testing line ("no radio group needed"), **both** radio inputs are gone, not just Stripe's — a
+  single always-true option has no business being a radio group. COD now renders as a plain
+  `"Cash on Delivery (COD)"` label. `paymentMethod` changed from `useState('COD')` to a plain
+  `const paymentMethod = 'COD'`: nothing can set it to anything else anymore, so the setter was dead
+  weight; the constant stays, declared but not yet read within this file, for `M33` to consume when it
+  builds the real order. Verified with a scripted headless-Chromium session against a live
+  `npm run start` server with seeded data: no "Stripe" text anywhere on the page, zero
+  `<input type="radio">` elements, COD still shown, and "Place Order" still navigates to `/orders`
+  unaffected. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`, client JS
+  dropped slightly (4.35 kB → 4.25 kB) from the removed radio-group logic.
+
+- **`M31` — real guest address capture, Pakistani fields (2026-08-26)** — `AddressModal.jsx`'s submit
+  handler did nothing before this; it just closed the modal. It now captures `name`, `phone`, `email`,
+  `address`, `city`, `area` (phone ordered ahead of email, per the milestone's "phone-first" goal) and
+  dispatches `addAddress` — a reducer that already existed in `lib/features/address/addressSlice.js`
+  (added at `M28` in anticipation of this milestone) but had never been called. The field set matches
+  `collections/Orders.ts`'s embedded guest-address fields exactly
+  ([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)),
+  so `M33` can map it straight onto an order with no translation layer later. `email` is kept on the
+  form by explicit stakeholder decision even though `Orders` has no email column today — captured
+  against a possible future order-notification use rather than dropped and re-added later. `phone`
+  gets an 11-digit, leading-zero HTML5 pattern (`03XXXXXXXXX`) with a descriptive validation message.
+  **Scope note, stakeholder-approved**: `components/OrderSummary.jsx` was pulled in alongside
+  `AddressModal.jsx` — its two address-display lines referenced `.state`/`.zip`, fields the new form no
+  longer produces, and would have shown a newly submitted address with blank fields on every field the
+  removed columns used to fill. Both lines now read `.address`/`.area`/`.city` instead. **Found but not
+  fixed**: the dummy seed address (`addressDummyData`, `lib/features/address/addressSlice.js:5-16`, not
+  on this milestone's Files line) still uses the old shape and now renders as `"John Doe, , , New York"`
+  in the dropdown — blank fields, not literal "undefined" text (React silently drops `undefined` JSX
+  interpolations; this corrects an assumption from the milestone's own dry run, which had predicted the
+  word "undefined" would appear). Verified with a scripted headless-Chromium session (18 checks) against
+  a live `npm run start` server with seeded data: correct field set and order, no leftover
+  `state`/`zip`/`country` inputs, a submitted address appears in `OrderSummary`'s dropdown and renders
+  correctly when selected, required-field and phone-pattern validation both work (a 5-digit number fails,
+  `03001234567` passes), and two addresses added in one session both persist. `npm run type-check` and
+  `npm run build` both pass; `/cart` remains `○ Static`.
+
+- **`M30` — cart persistence across page reloads (2026-08-26)** — the cart no longer empties on
+  refresh. `lib/features/cart/cartSlice.js` gains a `hydrateCart` reducer that replaces `cartItems`
+  wholesale and recomputes `total` from it, rather than trusting a persisted total — so a stored total
+  can never drift from the items it actually matches. `app/StoreProvider.js` dispatches `hydrateCart`
+  from `localStorage` **inside a `useEffect`, after mount** rather than during initial state: the
+  navbar's cart badge (`state.cart.total`) is server-rendered on every storefront route via the shared
+  layout, so hydrating synchronously would mismatch the server's always-empty HTML against the client's
+  restored state. A `store.subscribe` callback persists `cartItems` on every mutation — `clearCart`
+  needed no special case, since it writes `{}` like any other mutation. Both the read and write paths
+  are wrapped in `try`/`catch`, and the read path validates each entry (rejects non-objects, arrays, and
+  non-positive/non-integer quantities), so corrupted or inaccessible storage degrades to an empty cart
+  instead of crashing every route `StoreProvider` wraps. Implemented per
+  [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added), recorded
+  ahead of time so this milestone would not have to reopen "which state library" — Redux stays, only
+  persistence was added, and no component outside the two changed files needed touching, as the ADR
+  predicted. `lib/store.js` was deliberately left out of scope by choosing the `subscribe` approach over
+  a `preloadedState` one. Verified with a scripted headless-Chromium session (17 checks) against a live
+  `npm run start` server with seeded data: items survive a hard reload with zero hydration-mismatch
+  console warnings; malformed JSON, a non-object value, and an array in storage all degrade to an empty
+  cart with no crash; deleting all items via the cart page's real delete control clears storage to `{}`
+  and stays empty after a further reload; and a directly-seeded `{"1": 2, "2": 3}` hydrates to a navbar
+  badge of `5`, confirming the total is derived, not trusted. `npm run type-check` and `npm run build`
+  both pass; `/cart`, `/categories`, and `/orders` remain `○ Static`. Also corrected two stale
+  `docs/TASKS.md` entries ("Guest order-lookup key…" and "Cart state mechanism…") that were already
+  resolved by ADR-024/ADR-023 on 2026-08-18 but never checked off — a `C`-class doc-drift finding this
+  milestone's own dry run caught.
+
+- **`M29` — real product search (2026-08-26)** — `/shop`'s search is now a database query, not an
+  in-memory `.includes()` filter over the fetched array. `lib/payload/products.ts`'s `getProducts()`
+  gains an optional `search` option, applied as `where: { name: { contains: trimmedSearch } } }` only
+  when non-empty; `app/(public)/shop/page.jsx` passes `search` straight through and no longer filters
+  client-side. The contract — case-insensitive substring match on `name` only — is locked in
+  [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only),
+  written *before* implementation after empirically confirming Payload's `contains` operator maps to
+  Postgres `ILIKE` (retiring the dry run's highest-rated risk: a naive port to raw `LIKE` would have
+  silently broken every mixed-case search, and no existing gate would have caught it). Verified
+  against a live `npm run start` server with real seeded data across ten cases — exact/lower/upper/
+  mixed case, mid-string substring, multi-match, non-match (HTTP 200, empty grid, not an error), empty
+  search string (full listing), and a `description`-only term correctly returning nothing. The home
+  page's separate `getProducts()` call is unaffected. `npm run type-check` and `npm run build` both
+  pass; `/shop` stays `ƒ Dynamic`. `npm run lint` and the Docker registry-egress gap were explicitly
+  out of scope for this milestone and remain as previously documented.
 
 - **AI engineering team foundation (2026-08-19)** — added `.claude/`, a **development-time**
   engineering system: eight roles (Engineering Manager orchestrating Product, Architecture,

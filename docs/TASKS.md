@@ -52,10 +52,13 @@ collection-backed admin panel — the "collection-less admin shell" era from `M3
 Every milestone's testing criteria in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) was verified against
 a live Postgres-backed dev server (REST + GraphQL). Two things flagged during that work:
 
-- `scripts/seed.ts` could not be executed directly via `tsx` in the authoring sandbox (a Node/tsx
-  ESM-interop bug in `@payloadcms/db-postgres`'s import chain, unrelated to the seed script itself —
-  same class of issue as `M3`'s `generate:importmap` problem). Its logic was validated indirectly via
-  equivalent REST calls; run `npm run seed` for real before relying on it.
+- ~~`scripts/seed.ts` could not be executed directly via `tsx`~~ — **resolved 2026-08-26.**
+  `npm run seed` runs successfully and produces the expected 4 products / 5 categories / 4 media.
+  The diagnosis above was wrong: it was not a sandbox bug and not confined to
+  `@payloadcms/db-postgres`. `package.json` declared no `"type": "module"`, so project `.ts` files
+  loaded as CommonJS while Payload v3 ships ESM with top-level await; separately, `readAsset()` still
+  read images from the `assets/` directory `M28` deleted. Both fixed — see
+  [CHANGELOG.md](./CHANGELOG.md).
 - `M13`'s admin-only `Orders` read is exactly as specified, and exactly what readiness finding `C7`
   already flags as conflicting with `M36`'s future guest-order-lookup requirement. Still open — not
   solved by this implementation, tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
@@ -136,6 +139,95 @@ guest-lookup requirement without the "improvised fix" the report warned would le
 (opening collection read). Both ADRs update `M30`'s and `M36`'s `MIGRATION_PLAN.md` entries and the
 corresponding `PHASE_1_READINESS_REPORT.md` rows; neither ADR itself is implementation — both
 milestones remain Not Started.
+
+**`M32` is done (2026-08-26).** The non-functional Stripe radio button is gone from
+`components/OrderSummary.jsx` — it was fully wired (`onChange`, `checked`) but no payment gateway has
+ever existed anywhere in the codebase, so it presented a choice that didn't work. [ADR-004](./DECISIONS.md#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)'s
+Consequences line already specified the exact outcome word for word — *"Checkout UI shows COD as the
+only option (not a disabled placeholder for others, to avoid confusing customers)"* — so this milestone
+had no open decision to make; it was UI catching up to a decision the data model already enforces
+(`collections/Orders.ts`'s `paymentMethod` field is a `select` with exactly one option, `'COD'`). Per
+the Testing line ("no radio group needed"), both radio inputs are removed, not just Stripe's — a single
+always-true option has no business being a radio button. COD is now a plain `"Cash on Delivery (COD)"`
+label. `paymentMethod` changed from `useState('COD')` to a plain `const paymentMethod = 'COD'`: nothing
+can set it to anything else anymore, so the setter was dead weight; the constant itself stays, declared
+but not yet read within this file, for `M33` to consume when it builds the real order. Verified with a
+scripted headless-Chromium session against a live `npm run start` server with seeded data: no "Stripe"
+text anywhere on the page, zero `<input type="radio">` elements, COD still shown, and "Place Order"
+still navigates to `/orders` unaffected. `npm run type-check` and `npm run build` both pass; `/cart`
+remains `○ Static`, client JS dropped slightly (4.35 kB → 4.25 kB) from the removed radio-group logic.
+
+**`M31` is done (2026-08-26).** `AddressModal.jsx`'s submit handler did nothing before this — it just
+closed the modal. It now captures a real Pakistani guest-checkout address (`name`, `phone`, `email`,
+`address`, `city`, `area` — phone ordered ahead of email, per the milestone's "phone-first" goal) and
+dispatches it via `addAddress`, a reducer that already existed in `lib/features/address/addressSlice.js`
+(added at `M28` in anticipation of this milestone) but had never been called. The field set matches
+`collections/Orders.ts`'s embedded guest-address fields exactly ([ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection)),
+so `M33` can map it straight onto an order later with no translation layer. `email` is kept on the form
+even though `Orders` has no email column today — a deliberate stakeholder call, captured now against a
+possible future order-notification use rather than dropped and re-added later. `phone` gets an 11-digit,
+leading-zero HTML5 pattern (`03XXXXXXXXX`) with a descriptive validation message.
+**Scope note**: `components/OrderSummary.jsx` was pulled in alongside `AddressModal.jsx`, one file beyond
+the milestone's own list — its two address-display lines (`selectedAddress.state`/`.zip`, the dropdown
+option text) referenced fields the new form no longer produces. Left unfixed, a selected new-style
+address would have displayed with blank fields on every field the removed `state`/`zip` columns used to
+fill. Both lines now read `.address`/`.area`/`.city` instead — a stakeholder-approved excursion, the same
+class of pull-forward as `M23`'s `ProductCard.jsx`. **Found but not fixed, left for later**: the dummy
+seed address (`addressDummyData`, `lib/features/address/addressSlice.js:5-16`) still uses the old
+`street`/`state`/`zip`/`country` shape and is not on this milestone's Files line; it now renders in the
+address dropdown as `"John Doe, , , New York"` — blank, not broken (React silently drops `undefined`
+JSX interpolations rather than printing the string "undefined", confirmed empirically during QA, correcting
+an assumption from this milestone's own dry run). Verified with a scripted headless-Chromium session (18
+checks) against a live `npm run start` server with seeded data: all six fields present and correctly
+ordered, no leftover `state`/`zip`/`country` inputs, a submitted address appears in `OrderSummary`'s
+dropdown and renders correctly when selected (no "undefined" anywhere), required-field and phone-pattern
+validation both work (a 5-digit number fails, `03001234567` passes), and two addresses added in one
+session both persist. `npm run type-check` and `npm run build` both pass; `/cart` remains `○ Static`.
+
+**`M30` is done (2026-08-26).** The cart survives a page reload for the first time — `lib/features/cart/cartSlice.js`
+gains a `hydrateCart` reducer that replaces `cartItems` wholesale and **recomputes `total` from it**
+rather than trusting a persisted value, so a stored total can never drift from the items it should
+match. `app/StoreProvider.js` reads `localStorage` and dispatches `hydrateCart` **inside a `useEffect`,
+after mount** — not during initial state — because Navbar's cart badge (`state.cart.total`) is
+server-rendered on every storefront route via the shared layout, and hydrating synchronously would
+mismatch the server's always-empty HTML against the client's restored state. A `store.subscribe`
+callback persists `cartItems` on every mutation, including `clearCart` (no special case needed — it
+writes `{}` like any other mutation). Both the read and write paths are wrapped in `try`/`catch`, and
+the read path validates shape per-entry (rejects non-objects, arrays, and non-positive/non-integer
+quantities) rather than trusting the whole stored blob, so corrupted storage degrades to an empty cart
+instead of breaking every route `StoreProvider` wraps. Implemented per [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added),
+recorded ahead of time specifically so this milestone would not have to reopen "which state library" —
+Redux stays, only persistence was added; no component outside the two files above needed a change, as
+the ADR predicted. `lib/store.js` was deliberately left untouched by choosing the `subscribe` approach
+over a `preloadedState` one. Verified with a scripted headless-Chromium session against a live
+`npm run start` server with seeded data (17 checks): items survive a hard reload with no
+hydration-mismatch console warnings; malformed JSON, a non-object value, and an array in storage all
+degrade to an empty cart with no crash; deleting all items via the cart page's real delete control
+clears storage to `{}` and stays empty after a further reload; and a directly-seeded
+`{"1": 2, "2": 3}` hydrates to a navbar badge of `5`, confirming `total` is derived, not trusted.
+`npm run type-check` and `npm run build` both pass; `/cart`, `/categories`, and `/orders` remain
+`○ Static`, confirming no hydration mismatch was introduced. Corrected two stale entries in "Later,
+non-blocking" below while here — both had already been resolved by ADR-023/ADR-024 on 2026-08-18 but
+were never checked off, a `C`-class doc-drift finding this milestone's own dry run caught.
+
+**`M29` is done (2026-08-26).** `/shop`'s search is now a real Payload query instead of an in-memory
+`.includes()` filter: `getProducts()` (`lib/payload/products.ts`) gains an optional `search` option,
+applied as `where: { name: { contains: trimmedSearch } } }` only when non-empty. Contract locked ahead
+of implementation in [ADR-025](./DECISIONS.md#adr-025-m29-product-search-is-a-case-insensitive-contains-match-on-name-only)
+— case-insensitive substring match on `name` only, `description` deliberately excluded — after
+empirically confirming Payload's `contains` maps to Postgres `ILIKE` (raw `LIKE '%lamp%'` returns 0
+rows against seeded data; `ILIKE`/`contains` both return 1), closing the dry run's highest-rated risk
+of a silent case-sensitivity regression. `app/(public)/shop/page.jsx` drops its `filteredProducts`
+in-memory filter entirely and passes `search` straight through. Verified against a live
+`npm run start` server with seeded data: no-params returns the full listing (4), a seeded name search
+returns exact matches case-insensitively (`Lamp`/`lamp`/`LAMP`/`lAmP` all → 1, `smart` → 2), a
+mid-string substring matches, a non-matching term renders an empty grid at HTTP 200 (not an error), an
+empty search string behaves as no search, and — confirming the name-only contract — searching `sleek`
+(a word every seeded product's *description* shares) returns zero results. The home page's other
+`getProducts()` call (`{ sort: '-createdAt', limit: 4 }`, no `search`) is unaffected — its `where`
+clause stays `undefined`, identical to before. `/shop` remains `ƒ Dynamic`; `npm run type-check` and
+`npm run build` both pass. `npm run lint` and the Docker registry-egress gap were explicitly out of
+scope and remain as documented.
 
 **`M28` is done (2026-08-18) — the `M22`–`M28` storefront-data group is now fully complete.**
 `assets/assets.js` and all its imported placeholder images are deleted, along with
@@ -222,8 +314,8 @@ moved `○ Static` → `ƒ Dynamic`.
 `getProducts()` from `lib/payload/products.ts`, matching `M23`'s precedent under
 [ADR-007](./DECISIONS.md)'s blanket SEO-first/mobile-first mandate even though `M24`'s literal text
 doesn't spell out "server component" the way `M23`'s does. The `?search=` filter is unchanged — still a
-simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data;
-`M29` remains the milestone that replaces it with a real Payload query. The "all products" back-link
+simple in-memory `.includes()` over the fetched list, exactly as it worked against the dummy Redux data
+at the time — `M29` (below) is the milestone that replaced it with a real Payload query. The "all products" back-link
 changed from an `onClick`/`router.push` handler to a plain `<Link href="/shop">`, since nothing on the
 page needs client-side interactivity anymore. Verified against a live `npm run start` server with seeded
 data: real names render, `?search=Bluetooth` includes/excludes correctly, an unmatched search renders a
@@ -251,8 +343,8 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M6`–`M13`, `M13a` | Payload collections: Users, Media, Categories, Products, Orders, Settings global | **Done** (2026-08-17) |
 | `M20`–`M21` | Confirm admin-only auth end to end | **Done** (2026-08-17) — audit found no custom/fake auth anywhere; dead Login button removed |
 | `M22`–`M28` (incl. `M27a`, `M27b`) | Storefront on real Payload data; category browsing routes; dummy data removed | **Done** (2026-08-18) |
-| `M29` | Real search | Not Started |
-| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
+| `M29` | Real search | **Done** (2026-08-26) |
+| `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **`M30`, `M31`, `M32` Done** (2026-08-26); `M33`–`M36` Not Started — cart-state ([ADR-023](./DECISIONS.md)) and guest-order-lookup ([ADR-024](./DECISIONS.md)) decisions recorded ahead of time (2026-08-18), closing `D10`/`C7`/`D9`; new milestone `M33a` inserted to close `R5` (out-of-stock enforcement) |
 | `M37`–`M39` | Admin order fulfillment | Not Started |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
@@ -293,13 +385,13 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
   `NEXT_PUBLIC_CURRENCY_SYMBOL` and its fallback in every consumer); comma grouping/decimal handling
   is still open and stays with `M55`.
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
-- [ ] Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)
-- [ ] Cart state mechanism: Redux vs. simpler client-side store (`M30` assumes Redux + `localStorage`)
+- [x] ~~Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)~~ — **Resolved 2026-08-18** → [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only). Left listed here in error after the ADR landed; caught during `M30`'s dry run. Implementation is still `M36`'s job.
+- [x] ~~Cart state mechanism: Redux vs. simpler client-side store~~ — **Resolved 2026-08-18** → [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added): Redux stays, `localStorage` persistence added. Left listed here in error after the ADR landed; caught during `M30`'s dry run. **Implemented 2026-08-26** as `M30` itself.
 - [x] ~~**Mobile navbar has no cart link or navigation**~~ — **Resolved 2026-08-17**, pulled forward from
   `M44`. `components/Navbar.jsx` gained a mobile row (`flex sm:hidden`): a Shop link, a search toggle,
   and a cart link with the count badge — the same badge the desktop nav already had. Verified `Rs.`/
   cart markup render server-side under `npm run build && npm run start`.
 - [x] ~~**"Best selling" has no defined ranking**~~ — **Resolved 2026-08-17** at `M23` → [ADR-022](./DECISIONS.md#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking): admin-curated `isFeatured` flag on `Products`, not a computed metric. A sales-derived ranking remains possible later (it would need an `Orders` aggregation no milestone owns yet, and would render empty at launch regardless).
-- [ ] **`payload-types.ts` cannot be generated in this sandbox** (found during `M22`). `payload generate:types` hits the same `tsx`/Node ESM-interop class of failure as `scripts/seed.ts` (`M13`) and `generate:importmap` (`M3`). `lib/payload/*.ts` use hand-written types mirroring the collections exactly as a stand-in. Confirm `payload generate:types` works in a normal environment and switch these files to the generated types when convenient — not launch-blocking, but worth doing before the type surface grows much further.
+- [ ] **Switch `lib/payload/*.ts` to the generated `payload-types.ts`** (found during `M22`; blocker cleared 2026-08-26). `payload generate:types` **now works** — the failure was `package.json` missing `"type": "module"`, not a sandbox bug, and the Payload CLI as a whole was affected. Generated output confirms the hand-written mirrors in `lib/payload/products.ts` and `lib/payload/categories.ts` are accurate, so nothing is broken today; switching them over remains open and is not owned by a milestone. Note that generating the file also surfaces real type errors that were previously invisible — one such error in `scripts/seed.ts` was fixed at the same time. Not launch-blocking, but worth doing before the type surface grows much further.
 - [ ] Unscheduled gaps tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md): test framework + CI, Newsletter disposition, storefront copy pass, production `payload migrate` step
   - *(the category listing route is no longer among these — scheduled as `M27a`/`M27b`, closing finding `C8`; the store Settings global is no longer among these either — scheduled as `M13a`, per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order))*
