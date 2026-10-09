@@ -4,6 +4,39 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Added
+
+- **`M33` — real guest order creation (2026-10-09).** Implements [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins).
+  - `lib/payload/orders.ts` (`createOrder`), `app/(public)/cart/actions.ts` (`placeOrder` server action),
+    `lib/rate-limit.ts` (in-process sliding window, shared with `M36`), `Orders.create` → admin-only,
+    `components/OrderSummary.jsx` wired to the action (double-submit guard, error toasts, success toast with
+    the order number; the cart is cleared only on success and the page no longer navigates to the dummy `/orders`).
+  - The server derives prices (current `Products.price`), shipping and total (`Settings`, ADR-018), `COD`,
+    `PLACED`, `isPaid: false` and the order number; the client supplies only cart lines and the address. Whole-order
+    rejection on any invalid input; ids bounded to the Postgres integer range; control characters rejected;
+    money rounded to 2 decimals; errors log only the error class/code (no PII). Response is order number + totals only.
+  - **Scope excursions (reported):** shipping/total *display* in `OrderSummary.jsx` pulled forward from `M34` (it fetches
+    `/api/globals/settings`; Place Order stays disabled until it loads); dummy US address removed from `addressSlice.js`;
+    `collections/Orders.ts`, `actions.ts` and `rate-limit.ts` are outside the original `Files` line but named by ADR-026;
+    stale lint/CI notes corrected in `GATES.md` and `CONVENTIONS.md`; `M13`/`M33` annotated in `MIGRATION_PLAN.md`.
+  - **Verification (live server, throwaway PostgreSQL 16):** `type-check`, `lint`, `build` pass; anonymous
+    `POST /api/orders` and GraphQL `createOrder` refused with no row created; ~75-case validation matrix; price/total
+    tampering ignored; shipping boundaries 2999/3000; price-change snapshot; double-click → one order; 6th order from one
+    IP rate-limited through the real server action; fresh-DB `npm run seed` still works; no customer strings in server or
+    Postgres logs. A Security/Performance review found no Blockers; its High/Medium findings in the new code were fixed
+    (limiter overflow no longer clears all counters, per-entry windows, bounded keys).
+  - **Found, not fixed (decisions or later milestones):**
+    - No server-side idempotency: a lost response followed by a retry can create a duplicate order (needs a dedupe design).
+    - No per-phone throttle or maximum order value; 5 orders / 15 min / IP still permits fake COD orders at some rate.
+    - Client IP trust: `cf-connecting-ip`/`x-forwarded-for` are only safe once the origin is firewalled to Cloudflare, and
+      Next server actions may need `serverActions.allowedOrigins` behind a proxy — both for `M49`–`M52`. Unverified through a real proxy.
+    - C1 control character `\u0085` is not rejected (data hygiene only). Line `unitPrice` is stored unrounded.
+    - `app/(public)/cart/page.jsx` still fetches the whole catalog over REST; GraphQL playground/depth limits not set for production.
+    - Out-of-stock products can still be ordered until `M33a`; `AddressModal` still requires an `email` that `Orders` does not store.
+    - ADR-024's lookup query names `guestPhone`; the field is `phone` (erratum for a human to apply).
+    - `.claude/commands/*.md` and `.claude/agents/qa-engineer.md`/`devops-release-engineer.md` still say `npm run lint` is broken.
+    - One unconfirmed `Failed to fetch` console error appeared once in a QA script, probably from navigating away mid-request.
+
 ### Changed
 
 - **Doctor fix pass (2026-10-09)** — project-resume health pass before `M33`.
