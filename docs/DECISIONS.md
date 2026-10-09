@@ -587,7 +587,7 @@ Each result matches the live pre-`M29` `/shop` baseline exactly, including HTTP 
 
 ## ADR-026: Orders are created only by a server-side function — `Orders` collection `create` access closes to admins
 
-**Status**: **Proposed (2026-10-09)** — **awaiting human approval; not Accepted.** This changes authorization on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action, and it reverses `M13`'s acceptance criterion *"anonymous `POST /api/orders` succeeds"*. It does **not** supersede an Accepted ADR (see *Relationship to existing ADRs*). `M33` must not start until this is Accepted, Amended, or Rejected by a human.
+**Status**: **Accepted (2026-10-09)** — approved by the human owner (the project's sole reviewer) the same day it was proposed. It changes authorization on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action, and it reverses `M13`'s acceptance criterion *"anonymous `POST /api/orders` succeeds"*. It does **not** supersede an Accepted ADR (see *Relationship to existing ADRs*).
 
 **Context**: `M13` set `Orders` to public-create/admin-read so that guest checkout (ADR-005) could write an order without an account, and verified exactly that: anonymous `POST /api/orders` succeeds, anonymous `GET /api/orders` fails. `M33`'s goal, as written, is *"an actual `POST` to the `Orders` collection, using the cart contents and guest address"* — i.e. the browser calls the collection endpoint directly. That combination was verified to be unsafe against a live server on 2026-10-09, during `M33`'s dry run:
 
