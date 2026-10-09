@@ -673,6 +673,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Placing an order lands on a confirmation view showing that order's real data.
 - **Rollback**: Revert/delete the new/changed route.
 - **Commit message**: `Add real order confirmation flow after guest checkout`
+- **✅ Done (2026-10-09)**. Per [ADR-027](./DECISIONS.md#adr-027-m35-order-confirmation-is-rendered-from-the-placeorder-response-held-in-sessionstorage--no-server-read-of-orders) the route is a fixed `app/(public)/order-confirmation/` page (client-rendered, `noindex`) fed by the `placeOrder` response in `sessionStorage` — **not** a `[orderId]` route reading `Orders`. **Files beyond the plan line**: `lib/payload/orders.ts` (result gains `items`), `lib/order-confirmation.ts` (new, client-safe storage helpers + validator), `components/OrderSummary.jsx` (store the response and navigate). Verified by QA on a live server: real data incl. server-snapshot prices, reload, empty-storage state, 13 malformed-storage cases, escaped text, storage-blocked fallback, no order-data network reads, M33/M33a regression.
 
 ### M36 — Guest order lookup
 - **Goal**: Since there are no accounts, "My Orders" needs a non-account lookup mechanism (e.g. order ID + phone/email), replacing the current dummy-data table.

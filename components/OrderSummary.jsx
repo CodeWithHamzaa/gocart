@@ -5,12 +5,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { clearCart } from '@/lib/features/cart/cartSlice';
 import { placeOrder } from '@/app/(public)/cart/actions';
+import { writeLastOrder } from '@/lib/order-confirmation';
+import { useRouter } from 'next/navigation';
 
 const OrderSummary = ({ totalPrice, items }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const dispatch = useDispatch();
+    const router = useRouter();
 
     const addressList = useSelector(state => state.address.list);
 
@@ -75,6 +78,8 @@ const OrderSummary = ({ totalPrice, items }) => {
         }
 
         setPlacing(true);
+        // M35: stays true after a successful order until navigation unmounts the page.
+        let keepDisabled = false;
         try {
             const result = await placeOrder({
                 items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
@@ -88,7 +93,32 @@ const OrderSummary = ({ totalPrice, items }) => {
             });
 
             if (result.ok) {
+                keepDisabled = true;
+                // M35 (ADR-027): hand the server's response to /order-confirmation via
+                // sessionStorage; delivery details come from the form the guest filled in.
+                const saved = writeLastOrder({
+                    orderNumber: result.orderNumber,
+                    items: result.items,
+                    subtotal: result.subtotal,
+                    shippingCost: result.shippingCost,
+                    orderTotal: result.orderTotal,
+                    delivery: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        address: selectedAddress.address,
+                        city: selectedAddress.city,
+                        area: selectedAddress.area || undefined,
+                    },
+                    placedAt: new Date().toISOString(),
+                });
                 dispatch(clearCart());
+                if (saved) {
+                    toast.success('Order placed!');
+                    router.push('/order-confirmation');
+                    return;
+                }
+                // Storage unavailable: keep the M33 behaviour, no navigation.
+                keepDisabled = false;
                 toast.success(
                     `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${currency}${result.orderTotal.toLocaleString()}. Please save this order number - together with your phone number it is how you look up your order.`,
                     { duration: 20000 }
@@ -101,7 +131,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         } catch (error) {
             toast.error('We could not place your order. Please try again.');
         } finally {
-            setPlacing(false);
+            if (!keepDisabled) setPlacing(false);
         }
     }
 
