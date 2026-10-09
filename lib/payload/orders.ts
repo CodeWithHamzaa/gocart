@@ -21,6 +21,7 @@ const MAX_CITY = 100
 const MAX_AREA = 100
 const PHONE_PATTERN = /^0[0-9]{10}$/
 const ID_PATTERN = /^\d+$/
+const CONTROL_CHARS = /[\u0000-\u001F\u007F]/
 // Products.id is a Postgres integer; anything above this cannot exist.
 const MAX_PRODUCT_ID = 2147483647
 
@@ -70,6 +71,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function cleanText(value: unknown, max: number, required: boolean): string | null {
   if (typeof value !== 'string') return required ? null : ''
   const trimmed = value.trim()
+  // Single-line fields: no control characters (covers NUL and newlines).
+  if (CONTROL_CHARS.test(trimmed)) return null
   if (required && trimmed.length === 0) return null
   if (trimmed.length > max) return null
   return trimmed
@@ -188,14 +191,26 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       freeShippingThreshold: number
     }
 
+    const isValidMoney = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0
+    if (
+      !isValidMoney(settings?.shippingFlatRate) ||
+      !isValidMoney(settings?.freeShippingThreshold) ||
+      ![...priceById.values()].every(isValidMoney)
+    ) {
+      return fail('SERVER_ERROR', 'We could not place your order. Please try again.')
+    }
+
     const lines = ids.map((id) => ({
       product: Number(id),
       quantity: merged.get(id) as number,
       unitPrice: priceById.get(id) as number,
     }))
-    const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
-    const shippingCost = subtotal >= settings.freeShippingThreshold ? 0 : settings.shippingFlatRate
-    const orderTotal = subtotal + shippingCost
+    const round2 = (x: number) => Math.round(x * 100) / 100
+    const subtotal = round2(lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0))
+    const shippingCost = round2(
+      subtotal >= settings.freeShippingThreshold ? 0 : settings.shippingFlatRate,
+    )
+    const orderTotal = round2(subtotal + shippingCost)
 
     const created = await payload.create({
       collection: 'orders',

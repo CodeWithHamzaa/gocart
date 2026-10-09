@@ -93,8 +93,6 @@ const OrderSummary = ({ totalPrice, items }) => {
                     `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${currency}${result.orderTotal.toLocaleString()}. Please save this order number - together with your phone number it is how you look up your order.`,
                     { duration: 20000 }
                 );
-            } else if (result.code === 'UNKNOWN_PRODUCT') {
-                toast.error(`Some items in your cart are no longer available. ${result.message}`);
             } else {
                 toast.error(result.message);
             }
