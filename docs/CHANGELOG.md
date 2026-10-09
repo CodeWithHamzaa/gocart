@@ -4,6 +4,26 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Changed
+
+- **Doctor fix pass (2026-10-09)** — project-resume health pass before `M33`.
+  - **Dependencies:** `payload` and all `@payloadcms/*` packages `3.88.0` → `3.90.2`; `next` `15.3.9` →
+    `15.4.11`. This clears Payload's critical field-access-bypass advisory (audit: 24 → 20 findings,
+    critical 2 → 1). `next@15.4.11` is the newest Next that `@payloadcms/next@3.90.2` allows on 15.x
+    (its peer range excludes 15.5.x). **Residual:** the remaining critical `next` advisory is only
+    fixed in 15.5.x / 16.3+, so closing it needs a Next 16 upgrade — tracked as a decision, not done here.
+    `package-lock.json` was regenerated because the old lock pinned every Payload sub-package at 3.88.
+  - Removed unused dependencies `recharts` and `date-fns` (zero imports since the admin dashboard was deleted).
+  - **Tooling:** added `eslint.config.mjs` (`next/core-web-vitals`) — `npm run lint` previously dropped into
+    an interactive setup prompt. Added `.github/workflows/ci.yml` running type-check and lint. `build` is
+    deliberately not in CI yet: `generateStaticParams` on `/category/[slug]` needs a reachable database at
+    build time (to be addressed with the production Docker work, `M49`).
+  - **Hardening:** `payload.config.ts` now throws at runtime if `PAYLOAD_SECRET` is missing in production
+    (build phase exempt); order numbers use `crypto.randomBytes` instead of `Math.random`.
+  - Docs: milestone totals corrected to 68; `CLAUDE.md` status brought up to `M32`.
+  - Verified against a throwaway PostgreSQL 16: `npm run seed`, `npm run build`, and HTTP smoke of every
+    storefront route, `/admin`, and the access rules (`/api/users`, `/api/orders` → 403 anonymous).
+
 ### Fixed
 
 - **`scripts/seed.ts` runs successfully for the first time (2026-08-26)** — clearing `M29`'s

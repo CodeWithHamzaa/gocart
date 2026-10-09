@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-63 milestones (`M1`–`M59`, plus `M2a`, `M27a`, `M27b`, `M13a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+68 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -1021,4 +1021,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**63 milestones total** — `M1`–`M59` plus four decimal insertions that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**68 milestones total** — `M1`–`M59` plus nine decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
