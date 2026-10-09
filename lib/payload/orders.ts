@@ -49,7 +49,15 @@ export type CreateOrderErrorCode =
   | 'SERVER_ERROR'
 
 export type CreateOrderResult =
-  | { ok: true; orderNumber: string; subtotal: number; shippingCost: number; orderTotal: number }
+  | {
+      ok: true
+      orderNumber: string
+      subtotal: number
+      shippingCost: number
+      orderTotal: number
+      // M35 (ADR-027): server-priced lines in cart order, for the confirmation screen.
+      items: { name: string; quantity: number; unitPrice: number }[]
+    }
   | {
       ok: false
       code: CreateOrderErrorCode
@@ -265,7 +273,13 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       return fail('SERVER_ERROR', 'We could not place your order. Please try again.')
     }
 
-    return { ok: true, orderNumber, subtotal, shippingCost, orderTotal }
+    const resultItems = lines.map((line) => ({
+      name: stockById.get(String(line.product))?.name ?? '',
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+    }))
+
+    return { ok: true, orderNumber, subtotal, shippingCost, orderTotal, items: resultItems }
   } catch (error) {
     // Log only the error class and code: Postgres/Payload messages can embed row
     // data (guest name/phone/address), so never log message, stack, or input.
