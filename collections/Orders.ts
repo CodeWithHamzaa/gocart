@@ -6,14 +6,12 @@ import type { CollectionConfig } from 'payload'
 // M12: COD-only paymentMethod (extensible enum, ADR-004) and the decided order
 // status set (ADR-019).
 //
-// M13 adds the access rules below: public-create (guest checkout), admin-read.
-// NOTE — this leaves no public read path for guest order lookup by reference,
-// which readiness finding C7 (docs/PHASE_1_READINESS_REPORT.md) already flags as
-// conflicting with M36's requirement. No reconciling mechanism (scoped lookup
-// endpoint, field-level access, signed token) is designed anywhere in the docs.
-// M13's own testing bar is exactly "anonymous GET /api/orders fails," so that is
-// what's implemented here; C7 is a pre-existing, still-open gap to resolve before
-// M36, not something invented here.
+// M13 added the access rules below. M33 (ADR-026) closed public create: the REST and
+// GraphQL create endpoints accepted client-controlled prices and status, so every
+// operation is now admin-only. Guest orders are created through createOrder() in
+// lib/payload/orders.ts (called from a server action), which validates and derives
+// all prices server-side and writes with overrideAccess. Guest lookup by reference
+// is M36's dedicated (orderNumber, phone) endpoint (ADR-024), not collection access.
 
 function generateOrderNumber(): string {
   const timestampPart = Date.now().toString(36).toUpperCase()
@@ -30,7 +28,7 @@ export const Orders: CollectionConfig = {
     defaultColumns: ['orderNumber', 'name', 'orderTotal', 'status', 'isPaid', 'createdAt'],
   },
   access: {
-    create: () => true,
+    create: ({ req: { user } }) => Boolean(user),
     read: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
     delete: ({ req: { user } }) => Boolean(user),
