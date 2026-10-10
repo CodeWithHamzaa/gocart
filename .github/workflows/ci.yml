@@ -17,3 +17,47 @@ jobs:
       - run: npm ci
       - run: npm run type-check
       - run: npm run lint
+
+  # M56a: production build + the golden-path E2E test against a freshly seeded PostgreSQL.
+  # The credentials below belong to a throwaway database that exists only for this job.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gocart
+          POSTGRES_PASSWORD: gocart
+          POSTGRES_DB: gocart_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gocart -d gocart_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URI: postgresql://gocart:gocart@localhost:5432/gocart_e2e
+      PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-else
+      NEXT_PUBLIC_SITE_URL: http://localhost:3100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Creates the schema (Payload pushes it outside production) and the demo records.
+      - run: npm run seed
+      - run: npm run build
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
