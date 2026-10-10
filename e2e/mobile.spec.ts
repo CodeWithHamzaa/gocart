@@ -15,10 +15,32 @@ test('no storefront page scrolls sideways at 320px', async ({ page, request }) =
   const paths = ['/', '/shop', `/product/${lamp.id}`, '/category/electronics', '/categories', '/cart', '/orders']
   for (const path of paths) {
     await page.goto(path)
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    )
-    expect(overflow, `${path} overflows horizontally by ${overflow}px`).toBeLessThanOrEqual(0)
+    // On failure, name the elements that stick out so the message is actionable (a bare
+    // "overflows by 4px" in CI cannot be debugged without a browser).
+    const { overflow, offenders } = await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth
+      const offenders: string[] = []
+      for (const el of Array.from(document.querySelectorAll('body *'))) {
+        const r = el.getBoundingClientRect()
+        if (r.width === 0 || r.right <= vw + 0.5) continue
+        let clipped = false // inside an overflow:hidden/auto box (e.g. the category marquee)
+        for (let q = el.parentElement; q; q = q.parentElement) {
+          if (q !== document.body && q !== document.documentElement && getComputedStyle(q).overflowX !== 'visible') {
+            clipped = true
+            break
+          }
+        }
+        if (!clipped) {
+          const text = ((el as HTMLElement).innerText || '').trim().replace(/\s+/g, ' ').slice(0, 30)
+          offenders.push(`<${el.tagName.toLowerCase()} class="${String(el.className).slice(0, 60)}"> right=${Math.round(r.right)} "${text}"`)
+        }
+      }
+      return { overflow: document.documentElement.scrollWidth - vw, offenders: offenders.slice(0, 6) }
+    })
+    expect(
+      overflow,
+      `${path} overflows horizontally by ${overflow}px; elements past the edge:\n${offenders.join('\n')}`,
+    ).toBeLessThanOrEqual(0)
   }
 })
 
