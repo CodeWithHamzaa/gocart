@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto'
 import type { CollectionConfig, TextFieldSingleValidation } from 'payload'
-import { validatePhone } from '../lib/validation/pk'
+import { normalizePhone, validatePhone } from '../lib/validation/pk'
 
 // M11: orders for guest checkout — embedded customer/address fields instead of a
 // User relation (ADR-021), plus a line-items array instead of a join table (ADR-005).
@@ -18,8 +18,6 @@ import { validatePhone } from '../lib/validation/pk'
 const validatePhoneField: TextFieldSingleValidation = (value, { operation, previousValue }) => {
   if (typeof value !== 'string' || value.trim() === '') return 'This field is required.'
   if (operation === 'update' && value === previousValue) return true
-  // Stored as typed, and the guest lookup matches exactly: no surrounding whitespace.
-  if (value !== value.trim()) return 'Remove spaces before or after the phone number.'
   return validatePhone(value) ?? true
 }
 
@@ -75,6 +73,12 @@ export const Orders: CollectionConfig = {
       // re-checked, so orders stored before M56 can still be saved (e.g. a status
       // change). Guest orders are validated by createOrder; this covers admin entry.
       validate: validatePhoneField,
+      hooks: {
+        // Stored in the canonical 03XXXXXXXXX form (trimmed; +923… rewritten), the same as
+        // createOrder, so the guest lookup key is the same however the number was typed.
+        // Only touches a value that is being written, and leaves unchanged legacy numbers alone.
+        beforeValidate: [({ value }) => (typeof value === 'string' ? normalizePhone(value) : value)],
+      },
     },
     {
       name: 'address',

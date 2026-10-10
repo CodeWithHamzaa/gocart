@@ -74,8 +74,8 @@ export function OrderLookup() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               type="tel"
-              pattern="0[0-9]{10}"
-              title="11-digit phone number starting with 0, e.g. 03001234567"
+              pattern="(0[0-9]{10}|\+923[0-9]{9})"
+              title="Phone number you ordered with, e.g. 03001234567 or +923001234567"
               placeholder="03XXXXXXXXX"
               className={inputClass}
               required

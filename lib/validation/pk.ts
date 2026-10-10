@@ -6,30 +6,45 @@
 // Each validator returns an error message, or null when the value is acceptable.
 // Messages never echo the value back (it is PII and these strings reach logs/UI).
 //
-// Deliberately NOT done, because the owner has not confirmed them: +92/0092 number
-// normalisation, a landline allowlist, an operator-prefix allowlist, and a city list
-// (ADR-018 rejected city tables — Pakistani addresses are free text). Tighten here,
-// in one place, once decided.
+// Deliberately NOT done: a landline allowlist, an operator-prefix allowlist, 0092 numbers,
+// and a city list (ADR-018 rejected city tables — Pakistani addresses are free text).
+// Rules are in ADR-029; change them here, in one place.
 
-/** Pakistani mobile number as customers write it: 03XXXXXXXXX (11 digits). */
+/** Pakistani mobile number in its stored form: 03XXXXXXXXX (11 digits). */
 export const PK_MOBILE = /^03[0-9]{9}$/
-export const PHONE_MESSAGE = 'Enter a Pakistani mobile number: 11 digits starting with 03, e.g. 03001234567.'
+/** International form a customer may type instead: +923XXXXXXXXX. */
+const PK_MOBILE_INTL = /^\+923[0-9]{9}$/
+export const PHONE_MESSAGE =
+  'Enter a Pakistani mobile number, like 03001234567 or +923001234567.'
+
+/**
+ * The one stored form of a phone number. Trims, and rewrites +923XXXXXXXXX as
+ * 03XXXXXXXXX so the order's phone — half of the guest lookup key (ADR-024) — is the same
+ * however the customer typed it. Anything else is returned trimmed and otherwise untouched
+ * (validatePhone then rejects it). Non-strings come back as an empty string.
+ */
+export function normalizePhone(value: unknown): string {
+  const v = typeof value === 'string' ? value.trim() : ''
+  return PK_MOBILE_INTL.test(v) ? `0${v.slice(3)}` : v
+}
 
 export const MIN_ADDRESS = 10
 const LETTER = /\p{L}/u
-// Letters (any script, so Urdu names work), marks, spaces and . ' - only.
+// Names and cities: letters (any script, so Urdu works), combining marks, spaces and the
+// usual punctuation — . , ' ’ - ( ) / — and nothing else (no digits, no < > & ; = etc).
 // U+200C/U+200D (ZWNJ/ZWJ) are allowed: Urdu orthography uses them inside names.
-const NAME_CHARS = /^[\p{L}\p{M}\u200C\u200D .'-]+$/u
-const PLACE_CHARS = /^[\p{L}\p{M}\u200C\u200D .'()/-]+$/u
+const TEXT_CHARS = /^[\p{L}\p{M}\u200C\u200D .,'’()/-]+$/u
+const NAME_CHARS = TEXT_CHARS
+const PLACE_CHARS = TEXT_CHARS
 
 export function validatePhone(value: unknown): string | null {
-  return typeof value === 'string' && PK_MOBILE.test(value.trim()) ? null : PHONE_MESSAGE
+  return PK_MOBILE.test(normalizePhone(value)) ? null : PHONE_MESSAGE
 }
 
 export function validateName(value: unknown): string | null {
   const v = typeof value === 'string' ? value.trim() : ''
   if (v.length < 2 || !NAME_CHARS.test(v) || !LETTER.test(v)) {
-    return 'Please enter your full name using letters only.'
+    return "Please enter your full name (letters, spaces and . , ' - only)."
   }
   return null
 }
@@ -47,7 +62,7 @@ export function validateAddress(value: unknown): string | null {
 export function validateCity(value: unknown): string | null {
   const v = typeof value === 'string' ? value.trim() : ''
   if (v.length < 2 || !PLACE_CHARS.test(v) || !LETTER.test(v)) {
-    return 'Please enter a valid city name (letters only).'
+    return "Please enter a valid city name (letters, spaces and . , ' - ( ) / only)."
   }
   return null
 }

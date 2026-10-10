@@ -5,6 +5,7 @@ import {
   validateArea,
   validateCity,
   validateName,
+  normalizePhone as normalizePkPhone,
   validatePhone,
 } from '../validation/pk'
 
@@ -187,7 +188,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (area === null) return fail('INVALID_CUSTOMER', 'Please enter a valid area.', { field: 'area' })
   const areaError = validateArea(area)
   if (areaError) return fail('INVALID_CUSTOMER', areaError, { field: 'area' })
-  const phone = typeof rawCustomer.phone === 'string' ? rawCustomer.phone.trim() : ''
+  // Stored in the one canonical form (+923XXXXXXXXX -> 03XXXXXXXXX), so the guest lookup
+  // key matches however the customer typed it.
+  const phone = normalizePkPhone(rawCustomer.phone)
   const phoneError = validatePhone(phone)
   if (phoneError) return fail('INVALID_CUSTOMER', phoneError, { field: 'phone' })
 
@@ -347,9 +350,9 @@ export function normalizeOrderNumber(value: unknown): string | null {
 }
 
 function normalizePhone(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  return PHONE_PATTERN.test(trimmed) ? trimmed : null
+  // Accept +923XXXXXXXXX as well: new orders are stored as 03XXXXXXXXX (M56/ADR-029).
+  const normalized = normalizePkPhone(value)
+  return PHONE_PATTERN.test(normalized) ? normalized : null
 }
 
 export async function lookupOrder(input: {
