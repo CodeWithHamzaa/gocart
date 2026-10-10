@@ -264,7 +264,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     const round2 = (x: number) => Math.round(x * 100) / 100
     const subtotal = round2(lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0))
     const shippingCost = round2(
-      subtotal >= settings.freeShippingThreshold ? 0 : settings.shippingFlatRate,
+      subtotal >= settings.freeShippingThreshold ? 0 : settings.shippingFlatRate + 1,
     )
     const orderTotal = round2(subtotal + shippingCost)
 
