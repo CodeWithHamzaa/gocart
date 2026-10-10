@@ -1,12 +1,13 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { TagIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react";
+import { TagIcon, TruckIcon, BanknoteIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
+import { formatPKR } from "@/lib/currency";
 
 // M25: adapted for real Payload data.
 // - `images` are Media relationships, resolved to `.url` the same way
@@ -15,10 +16,23 @@ import { useDispatch, useSelector } from "react-redux";
 //   out of scope for v1 (ADR-016) — same fix M46 already scopes for this
 //   file, pulled forward because it read `product.rating`, which real
 //   products don't have, and would have thrown before rendering.
-const ProductDetails = ({ product }) => {
+// M55a: `shipping` is read from the Settings global by the product page (server) and
+// passed in, so the delivery line can never disagree with what checkout charges
+// (ADR-018: flat rate, free at or above the threshold). Null values are not guessed.
+const deliveryNote = (shipping) => {
+    const flat = shipping?.flatRate
+    const threshold = shipping?.freeShippingThreshold
+    if (typeof flat !== 'number') return 'Delivery charges are shown at checkout'
+    if (flat === 0) return 'Free delivery across Pakistan'
+    if (typeof threshold === 'number' && threshold > 0) {
+        return `Delivery ${formatPKR(flat)} · free on orders of ${formatPKR(threshold)} or more`
+    }
+    return `Delivery ${formatPKR(flat)} across Pakistan`
+}
+
+const ProductDetails = ({ product, shipping }) => {
 
     const productId = product.id;
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const cart = useSelector(state => state.cart.cartItems);
     const dispatch = useDispatch();
@@ -54,8 +68,8 @@ const ProductDetails = ({ product }) => {
             <div className="flex-1">
                 <h1 className="text-3xl font-semibold text-slate-800">{product.name}</h1>
                 <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
-                    <p> {currency}{product.price} </p>
-                    <p className="text-xl text-slate-500 line-through">{currency}{product.mrp}</p>
+                    <p>{formatPKR(product.price)}</p>
+                    <p className="text-xl text-slate-500 line-through">{formatPKR(product.mrp)}</p>
                 </div>
                 <div className="flex items-center gap-2 text-slate-500">
                     <TagIcon size={14} />
@@ -84,9 +98,8 @@ const ProductDetails = ({ product }) => {
                 </div>
                 <hr className="border-gray-300 my-5" />
                 <div className="flex flex-col gap-4 text-slate-500">
-                    <p className="flex gap-3"> <EarthIcon className="text-slate-400" /> Free shipping worldwide </p>
-                    <p className="flex gap-3"> <CreditCardIcon className="text-slate-400" /> 100% Secured Payment </p>
-                    <p className="flex gap-3"> <UserIcon className="text-slate-400" /> Trusted by top brands </p>
+                    <p className="flex gap-3"> <TruckIcon className="text-slate-400" /> {deliveryNote(shipping)} </p>
+                    <p className="flex gap-3"> <BanknoteIcon className="text-slate-400" /> Cash on Delivery — pay when your order arrives </p>
                 </div>
 
             </div>

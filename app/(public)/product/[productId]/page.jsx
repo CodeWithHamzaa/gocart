@@ -2,6 +2,7 @@ import Link from "next/link";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { getProductById } from "@/lib/payload/products";
+import { getSettings } from "@/lib/payload/settings";
 import { notFound } from "next/navigation";
 
 // M25: server component reading a real per-product fetch (ADR-007 — SEO-first
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic'
 export default async function Product({ params }) {
 
     const { productId } = await params
-    const product = await getProductById(productId)
+    const [product, settings] = await Promise.all([getProductById(productId), getSettings()])
 
     if (!product) {
         notFound()
@@ -36,7 +37,10 @@ export default async function Product({ params }) {
                 </div>
 
                 {/* Product Details */}
-                <ProductDetails product={product} />
+                <ProductDetails
+                    product={product}
+                    shipping={{ flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }}
+                />
 
                 {/* Description & Reviews */}
                 <ProductDescription product={product} />

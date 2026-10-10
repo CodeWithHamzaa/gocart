@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto'
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, TextFieldSingleValidation } from 'payload'
+import { normalizePhone, validatePhone } from '../lib/validation/pk'
 
 // M11: orders for guest checkout — embedded customer/address fields instead of a
 // User relation (ADR-021), plus a line-items array instead of a join table (ADR-005).
@@ -12,6 +13,13 @@ import type { CollectionConfig } from 'payload'
 // lib/payload/orders.ts (called from a server action), which validates and derives
 // all prices server-side and writes with overrideAccess. Guest lookup by reference
 // is M36's dedicated (orderNumber, phone) endpoint (ADR-024), not collection access.
+
+// M56: see the comment on the `phone` field below.
+const validatePhoneField: TextFieldSingleValidation = (value, { operation, previousValue }) => {
+  if (typeof value !== 'string' || value.trim() === '') return 'This field is required.'
+  if (operation === 'update' && value === previousValue) return true
+  return validatePhone(value) ?? true
+}
 
 function generateOrderNumber(): string {
   const timestampPart = Date.now().toString(36).toUpperCase()
@@ -60,6 +68,17 @@ export const Orders: CollectionConfig = {
       name: 'phone',
       type: 'text',
       required: true,
+      // M56: Pakistani mobile format (lib/validation/pk.ts). Enforced on create and
+      // whenever the value changes; an unchanged phone on an existing order is not
+      // re-checked, so orders stored before M56 can still be saved (e.g. a status
+      // change). Guest orders are validated by createOrder; this covers admin entry.
+      validate: validatePhoneField,
+      hooks: {
+        // Stored in the canonical 03XXXXXXXXX form (trimmed; +923… rewritten), the same as
+        // createOrder, so the guest lookup key is the same however the number was typed.
+        // Only touches a value that is being written, and leaves unchanged legacy numbers alone.
+        beforeValidate: [({ value }) => (typeof value === 'string' ? normalizePhone(value) : value)],
+      },
     },
     {
       name: 'address',

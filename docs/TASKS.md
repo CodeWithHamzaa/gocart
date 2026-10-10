@@ -396,7 +396,8 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
-| `M55`–`M56` (incl. new `M55a`, `M56a`) | PKR currency, Pakistani address/phone validation | Not Started — `M55a` inserted to close `R12` (storefront copy correctness); `M56a` inserted to close `R7` (golden-path E2E + CI) (both 2026-08-18) |
+| `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
+| `M56a` | Golden-path E2E test and CI | Not Started — inserted 2026-08-18 to close `R7` |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
 
 ---
@@ -427,9 +428,7 @@ All six decisions are made and recorded as ADRs, and `M6`–`M13`/`M13a` are now
 
 ### Later, non-blocking
 
-- [ ] PKR formatting convention (blocks `M55`) — the displayed **symbol** is fixed (`Rs. `, 2026-08-17,
-  `NEXT_PUBLIC_CURRENCY_SYMBOL` and its fallback in every consumer); comma grouping/decimal handling
-  is still open and stays with `M55`.
+- [x] PKR formatting convention — **resolved 2026-10-10**: `Rs. 1,500`, comma grouping, no decimals ([ADR-029](./DECISIONS.md)); implemented by `M55`.
 - [ ] Order notifications: WhatsApp/email — **no milestone exists yet**. SMS is deferred to a future phase, per [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline); Resend (email infra) is decided, but which order-lifecycle emails are sent is still unspecified.
 - [x] ~~Guest order-lookup key and abuse controls (reconciles `M13` access rules with `M36`)~~ — **Resolved 2026-08-18** → [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only). Left listed here in error after the ADR landed; caught during `M30`'s dry run. Implementation is still `M36`'s job.
 - [x] ~~Cart state mechanism: Redux vs. simpler client-side store~~ — **Resolved 2026-08-18** → [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added): Redux stays, `localStorage` persistence added. Left listed here in error after the ADR landed; caught during `M30`'s dry run. **Implemented 2026-08-26** as `M30` itself.

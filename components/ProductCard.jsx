@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import { formatPKR } from '@/lib/currency'
 
 // M23: adapted for real Payload data.
 // - The star-rating block is gone: Products carry no rating, and Reviews are
@@ -10,8 +11,6 @@ import React from 'react'
 // - `images` are Media relationships, so the card resolves `.url` rather than
 //   treating the entry as a string path.
 const ProductCard = ({ product }) => {
-
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. '
 
     const firstImage = product.images?.[0]
     const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
@@ -25,7 +24,7 @@ const ProductCard = ({ product }) => {
             </div>
             <div className='flex justify-between gap-3 text-sm text-slate-800 pt-2 max-w-60'>
                 <p>{product.name}</p>
-                <p>{currency}{product.price}</p>
+                <p>{formatPKR(product.price)}</p>
             </div>
         </Link>
     )

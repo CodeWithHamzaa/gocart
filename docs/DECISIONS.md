@@ -720,3 +720,22 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - The hand-written types in `lib/payload/orders.ts` are unaffected (no field is added, removed, or retyped).
 - **Verification requirement for the implementing milestone:** anonymous and admin REST and GraphQL updates of each of the four fields leave the stored values unchanged; create still works (both `createOrder` and a hand-made admin order); `status` and `isPaid` updates still work; and the guest lookup (`M36`) still finds the order by `(orderNumber, phone)`.
 - Closes no readiness-report finding.
+
+---
+
+## ADR-029: PKR display format and Pakistani guest-checkout validation rules (`M55`, `M56`)
+
+**Status**: **Accepted (2026-10-10)** — the PKR format and the `M56` rules were specified or confirmed by the project owner in session (format "Rs. 1,500"; phone `03XXXXXXXXX` or `+923XXXXXXXXX`; spaces and standard punctuation in names and cities; address minimum 10 characters). The spec itself did not define them (PROJECT_SPEC.md names only the fields and, via ADR-026, the old `0[0-9]{10}` shape). Reverses no Accepted ADR.
+
+**Decision**:
+
+1. **Money display** is produced only by `formatPKR()` in `lib/currency.ts`: `Rs. 1,500` — symbol, one space, comma-grouped whole rupees, no decimals, rounded. The locale is pinned to `en-US` (a bare `toLocaleString()` follows the runtime locale and can differ between server and browser, causing hydration mismatches). Western three-digit grouping (`1,234,567`), not lakh/crore grouping. The symbol still comes from `NEXT_PUBLIC_CURRENCY_SYMBOL`, normalised to one trailing space. A non-finite amount renders `Rs. —`, never `NaN`. This is display only: stored amounts and server-side pricing are unchanged.
+2. **Phone** (guest checkout, `createOrder`, `Orders.phone`): a Pakistani **mobile** number in either form — `03XXXXXXXXX` (11 digits) or `+923XXXXXXXXX`. **It is stored in one canonical form, `03XXXXXXXXX`**: surrounding whitespace is trimmed and `+923…` is rewritten to `03…` at write time (`normalizePhone()` in `lib/validation/pk.ts`, applied by `createOrder` and by a `beforeValidate` hook on `Orders.phone`). Normalising is what keeps the guest lookup key (ADR-024) the same however the number was typed; the lookup normalises its input the same way, so a guest may type either form. Not accepted: landlines, `0092…`, spaces or dashes inside the number, operator-prefix allowlists.
+3. **Name** and **city**: at least 2 characters, containing a letter, made of letters (any script, so Urdu works, including ZWNJ/ZWJ), combining marks, spaces and the usual punctuation `. , ' ’ - ( ) /` — no digits and nothing else (no `< > & ; =`). No city list (ADR-018 already rejected city tables: Pakistani addresses are free text). **Address**: at least 10 characters and containing a letter or digit. **Area**: optional; if given, at least 2 characters.
+4. **One source of truth**: `lib/validation/pk.ts`, used by the checkout form (for specific inline messages), by `createOrder` (the authority; ADR-026), and by the `Orders.phone` field. Messages never echo the submitted value.
+5. **`Orders.phone` is validated on create and when the value changes**, not on every save, so an order stored before `M56` under a number the new rule rejects can still have its status updated (verified). Only `phone` is validated at collection level; admin entry of address text stays free-form.
+6. **The guest lookup (`M36`, `/orders`) accepts the looser `0[0-9]{10}` shape as well as `+923XXXXXXXXX`** (normalised first), so a pre-`M56` order can still be found by its guest.
+
+**Rejected alternatives**: lakh/crore grouping (owner specified `Rs. 1,500`; Western grouping agrees for four-digit amounts, and the choice for larger amounts is flagged below); a city dropdown/allowlist (ADR-018); accepting `+92` but storing it as typed (the lookup key would then depend on how the customer typed it, ADR-024); validating `Orders.phone` unconditionally (would block saving old orders).
+
+**Consequences / open items for the owner**: (a) a customer who only has a landline cannot order — widen `PK_MOBILE` in `lib/validation/pk.ts` if that matters; (b) orders keep the number in `03XXXXXXXXX` form, so a customer who typed `+92…` sees `03…` in the admin — this is intended; (c) city names with digits ("Sector 11") are rejected; (d) amounts of one million or more would group as `1,000,000`, not `10,00,000`; (e) the checkout form still collects an email address that nothing stores or uses (found, not changed). No schema or migration change.
