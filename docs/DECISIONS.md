@@ -764,3 +764,30 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - **Fonts:** already self-hosted by `next/font` with three weights; only `display: "swap"` was made explicit.
 
 **Consequences**: the head is complete for every crawler; repeat visits reuse media for a day. If media is ever served from object storage (ADR-020's designated successor), the header rule moves with it.
+
+---
+
+## ADR-031: The production image — a database-free build, a standalone server, and a category page that is honestly dynamic (`M49`)
+
+**Status**: **Accepted (2026-10-10)** as the implementation of `M49`. It reverses no Accepted ADR; it amends the *rendering strategy* that `M27a`/`M27b` chose for two routes (below), which `CATEGORY_REQUIREMENTS.md` described as static-by-default "where build-time generation is practical".
+
+**Context**: `M49` asks for a multi-stage, non-root, minimal production image. Building and *running* one (a real `docker build --target production` and a real container, not a read-through of the Dockerfile) found three things the plan did not anticipate:
+
+1. **`next build` failed without a reachable database** (`Failed to collect page data for /category/[slug]`): `generateStaticParams` queried the catalog at build time. The `M23`/`M25` comments already say the image build "cannot assume a reachable database" — a Docker build has none (and CI/VPS builds should not need one) — so the category routes contradicted the project's own design. Payload also refuses to initialise with an empty secret even during a build.
+2. **A category created after the build returned HTTP 500 in production** (`DYNAMIC_SERVER_USAGE`). The category page reads `searchParams` for `?page=N`, which a statically cached (`revalidate`) page cannot do. Categories that existed at build time worked, so the dev server and CI never showed it; any category an admin added after deploying would have been a 500. This is a latent defect in already-shipped code, found only by running the production image.
+3. **Missing configuration made the app start and then 500 on every request** (`PAYLOAD_SECRET must be set in production` is raised lazily, on the first request), so nothing told an orchestrator the container was broken.
+
+**Decision**:
+
+- **Multi-stage Dockerfile**: `deps` (npm ci) → `dev` (unchanged behaviour, `M5`) / `builder` → `production`, which is the **last stage and so the default target**; the development image is `--target dev`. The production stage copies only Next's `standalone` output and static assets (262 MB image, ~99 MB app; no source, tests, docs, `.env`, `.claude`, devDependencies or build tools), runs `node server.js` as the unprivileged `node` user (uid 1000) and creates `/app/media` (writable, the mount point for uploads — `collections/Media.ts` resolves it relative to the app root).
+- **The image is built with no database.** The build stage passes a placeholder `PAYLOAD_SECRET` and a closed-port `DATABASE_URI` to the single `npm run build` command *inline* (not `ENV`, so neither is stored in a layer or the image metadata); the app reads the real values at runtime. Where the build still touches the catalog it must tolerate failure: the footer and settings readers already degrade to nothing (`M55a`).
+- **`output: 'standalone'` is opt-in** (`NEXT_OUTPUT=standalone`, set only by the Dockerfile), so `next start`, `next dev` and the CI e2e job are unchanged.
+- **The category page is `dynamic = 'force-dynamic'`** and drops `generateStaticParams`/`revalidate`: it is dynamic by nature (pagination via `searchParams`), so it says so, which fixes defect 2 and removes the build's database need. **`/categories` is `force-dynamic` too**: a statically prerendered copy would either fail the build or bake an *empty* categories page that stays live for an hour after every deploy, and a data failure must never look like "no categories" (`CATEGORY_REQUIREMENTS.md`). Cost: one cheap catalog query per request on both routes. If caching is wanted later: split page 1 from `?page=N`, or revalidate on demand from `Categories`/`Products` hooks (ADR-030).
+- **`NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_CURRENCY_SYMBOL` are build arguments** (they are inlined into the bundle, so they cannot be set when the container starts). The site URL defaults to `http://localhost:3000` with a loud warning during the build; a deployment must pass the real origin, or the image publishes localhost canonicals and sitemap URLs. Changing the domain therefore means rebuilding — no code change, as required, but not a runtime switch.
+- **The container checks its required settings up front**: `DATABASE_URI` and `PAYLOAD_SECRET` missing → it prints `FATAL: … must be set` and exits 1 (`exec` keeps `node` as PID 1, so `docker stop` is graceful: ~0.1 s measured).
+
+**Not done here, by design** (each belongs to a named milestone): the database **schema must already exist** — Payload does not push it in production, and there are no migrations yet (`M52a`); Compose stacks (`M50`); image optimisation, `images.unoptimized` (`M51`); secrets handling and the Cloudflare-only origin (`M52`); health check and logging (`M53`); media/DB persistence and backups (`M54`).
+
+**Verified** (production image, local PostgreSQL, the full Playwright suite *against the running container*, 12/12): non-root user and `NODE_ENV=production`; every storefront route, `/admin`, the REST API and static assets served; a new category rendered on demand; a media upload written to `/app/media` as uid 1000 and served back; the image holds no source, secrets or placeholder values; missing configuration exits with a message; `docker stop` is immediate; `--target dev` still builds and serves `/admin`.
+
+**Consequences / open items**: a first request after a deploy renders the static pages' footer from the build-time (empty) settings for up to the 60 s revalidation window (`M55a`, fails closed); `docker build` here used a sandbox-only copy of the Dockerfile adding a proxy and CA (3 lines, not committed) — the real file is built by the CI `image` job; no healthcheck means an unhealthy-but-running container is not detected until `M53`.

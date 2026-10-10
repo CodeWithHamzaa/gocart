@@ -47,10 +47,32 @@ npm run dev
 The storefront runs at `http://localhost:3000` and the Payload admin panel at
 `http://localhost:3000/admin`. Run `npm run seed` for development data.
 
-`npm run build` and `npm run type-check` are the two working verification gates.
-`npm run lint` is currently broken (no ESLint dependency or config is installed), and
-there is no test framework yet — one Playwright golden-path test plus CI is scheduled
-as `M56a`.
+Verification: `npm run type-check`, `npm run lint` and `npm run build`, plus the Playwright
+end-to-end tests (`npm run test:e2e`: golden-path checkout, SEO and mobile layout) against a
+seeded database. CI (`.github/workflows/ci.yml`) runs all of them on every pull request.
+
+### Production image (M49)
+
+```bash
+docker build --target production \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.example .
+docker run -p 3000:3000 \
+  -e DATABASE_URI=postgresql://user:password@host:5432/gocart \
+  -e PAYLOAD_SECRET=<a long random secret> \
+  -v gocart-media:/app/media <image>
+```
+
+- The image is built **without a database**. `NEXT_PUBLIC_SITE_URL` and
+  `NEXT_PUBLIC_CURRENCY_SYMBOL` are inlined at build time, so changing either means rebuilding.
+  If `NEXT_PUBLIC_SITE_URL` is omitted the image publishes `http://localhost:3000` URLs.
+- `DATABASE_URI` and `PAYLOAD_SECRET` are runtime settings and are required — the container
+  exits immediately with a message if either is missing.
+- It runs as the unprivileged `node` user. Uploaded images are written to `/app/media`: mount a
+  volume there (backup and persistence are `M54`).
+- **The database schema must already exist.** Payload does not create tables in production;
+  running migrations as a deploy step is `M52a`. Until then a brand-new database needs the schema
+  created once (for example by running the app in development mode against it).
+- `docker build --target dev .` still builds the development image.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
 

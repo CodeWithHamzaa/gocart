@@ -2,6 +2,12 @@ import { withPayload } from '@payloadcms/next/withPayload'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // M49: the production image runs a self-contained server (`node server.js`) with only the
+    // files it needs, instead of the whole repository and every dependency. Opt-in (the
+    // Dockerfile's build stage sets it) so `next start`, `next dev` and the CI e2e job, which use
+    // `next start`, are unchanged.
+    ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' } : {}),
+
     images:{
         // Left as is on purpose: removing it and making optimization work under Docker is M51.
         unoptimized: true

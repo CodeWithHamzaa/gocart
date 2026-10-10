@@ -11,3 +11,13 @@ npm-debug.log*
 # AI engineering team — development-time tooling, never part of a runtime image.
 # See .claude/docs/NO_PRODUCTION_AI.md
 .claude
+
+# Not needed to build or run the app, and never baked into an image.
+# Uploaded media belongs on a volume (M54), not in a layer.
+media
+e2e
+playwright-report
+test-results
+playwright.config.ts
+docs
+.github

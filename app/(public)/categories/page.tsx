@@ -9,11 +9,16 @@ import { pageMetadata } from '@/lib/seo'
 // category with its children — the single entry point into category
 // browsing. Per docs/CATEGORY_REQUIREMENTS.md and ADR-007. `.tsx`, per M2a.
 
-// Same static-by-default reasoning as M27a: the catalog structure changes
-// infrequently, and this route has no per-slug notFound() path, so it
-// doesn't hit the loading.tsx/Suspense status-code conflict documented
-// there — a loading.tsx skeleton is safe here.
-export const revalidate = 3600
+// This route has no per-slug notFound() path, so it doesn't hit the
+// loading.tsx/Suspense status-code conflict documented in M27a — a loading.tsx
+// skeleton is safe here.
+//
+// M49: rendered per request, no longer static with `revalidate = 3600` (M27b). A static page is
+// prerendered at build time, and the production image is built without a database: it would
+// either fail the build or bake an *empty* categories page that stays live for the first hour
+// after every deploy, and a data failure must never look like "no categories". One cheap
+// query per request is the safe trade; revisit with on-demand revalidation (ADR-030).
+export const dynamic = 'force-dynamic'
 
 // M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
 // conventions as every other route.
