@@ -1,9 +1,10 @@
-'use client'
 import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
 import React from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
 import { formatPKR } from '@/lib/currency'
 
+// M40: a server component (no hooks or handlers), so the hero and the category links are in the
+// initial HTML.
 // M28: the hero/product placeholder images (assets/hero_*.png) were part of
 // the deleted dummy dataset and are removed with it — real marketing/product
 // photography is a separate, not-yet-supplied asset. The `<Image>` elements
@@ -13,7 +14,7 @@ import { formatPKR } from '@/lib/currency'
 // M55/M55a: the banner threshold and the "Starts from" price are real values passed in by
 // the home page (Settings global / cheapest product); each block is hidden, not faked,
 // when its value is unavailable.
-const Hero = ({ freeShippingThreshold = null, startingPrice = null }) => {
+const Hero = ({ freeShippingThreshold = null, startingPrice = null, categories = [] }) => {
 
     return (
         <div className='mx-6'>
@@ -55,7 +56,7 @@ const Hero = ({ freeShippingThreshold = null, startingPrice = null }) => {
                     </div>
                 </div>
             </div>
-            <CategoriesMarquee />
+            <CategoriesMarquee categories={categories} />
         </div>
 
     )

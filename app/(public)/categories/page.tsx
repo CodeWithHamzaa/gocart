@@ -2,6 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import { getTopLevelCategories } from '@/lib/payload/categories'
+import { getSettings } from '@/lib/payload/settings'
+import { pageMetadata } from '@/lib/seo'
 
 // M27b: a browsable index of the whole catalog structure — every top-level
 // category with its children — the single entry point into category
@@ -13,9 +15,16 @@ import { getTopLevelCategories } from '@/lib/payload/categories'
 // there — a loading.tsx skeleton is safe here.
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: 'Categories',
-  description: 'Browse every product category at gocart.',
+// M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
+// conventions as every other route.
+export async function generateMetadata(): Promise<Metadata> {
+  const { storeName } = await getSettings()
+  return pageMetadata({
+    storeName,
+    title: 'Categories',
+    description: `Browse every product category at ${storeName}.`,
+    path: '/categories',
+  })
 }
 
 export default async function CategoriesPage() {
