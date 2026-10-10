@@ -42,9 +42,6 @@
       "Bash(docker compose up:*)",
       "Bash(docker compose down:*)",
       "Bash(git reset --hard:*)",
-      "Bash(docker build:*)"
-    ],
-    "deny": [
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(git push origin main:*)",
@@ -59,6 +56,9 @@
       "Bash(docker compose down -v:*)",
       "Bash(docker volume rm:*)",
       "Bash(dropdb:*)",
+      "Bash(docker build:*)"
+    ],
+    "deny": [
       "Bash(npm publish:*)",
       "Read(./.env)",
       "Read(./.env.*)",
