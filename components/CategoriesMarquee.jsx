@@ -1,34 +1,11 @@
-'use client'
-import { useEffect, useState } from "react"
 import Link from "next/link"
 
-// M27: data source only — swapped the hardcoded `categories` array from
-// assets/assets.js for the real Categories collection.
-//
-// This component is nested inside Hero.jsx, which is 'use client' (Hero's
-// own server-component conversion is M40's pass, not this one). A client
-// component can't use lib/payload/categories.ts's Local API, so this fetches
-// Payload's public-read REST API directly instead, per the sanctioned
-// pattern documented in lib/payload/categories.ts.
-//
-// M27a: items are now real next/link anchors to /category/[slug] — a
-// crawler can't follow a click handler, and neither can a keyboard user.
-const CategoriesMarquee = () => {
-
-    const [categories, setCategories] = useState([])
-
-    useEffect(() => {
-        const controller = new AbortController()
-
-        fetch('/api/categories?limit=0&sort=displayOrder,title&depth=0', { signal: controller.signal })
-            .then((res) => res.json())
-            .then((data) => setCategories(data.docs || []))
-            .catch((error) => {
-                if (error.name !== 'AbortError') console.error(error)
-            })
-
-        return () => controller.abort()
-    }, [])
+// M40: a server component. It used to be a client component that fetched the categories from
+// the REST API after hydration (M27), which left the links out of the initial HTML where a
+// crawler (and a slow connection) never sees them. The home page now passes the real
+// categories in as props, so the links are plain server-rendered anchors (M27a: a crawler
+// cannot follow a click handler). The scrolling is pure CSS.
+const CategoriesMarquee = ({ categories = [] }) => {
 
     if (categories.length === 0) return null
 

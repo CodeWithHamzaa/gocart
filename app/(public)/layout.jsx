@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "../globals.css";
 import { getSiteUrl } from "@/lib/site-url";
+import { getSettings } from "@/lib/payload/settings";
+import { DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
@@ -13,12 +15,19 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 // edit to the contact details reaches the storefront without a redeploy.
 export const revalidate = 60;
 
-export const metadata = {
-    // Resolves relative URLs (canonical, Open Graph). Comes only from NEXT_PUBLIC_SITE_URL.
-    metadataBase: new URL(getSiteUrl()),
-    title: "GoCart. - Shop smarter",
-    description: "GoCart. - Shop smarter",
-};
+// M41: site-wide defaults. Pages add their own title (the template appends the store name),
+// description, canonical and Open Graph via pageMetadata() in lib/seo.ts. The store name is
+// the Settings value, so renaming the store in /admin renames it everywhere.
+export async function generateMetadata() {
+    const { storeName } = await getSettings();
+    return {
+        // Resolves relative URLs (canonical, Open Graph). Comes only from NEXT_PUBLIC_SITE_URL.
+        metadataBase: new URL(getSiteUrl()),
+        title: { default: `${storeName} - Shop smarter`, template: `%s | ${storeName}` },
+        description: DEFAULT_DESCRIPTION,
+        openGraph: { type: "website", siteName: storeName, locale: "en_PK" },
+    };
+}
 
 export default function PublicLayout({ children }) {
     return (

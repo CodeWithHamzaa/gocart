@@ -392,7 +392,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M29` | Real search | **Done** (2026-08-26) |
 | `M30`–`M36` (incl. new `M33a`) | Cart persistence, guest checkout, real COD order creation | **Done** (2026-08-26 for `M30`–`M32`; 2026-10-09 for `M33`, `M33a`, `M34`, `M35`, `M36`) — real orders with server-side pricing/shipping/stock checks, confirmation page, rate-limited guest lookup; cart-state ([ADR-023](./DECISIONS.md)), guest-lookup ([ADR-024](./DECISIONS.md)), order-creation ([ADR-026](./DECISIONS.md)) and confirmation ([ADR-027](./DECISIONS.md)) decisions recorded |
 | `M37`–`M39` | Admin order fulfillment | **Done** (2026-10-09) — `/admin` order list/search/status workflow tuned and verified; `M39` was delivered inside `M36` |
-| `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | Not Started |
+| `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | **Done** (2026-10-10) — see CHANGELOG; Google Rich Results validation not run (no access) |
 | `M44`–`M45` | Mobile-first audit and performance | Not Started |
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |

@@ -8,6 +8,8 @@ import {
   getProductsByCategory,
 } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
+import { getSettings } from '@/lib/payload/settings'
+import { pageMetadata } from '@/lib/seo'
 
 // M27a: server-rendered category detail + product listing route, per
 // docs/CATEGORY_REQUIREMENTS.md and ADR-007. `.tsx`, not `.jsx`, per M2a's
@@ -54,16 +56,16 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const result = await getProductsByCategory(slug, { page, limit: PAGE_SIZE })
   if (!result || (page > 1 && page > result.totalPages)) notFound()
 
-  const title = category.seo?.metaTitle || category.title
+  const { storeName } = await getSettings()
+  const baseTitle = category.seo?.metaTitle || category.title
+  // M41: a paginated page is its own indexable page (self-canonical), so it gets its own
+  // title rather than repeating page 1's.
+  const title = page > 1 ? `${baseTitle} - Page ${page}` : baseTitle
   const description =
-    category.seo?.metaDescription || category.description || `Shop ${category.title} at gocart.`
+    category.seo?.metaDescription || category.description || `Shop ${category.title} at ${storeName}.`
   const canonicalPath = page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`
 
-  return {
-    title,
-    description,
-    alternates: { canonical: canonicalPath },
-  }
+  return pageMetadata({ storeName, title, description, path: canonicalPath })
 }
 
 export default async function CategoryPage({ params, searchParams }: PageProps) {
