@@ -48,3 +48,7 @@ yarn-error.log*
 # AI engineering team (development-time only) — shared config IS committed;
 # per-developer overrides are not. See .claude/docs/NO_PRODUCTION_AI.md
 .claude/settings.local.json
+
+# Playwright (M56a)
+/test-results/
+/playwright-report/

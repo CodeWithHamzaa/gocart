@@ -397,7 +397,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49`–`M54` (incl. new `M52a`) | Docker production hardening, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
 | `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
-| `M56a` | Golden-path E2E test and CI | Not Started — inserted 2026-08-18 to close `R7` |
+| `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
 
 ---
