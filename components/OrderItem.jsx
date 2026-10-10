@@ -1,3 +1,4 @@
+import { formatPKR } from '@/lib/currency'
 // M36: renders the guest order-lookup result (lookupOrder's `order` shape, ADR-024) as
 // a single responsive card. Replaces the dummy-data table row. Product images are not
 // part of the lookup result, so lines are text-only. React escaping only.
@@ -13,7 +14,6 @@ const STATUS_STYLES = {
 
 const OrderItem = ({ order }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
     const status = STATUS_STYLES[order.status] || { label: String(order.status), className: 'bg-slate-100 text-slate-700' };
     const placedOn = new Date(order.createdAt);
 
@@ -33,9 +33,9 @@ const OrderItem = ({ order }) => {
                     <li key={index} className="flex justify-between gap-4 py-3">
                         <div className="min-w-0">
                             <p className="break-words text-slate-700">{item.name} <span className="text-slate-400">x {item.quantity}</span></p>
-                            <p className="text-xs text-slate-400">{currency}{item.unitPrice.toLocaleString()} each</p>
+                            <p className="text-xs text-slate-400">{formatPKR(item.unitPrice)} each</p>
                         </div>
-                        <p className="shrink-0 font-medium">{currency}{(item.unitPrice * item.quantity).toLocaleString()}</p>
+                        <p className="shrink-0 font-medium">{formatPKR(item.unitPrice * item.quantity)}</p>
                     </li>
                 ))}
             </ul>
@@ -43,15 +43,15 @@ const OrderItem = ({ order }) => {
             <dl className="mt-4 space-y-1">
                 <div className="flex justify-between">
                     <dt className="text-slate-400">Subtotal</dt>
-                    <dd className="font-medium">{currency}{order.subtotal.toLocaleString()}</dd>
+                    <dd className="font-medium">{formatPKR(order.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
                     <dt className="text-slate-400">Shipping</dt>
-                    <dd className="font-medium">{order.shippingCost === 0 ? 'Free' : `${currency}${order.shippingCost.toLocaleString()}`}</dd>
+                    <dd className="font-medium">{order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}</dd>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-2 text-base text-slate-800">
                     <dt>Total</dt>
-                    <dd className="font-semibold">{currency}{order.orderTotal.toLocaleString()}</dd>
+                    <dd className="font-semibold">{formatPKR(order.orderTotal)}</dd>
                 </div>
             </dl>
 

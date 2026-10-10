@@ -7,6 +7,7 @@ import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { formatPKR } from '@/lib/currency'
 
 // M28: previously resolved cart line items against `state.product.list`,
 // a Redux slice populated only from the dummy dataset (`productSlice.js`,
@@ -19,8 +20,6 @@ import { useDispatch, useSelector } from "react-redux";
 // CategoriesMarquee.jsx uses, M27) instead of carrying real-data fetching
 // forward as a second, unrelated milestone.
 export default function Cart() {
-
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const { cartItems } = useSelector(state => state.cart);
     const [products, setProducts] = useState([]);
@@ -103,13 +102,13 @@ export default function Cart() {
                                             <div>
                                                 <p className="max-sm:text-sm">{item.name}</p>
                                                 <p className="text-xs text-slate-500">{categoryTitle}</p>
-                                                <p>{currency}{item.price}</p>
+                                                <p>{formatPKR(item.price)}</p>
                                             </div>
                                         </td>
                                         <td className="text-center">
                                             <Counter productId={item.id} />
                                         </td>
-                                        <td className="text-center">{currency}{(item.price * item.quantity).toLocaleString()}</td>
+                                        <td className="text-center">{formatPKR(item.price * item.quantity)}</td>
                                         <td className="text-center max-md:hidden">
                                             <button onClick={() => handleDeleteItemFromCart(item.id)} className=" text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all">
                                                 <Trash2Icon size={18} />

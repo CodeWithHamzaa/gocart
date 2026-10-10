@@ -7,10 +7,10 @@ import { clearCart } from '@/lib/features/cart/cartSlice';
 import { placeOrder } from '@/app/(public)/cart/actions';
 import { writeLastOrder } from '@/lib/order-confirmation';
 import { useRouter } from 'next/navigation';
+import { formatPKR } from '@/lib/currency'
 
 const OrderSummary = ({ totalPrice, items }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. ';
 
     const dispatch = useDispatch();
     const router = useRouter();
@@ -113,7 +113,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 // Storage unavailable: keep the M33 behaviour, no navigation.
                 keepDisabled = false;
                 toast.success(
-                    `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${currency}${result.orderTotal.toLocaleString()}. Please save this order number - together with your phone number it is how you look up your order.`,
+                    `Order placed! Your order number is ${result.orderNumber}. Total to pay on delivery: ${formatPKR(result.orderTotal)}. Please save this order number - together with your phone number it is how you look up your order.`,
                     { duration: 20000 }
                 );
             } else if (result.code === 'OUT_OF_STOCK' && result.unavailable?.length) {
@@ -167,14 +167,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                         <p>Shipping:</p>
                     </div>
                     <div className='flex flex-col gap-1 font-medium text-right'>
-                        <p>{currency}{totalPrice.toLocaleString()}</p>
-                        <p>{shipping === null ? '...' : (shipping === 0 ? 'Free' : `${currency}${shipping.toLocaleString()}`)}</p>
+                        <p>{formatPKR(totalPrice)}</p>
+                        <p>{shipping === null ? '...' : (shipping === 0 ? 'Free' : formatPKR(shipping))}</p>
                     </div>
                 </div>
             </div>
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
-                <p className='font-medium text-right'>{grandTotal === null ? '...' : `${currency}${grandTotal.toLocaleString()}`}</p>
+                <p className='font-medium text-right'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-slate-400 pb-2'>

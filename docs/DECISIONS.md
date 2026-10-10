@@ -720,3 +720,22 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - The hand-written types in `lib/payload/orders.ts` are unaffected (no field is added, removed, or retyped).
 - **Verification requirement for the implementing milestone:** anonymous and admin REST and GraphQL updates of each of the four fields leave the stored values unchanged; create still works (both `createOrder` and a hand-made admin order); `status` and `isPaid` updates still work; and the guest lookup (`M36`) still finds the order by `(orderNumber, phone)`.
 - Closes no readiness-report finding.
+
+---
+
+## ADR-029: PKR display format and Pakistani guest-checkout validation rules (`M55`, `M56`)
+
+**Status**: **Accepted (2026-10-10)** for the PKR format, which the owner specified in session ("Rs. 1,500", comma grouping, no decimals). **Proposed — owner to confirm** for the `M56` rules below, which the spec does not define (PROJECT_SPEC.md names only the fields and, via ADR-026, the old `0[0-9]{10}` shape; "full Pakistani address/phone validation stays with `M56`"). They are conservative defaults held in one file so they can be changed in one place. Reverses no Accepted ADR.
+
+**Decision**:
+
+1. **Money display** is produced only by `formatPKR()` in `lib/currency.ts`: `Rs. 1,500` — symbol, one space, comma-grouped whole rupees, no decimals, rounded. The locale is pinned to `en-US` (a bare `toLocaleString()` follows the runtime locale and can differ between server and browser, causing hydration mismatches). Western three-digit grouping (`1,234,567`), not lakh/crore grouping. The symbol still comes from `NEXT_PUBLIC_CURRENCY_SYMBOL`, normalised to one trailing space. A non-finite amount renders `Rs. —`, never `NaN`. This is display only: stored amounts and server-side pricing are unchanged.
+2. **Phone** (guest checkout, `createOrder`, `Orders.phone`): a Pakistani **mobile** number, `^03[0-9]{9}$` (11 digits), as customers write it. Not accepted, deliberately: `+92`/`0092` forms (no normalisation, so the stored value always equals what the guest types into the lookup), landlines, operator-prefix allowlists.
+3. **Name** at least 2 characters, letters (any script, so Urdu works), marks, spaces and `. ' -` only. **Address** at least 10 characters and containing a letter or digit. **City** at least 2 characters, letters/marks/spaces and `. ' ( ) / -` only — no city list (ADR-018 already rejected city tables: Pakistani addresses are free text). **Area** optional; if given, at least 2 characters.
+4. **One source of truth**: `lib/validation/pk.ts`, used by the checkout form (for specific inline messages), by `createOrder` (the authority; ADR-026), and by the `Orders.phone` field. Messages never echo the submitted value.
+5. **`Orders.phone` is validated on create and when the value changes**, not on every save, so an order stored before `M56` under a number the new rule rejects can still have its status updated (verified). Only `phone` is validated at collection level; admin entry of address text stays free-form.
+6. **The guest lookup (`M36`, `/orders`) keeps the looser `0[0-9]{10}` shape** so a pre-`M56` order can still be found by its guest.
+
+**Rejected alternatives**: lakh/crore grouping (owner specified `Rs. 1,500`; Western grouping agrees for four-digit amounts, and the choice for larger amounts is flagged below); a city dropdown/allowlist (ADR-018); normalising `+92` to `03` (silently changes what is stored and could desynchronise the lookup key, ADR-024); validating `Orders.phone` unconditionally (would block saving old orders).
+
+**Consequences / open items for the owner**: (a) a customer who only has a landline or a `+92` number cannot order until the rule is widened — widen `PK_MOBILE` or add normalisation in `lib/validation/pk.ts`; (b) the minimum address length (10) and name/city character rules are judgement calls, not owner-confirmed; (c) amounts of one million or more would group as `1,000,000`, not `10,00,000`; (d) the checkout form still collects an email address that nothing stores or uses (found, not changed). No schema or migration change.

@@ -1,5 +1,12 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import {
+  validateAddress,
+  validateArea,
+  validateCity,
+  validateName,
+  validatePhone,
+} from '../validation/pk'
 
 // M33: the only public path that creates an Order (ADR-026). Server-only (Payload
 // Local API) — call from Server Actions / Route Handlers, never a 'use client'
@@ -22,8 +29,10 @@ const MAX_NAME = 100
 const MAX_ADDRESS = 300
 const MAX_CITY = 100
 const MAX_AREA = 100
-const PHONE_PATTERN = /^0[0-9]{10}$/
 const ID_PATTERN = /^\d+$/
+// Lookup only (M36): deliberately looser than the M56 order-creation rule, so an order
+// stored before M56 under any 0-prefixed 11-digit number can still be found.
+const PHONE_PATTERN = /^0[0-9]{10}$/
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/
 // Products.id is a Postgres integer; anything above this cannot exist.
 const MAX_PRODUCT_ID = 2147483647
@@ -160,20 +169,27 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (!isRecord(rawCustomer)) {
     return fail('INVALID_CUSTOMER', 'Delivery details are missing.')
   }
+  // M56: cleanText enforces shape/length/control characters; the Pakistani format rules
+  // (lib/validation/pk.ts, shared with the checkout form) run on the cleaned value.
   const name = cleanText(rawCustomer.name, MAX_NAME, true)
   if (name === null) return fail('INVALID_CUSTOMER', 'Please enter a valid name.', { field: 'name' })
+  const nameError = validateName(name)
+  if (nameError) return fail('INVALID_CUSTOMER', nameError, { field: 'name' })
   const address = cleanText(rawCustomer.address, MAX_ADDRESS, true)
   if (address === null) return fail('INVALID_CUSTOMER', 'Please enter a valid address.', { field: 'address' })
+  const addressError = validateAddress(address)
+  if (addressError) return fail('INVALID_CUSTOMER', addressError, { field: 'address' })
   const city = cleanText(rawCustomer.city, MAX_CITY, true)
   if (city === null) return fail('INVALID_CUSTOMER', 'Please enter a valid city.', { field: 'city' })
+  const cityError = validateCity(city)
+  if (cityError) return fail('INVALID_CUSTOMER', cityError, { field: 'city' })
   const area = cleanText(rawCustomer.area, MAX_AREA, false)
   if (area === null) return fail('INVALID_CUSTOMER', 'Please enter a valid area.', { field: 'area' })
+  const areaError = validateArea(area)
+  if (areaError) return fail('INVALID_CUSTOMER', areaError, { field: 'area' })
   const phone = typeof rawCustomer.phone === 'string' ? rawCustomer.phone.trim() : ''
-  if (!PHONE_PATTERN.test(phone)) {
-    return fail('INVALID_CUSTOMER', 'Phone must be 11 digits starting with 0, e.g. 03001234567.', {
-      field: 'phone',
-    })
-  }
+  const phoneError = validatePhone(phone)
+  if (phoneError) return fail('INVALID_CUSTOMER', phoneError, { field: 'phone' })
 
   // --- Server-side reads and the write ---
   // Deliberately no logging of customer fields anywhere in this function.

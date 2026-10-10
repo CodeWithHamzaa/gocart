@@ -2,6 +2,7 @@
 import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
 import React from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
+import { formatPKR } from '@/lib/currency'
 
 // M28: the hero/product placeholder images (assets/hero_*.png) were part of
 // the deleted dummy dataset and are removed with it — real marketing/product
@@ -9,9 +10,10 @@ import CategoriesMarquee from './CategoriesMarquee'
 // they filled are replaced with plain gradient placeholders that keep the
 // same layout dimensions (no CLS), not left as broken image references.
 
-const Hero = () => {
-
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. '
+// M55/M55a: the banner threshold and the "Starts from" price are real values passed in by
+// the home page (Settings global / cheapest product); each block is hidden, not faked,
+// when its value is unavailable.
+const Hero = ({ freeShippingThreshold = null, startingPrice = null }) => {
 
     return (
         <div className='mx-6'>
@@ -19,15 +21,19 @@ const Hero = () => {
                 <div className='relative flex-1 flex flex-col bg-green-200 rounded-3xl xl:min-h-100 group'>
                     <div className='p-5 sm:p-16'>
                         <div className='inline-flex items-center gap-3 bg-green-300 text-green-600 pr-4 p-1 rounded-full text-xs sm:text-sm'>
-                            <span className='bg-green-600 px-3 py-1 max-sm:ml-1 rounded-full text-white text-xs'>NEWS</span> Free Shipping on Orders Above $50! <ChevronRightIcon className='group-hover:ml-2 transition-all' size={16} />
+                            <span className='bg-green-600 px-3 py-1 max-sm:ml-1 rounded-full text-white text-xs'>NEWS</span>
+                            {freeShippingThreshold > 0 ? `Free delivery on orders of ${formatPKR(freeShippingThreshold)} or more` : 'Cash on Delivery across Pakistan'}
+                            <ChevronRightIcon className='group-hover:ml-2 transition-all' size={16} />
                         </div>
                         <h2 className='text-3xl sm:text-5xl leading-[1.2] my-3 font-medium bg-gradient-to-r from-slate-600 to-[#A0FF74] bg-clip-text text-transparent max-w-xs  sm:max-w-md'>
                             Gadgets you'll love. Prices you'll trust.
                         </h2>
-                        <div className='text-slate-800 text-sm font-medium mt-4 sm:mt-8'>
-                            <p>Starts from</p>
-                            <p className='text-3xl'>{currency}4.90</p>
-                        </div>
+                        {startingPrice !== null && (
+                            <div className='text-slate-800 text-sm font-medium mt-4 sm:mt-8'>
+                                <p>Starts from</p>
+                                <p className='text-3xl'>{formatPKR(startingPrice)}</p>
+                            </div>
+                        )}
                         <button className='bg-slate-800 text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 mt-4 sm:mt-10 rounded-md hover:bg-slate-900 hover:scale-103 active:scale-95 transition'>LEARN MORE</button>
                     </div>
                     <div className='sm:absolute bottom-0 right-0 md:right-10 w-full sm:max-w-sm h-40 sm:h-64 rounded-3xl bg-gradient-to-br from-green-300/60 to-green-500/40' />

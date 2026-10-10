@@ -8,8 +8,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { readLastOrder } from '@/lib/order-confirmation'
 import type { LastOrder } from '@/lib/order-confirmation'
-
-const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs. '
+import { formatPKR } from '@/lib/currency'
 
 const linkButton =
   'inline-flex items-center justify-center rounded px-6 py-2.5 text-sm font-medium transition active:scale-95'
@@ -109,13 +108,11 @@ export function OrderConfirmation() {
                   {item.name} <span className="text-slate-400">x {item.quantity}</span>
                 </p>
                 <p className="text-xs text-slate-400">
-                  {currency}
-                  {item.unitPrice.toLocaleString()} each
+                  {formatPKR(item.unitPrice)} each
                 </p>
               </div>
               <p className="shrink-0 font-medium">
-                {currency}
-                {(item.unitPrice * item.quantity).toLocaleString()}
+                {formatPKR(item.unitPrice * item.quantity)}
               </p>
             </li>
           ))}
@@ -125,21 +122,19 @@ export function OrderConfirmation() {
           <div className="flex justify-between">
             <dt className="text-slate-400">Subtotal</dt>
             <dd className="font-medium">
-              {currency}
-              {order.subtotal.toLocaleString()}
+              {formatPKR(order.subtotal)}
             </dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-slate-400">Shipping</dt>
             <dd className="font-medium">
-              {order.shippingCost === 0 ? 'Free' : `${currency}${order.shippingCost.toLocaleString()}`}
+              {order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}
             </dd>
           </div>
           <div className="flex justify-between border-t border-slate-200 pt-2 text-base text-slate-800">
             <dt>Total to pay on delivery</dt>
             <dd className="font-semibold">
-              {currency}
-              {order.orderTotal.toLocaleString()}
+              {formatPKR(order.orderTotal)}
             </dd>
           </div>
         </dl>
