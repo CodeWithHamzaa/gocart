@@ -100,3 +100,46 @@ test('the saved address is selected for the order without a dropdown step', asyn
   await expect(dialog).toBeHidden()
   await expect(page.getByText('Mobile Buyer, House 7, Street 3, F-8/2, F-8, Islamabad')).toBeVisible()
 })
+
+// A long, unbroken product name and a seven-digit price are the realistic worst cases for a
+// two-column grid and a three-column cart table at 320px. This one needs an admin to create the
+// product: on a fresh database (CI) it registers the first admin; against a database that already
+// has users, set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD — otherwise it is skipped, not faked.
+test('a long product name and a large price do not break the 320px layout', async ({ page, request }) => {
+  const email = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.com'
+  const password = process.env.E2E_ADMIN_PASSWORD ?? 'E2e-Pass-12345!'
+  let auth = process.env.E2E_ADMIN_EMAIL
+    ? await request.post('/api/users/login', { data: { email, password } })
+    : await request.post('/api/users/first-register', { data: { email, password } })
+  test.skip(!auth.ok(), 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
+  const headers = { Authorization: `JWT ${(await auth.json()).token}` }
+
+  const base = (await (await request.get('/api/products?limit=1&depth=0')).json()).docs[0]
+  const created = await request.post('/api/products', {
+    headers,
+    data: {
+      name: 'Supercalifragilisticexpialidocious-Wireless-Headphones-ABC123',
+      description: 'Layout stress product',
+      mrp: 12345678,
+      price: 1234567,
+      images: base.images,
+      category: base.category,
+      inStock: true,
+    },
+  })
+  expect(created.status()).toBe(201)
+  const id = (await created.json()).doc.id
+  try {
+    await page.goto(`/product/${id}`)
+    await page.getByRole('button', { name: 'Add to Cart' }).click()
+    for (const path of ['/shop', '/', `/product/${id}`, '/cart']) {
+      await page.goto(path)
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow, `${path} overflows by ${overflow}px with a long name and a large price`).toBeLessThanOrEqual(0)
+    }
+  } finally {
+    await request.delete(`/api/products/${id}`, { headers })
+  }
+})

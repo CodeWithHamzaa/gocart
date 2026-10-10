@@ -83,7 +83,7 @@ export default function Cart() {
                             <tr className="max-sm:text-sm">
                                 <th className="text-left">Product</th>
                                 <th>Quantity</th>
-                                <th>Total Price</th>
+                                <th className="max-sm:hidden">Total Price</th>
                                 <th className="max-md:hidden">Remove</th>
                             </tr>
                         </thead>
@@ -100,8 +100,8 @@ export default function Cart() {
                                             <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
                                                 {imageUrl && <Image src={imageUrl} className="h-14 w-auto" alt="" width={45} height={45} />}
                                             </div>
-                                            <div>
-                                                <p className="max-sm:text-sm">{item.name}</p>
+                                            <div className="min-w-0">
+                                                <p className="max-sm:text-sm [overflow-wrap:anywhere]">{item.name}</p>
                                                 <p className="text-xs text-slate-500">{categoryTitle}</p>
                                                 <p>{formatPKR(item.price)}</p>
                                                 {/* M44: below md the "Remove" column is hidden, and this was the only way to
@@ -113,8 +113,12 @@ export default function Cart() {
                                         </td>
                                         <td className="text-center">
                                             <Counter productId={item.id} />
+                                            {/* M44: below sm the separate "Total Price" column is dropped (three columns
+                                                do not fit a 320px phone once a name or price is long); the line total
+                                                sits under the quantity instead. */}
+                                            <p className="sm:hidden mt-1 text-sm font-medium whitespace-nowrap">{formatPKR(item.price * item.quantity)}</p>
                                         </td>
-                                        <td className="text-center whitespace-nowrap">{formatPKR(item.price * item.quantity)}</td>
+                                        <td className="max-sm:hidden text-center whitespace-nowrap">{formatPKR(item.price * item.quantity)}</td>
                                         <td className="text-center max-md:hidden">
                                             <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="inline-flex items-center justify-center size-11 text-red-600 hover:bg-red-50 rounded-full active:scale-95 transition-all">
                                                 <Trash2Icon size={18} />

@@ -55,8 +55,9 @@ const ProductDetails = ({ product, shipping }) => {
                     {mainImage && <Image src={mainImage} alt={product.name} width={250} height={250} priority fetchPriority="high" />}
                 </div>
             </div>
-            <div className="flex-1">
-                <h1 className="text-3xl font-semibold text-slate-800">{product.name}</h1>
+            <div className="flex-1 min-w-0">
+                {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
+                <h1 className="text-3xl font-semibold text-slate-800 [overflow-wrap:anywhere]">{product.name}</h1>
                 <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
                     <p>{formatPKR(product.price)}</p>
                     <p className="text-xl text-slate-500 line-through">{formatPKR(product.mrp)}</p>
