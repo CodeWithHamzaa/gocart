@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { adminHeaders } from './admin'
 
 // M44 guard rails, at the narrowest phone width we support (320px): no horizontal scroll on any
 // storefront page, the header's controls are reachable and large enough to tap, and a cart line
@@ -106,17 +107,12 @@ test('the saved address is selected for the order without a dropdown step', asyn
 // product: on a fresh database (CI) it registers the first admin; against a database that already
 // has users, set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD — otherwise it is skipped, not faked.
 test('a long product name and a large price do not break the 320px layout', async ({ page, request }) => {
-  const email = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.com'
-  const password = process.env.E2E_ADMIN_PASSWORD ?? 'E2e-Pass-12345!'
-  let auth = process.env.E2E_ADMIN_EMAIL
-    ? await request.post('/api/users/login', { data: { email, password } })
-    : await request.post('/api/users/first-register', { data: { email, password } })
-  test.skip(!auth.ok(), 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
-  const headers = { Authorization: `JWT ${(await auth.json()).token}` }
+  const headers = await adminHeaders(request)
+  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
 
   const base = (await (await request.get('/api/products?limit=1&depth=0')).json()).docs[0]
   const created = await request.post('/api/products', {
-    headers,
+    headers: headers!,
     data: {
       name: 'Supercalifragilisticexpialidocious-Wireless-Headphones-ABC123',
       description: 'Layout stress product',
@@ -140,6 +136,6 @@ test('a long product name and a large price do not break the 320px layout', asyn
       expect(overflow, `${path} overflows by ${overflow}px with a long name and a large price`).toBeLessThanOrEqual(0)
     }
   } finally {
-    await request.delete(`/api/products/${id}`, { headers })
+    await request.delete(`/api/products/${id}`, { headers: headers! })
   }
 })

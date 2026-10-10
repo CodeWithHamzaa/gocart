@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { adminHeaders } from './admin'
 
 // M40–M43 guard rails: what a crawler gets from a plain HTTP request (no JavaScript), the
 // per-page metadata, the sitemap and robots files, and the product structured data. These
@@ -82,4 +83,30 @@ test('private and transactional pages are noindex (M41)', async ({ request }) =>
   const search = await (await request.get('/shop?search=lamp')).text()
   expect(meta(search, 'name', 'robots')).toContain('noindex')
   expect(canonical(search)).toBe(`${SITE}/shop`)
+})
+
+// A category an admin creates AFTER the build was never pre-rendered, so its page is rendered on
+// demand in production. That path once returned 500 (DYNAMIC_SERVER_USAGE: the page reads
+// `searchParams` for pagination, which a statically cached page cannot do) while every category
+// that existed at build time worked — so only a category created after deploy exposes it.
+test('a category created after the build renders on demand, and paginates', async ({ request }) => {
+  const headers = await adminHeaders(request)
+  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
+  const slug = `e2e-on-demand-${Date.now()}`
+  const created = await request.post('/api/categories', {
+    headers: headers!,
+    data: { title: 'E2E On Demand', slug },
+  })
+  expect(created.status()).toBe(201)
+  const id = (await created.json()).doc.id
+  try {
+    const page = await request.get(`/category/${slug}`)
+    expect(page.status(), 'a new category renders').toBe(200)
+    const html = await page.text()
+    expect(html).toContain('E2E On Demand')
+    expect(canonical(html)).toBe(`${SITE}/category/${slug}`)
+    expect((await request.get(`/category/${slug}?page=2`)).status(), 'an out-of-range page is a 404').toBe(404)
+  } finally {
+    await request.delete(`/api/categories/${id}`, { headers: headers! })
+  }
 })

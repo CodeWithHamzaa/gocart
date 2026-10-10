@@ -2,11 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
-import {
-  getCategoryBySlug,
-  getTopLevelCategories,
-  getProductsByCategory,
-} from '@/lib/payload/categories'
+import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
 import { getSettings } from '@/lib/payload/settings'
 import { pageMetadata } from '@/lib/seo'
@@ -15,12 +11,16 @@ import { pageMetadata } from '@/lib/seo'
 // docs/CATEGORY_REQUIREMENTS.md and ADR-007. `.tsx`, not `.jsx`, per M2a's
 // rule that new files are TypeScript.
 
-// Static-by-default, revalidated rather than rendered per request — the
-// requirements doc's explicit choice for this route, unlike M23's home page
-// (which needs per-request freshness for admin isFeatured curation). Category
-// edits are infrequent and slugs are stable, so an hour-old page is an
-// acceptable staleness window; revisit alongside M45's caching pass.
-export const revalidate = 3600
+// Rendered per request (M49). This route was designed static-by-default with `revalidate = 3600`
+// (M27a), but it reads `searchParams` for `?page=N`, which a statically cached page cannot do:
+// every category that existed at BUILD time worked, but a category created afterwards was
+// rendered on demand and crashed in production with DYNAMIC_SERVER_USAGE (a 500) — found by
+// running the production image, not by the dev server. The page is dynamic by nature, so it says
+// so. Two consequences: no `generateStaticParams` (nothing to pre-render, and the image build no
+// longer needs a database), and one cheap catalog query per request. Pagination, canonicals and
+// 404s are unchanged. If this ever needs caching, split page 1 from `?page=N` or add on-demand
+// revalidation (ADR-030/031).
+export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 24
 
@@ -32,17 +32,6 @@ type PageProps = {
 function parsePage(raw: string | undefined): number {
   const page = Number(raw)
   return Number.isInteger(page) && page >= 1 ? page : 1
-}
-
-// Every published category slug (parent and child) — there is no
-// publish/draft field on Categories, so this is simply every category.
-export async function generateStaticParams() {
-  const topLevel = await getTopLevelCategories()
-  const slugs = topLevel.flatMap((category) => [
-    category.slug,
-    ...category.children.map((child) => child.slug),
-  ])
-  return slugs.map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {

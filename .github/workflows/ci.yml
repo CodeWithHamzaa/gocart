@@ -61,3 +61,30 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  # M49: the production image must build with NO database available, run as an unprivileged user,
+  # refuse to start without its required settings, and carry no secrets.
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the production image (no database)
+        run: docker build --target production -t gocart:ci .
+      - name: Runs as an unprivileged user
+        run: |
+          uid="$(docker run --rm --entrypoint id gocart:ci -u)"
+          echo "uid=$uid"
+          test "$uid" != "0"
+      - name: Refuses to start without its required settings
+        run: |
+          if docker run --rm gocart:ci; then
+            echo "the container started without PAYLOAD_SECRET and DATABASE_URI"
+            exit 1
+          fi
+      - name: No secrets baked into the image environment
+        run: |
+          if docker inspect --format '{{json .Config.Env}}' gocart:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+            echo "a secret or connection string is baked into the image"
+            exit 1
+          fi
