@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Security
+
+- **Order immutability — ADR-028 (2026-10-10).** `collections/Orders.ts`: field-level `update: () => false` on `orderNumber`, `orderTotal`, `shippingCost`, the `items` array and `items[].product` / `quantity` / `unitPrice` (create and collection access unchanged). Owner-approved authorization change that narrows access.
+  - **QA found and fixed a real hole:** with sub-field locks only, an admin REST `PATCH` could remove a line-item row while `orderTotal` stayed put. Locking the array itself closes it.
+  - **Verified (live server, throwaway local PostgreSQL):** 26/26 REST + GraphQL checks — admin PATCH of each locked field, and of `items` (edit quantity / unitPrice / product, remove, reorder, append, replace, empty, null) leave stored values unchanged; `status`/`isPaid`/phone/city still editable; full-document PATCH as the admin UI sends it updates status with locks intact; anonymous REST and GraphQL read/create/update rejected (403). Browser: locked fields read-only on desktop and mobile, no add/remove/reorder controls, a status change saved through the UI persisted. Guest `createOrder` still writes an order with server-derived prices; guest lookup by `(orderNumber, phone)` still finds it (wrong phone: not found). `lint`, `type-check`, `build` pass.
+  - **Not covered:** no automated tests exist (GATES.md); QA was manual scripts, not committed. Schema unchanged by reasoning (access config only) — `pg_dump` diff not run.
+
 ### Changed
 
 - **Admin verification batch — `M34`, `M37`, `M38`, `M39` (2026-10-09).**

@@ -689,10 +689,10 @@ The data the confirmation screen needs is nearly all already in the browser: the
 
 The price fields have a related problem. `items[].unitPrice`, `orderTotal`, and `shippingCost` are the snapshot of what the customer was quoted and will pay at the door (ADR-018, written by `createOrder` per ADR-026). They were plain editable inputs, and their own descriptions admit that editing one never recalculates the others. An accidental edit therefore desynchronises the order with no warning, on a COD order where the amount on the sheet is the amount the courier collects.
 
-**Decision**: Add field-level access `update: () => false` (create left unchanged) to four fields in `collections/Orders.ts`:
+**Decision**: Add field-level access `update: () => false` (create left unchanged) to these fields in `collections/Orders.ts` (list extended by the 2026-10-10 amendment under Consequences):
 
 1. `orderNumber`
-2. `items[].unitPrice`
+2. `items` (the array), `items[].product`, `items[].quantity`, `items[].unitPrice`
 3. `orderTotal`
 4. `shippingCost`
 
@@ -714,7 +714,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 **Consequences**:
 
 - If an amount genuinely has to change after a phone confirmation, the admin sets the order to `CANCELLED` and creates a replacement order by hand in `/admin`. Creation stays allowed, so this path remains open.
-- **Open item for the owner — not decided here:** `items[].quantity` and `items[].product` remain editable, so an admin can still desynchronise line items from the now-locked `orderTotal`. The two options are to lock `items` entirely, or to add a recalculation hook. Recommended for the owner's decision; if taken, it needs its own ADR or an amendment proposal.
+- **Amended 2026-10-10 (owner decision, in session):** `items[].quantity`, `items[].product` and the `items` array itself are locked too — any field that alters financial integrity or bypasses `orderTotal` is immutable after creation. QA of the first cut (sub-field locks only) found a real hole: an admin REST `PATCH` could still **remove a line-item row** while `orderTotal` stayed unchanged (a 2-row order became 1 row, total still 250). Field access on the array (`access.update: () => false`) closes add, remove and reorder; the sub-field locks stay as defence in depth. The recalculation-hook option is not taken.
 - The admin UI renders the four locked fields read-only; Payload derives this from field access, so `admin.readOnly` on `orderNumber` becomes redundant (it may stay).
 - No schema or migration change — access is configuration.
 - The hand-written types in `lib/payload/orders.ts` are unaffected (no field is added, removed, or retyped).

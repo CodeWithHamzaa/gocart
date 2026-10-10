@@ -81,6 +81,10 @@ export const Orders: CollectionConfig = {
       type: 'array',
       required: true,
       minRows: 1,
+      // ADR-028: the sub-field locks below stop edits to existing rows, but not removing,
+      // adding or reordering rows (QA showed a PATCH could drop a row while orderTotal
+      // stayed put). Locking the array itself closes that; rows exist only from creation.
+      access: { update: () => false },
       fields: [
         {
           name: 'product',
@@ -88,12 +92,22 @@ export const Orders: CollectionConfig = {
           relationTo: 'products',
           hasMany: false,
           required: true,
+          access: { update: () => false },
+          admin: {
+            description:
+              'Cannot be changed after the order is created (ADR-028); to change the items, cancel the order and create a replacement.',
+          },
         },
         {
           name: 'quantity',
           type: 'number',
           required: true,
           min: 1,
+          access: { update: () => false },
+          admin: {
+            description:
+              'Cannot be changed after the order is created (ADR-028) — orderTotal was computed from it; to change the items, cancel the order and create a replacement.',
+          },
         },
         {
           name: 'unitPrice',
