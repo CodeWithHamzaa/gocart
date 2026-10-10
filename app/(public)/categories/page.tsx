@@ -73,7 +73,7 @@ export default async function CategoriesPage() {
                         <Link
                           key={child.id}
                           href={`/category/${child.slug}`}
-                          className="px-3 py-1 bg-white rounded-full text-xs text-slate-600 hover:bg-slate-600 hover:text-white transition-all"
+                          className="inline-flex items-center min-h-11 px-4 bg-white rounded-full text-sm text-slate-600 hover:bg-slate-600 hover:text-white transition-all"
                         >
                           {child.title}
                         </Link>
@@ -87,7 +87,7 @@ export default async function CategoriesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
             <p>No categories yet.</p>
-            <Link href="/shop" className="text-green-600 text-sm">View all products</Link>
+            <Link href="/shop" className="inline-flex items-center min-h-11 text-green-700 text-sm">View all products</Link>
           </div>
         )}
       </div>

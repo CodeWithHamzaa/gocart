@@ -739,3 +739,28 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 **Rejected alternatives**: lakh/crore grouping (owner specified `Rs. 1,500`; Western grouping agrees for four-digit amounts, and the choice for larger amounts is flagged below); a city dropdown/allowlist (ADR-018); accepting `+92` but storing it as typed (the lookup key would then depend on how the customer typed it, ADR-024); validating `Orders.phone` unconditionally (would block saving old orders).
 
 **Consequences / open items for the owner**: (a) a customer who only has a landline cannot order — widen `PK_MOBILE` in `lib/validation/pk.ts` if that matters; (b) orders keep the number in `03XXXXXXXXX` form, so a customer who typed `+92…` sees `03…` in the admin — this is intended; (c) city names with digits ("Sector 11") are rejected; (d) amounts of one million or more would group as `1,000,000`, not `10,00,000`; (e) the checkout form still collects an email address that nothing stores or uses (found, not changed). No schema or migration change.
+
+---
+
+## ADR-030: Mobile performance configuration — blocking metadata for every user agent, media cache headers, and what `M45` deliberately did not change
+
+**Status**: **Accepted (2026-10-10)** as an implementation decision inside `M45` (configuration in `next.config.mjs`; no schema, access or ADR-level behaviour change). It reverses no Accepted ADR. The owner may revisit either setting.
+
+**Context**: Lighthouse on the production build found two real, measurable problems and several things that are *not* worth changing yet.
+
+1. **`<title>`/`<meta>` outside `<head>`.** Next.js 15.4 streams metadata into the `<body>` for ordinary browsers on statically cached pages (the category pages) and moves it into `<head>` with JavaScript; only user agents matching `htmlLimitedBots` get it in `<head>` up front. Lighthouse reported "Document does not have a meta description" on a page whose HTML did contain one. Googlebot is on the default list, but a link-preview or crawler client that does not run JavaScript (and any bot not on the list) would see a head with no description, canonical or Open Graph tags — the data `M41` exists to provide.
+2. **Uploaded media has no `Cache-Control` and no ETag** (Payload's file route sets neither), so every repeat visit re-downloaded every product image.
+
+**Decision**:
+
+- `htmlLimitedBots: /.*/` — every user agent gets blocking metadata, so the head is complete in the first HTML response. Cost: the head waits for `generateMetadata`, which on these pages is a cached read.
+- `Cache-Control: public, max-age=86400, stale-while-revalidate=604800` on `/api/media/file/:path*`. One day, not `immutable`: an admin can replace a file under the same name, and a changed image should appear within a day.
+
+**Deliberately not changed** (each with the reason, so it is not mistaken for an oversight):
+
+- **`images.unoptimized: true` stays.** Removing it and making the optimizer work under Docker is `M51`'s scope and depends on `M49`. This is also the biggest real-world mobile lever (the seeded images are ~4 KB placeholders; real product photos are not), so **the local Lighthouse numbers below say little about image weight.**
+- **`force-dynamic` stays on the home, shop and product pages.** Moving them to short-lived ISR would let `bfcache` restore them and cut server time, but would show a stale price or stock state for up to the revalidation window after an admin edit, and checkout charges the server price. The correct design is on-demand revalidation from `Products`/`Categories`/`Settings` `afterChange` hooks (immediate freshness, long cache) — a change to those collections, so it needs its own decision. Recorded as a follow-up, not done.
+- **Render-blocking CSS, unused/legacy JavaScript:** one 15 KB stylesheet and Next's shared 101 kB chunk; no cheap, low-risk change (inlining CSS is experimental in this Next version).
+- **Fonts:** already self-hosted by `next/font` with three weights; only `display: "swap"` was made explicit.
+
+**Consequences**: the head is complete for every crawler; repeat visits reuse media for a day. If media is ever served from object storage (ADR-020's designated successor), the header rule moves with it.

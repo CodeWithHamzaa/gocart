@@ -131,21 +131,21 @@ const OrderSummary = ({ totalPrice, items }) => {
     return (
         <div className='w-full max-w-lg lg:max-w-[340px] bg-slate-50/30 border border-slate-200 text-slate-500 text-sm rounded-xl p-7'>
             <h2 className='text-xl font-medium text-slate-600'>Payment Summary</h2>
-            <p className='text-slate-400 text-xs my-4'>Payment Method</p>
+            <p className='text-slate-500 text-xs my-4'>Payment Method</p>
             <p className='text-slate-700 font-medium'>Cash on Delivery (COD)</p>
-            <div className='my-4 py-4 border-y border-slate-200 text-slate-400'>
+            <div className='my-4 py-4 border-y border-slate-200 text-slate-500'>
                 <p>Address</p>
                 {
                     selectedAddress ? (
                         <div className='flex gap-2 items-center'>
                             <p>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
-                            <SquarePenIcon onClick={() => setSelectedAddress(null)} className='cursor-pointer' size={18} />
+                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex items-center justify-center size-11 shrink-0'><SquarePenIcon size={18} aria-hidden='true' /></button>
                         </div>
                     ) : (
                         <div>
                             {
                                 addressList.length > 0 && (
-                                    <select className='border border-slate-400 p-2 w-full my-3 outline-none rounded' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
+                                    <select aria-label='Delivery address' className='border border-slate-400 min-h-11 px-2 w-full my-3 outline-none rounded' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
                                         <option value="">Select Address</option>
                                         {
                                             addressList.map((address, index) => (
@@ -155,14 +155,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                                     </select>
                                 )
                             }
-                            <button className='flex items-center gap-1 text-slate-600 mt-1' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} /></button>
+                            <button type='button' className='inline-flex items-center gap-1 min-h-11 text-slate-700' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
                         </div>
                     )
                 }
             </div>
             <div className='pb-4 border-b border-slate-200'>
                 <div className='flex justify-between'>
-                    <div className='flex flex-col gap-1 text-slate-400'>
+                    <div className='flex flex-col gap-1 text-slate-500'>
                         <p>Subtotal:</p>
                         <p>Shipping:</p>
                     </div>
@@ -177,13 +177,15 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <p className='font-medium text-right'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
-                <p className='text-xs text-slate-400 pb-2'>
+                <p className='text-xs text-slate-500 pb-2'>
                     {settingsFailed ? 'Could not load shipping charges. Please refresh the page.' : 'Calculating shipping...'}
                 </p>
             )}
-            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
 
-            {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} />}
+            {/* M44: a newly saved address is selected straight away; before, the customer had to find
+                it in the dropdown and Place Order failed with "select an address". */}
+            {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} onSaved={setSelectedAddress} />}
 
         </div>
     )

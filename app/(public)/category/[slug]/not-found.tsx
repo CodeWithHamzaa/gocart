@@ -11,8 +11,8 @@ export default function CategoryNotFound() {
           We couldn&apos;t find the category you&apos;re looking for. It may have moved or no longer exists.
         </p>
         <div className="flex gap-4 text-sm">
-          <Link href="/categories" className="text-green-600">Browse categories</Link>
-          <Link href="/shop" className="text-green-600">View all products</Link>
+          <Link href="/categories" className="inline-flex items-center min-h-11 text-green-700">Browse categories</Link>
+          <Link href="/shop" className="inline-flex items-center min-h-11 text-green-700">View all products</Link>
         </div>
       </div>
     </div>

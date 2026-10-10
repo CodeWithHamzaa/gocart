@@ -63,7 +63,7 @@ npm run build          # MUST pass
 | `npm run type-check` | ✅ Available |
 | `npm run build` | ✅ Available |
 | `npm run lint` | ✅ Available since 2026-10-09 (`eslint.config.mjs`, `next/core-web-vitals`). Report its real output |
-| Automated tests | ◐ One Playwright golden-path test (+ an out-of-stock check) in `e2e/` (`M56a`): `npm run test:e2e` against a production build and a seeded throwaway PostgreSQL. It is deliberately minimal — **no unit tests, and no coverage of admin, lookup edge cases, validation rules or copy**; `e2e/seo.spec.ts` (`M40`–`M43`) also checks what a crawler receives (initial HTML, metadata, sitemap, robots, JSON-LD) |
+| Automated tests | ◐ One Playwright golden-path test (+ an out-of-stock check) in `e2e/` (`M56a`): `npm run test:e2e` against a production build and a seeded throwaway PostgreSQL. It is deliberately minimal — **no unit tests, and no coverage of admin, lookup edge cases, validation rules or copy**; `e2e/seo.spec.ts` (`M40`–`M43`) also checks what a crawler receives (initial HTML, metadata, sitemap, robots, JSON-LD), and `e2e/mobile.spec.ts` (`M44`) guards 320px layout, 44px header targets and mobile cart/address flows |
 | CI | ✅ `.github/workflows/ci.yml`: `checks` (type-check, lint) and `e2e` (PostgreSQL service, seed, **`build`**, golden-path test) on every PR and push to `main` |
 
 Until those are repaired, **manual verification is the only regression net.** Treat it

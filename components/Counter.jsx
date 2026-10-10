@@ -17,10 +17,10 @@ const Counter = ({ productId }) => {
     }
 
     return (
-        <div className="inline-flex items-center gap-1 sm:gap-3 px-3 py-1 rounded border border-slate-200 max-sm:text-sm text-slate-600">
-            <button onClick={removeFromCartHandler} className="p-1 select-none">-</button>
-            <p className="p-1">{cartItems[productId]}</p>
-            <button onClick={addToCartHandler} className="p-1 select-none">+</button>
+        <div className="inline-flex items-center rounded border border-slate-200 max-sm:text-sm text-slate-600">
+            <button type="button" aria-label="Decrease quantity" onClick={removeFromCartHandler} className="size-11 select-none">-</button>
+            <p className="min-w-6 text-center" aria-live="polite">{cartItems[productId]}</p>
+            <button type="button" aria-label="Increase quantity" onClick={addToCartHandler} className="size-11 select-none">+</button>
         </div>
     )
 }

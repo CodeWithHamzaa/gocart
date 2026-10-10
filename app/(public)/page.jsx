@@ -51,7 +51,7 @@ export default async function Home() {
             <Hero freeShippingThreshold={settings.freeShippingThreshold} startingPrice={startingPrice} categories={categories} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} />
-            <OurSpecs />
+            <OurSpecs shipping={{ flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }} />
         </div>
     );
 }

@@ -5,6 +5,7 @@ import PageTitle from "@/components/PageTitle";
 import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
 import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from '@/lib/currency'
@@ -82,7 +83,7 @@ export default function Cart() {
                             <tr className="max-sm:text-sm">
                                 <th className="text-left">Product</th>
                                 <th>Quantity</th>
-                                <th>Total Price</th>
+                                <th className="max-sm:hidden">Total Price</th>
                                 <th className="max-md:hidden">Remove</th>
                             </tr>
                         </thead>
@@ -99,18 +100,27 @@ export default function Cart() {
                                             <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
                                                 {imageUrl && <Image src={imageUrl} className="h-14 w-auto" alt="" width={45} height={45} />}
                                             </div>
-                                            <div>
-                                                <p className="max-sm:text-sm">{item.name}</p>
+                                            <div className="min-w-0">
+                                                <p className="max-sm:text-sm [overflow-wrap:anywhere]">{item.name}</p>
                                                 <p className="text-xs text-slate-500">{categoryTitle}</p>
                                                 <p>{formatPKR(item.price)}</p>
+                                                {/* M44: below md the "Remove" column is hidden, and this was the only way to
+                                                    remove a line on a phone (decrement to zero). */}
+                                                <button type="button" onClick={() => handleDeleteItemFromCart(item.id)} className="md:hidden mt-1 inline-flex items-center gap-1 min-h-11 text-sm text-red-700">
+                                                    <Trash2Icon size={16} aria-hidden="true" /> Remove
+                                                </button>
                                             </div>
                                         </td>
                                         <td className="text-center">
                                             <Counter productId={item.id} />
+                                            {/* M44: below sm the separate "Total Price" column is dropped (three columns
+                                                do not fit a 320px phone once a name or price is long); the line total
+                                                sits under the quantity instead. */}
+                                            <p className="sm:hidden mt-1 text-sm font-medium whitespace-nowrap">{formatPKR(item.price * item.quantity)}</p>
                                         </td>
-                                        <td className="text-center">{formatPKR(item.price * item.quantity)}</td>
+                                        <td className="max-sm:hidden text-center whitespace-nowrap">{formatPKR(item.price * item.quantity)}</td>
                                         <td className="text-center max-md:hidden">
-                                            <button onClick={() => handleDeleteItemFromCart(item.id)} className=" text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all">
+                                            <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="inline-flex items-center justify-center size-11 text-red-600 hover:bg-red-50 rounded-full active:scale-95 transition-all">
                                                 <Trash2Icon size={18} />
                                             </button>
                                         </td>
@@ -125,8 +135,9 @@ export default function Cart() {
             </div>
         </div>
     ) : (
-        <div className="min-h-[80vh] mx-6 flex items-center justify-center text-slate-400">
+        <div className="min-h-[80vh] mx-6 flex flex-col gap-4 items-center justify-center text-slate-600">
             <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
+            <Link href="/shop" className="inline-flex items-center justify-center min-h-11 px-6 rounded bg-slate-800 text-white text-sm font-medium hover:bg-slate-900">Browse products</Link>
         </div>
     )
 }

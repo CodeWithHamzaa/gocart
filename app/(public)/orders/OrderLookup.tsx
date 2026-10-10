@@ -9,7 +9,7 @@ import { lookupOrderAction } from './actions'
 import type { LookupOrderActionResult } from './actions'
 import OrderItem from '@/components/OrderItem'
 
-const inputClass = 'w-full rounded border border-slate-300 p-2 px-4 outline-none focus:border-slate-500'
+const inputClass = 'w-full min-h-11 rounded border border-slate-300 p-2 px-4 outline-none focus:border-slate-500'
 
 export function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -84,7 +84,7 @@ export function OrderLookup() {
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-slate-800 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+            className="min-h-11 rounded bg-slate-800 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}
           </button>
