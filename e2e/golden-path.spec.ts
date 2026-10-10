@@ -74,8 +74,10 @@ test('golden path: browse, add to cart, guest checkout, COD order, lookup', asyn
   await page.getByText('SAVE ADDRESS').click()
   await expect(page.getByText('SAVE ADDRESS')).toBeHidden()
 
+  // The address just saved is selected for the order straight away (M44) — no dropdown step.
+  await expect(page.getByText('Test Buyer, House 5, Street 12, G-9/1, G-9, Islamabad')).toBeVisible()
+
   // Place the Cash on Delivery order.
-  await page.locator('select').selectOption({ index: 1 })
   await page.getByRole('button', { name: /place order/i }).click()
   await expect(page).toHaveURL(/\/order-confirmation$/)
   const body = page.locator('body')

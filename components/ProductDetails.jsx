@@ -8,6 +8,7 @@ import Image from "next/image";
 import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from "@/lib/currency";
+import { deliveryNote } from "@/lib/delivery";
 
 // M25: adapted for real Payload data.
 // - `images` are Media relationships, resolved to `.url` the same way
@@ -16,20 +17,8 @@ import { formatPKR } from "@/lib/currency";
 //   out of scope for v1 (ADR-016) — same fix M46 already scopes for this
 //   file, pulled forward because it read `product.rating`, which real
 //   products don't have, and would have thrown before rendering.
-// M55a: `shipping` is read from the Settings global by the product page (server) and
-// passed in, so the delivery line can never disagree with what checkout charges
-// (ADR-018: flat rate, free at or above the threshold). Null values are not guessed.
-const deliveryNote = (shipping) => {
-    const flat = shipping?.flatRate
-    const threshold = shipping?.freeShippingThreshold
-    if (typeof flat !== 'number') return 'Delivery charges are shown at checkout'
-    if (flat === 0) return 'Free delivery across Pakistan'
-    if (typeof threshold === 'number' && threshold > 0) {
-        return `Delivery ${formatPKR(flat)} · free on orders of ${formatPKR(threshold)} or more`
-    }
-    return `Delivery ${formatPKR(flat)} across Pakistan`
-}
-
+// M55a: `shipping` is read from the Settings global by the product page (server) and passed in,
+// so the delivery line can never disagree with what checkout charges (see lib/delivery.ts).
 const ProductDetails = ({ product, shipping }) => {
 
     const productId = product.id;
@@ -56,13 +45,14 @@ const ProductDetails = ({ product, shipping }) => {
             <div className="flex max-sm:flex-col-reverse gap-3">
                 <div className="flex sm:flex-col gap-3">
                     {images.map((image, index) => (
-                        <div key={index} onClick={() => setMainImage(images[index])} className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer">
+                        <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer">
                             <Image src={image} className="group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} />
-                        </div>
+                        </button>
                     ))}
                 </div>
                 <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg ">
-                    {mainImage && <Image src={mainImage} alt="" width={250} height={250} />}
+                    {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
+                    {mainImage && <Image src={mainImage} alt={product.name} width={250} height={250} priority fetchPriority="high" />}
                 </div>
             </div>
             <div className="flex-1">
@@ -98,8 +88,8 @@ const ProductDetails = ({ product, shipping }) => {
                 </div>
                 <hr className="border-gray-300 my-5" />
                 <div className="flex flex-col gap-4 text-slate-500">
-                    <p className="flex gap-3"> <TruckIcon className="text-slate-400" /> {deliveryNote(shipping)} </p>
-                    <p className="flex gap-3"> <BanknoteIcon className="text-slate-400" /> Cash on Delivery — pay when your order arrives </p>
+                    <p className="flex gap-3"> <TruckIcon className="text-slate-500" /> {deliveryNote(shipping)} </p>
+                    <p className="flex gap-3"> <BanknoteIcon className="text-slate-500" /> Cash on Delivery — pay when your order arrives </p>
                 </div>
 
             </div>

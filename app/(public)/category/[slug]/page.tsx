@@ -124,7 +124,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
               <Link
                 key={child.id}
                 href={`/category/${child.slug}`}
-                className="px-4 py-2 bg-slate-100 rounded-lg text-slate-600 text-sm hover:bg-slate-600 hover:text-white transition-all"
+                className="inline-flex items-center min-h-11 px-4 bg-slate-100 rounded-lg text-slate-600 text-sm hover:bg-slate-600 hover:text-white transition-all"
               >
                 {child.title}
               </Link>
@@ -135,16 +135,16 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         {/* Product grid */}
         {products.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 xl:gap-8 my-10">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, index) => (
+              <ProductCard key={product.id} product={product} priority={index < 4} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
             <p>No products in this category yet.</p>
             <div className="flex gap-4 text-sm">
-              <Link href="/categories" className="text-green-600">Browse categories</Link>
-              <Link href="/shop" className="text-green-600">View all products</Link>
+              <Link href="/categories" className="inline-flex items-center min-h-11 text-green-700">Browse categories</Link>
+              <Link href="/shop" className="inline-flex items-center min-h-11 text-green-700">View all products</Link>
             </div>
           </div>
         )}
@@ -153,9 +153,9 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 my-10 text-sm text-slate-600">
             {page > 1 ? (
-              <Link href={pageHref(page - 1)} className="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200">Previous</Link>
+              <Link href={pageHref(page - 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-100 hover:bg-slate-200">Previous</Link>
             ) : (
-              <span className="px-3 py-1.5 rounded bg-slate-50 text-slate-300">Previous</span>
+              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-50 text-slate-500">Previous</span>
             )}
             <div className="flex gap-2">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
@@ -163,21 +163,21 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`px-3 py-1.5 rounded ${n === page ? 'bg-slate-800 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
+                  className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded ${n === page ? 'bg-slate-800 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
                 >
                   {n}
                 </Link>
               ))}
             </div>
             {page < totalPages ? (
-              <Link href={pageHref(page + 1)} className="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200">Next</Link>
+              <Link href={pageHref(page + 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-100 hover:bg-slate-200">Next</Link>
             ) : (
-              <span className="px-3 py-1.5 rounded bg-slate-50 text-slate-300">Next</span>
+              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-50 text-slate-500">Next</span>
             )}
           </div>
         )}
 
-        <p className="text-xs text-slate-400 text-center mb-10">
+        <p className="text-xs text-slate-500 text-center mb-10">
           Page {page} of {Math.max(totalPages, 1)} — {totalDocs} product{totalDocs === 1 ? '' : 's'}
         </p>
       </div>

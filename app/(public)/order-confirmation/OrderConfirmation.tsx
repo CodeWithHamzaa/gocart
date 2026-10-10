@@ -11,7 +11,7 @@ import type { LastOrder } from '@/lib/order-confirmation'
 import { formatPKR } from '@/lib/currency'
 
 const linkButton =
-  'inline-flex items-center justify-center rounded px-6 py-2.5 text-sm font-medium transition active:scale-95'
+  'inline-flex min-h-11 items-center justify-center rounded px-6 py-2.5 text-sm font-medium transition active:scale-95'
 
 export function OrderConfirmation() {
   const [state, setState] = useState<'loading' | 'found' | 'missing'>('loading')
@@ -80,7 +80,7 @@ export function OrderConfirmation() {
         </div>
 
         <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/30 p-5">
-          <p className="text-xs text-slate-400">Your order number</p>
+          <p className="text-xs text-slate-500">Your order number</p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <p className="break-all font-mono text-xl font-semibold text-slate-800 sm:text-2xl">
               {order.orderNumber}
@@ -105,9 +105,9 @@ export function OrderConfirmation() {
             <li key={index} className="flex justify-between gap-4 py-3 text-sm">
               <div className="min-w-0">
                 <p className="break-words text-slate-700">
-                  {item.name} <span className="text-slate-400">x {item.quantity}</span>
+                  {item.name} <span className="text-slate-500">x {item.quantity}</span>
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   {formatPKR(item.unitPrice)} each
                 </p>
               </div>
@@ -120,13 +120,13 @@ export function OrderConfirmation() {
 
         <dl className="mt-4 space-y-1 text-sm">
           <div className="flex justify-between">
-            <dt className="text-slate-400">Subtotal</dt>
+            <dt className="text-slate-500">Subtotal</dt>
             <dd className="font-medium">
               {formatPKR(order.subtotal)}
             </dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-slate-400">Shipping</dt>
+            <dt className="text-slate-500">Shipping</dt>
             <dd className="font-medium">
               {order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}
             </dd>

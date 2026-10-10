@@ -21,7 +21,7 @@ const OrderItem = ({ order }) => {
         <div className="rounded-xl border border-slate-200 bg-slate-50/30 p-5 text-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p className="text-xs text-slate-400">Order number</p>
+                    <p className="text-xs text-slate-500">Order number</p>
                     <p className="break-all font-mono text-base font-semibold text-slate-800">{order.orderNumber}</p>
                     {!Number.isNaN(placedOn.getTime()) && <p className="mt-1 text-slate-500">{placedOn.toDateString()}</p>}
                 </div>
@@ -32,8 +32,8 @@ const OrderItem = ({ order }) => {
                 {order.items.map((item, index) => (
                     <li key={index} className="flex justify-between gap-4 py-3">
                         <div className="min-w-0">
-                            <p className="break-words text-slate-700">{item.name} <span className="text-slate-400">x {item.quantity}</span></p>
-                            <p className="text-xs text-slate-400">{formatPKR(item.unitPrice)} each</p>
+                            <p className="break-words text-slate-700">{item.name} <span className="text-slate-500">x {item.quantity}</span></p>
+                            <p className="text-xs text-slate-500">{formatPKR(item.unitPrice)} each</p>
                         </div>
                         <p className="shrink-0 font-medium">{formatPKR(item.unitPrice * item.quantity)}</p>
                     </li>
@@ -42,11 +42,11 @@ const OrderItem = ({ order }) => {
 
             <dl className="mt-4 space-y-1">
                 <div className="flex justify-between">
-                    <dt className="text-slate-400">Subtotal</dt>
+                    <dt className="text-slate-500">Subtotal</dt>
                     <dd className="font-medium">{formatPKR(order.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                    <dt className="text-slate-400">Shipping</dt>
+                    <dt className="text-slate-500">Shipping</dt>
                     <dd className="font-medium">{order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}</dd>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-2 text-base text-slate-800">
@@ -57,7 +57,7 @@ const OrderItem = ({ order }) => {
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
                 <div>
-                    <p className="text-xs text-slate-400">Delivery details</p>
+                    <p className="text-xs text-slate-500">Delivery details</p>
                     <p className="text-slate-700">{order.delivery.name}</p>
                     <p>{order.delivery.phone}</p>
                     <p>{order.delivery.address}</p>
@@ -65,7 +65,7 @@ const OrderItem = ({ order }) => {
                     <p>{order.delivery.city}</p>
                 </div>
                 <div>
-                    <p className="text-xs text-slate-400">Payment</p>
+                    <p className="text-xs text-slate-500">Payment</p>
                     <p className="text-slate-700">Cash on Delivery (COD)</p>
                     <p>{order.isPaid ? 'Paid' : 'Unpaid'}</p>
                 </div>

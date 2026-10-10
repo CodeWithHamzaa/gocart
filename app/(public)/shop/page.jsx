@@ -43,7 +43,7 @@ export default async function Shop({ searchParams }) {
                     )}
                 </h1>
                 <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
-                    {products.map((product) => <ProductCard key={product.id} product={product} />)}
+                    {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                 </div>
             </div>
         </div>

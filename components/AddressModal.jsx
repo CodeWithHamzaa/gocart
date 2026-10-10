@@ -29,7 +29,7 @@ const VALIDATORS = {
     area: validateArea,
 }
 
-const AddressModal = ({ setShowAddressModal }) => {
+const AddressModal = ({ setShowAddressModal, onSaved }) => {
 
     const dispatch = useDispatch()
 
@@ -66,29 +66,34 @@ const AddressModal = ({ setShowAddressModal }) => {
             return
         }
 
-        dispatch(addAddress({ ...address, id: crypto.randomUUID() }))
+        const saved = { ...address, id: crypto.randomUUID() }
+        dispatch(addAddress(saved))
+        if (onSaved) onSaved(saved)
         setShowAddressModal(false)
     }
 
     return (
-        <form onSubmit={handleSubmit} className="fixed inset-0 z-50 bg-white/60 backdrop-blur h-screen flex items-center justify-center">
-            <div className="flex flex-col gap-5 text-slate-700 w-full max-w-sm mx-6">
+        <form onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-label="Add new address" className="fixed inset-0 z-50 bg-white/60 backdrop-blur overflow-y-auto">
+            {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen. */}
+            <div className="flex flex-col justify-center gap-5 text-slate-700 w-full max-w-sm mx-auto px-6 py-16 min-h-dvh">
                 <h2 className="text-3xl ">Add New <span className="font-semibold">Address</span></h2>
-                <input name="name" onChange={handleAddressChange} value={address.name} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="text" placeholder="Full name" autoComplete="name" required />
+                <input name="name" onChange={handleAddressChange} value={address.name} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="text" placeholder="Full name" autoComplete="name" required />
                 {errors.name && <p role="alert" className="-mt-3 text-xs text-red-500">{errors.name}</p>}
-                <input name="phone" onChange={handleAddressChange} value={address.phone} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />
+                <input name="phone" onChange={handleAddressChange} value={address.phone} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />
                 {errors.phone && <p role="alert" className="-mt-3 text-xs text-red-500">{errors.phone}</p>}
-                <input name="email" onChange={handleAddressChange} value={address.email} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="email" placeholder="Email address" required />
-                <input name="address" onChange={handleAddressChange} value={address.address} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="text" placeholder="House #, street, locality" autoComplete="street-address" required />
+                <input name="email" onChange={handleAddressChange} value={address.email} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="email" placeholder="Email address" required />
+                <input name="address" onChange={handleAddressChange} value={address.address} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="text" placeholder="House #, street, locality" autoComplete="street-address" required />
                 {errors.address && <p role="alert" className="-mt-3 text-xs text-red-500">{errors.address}</p>}
                 <div className="flex gap-4">
-                    <input name="city" onChange={handleAddressChange} value={address.city} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="text" placeholder="City" required />
-                    <input name="area" onChange={handleAddressChange} value={address.area} className="p-2 px-4 outline-none border border-slate-200 rounded w-full" type="text" placeholder="Area" required />
+                    <input name="city" onChange={handleAddressChange} value={address.city} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="text" placeholder="City" required />
+                    <input name="area" onChange={handleAddressChange} value={address.area} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="text" placeholder="Area" required />
                 </div>
                 {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-red-500">{errors.city || errors.area}</p>}
-                <button className="bg-slate-800 text-white text-sm font-medium py-2.5 rounded-md hover:bg-slate-900 active:scale-95 transition-all">SAVE ADDRESS</button>
+                <button className="min-h-11 bg-slate-800 text-white text-sm font-medium py-3 rounded-md hover:bg-slate-900 active:scale-95 transition-all">SAVE ADDRESS</button>
             </div>
-            <XIcon size={30} className="absolute top-5 right-5 text-slate-500 hover:text-slate-700 cursor-pointer" onClick={() => setShowAddressModal(false)} />
+            <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute top-3 right-3 inline-flex items-center justify-center size-11 text-slate-500 hover:text-slate-700">
+                <XIcon size={28} aria-hidden="true" />
+            </button>
         </form>
     )
 }
