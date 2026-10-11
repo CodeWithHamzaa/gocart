@@ -1,5 +1,15 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 
+// M52 (ADR-033 decision 6): admit only the site's own origin for Server Actions. Behind the
+// tunnel the Host header is preserved, so this is a precaution against a silent checkout break.
+// Unset or unparseable NEXT_PUBLIC_SITE_URL (dev, CI e2e) adds nothing.
+let siteHost
+try {
+    siteHost = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? '').host
+} catch {
+    siteHost = undefined
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // M49: the production image runs a self-contained server (`node server.js`) with only the
@@ -7,6 +17,8 @@ const nextConfig = {
     // Dockerfile's build stage sets it) so `next start`, `next dev` and the CI e2e job, which use
     // `next start`, are unchanged.
     ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' } : {}),
+
+    ...(siteHost ? { experimental: { serverActions: { allowedOrigins: [siteHost] } } } : {}),
 
     images:{
         // Left as is on purpose: removing it and making optimization work under Docker is M51.
