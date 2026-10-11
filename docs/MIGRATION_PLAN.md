@@ -978,9 +978,11 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
   type-check and lint; the deploy step and the role privileges on a real PostgreSQL 16; the idempotency
   test (and its mutation check); all 15 Playwright tests and seven provider failure modes against a
   **local simulation** of Cloudflare, with the app running as `gocart_app`; `first-register` refused with an
-  empty users table; `/_next/image` closed; a read-only container. **Not observed by anyone**: real
-  Cloudflare, and the repository's Dockerfile images in the compose stack (proven only if the CI
-  `prod-stack` job passes). The earlier "QA result: passed on the real production stack" for the first
+  empty users table; `/_next/image` closed; a read-only container. **Added by CI on commit `95bf3b1` (all six jobs green)**: the repository's Dockerfile images in the real
+  compose stack (`prod-stack`: read-only `app` and `migrate`, restricted role, first-register 403 on an empty
+  users table, uploads), and the golden path through the real widget and real siteverify with Cloudflare's
+  PUBLIC TEST keys. **Not observed by anyone**: real keys on the real hostname (the real `hostname`/`action`
+  values) and the widget at 320 px. The earlier "QA result: passed on the real production stack" for the first
   design was observed with every request degraded and is **withdrawn as a statement about the current
   design**: its verified-path items were never observed on a real stack.
 - **Rollback**: `git revert` the milestone commit. The `idempotency_key` column and its unique index are

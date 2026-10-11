@@ -511,12 +511,13 @@ The stack is **not cleared for launch** until every item is done or explicitly a
    `next lint` is removed in Next 16). The interim mitigations (optimizer off, `/_next/image` closed,
    narrower upload types) remove the image-optimizer surface only; they do **not** address the Server Action
    DoS or the other advisories. Re-run `npm audit` after the upgrade.
-2. **Real Cloudflare checks** (never observed by anyone so far): with real Turnstile keys on the real
-   hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines; the CI
-   `turnstile-contract` job and the golden path are green.
+2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
+   hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
+   passes the `turnstile-contract` job and a golden path through the real widget and siteverify, but with
+   Cloudflare's public TEST keys, which skip the hostname and action checks.)
 3. **First deploy checks**: the migrate step succeeded, `/admin` login works with the bootstrap credentials,
    the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
-   token, and the CI `prod-stack` job is green.
+   token, and the CI `prod-stack` job stays green (it passed on the commit this section was written against).
 4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (for example 30 requests per minute per IP, action Block or Managed Challenge). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
 5. **Backups** (`M54`) and **health checks** (`M53`).
 
