@@ -49,10 +49,9 @@ internal hostnames.
 
 ## CI
 
-No CI exists yet (`.github/workflows/` is absent). When you add it, the pipeline is
-`npm ci` → `npm run type-check` → `npm run build`. **Do not wire `npm run lint` into
-CI until it is repaired** — the script calls `next lint` with no ESLint dependency and
-no config, so it will fail on every run and train everyone to ignore red.
+CI exists in `.github/workflows/ci.yml` (`checks`, `migrations`, `e2e`, `image`, `prod-stack`,
+`turnstile-contract`). `npm run lint` runs there as `eslint .` (Next 16 removed `next lint`,
+ADR-037) and must stay at 0 errors.
 
 ## Docker
 

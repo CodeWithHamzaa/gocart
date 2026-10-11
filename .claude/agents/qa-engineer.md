@@ -16,10 +16,10 @@ npm run type-check     # tsc --noEmit, strict — MUST pass
 npm run build          # next build — MUST pass
 ```
 
-**`npm run lint` is currently broken** — the `lint` script calls `next lint`, but no
-ESLint dependency and no ESLint config exist in this repository. It cannot pass.
-**Do not count it as a passing gate, and do not report "lint clean".** Report it as
-*not available*. Repairing it is a tracked blocker, not your job to paper over.
+**`npm run lint` is a real gate** (`eslint .`, flat config in `eslint.config.mjs`; Next 16 removed
+`next lint`, ADR-037). It must exit 0 with **0 errors**. The React Compiler rules
+(`react-hooks/refs`, `react-hooks/set-state-in-effect`) are deliberately warnings: report new
+warnings, but they do not fail the gate.
 
 **There is no test framework.** No runner, no test file, no fixture. `M56a` schedules
 one Playwright golden-path test plus CI, and depends on `M33a` and `M56` — both Not

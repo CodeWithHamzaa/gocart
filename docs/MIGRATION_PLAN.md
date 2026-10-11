@@ -992,6 +992,23 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
   ADR-036.
 - **Commit message**: `Add Turnstile verification, order idempotency and the pre-launch security batch`
 
+### M52c — Next.js 16 upgrade (closes the framework-advisory launch blocker)
+- **New milestone, inserted 2026-10-11 (owner-approved: "Next 16 upgrade shuru karo, alag branch, alag PR").**
+  Design: [ADR-037](./DECISIONS.md#adr-037-nextjs-1638--closing-the-framework-advisories-m52c).
+- **Goal**: Move `next` from 15.4.11 (30 advisories, two critical) to a patched release inside Payload
+  3.90.x's peer range (`>=16.3.3 <17`), with no behaviour change for customers or admins.
+- **Files**: `package.json` / `package-lock.json` (`next` and `eslint-config-next` `16.3.8`, `lint` = `eslint .`,
+  `overrides.undici` = `7.29.1`), `eslint.config.mjs` (native flat config), `tsconfig.json` and
+  `next-env.d.ts` (rewritten by Next 16), `components/Hero.jsx` (escaped apostrophes), docs.
+- **Dependencies**: M52b
+- **Testing**: `npm audit` shows no `next` advisory and no critical; type-check, lint (0 errors), the unit and
+  database tests, the production build (Turbopack), every public route and the 404 paths, the admin UI in a
+  real browser, and the full Playwright suite with the app as `gocart_app`; in CI, all six jobs (including
+  `image`, `prod-stack` and the golden path through the real Turnstile widget).
+- **Rollback**: `git revert` the milestone commit and `npm ci` (restores 15.4.11 and `next lint`). No schema or
+  data change.
+- **Commit message**: `Upgrade Next.js to 16.3.8 and close the framework advisories`
+
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
 - **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
