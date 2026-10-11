@@ -101,4 +101,25 @@ pass "PNG upload and download work on the read-only container (media volume)"
 [ "$(run_upload ci.svg image/svg+xml "$(printf '<svg xmlns="http://www.w3.org/2000/svg"><script>1</script></svg>' | base64 -w0)")" = "400" ] || fail "an SVG upload was not refused"
 pass "AVIF and SVG uploads are refused (400)"
 
+# --- M54: backup, restore verification, and persistence across a full stop/start -----------------------
+BK="$(mktemp -d)"; trap 'rm -rf "$BK"' EXIT
+scripts/backup.sh "$ENV_FILE" "$BK" >/dev/null || fail "scripts/backup.sh failed"
+ls "$BK"/gocart-db-*.dump >/dev/null 2>&1 || fail "backup.sh wrote no database dump"
+tar tzf "$BK"/gocart-media-*.tar.gz | grep -q '\.png$' || fail "the media archive does not contain the uploaded PNG"
+(cd "$BK" && sha256sum -c SHA256SUMS-* >/dev/null) || fail "backup checksums do not match"
+scripts/backup-verify.sh "$ENV_FILE" "$BK"/gocart-db-*.dump >/dev/null || fail "the backup does not restore into a scratch database"
+pass "backup.sh: dump + media archive + checksums; backup-verify.sh restored the dump into a scratch database"
+# Stop everything WITHOUT removing volumes, start again: the admin (database) and the upload (media volume) survive.
+"${PROD[@]}" down >/dev/null 2>&1 || fail "docker compose down failed"
+"${PROD[@]}" up -d app >/dev/null 2>&1 || fail "docker compose up after down failed"
+ready=""
+for i in $(seq 1 60); do
+  if [ "$(http_status GET / 2>/dev/null || true)" = "200" ]; then ready=1; break; fi
+  sleep 2
+done
+[ -n "$ready" ] || fail "the app did not become ready after a full stop/start"
+[ "$(app_js "fetch('http://127.0.0.1:3000/api/users/init').then(r=>r.json()).then(j=>console.log(j.initialized))")" = "true" ] || fail "the admin user did not survive stop/start"
+[ "$(app_js "fetch('http://127.0.0.1:3000/api/media?limit=1').then(r=>r.json()).then(j=>fetch('http://127.0.0.1:3000/api/media/file/'+j.docs[0].filename)).then(r=>console.log(r.status))")" = "200" ] || fail "the uploaded media did not survive stop/start"
+pass "full stop/start (volumes kept): database rows and uploaded media survive"
+
 echo "prod-stack checks passed"

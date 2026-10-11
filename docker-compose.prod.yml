@@ -129,7 +129,8 @@ services:
       retries: 5
       start_period: 10s
     logging: *default-logging
-    # Backups and restart-survival verification: M54.
+    # Backups: scripts/backup.sh and scripts/backup-verify.sh (M54, docs/DEPLOYMENT.md). The volume survives
+    # down/up/restart; only `down -v` or losing the disk destroys it.
 
   # One-shot schema step (M52a). Same image source and database settings as `app`, but no
   # published ports, no media volume and no extra secrets. restart "no": it must run once per
@@ -219,7 +220,7 @@ services:
       - /app/.next/cache:rw,noexec,nosuid,uid=1000,gid=1000,size=128m
     volumes:
       # Uploaded media. The image creates /app/media owned by uid 1000, so a fresh volume
-      # mounted here inherits that owner and the non-root app can write to it. Backups: M54.
+      # mounted here inherits that owner and the non-root app can write to it. Backups: scripts/backup.sh (M54).
       - app-media:/app/media
     logging: *default-logging
     # Healthcheck: M53.

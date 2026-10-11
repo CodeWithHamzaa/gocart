@@ -5,7 +5,7 @@ environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the datab
 workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
 limits (`M52b`, [ADR-035](./DECISIONS.md), amended by [ADR-036](./DECISIONS.md): a verified token is
 required, orders are idempotent, the first admin comes from a secret, the app uses a restricted database
-role). `M53` adds health checks; `M54` adds backups; `M59` is the full runbook.**
+role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); `M59` is the full runbook.**
 
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
 > [Launch blockers](#launch-blockers) at the end of this file: the real-Cloudflare checks with real keys, the
@@ -151,18 +151,86 @@ Accepts downtime on every release, but the app can never run against a schema it
 Migrations are forward-only. Nothing runs `migrate:down` in production. If a release goes wrong,
 recover by restoring a backup and shipping a corrective forward migration.
 
-- Take a backup **before every schema-changing deploy**. Backups are manual for now
-  ([ADR-015](./DECISIONS.md)); `M54` formalises and verifies them. For example (not yet verified as a
-  restore procedure):
+**What must be backed up (M54):** two things, both on the VPS only. (1) The Postgres database
+(volume `gocart-prod_postgres-data`): products, orders and the admin account. (2) Uploaded product
+images (volume `gocart-prod_app-media`, [ADR-020](./DECISIONS.md)): `pg_dump` does not cover it.
+Both volumes survive `down`, `up`, `restart` and redeploys; they are lost only by `down -v`, deleting
+the volume, or losing the disk. **Never run `docker compose down -v` against production.**
 
-  ```sh
-  (umask 077; $PROD exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > gocart-$(date +%F-%H%M).sql)
-  ```
+### Taking a backup
 
-  The dump is **unencrypted customer personal data** (names, phones, addresses). It is created with
-  `umask 077` so it is mode 600; keep it that way, store it **off the host**, and **encrypt it** before it
-  leaves the machine. `M54` formalises backups and encryption.
-- Uploaded media lives in the `app-media` volume and is not covered by `pg_dump`.
+```sh
+scripts/backup.sh /path/outside/checkout/gocart-prod.env /path/to/backups
+```
+
+It writes, into the (mode 700) backup directory, with mode 600: `gocart-db-<UTC time>.dump`
+(compressed `pg_dump` custom format), `gocart-media-<UTC time>.tar.gz` and `SHA256SUMS-<UTC time>`. A
+file is created under a `.partial` name and renamed only after it has been read back, so a crash never
+leaves something that looks complete. It keeps the newest 14 sets (`BACKUP_KEEP=N` changes that). The
+media volume is read through a read-only mount with no network.
+
+**The dump is unencrypted customer personal data** (names, phones, addresses). Encrypt it before it
+leaves the machine, by giving the script a passphrase file that is itself stored somewhere else (a
+password manager, never next to the backups):
+
+```sh
+(umask 077; openssl rand -base64 32 > /path/outside/checkout/backup-passphrase)   # once; copy it to your password manager
+BACKUP_PASSPHRASE_FILE=/path/outside/checkout/backup-passphrase scripts/backup.sh <env-file> <dir>
+```
+
+The files then end in `.gpg` (GnuPG, AES256) and the plaintext copies are deleted. **Lose the
+passphrase and the backup is unreadable.** Copy the encrypted files off the VPS (another machine, cloud
+drive, an external disk): a backup on the same disk as the database does not survive losing that disk.
+
+Backup times (manual for now, [ADR-015](./DECISIONS.md)): before every schema-changing deploy, and at
+least once a day while orders are coming in. Automating this with `cron` is a small follow-up (not done:
+unverified on a real VPS).
+
+### Proving a backup restores (do this, a backup never restored is a hope)
+
+```sh
+scripts/backup-verify.sh <env-file> /path/to/backups/gocart-db-<time>.dump        # or the .dump.gpg (set BACKUP_PASSPHRASE_FILE)
+sha256sum -c SHA256SUMS-<time>      # run inside the backup directory
+```
+
+This restores the dump into a **scratch database** (never the live one), checks that the tables and
+the migration history came back, prints row counts and drops the scratch database. It needs the
+`postgres` service running. Do it once after setting backups up, and after every Postgres major
+version change.
+
+### Restoring for real (after a disaster or a bad release)
+
+This replaces the live data. Do not run it to "check" a backup (use the verify script above).
+
+1. Get the stack up on the new or repaired machine with the same env file (first deploy steps above),
+   then stop traffic: `$PROD stop app cloudflared`.
+2. Decrypt if needed: `gpg --decrypt --output restore.dump gocart-db-<time>.dump.gpg`.
+3. Replace the database (this DROPS the current one):
+
+   ```sh
+   $PROD exec -T postgres dropdb -U gocart --if-exists gocart
+   $PROD exec -T postgres createdb -U gocart gocart
+   $PROD exec -T postgres pg_restore -U gocart -d gocart --no-owner --no-privileges --exit-on-error < restore.dump
+   ```
+
+   (use your `POSTGRES_USER` / `POSTGRES_DB` if they are not the defaults).
+4. Re-create the restricted app role and its grants, which the dump deliberately does not carry:
+   `$PROD run --rm migrate` (idempotent; also applies any migration newer than the backup).
+5. Restore the media: stop `app` first (already done), then
+   `docker run --rm -v gocart-prod_app-media:/media -v "$PWD":/in:ro --entrypoint sh postgres:17-alpine -c 'cd /media && tar xzf /in/gocart-media-<time>.tar.gz && chown -R 1000:1000 /media'`.
+6. `$PROD up -d`, then place one test order and one order lookup (see "Cloudflare Turnstile: one-time setup", step 5) and open `/admin`.
+7. Delete `restore.dump` (plaintext personal data): `shred -u restore.dump` or `rm`.
+
+### What is verified, and what is not
+
+- Verified (local PostgreSQL 16, real migrated schema): `backup.sh` and `backup-verify.sh` logic: plain
+  and encrypted backups, restore into a scratch database with row counts, wrong passphrase and truncated
+  dump refused, retention, no partial file after a failure, directory mode 700 and file mode 600.
+- Checked by CI only (`scripts/prod-stack-check.sh`, the real compose stack): the Docker paths (`exec` into
+  the postgres container, the media-volume read) and that a full `down` / `up` keeps the admin and the
+  uploaded image. **Unverified until CI has run on this change.**
+- Not verified at all: the manual restore procedure above on a real stack, `cron` automation, a
+  restore onto a different machine, and Postgres major-version upgrades.
 
 ## Checking migration status
 
@@ -515,11 +583,11 @@ The stack is **not cleared for launch** until every item is done or explicitly a
 3. **First deploy checks**: the migrate step succeeded, `/admin` login works with the bootstrap credentials,
    the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
    token, and the CI `prod-stack` job stays green (it passed on the commit this section was written against).
-4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (for example 30 requests per minute per IP, action Block or Managed Challenge). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
-5. **Backups** (`M54`) and **health checks** (`M53`).
+4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (on a paid plan, for example 30 requests per minute per IP, action Block or Managed Challenge; the Free plan is reported, unverified, to allow one rule with a 10-second counting window, a 10-second block and the Block action only, so use about 10 POSTs per 10 seconds per IP there). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
+5. **Backups** (`M54`): the scripts and the procedure exist; still open: a first real backup and a `backup-verify.sh` run on the real VPS, copies kept off the host, and a schedule. **Health checks** (`M53`).
 
 ## Not covered yet
 
 Health checks (`M53`: `cloudflared` should then depend on `app` being healthy, not merely started);
-backups and restore drills (`M54`); `read_only` for `cloudflared` and `postgres` hardening (not testable
+an automated backup schedule and a restore drill on a real stack (`M54` has the scripts and the manual procedure); `read_only` for `cloudflared` and `postgres` hardening (not testable
 here); the full deploy runbook (`M59`).
