@@ -2,12 +2,16 @@
 
 // M36: guest order lookup form (ADR-024). Calls only the lookupOrderAction server
 // action — no REST fetch, and the order number/phone never appear in the URL.
-import { useEffect, useState } from 'react'
+// M52b (ADR-035/036): sends a Turnstile token; the button stays disabled until the check has
+// produced one (an unreachable check means no lookup - the message says to contact the store).
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { readLastOrder } from '@/lib/order-confirmation'
 import { lookupOrderAction } from './actions'
 import type { LookupOrderActionResult } from './actions'
 import OrderItem from '@/components/OrderItem'
+import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
+import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidget'
 
 const inputClass = 'w-full min-h-11 rounded border border-slate-300 p-2 px-4 outline-none focus:border-slate-500'
 
@@ -16,6 +20,8 @@ export function OrderLookup() {
   const [phone, setPhone] = useState('')
   const [pending, setPending] = useState(false)
   const [result, setResult] = useState<LookupOrderActionResult | null>(null)
+  const [turnstile, setTurnstile] = useState<TurnstileState>(initialTurnstileState)
+  const turnstileRef = useRef<TurnstileHandle>(null)
 
   // Prefill from this tab's own last order (sessionStorage), in an effect to avoid a
   // hydration mismatch.
@@ -33,7 +39,13 @@ export function OrderLookup() {
     setPending(true)
     setResult(null)
     try {
-      setResult(await lookupOrderAction({ orderNumber: orderNumber.trim(), phone: phone.trim() }))
+      setResult(
+        await lookupOrderAction({
+          orderNumber: orderNumber.trim(),
+          phone: phone.trim(),
+          turnstileToken: turnstile.token,
+        }),
+      )
     } catch {
       setResult({
         ok: false,
@@ -42,6 +54,8 @@ export function OrderLookup() {
       })
     } finally {
       setPending(false)
+      // Tokens are single-use; this page never navigates away, so always fetch a fresh one.
+      turnstileRef.current?.reset()
     }
   }
 
@@ -81,9 +95,10 @@ export function OrderLookup() {
               required
             />
           </label>
+          <TurnstileWidget ref={turnstileRef} action="order_lookup" onChange={setTurnstile} />
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || turnstile.status !== 'verified'}
             className="min-h-11 rounded bg-slate-800 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}

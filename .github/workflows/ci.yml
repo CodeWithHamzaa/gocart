@@ -23,6 +23,79 @@ jobs:
       - run: npm run lint
       # M52: table test of the production environment rules (scripts/check-env.ts). No database.
       - run: npm run test:env
+      # M52b (ADR-035): Turnstile verifier + order guard unit tests (injected fetch, no network).
+      - run: npm run test:turnstile
+
+  # M52b (ADR-035): contract test of OUR Turnstile classifier against the REAL Cloudflare siteverify.
+  # The response shapes ADR-035 relies on are UNVERIFIED from the authoring sandbox (no network to
+  # Cloudflare); GitHub runners can reach it. Uses only Cloudflare's PUBLIC test secrets and dummy
+  # token (not credentials), so printing the raw responses is safe and documents the real shapes.
+  # Separate job so a Cloudflare hiccup is visibly a contract failure, not a type-check failure.
+  turnstile-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Widget script is served (api.js -> HTTP 200)
+        run: |
+          # Observed on a GitHub runner (2026-10-11): the URL answers 302, a browser <script src> follows
+          # it. So the contract is "the redirect chain ends in 200 on a Cloudflare host", not "200 at once".
+          out="$(curl -sS -L -o /dev/null -w '%{http_code} %{num_redirects} %{url_effective}' https://challenges.cloudflare.com/turnstile/v0/api.js)"
+          echo "api.js (following redirects): $out"
+          code="${out%% *}"
+          test "$code" = "200"
+          case "$out" in *://challenges.cloudflare.com/*) ;; *) echo "api.js ended on a non-Cloudflare host"; exit 1 ;; esac
+      - name: lib/turnstile.ts classifies real siteverify responses (verified / rejected / rejected / unavailable)
+        run: |
+          cat > "$RUNNER_TEMP/turnstile-contract.mts" <<'TS'
+          import assert from 'node:assert/strict'
+          import { pathToFileURL } from 'node:url'
+          const mod = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/lib/turnstile.ts`).href)
+          const { createTurnstileVerifier, SITEVERIFY_URL } = mod
+          const TOKEN = 'XXXX.DUMMY.TOKEN.XXXX'
+          // Real global fetch; a clone of each response is printed so the log records the raw shape.
+          const loggingFetch: typeof fetch = async (input, init) => {
+            const res = await fetch(input, init)
+            console.log(`  HTTP ${res.status} ${JSON.stringify(await res.clone().text())}`)
+            return res
+          }
+          const cases = [
+            { name: 'always-pass', secret: '1x0000000000000000000000000000000AA', expected: { outcome: 'verified' } },
+            { name: 'always-fail', secret: '2x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'invalid-token' } },
+            { name: 'token-spent', secret: '3x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'expired-or-duplicate' } },
+            // ADR-036: a secret Cloudflare does not know is a CONFIGURATION fault, not a bad token:
+            // it must be 'unavailable' (service-error, logged as an error), never 'rejected'.
+            { name: 'unknown-secret', secret: '0x4AAAAAAAcontractTestNotARealSecret00', allowTest: false, expected: { outcome: 'unavailable', reason: 'service-error' } },
+          ]
+          assert.equal(SITEVERIFY_URL, 'https://challenges.cloudflare.com/turnstile/v0/siteverify')
+          let failed = 0
+          for (const c of cases) {
+            console.log(`${c.name}:`)
+            const verify = createTurnstileVerifier({
+              fetch: loggingFetch,
+              secret: c.secret,
+              allowTestKeys: c.allowTest !== false,
+              expectedHostname: 'localhost',
+              timeoutMs: 10000,
+            })
+            const result = await verify(TOKEN, { action: 'place_order', remoteIp: null })
+            console.log(`  classified as ${JSON.stringify(result)}`)
+            try {
+              assert.deepEqual(result, c.expected)
+            } catch {
+              failed++
+              console.error(`  FAIL: expected ${JSON.stringify(c.expected)}`)
+            }
+          }
+          if (failed) process.exit(1)
+          console.log('turnstile contract: OK')
+          TS
+          npx tsx "$RUNNER_TEMP/turnstile-contract.mts"
 
   # M56a: production build + the golden-path E2E test against a freshly seeded PostgreSQL.
   # The credentials below belong to a throwaway database that exists only for this job.
@@ -43,10 +116,23 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+    # Job level on purpose: `npm run build` inlines NEXT_PUBLIC_TURNSTILE_SITE_KEY and the started
+    # server reads TURNSTILE_SECRET_KEY, so both steps must see the same values.
+    # M52b (ADR-035): Cloudflare's PUBLIC always-pass test keys (not secrets), allowed only because
+    # TURNSTILE_ALLOW_TEST_KEYS=1. The golden path therefore loads the real widget script and calls
+    # the real siteverify (network access to challenges.cloudflare.com is required; accepted by
+    # ADR-035). Production rejects test keys and never sets the allow flag.
     env:
       DATABASE_URI: postgresql://gocart:gocart@localhost:5432/gocart_e2e
       PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-else
       NEXT_PUBLIC_SITE_URL: http://localhost:3100
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      TURNSTILE_ALLOW_TEST_KEYS: '1'
+      # ADR-036: development/CI only - lets the e2e helper register its admin through Payload's
+      # first-register endpoint, which the app otherwise refuses. check-env rejects it in production.
+      PAYLOAD_ALLOW_FIRST_REGISTER: '1'
+      APP_DB_PASSWORD: ci-e2e-app-role-0123456789
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,8 +143,21 @@ jobs:
       - run: npx playwright install --with-deps chromium
       # Creates the schema (Payload pushes it outside production) and the demo records.
       - run: npm run seed
+      # ADR-036 (H3): order idempotency against the real database (needs the seeded products).
+      - run: npm run test:idempotency
+      # ADR-036 (B2): the Users guard is exercised through the Local API (no HTTP needed).
+      - run: npm run test:users-guard
+      # ADR-036 (H4): from here on the app runs as the restricted `gocart_app` role, which can read
+      # and write rows but cannot change the schema - so the golden path also proves the storefront
+      # and checkout work without DDL rights.
+      - name: Create the restricted database role
+        run: npx tsx scripts/db-roles.ts
       - run: npm run build
+        env:
+          DATABASE_URI: postgresql://gocart_app:ci-e2e-app-role-0123456789@localhost:5432/gocart_e2e
       - run: npm run test:e2e
+        env:
+          DATABASE_URI: postgresql://gocart_app:ci-e2e-app-role-0123456789@localhost:5432/gocart_e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -75,6 +174,10 @@ jobs:
   # malformed values even in CI, so this job uses throwaway but CONFORMING ones (password >= 16
   # chars of A-Z a-z 0-9 . _ ~ -; secret >= 32 chars, >= 12 distinct, no placeholder words; an
   # https public-looking site URL). The values belong to a database that exists only for this job.
+  # M52b: the two Turnstile keys are throwaway values that only have to PASS check-env (lengths,
+  # no whitespace, no placeholder word, not a Cloudflare test key, different from each other).
+  # They are not real keys and nothing in this job calls Cloudflare. TURNSTILE_ALLOW_TEST_KEYS is
+  # deliberately unset (check-env rejects it in production).
   migrations:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -95,7 +198,13 @@ jobs:
     env:
       PAYLOAD_SECRET: Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U
       POSTGRES_PASSWORD: ci-throwaway-pw-0123456789
+      APP_DB_PASSWORD: ci-throwaway-app-9876543210
       NEXT_PUBLIC_SITE_URL: https://shop.example.com
+      TURNSTILE_SECRET_KEY: Qm7vTz2KpW9xRb4NcY6hJd3LfG8sAu5E
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: Hs4kVn8QwZ2tPy6R
+      # ADR-036: the first admin is created from these during the deploy step (throwaway values).
+      ADMIN_BOOTSTRAP_EMAIL: ci-owner@example.com
+      ADMIN_BOOTSTRAP_PASSWORD: Vx93-pLq.m7_Ez4~Hs2Kd
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -121,6 +230,74 @@ jobs:
           NODE_ENV: production
           DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
         run: npm run deploy:migrate
+      - name: A second run is a no-op (idempotent; the admin already exists)
+        env:
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
+        run: |
+          set -o pipefail
+          npm run deploy:migrate | tee run2.log
+          grep -q "1 user(s) exist, nothing to do" run2.log
+      - name: The app role can read and write rows but cannot change the schema (ADR-036, H4)
+        env:
+          PGPASSWORD: ci-throwaway-app-9876543210
+        run: |
+          app() { psql -h localhost -U gocart_app -d gocart_migrations -tA -c "$1"; }
+          app "select count(*) from orders"
+          app "select count(*) from users" | grep -qx 1
+          for sql in "create table evil(x int)" "drop table orders" "alter table orders add column z int" "truncate orders" \
+                     "create role r2 superuser" "copy (select 1) to program 'id'" "create extension if not exists pg_trgm" \
+                     "delete from payload_migrations" "create temp table t(x int)" "create schema s2"; do
+            if app "$sql" >/dev/null 2>&1; then echo "UNEXPECTEDLY ALLOWED for gocart_app: $sql"; exit 1; fi
+          done
+          app "select rolsuper or rolcreaterole or rolcreatedb or rolreplication or rolbypassrls from pg_roles where rolname = 'gocart_app'" | grep -qx f
+      - name: The deploy step fails closed on an empty database with no bootstrap credentials (ADR-036, B2)
+        env:
+          PGPASSWORD: ci-throwaway-pw-0123456789
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_nocreds
+          ADMIN_BOOTSTRAP_EMAIL: ''
+          ADMIN_BOOTSTRAP_PASSWORD: ''
+        run: |
+          createdb -h localhost -U gocart gocart_nocreds
+          if npm run deploy:migrate; then echo "deploy:migrate succeeded with nobody able to administer the stack"; exit 1; fi
+          test "$(psql -h localhost -U gocart -d gocart_nocreds -tA -c 'select count(*) from users')" = "0"
+
+  # ADR-036: the REAL production compose stack (docker-compose.prod.yml: postgres -> migrate -> app)
+  # with throwaway but conforming values, checked from the outside by scripts/prod-stack-check.sh:
+  # the migrate step bootstraps the schema, the restricted app role and the first admin from a
+  # secret; the app runs with a read-only root filesystem as uid 1000 and connects as `gocart_app`;
+  # the first-admin window is closed even with an EMPTY users table; /_next/image is closed; uploads
+  # work on the read-only container and AVIF/SVG are refused. cloudflared is not started (it needs a
+  # real tunnel token). Nothing here calls Cloudflare Turnstile (the keys only have to pass check-env).
+  prod-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Throwaway environment file (never reused outside this job)
+        run: |
+          cat > "$RUNNER_TEMP/prod.env" <<'EOF'
+          POSTGRES_PASSWORD=Kd82-hQ.x9_Lm4~Zt7Pw
+          APP_DB_PASSWORD=Rt57_Wn.c3-Vb8~Jq2Xe
+          PAYLOAD_SECRET=q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Gm0Rj-AeUi
+          NEXT_PUBLIC_SITE_URL=https://shop.mystore.pk
+          TURNSTILE_SECRET_KEY=0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAAh7Gm2Lk9Zp4V
+          TUNNEL_TOKEN=dummy-not-a-real-token
+          ADMIN_BOOTSTRAP_EMAIL=ci-owner@mystore.pk
+          ADMIN_BOOTSTRAP_PASSWORD=Vx93-pLq.m7_Ez4~Hs2Kd
+          EOF
+      - name: Build and start postgres, migrate and app
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml up -d --build app
+      - name: Check the running stack
+        run: scripts/prod-stack-check.sh "$RUNNER_TEMP/prod.env"
+      - name: Logs (on failure)
+        if: failure()
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml logs --no-color --tail=200 || true
+      - name: Tear down
+        if: always()
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml down -v || true
 
   # M49: the production image must build with NO database available, run as an unprivileged user,
   # refuse to start without its required settings, and carry no secrets.
@@ -130,9 +307,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the production image (no database)
-        run: docker build --target production --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart:ci .
+        # M52b: a dummy, non-empty public Turnstile site key (not a real key; nothing calls Cloudflare).
+        run: docker build --target production --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=Hs4kVn8QwZ2tPy6R -t gocart:ci .
       - name: Build the migrate image (M52a; used by the one-shot migrate service)
-        run: docker build --target migrate --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart-migrate:ci .
+        run: docker build --target migrate --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=Hs4kVn8QwZ2tPy6R -t gocart-migrate:ci .
       - name: Migrate image runs as an unprivileged user
         run: |
           uid="$(docker run --rm --entrypoint id gocart-migrate:ci -u)"
@@ -140,7 +318,7 @@ jobs:
           test "$uid" = "1000"
       - name: No secrets baked into the migrate image environment
         run: |
-          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI|TURNSTILE_SECRET_KEY'; then
             echo "a secret or connection string is baked into the migrate image"
             exit 1
           fi
@@ -157,7 +335,7 @@ jobs:
           fi
       - name: No secrets baked into the image environment
         run: |
-          if docker inspect --format '{{json .Config.Env}}' gocart:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+          if docker inspect --format '{{json .Config.Env}}' gocart:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI|TURNSTILE_SECRET_KEY'; then
             echo "a secret or connection string is baked into the image"
             exit 1
           fi

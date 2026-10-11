@@ -1,10 +1,14 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 // M56a: the money path, end to end, against a freshly seeded database (scripts/seed.ts):
 // browse -> product detail -> add to cart -> guest checkout -> COD order created -> guest
 // lookup finds it. Amounts are derived from the app's own public data (the seeded product
 // and the Settings global), never hardcoded, so editing the seed prices or shipping
 // defaults does not break the test — only a genuinely broken flow does.
+// M52b (ADR-035): runs with Cloudflare's always-pass Turnstile test keys and
+// TURNSTILE_ALLOW_TEST_KEYS=1, and asserts the widget reached `verified` before each submit —
+// the only automated proof the real widget and siteverify work. The phone number is new each
+// run, so reruns against a long-lived server never hit the per-phone limit (3 per hour).
 
 const pkr = (n: number) => `Rs. ${Math.round(n).toLocaleString('en-US')}`
 
@@ -31,6 +35,9 @@ test('golden path: browse, add to cart, guest checkout, COD order, lookup', asyn
   const settings = await (await request.get('/api/globals/settings')).json()
   const shipping = lamp.price >= settings.freeShippingThreshold ? 0 : settings.shippingFlatRate
   const total = lamp.price + shipping
+  const digits = String(Math.floor(Math.random() * 1e9)).padStart(9, '0')
+  const phoneIntl = `+923${digits}`
+  const phoneLocal = `03${digits}`
 
   // Browse: home and the shop listing show the real product, formatted in PKR.
   await page.goto('/')
@@ -70,14 +77,15 @@ test('golden path: browse, add to cart, guest checkout, COD order, lookup', asyn
   })
   await page.getByText('SAVE ADDRESS').click()
   await expect(page.getByRole('alert').filter({ hasText: 'Pakistani mobile number' })).toBeVisible()
-  await fill({ phone: '+923001234567' }) // accepted, stored as 03001234567
+  await fill({ phone: phoneIntl }) // accepted, stored as 03XXXXXXXXX
   await page.getByText('SAVE ADDRESS').click()
   await expect(page.getByText('SAVE ADDRESS')).toBeHidden()
 
   // The address just saved is selected for the order straight away (M44) — no dropdown step.
   await expect(page.getByText('Test Buyer, House 5, Street 12, G-9/1, G-9, Islamabad')).toBeVisible()
 
-  // Place the Cash on Delivery order.
+  // Place the Cash on Delivery order, once the Turnstile check has produced a token.
+  await expect(page.locator('[data-turnstile-status]')).toHaveAttribute('data-turnstile-status', 'verified')
   await page.getByRole('button', { name: /place order/i }).click()
   await expect(page).toHaveURL(/\/order-confirmation$/)
   const body = page.locator('body')
@@ -89,7 +97,8 @@ test('golden path: browse, add to cart, guest checkout, COD order, lookup', asyn
   // The order really exists: the guest lookup (order number + phone) finds it, as Placed.
   await page.goto('/orders')
   await page.locator('input[name="orderNumber"]').fill(orderNumber!)
-  await page.locator('input[name="phone"]').fill('03001234567')
+  await page.locator('input[name="phone"]').fill(phoneLocal)
+  await expect(page.locator('[data-turnstile-status]')).toHaveAttribute('data-turnstile-status', 'verified')
   await page.locator('button[type="submit"]').click()
   await expect(body).toContainText(orderNumber!)
   await expect(body).toContainText('Placed')

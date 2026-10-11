@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-68 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+69 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M52b`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -901,6 +901,97 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the compose/entrypoint changes.
 - **Commit message**: `Run Payload database migrations as an explicit production deploy step`
 
+### M52b — Turnstile verification, CGNAT-safe order limits and the pre-launch security batch
+- **New milestone, inserted 2026-10-11 (owner-approved).** Pakistani mobile carriers put many customers
+  behind one IP address (CGNAT), so the per-IP limit of 5 orders per 15 minutes blocked real buyers.
+  Design: [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b),
+  **amended the same day by [ADR-036](./DECISIONS.md#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)**,
+  which also closes the findings of the M52b security assessment (B1-B2, H1-H4, M1-M6, L1-L3). Where the
+  two disagree, ADR-036 wins. `Orders` access, guest checkout and COD-only are unchanged.
+- **Goal**:
+  - **Turnstile is required** (H1): an order or lookup without a verified token is refused. The server
+    classifies each token as `verified`, `rejected` (security validation: missing, malformed, invalid,
+    expired or spent, wrong action or hostname) or `unavailable` (Cloudflare unreachable, a bad answer, our
+    50-call concurrency cap, or a configuration fault); both non-verified outcomes refuse, with different
+    codes and messages (M1). There is no degraded path.
+  - **CGNAT-safe limits without a victim lock-out** (M2, M3, L3): an attempts gate per IP (bounding
+    siteverify calls and database lookups), a verified-order ceiling per IP (30 / 15 min), and
+    per-(phone, IP) limits (3 / hour, 10 / day) that count successful verified orders only; a store-wide
+    per-phone count is a log-only alert. All use the non-evicting bucket limiter. A production request
+    with no valid client IP is refused (M4).
+  - **Order idempotency** (H3): an `idempotencyKey` per checkout attempt, a unique index, and a replay that
+    needs no token.
+  - **First admin from a secret** (B2) and **separate database roles** (H4): see ADR-036 decisions 5 and 6.
+  - **Interim Next.js mitigations** (B1): optimizer off, `/_next/image` closed, narrower upload types. The
+    Next 16 upgrade is **not** part of this milestone and remains a launch blocker.
+  - **Read-only root filesystem** for `app` and `migrate` (M6).
+  - No new npm packages. siteverify is called with `fetch`: 3 s timeout, no retries, `redirect: 'error'`, a
+    16 KB body cap, at most 50 concurrent calls.
+- **Files** (as built):
+  - **New**: `lib/turnstile.ts`, `lib/order-guard.ts`, `lib/idempotency.ts`,
+    `components/TurnstileWidget.tsx`, `scripts/turnstile.test.ts`, `scripts/idempotency.test.ts`,
+    `scripts/bootstrap-admin.ts`, `scripts/db-roles.ts`, `scripts/prod-stack-check.sh`,
+    `e2e/turnstile-fallback.spec.ts`, `e2e/idempotency.spec.ts`,
+    `migrations/20261011_181740_order_idempotency_key.{ts,json}`.
+  - **Changed**: `lib/client-ip.ts`, `lib/rate-limit.ts` (`reserve` returns `retryAfterSec`),
+    `lib/payload/orders.ts` (idempotency key, `findOrderByIdempotencyKey`), `collections/Orders.ts`
+    (`idempotencyKey`), `collections/Users.ts` (first-register guard), `collections/Media.ts` (upload
+    types), `app/(public)/cart/actions.ts`, `app/(public)/orders/actions.ts`, `components/OrderSummary.jsx`,
+    `app/(public)/orders/OrderLookup.tsx`, `next.config.mjs`, `scripts/check-env.ts` (+ test),
+    `package.json` (`deploy:migrate` runs `db-roles` and `bootstrap-admin`; `test:idempotency`),
+    `Dockerfile` (messages), `docker-compose.prod.yml`, `docker-compose.yml`, `playwright.config.ts`,
+    `.github/workflows/ci.yml`, `e2e/golden-path.spec.ts`, `e2e/mobile.spec.ts`, `.env.example`, and the docs
+    (`DEPLOYMENT.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CHANGELOG.md`, `TASKS.md`, `CLAUDE.md`,
+    `PHASE_1_READINESS_REPORT.md`).
+- **Dependencies**: M52, M33, M36
+- **Testing** (what exists; the result of each run is under *Verification status*):
+  - **Unit** (`npm run test:turnstile`, injected `fetch`, no network): every classification row (missing
+    token, oversize token, unset secret, test secret without the flag, matching and mismatching
+    action/hostname, missing fields, redirect, oversized body, the 51st concurrent call, `invalid-input-response`
+    and `timeout-or-duplicate` alone and mixed, `internal-error`, the secret error codes, unknown codes,
+    non-200, malformed JSON, a thrown fetch, a hanging fetch and a stalled body); the request body; the
+    environment handling; and the guard (tokenless, rejected, unavailable and a throwing verifier are all
+    refused; the attempts gate; the CGNAT ceiling; per-(phone, IP) limits including the case where an
+    attacker's connection cannot lock out the victim's; the phone-volume alert; refunds; atomic
+    reservation under 20 concurrent requests; replay; a missing client IP; the lookup caps).
+  - **`check-env`** (`npm run test:env`): the two Turnstile keys, `APP_DB_PASSWORD`, the bootstrap
+    credentials, and the refusal of `TURNSTILE_ALLOW_TEST_KEYS` / `PAYLOAD_ALLOW_FIRST_REGISTER`.
+  - **Real database** (`npm run test:idempotency`, after `npm run seed`): sequential and 12-way concurrent
+    requests with one key create one order; distinct keys create distinct orders; the unique index;
+    the key is immutable. CI `migrations` job: the deploy step bootstraps an empty database, a second run
+    is a no-op, the app role cannot change the schema, and the step fails closed with no bootstrap credentials.
+  - **E2E** (CI; Cloudflare's public test keys and the allow flags; the app runs as `gocart_app`): the golden
+    path reaches `verified`; a dropped response followed by a retry creates exactly one order;
+    `turnstile-fallback.spec.ts` blocks the script and checks that no order or lookup can be made;
+    the 320 px no-overflow test; no indexable page loads Turnstile.
+  - **CI `prod-stack`** (the real compose stack): migrate exits 0; the app runs read-only as uid 1000 and
+    connects as `gocart_app` holding no superuser or bootstrap secret; `/_next/image` is 404;
+    `first-register` and `POST /api/users` return 403 **with an empty users table**; re-running migrate
+    recreates the admin; a PNG upload works on the read-only container and AVIF/SVG are refused.
+  - **CI `turnstile-contract`**: the real siteverify response shapes for the `1x`/`2x`/`3x` test secrets and
+    an unknown secret, and that `api.js` returns 200.
+  - **Owner, at launch**: with real keys on the real hostname, a verified order and a lookup with no
+    `[turnstile]` log lines; the items marked UNVERIFIED in ADR-035 and ADR-036; the Next 16 upgrade
+    (`docs/DEPLOYMENT.md`, "Launch blockers").
+- **Verification status (2026-10-11)**: the authoring sandbox could not reach Cloudflare, and could not
+  pull base images inside Docker builds. Observed there, outside Docker: the unit tests, `check-env`,
+  type-check and lint; the deploy step and the role privileges on a real PostgreSQL 16; the idempotency
+  test (and its mutation check); all 15 Playwright tests and seven provider failure modes against a
+  **local simulation** of Cloudflare, with the app running as `gocart_app`; `first-register` refused with an
+  empty users table; `/_next/image` closed; a read-only container. **Added by CI on commit `95bf3b1` (all six jobs green)**: the repository's Dockerfile images in the real
+  compose stack (`prod-stack`: read-only `app` and `migrate`, restricted role, first-register 403 on an empty
+  users table, uploads), and the golden path through the real widget and real siteverify with Cloudflare's
+  PUBLIC TEST keys. **Not observed by anyone**: real keys on the real hostname (the real `hostname`/`action`
+  values) and the widget at 320 px. The earlier "QA result: passed on the real production stack" for the first
+  design was observed with every request degraded and is **withdrawn as a statement about the current
+  design**: its verified-path items were never observed on a real stack.
+- **Rollback**: `git revert` the milestone commit. The `idempotency_key` column and its unique index are
+  harmless to leave in place (nothing reads them after the revert); to remove them run
+  `payload migrate:down` for `20261011_181740_order_idempotency_key` first. Reverting restores the open
+  first-admin flow and the single database role, so do not revert on a deployed stack without reading
+  ADR-036.
+- **Commit message**: `Add Turnstile verification, order idempotency and the pre-launch security batch`
+
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
 - **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
@@ -1040,8 +1131,8 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | After `M23`, `M25` |
 | `M44`–`M45` | Mobile-first audit and performance | After `M28` |
 | `M46`–`M48` | Reviews/Coupons: decide and land minimal v1 scope | After `M25`, `M33` |
-| `M49`–`M54` | Docker production hardening, health checks, backups | After `M5` |
+| `M49`–`M54` (incl. `M52a`, `M52b`) | Docker production hardening, health checks, backups; Turnstile and CGNAT-safe rate limits (`M52b`) | After `M5` (`M52b` after `M52`, `M33`, `M36`) |
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**68 milestones total** — `M1`–`M59` plus nine decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**69 milestones total** — `M1`–`M59` plus ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).

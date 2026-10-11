@@ -69,3 +69,18 @@ export async function getClientIp(): Promise<string> {
   const h = await headers()
   return selectClientIp((name) => h.get(name), process.env.NODE_ENV === 'production')
 }
+
+// M52b (ADR-035 decision 3): the address sent to Turnstile siteverify as `remoteip`. Only in
+// production, and only the raw cf-connecting-ip when it is a valid address (same validation
+// as normalizeIp) — never the /64 rate-limit key, never 'unknown', never x-forwarded-for.
+// Otherwise null, and remoteip is left out of the request.
+export function selectVerifyIp(get: (name: string) => string | null, production: boolean): string | null {
+  if (!production) return null
+  const cf = get('cf-connecting-ip')?.trim()
+  return cf && normalizeIp(cf) ? cf : null
+}
+
+export async function getVerifyIp(): Promise<string | null> {
+  const h = await headers()
+  return selectVerifyIp((name) => h.get(name), process.env.NODE_ENV === 'production')
+}

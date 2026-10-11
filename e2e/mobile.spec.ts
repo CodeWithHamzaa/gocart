@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { adminHeaders } from './admin'
 
 // M44 guard rails, at the narrowest phone width we support (320px): no horizontal scroll on any
@@ -16,6 +16,13 @@ test('no storefront page scrolls sideways at 320px', async ({ page, request }) =
   const paths = ['/', '/shop', `/product/${lamp.id}`, '/category/electronics', '/categories', '/cart', '/orders']
   for (const path of paths) {
     await page.goto(path)
+    // M52b: with a line in the cart, /cart shows the checkout form and its Turnstile widget.
+    if (path === `/product/${lamp.id}`) await page.getByRole('button', { name: 'Add to Cart' }).click()
+    // Measure /cart and /orders only once the widget has settled (it changes size as it
+    // loads); 'failed' counts as settled, as it does when Cloudflare is unreachable.
+    if (path === '/cart' || path === '/orders') {
+      await expect(page.locator('[data-turnstile-status]')).toHaveAttribute('data-turnstile-status', /^(verified|failed|disabled)$/)
+    }
     // On failure, name the elements that stick out so the message is actionable (a bare
     // "overflows by 4px" in CI cannot be debugged without a browser).
     const { overflow, offenders } = await page.evaluate(() => {

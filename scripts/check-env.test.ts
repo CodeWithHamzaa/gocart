@@ -3,13 +3,18 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { validateEnv } from './check-env'
-import { normalizeIp, selectClientIp } from '../lib/client-ip'
+import { normalizeIp, selectClientIp, selectVerifyIp } from '../lib/client-ip'
 
 const good = {
   PAYLOAD_SECRET: 'q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Gm0Rj-AeUi',
   POSTGRES_PASSWORD: 'Kd82-hQ.x9_Lm4~Zt7Pw',
+  // M52b/ADR-036: the app's own database role, a different secret from the superuser's.
+  APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~Jq2Xe',
   DATABASE_URI: 'postgresql://gocart:Kd82-hQ.x9_Lm4~Zt7Pw@postgres:5432/gocart',
   NEXT_PUBLIC_SITE_URL: 'https://shop.example.com',
+  // M52b: real-looking (not Cloudflare's test keys); the real format is undocumented.
+  TURNSTILE_SECRET_KEY: '0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J',
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAAh7Gm2Lk9Zp4V',
 }
 
 type Env = Record<string, string | undefined>
@@ -73,6 +78,46 @@ const bad: Array<[string, Env, string]> = [
   ['secret change-me', { PAYLOAD_SECRET: 'q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Change-Me' }, 'PAYLOAD_SECRET'],
   ['secret password', { PAYLOAD_SECRET: 'q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Password' }, 'PAYLOAD_SECRET'],
   ['url unparseable', { NEXT_PUBLIC_SITE_URL: 'not a url' }, 'NEXT_PUBLIC_SITE_URL'],
+  // M52b: Turnstile keys (ADR-035 decision 7).
+  ['turnstile secret missing', { TURNSTILE_SECRET_KEY: undefined }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret empty', { TURNSTILE_SECRET_KEY: '' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret test pass', { TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret test fail', { TURNSTILE_SECRET_KEY: '2x0000000000000000000000000000000AA' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret test spent', { TURNSTILE_SECRET_KEY: '3x0000000000000000000000000000000AA' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret whitespace', { TURNSTILE_SECRET_KEY: '0x4AAAAAAAq9Zk3pQw8 LmT5vXr2NbY7cHd4J' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret trailing newline', { TURNSTILE_SECRET_KEY: '0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J\n' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret too short', { TURNSTILE_SECRET_KEY: '0x4AAAAAAAq9Zk3pQw8' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret too long', { TURNSTILE_SECRET_KEY: `0x4${'Ab9'.repeat(70)}` }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret placeholder', { TURNSTILE_SECRET_KEY: 'REPLACE-ME-turnstile-secret-key' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile secret changeme', { TURNSTILE_SECRET_KEY: 'changeme-0x4AAAAAAAq9Zk3pQw8' }, 'TURNSTILE_SECRET_KEY'],
+  ['turnstile site key missing', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: undefined }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key test visible', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key test blocks', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '2x00000000000000000000AB' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key test invisible', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000BB' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key test interactive', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '3x00000000000000000000FF' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key whitespace', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAA h7Gm2Lk9Zp4V' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key too short', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAA' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile site key placeholder', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'your-site-key-placeholder' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile keys identical', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+  ['turnstile allow flag 1', { TURNSTILE_ALLOW_TEST_KEYS: '1' }, 'TURNSTILE_ALLOW_TEST_KEYS'],
+  ['turnstile allow flag 0', { TURNSTILE_ALLOW_TEST_KEYS: '0' }, 'TURNSTILE_ALLOW_TEST_KEYS'],
+  // ADR-036: separate database roles and the first-admin lock.
+  ['app db password missing', { APP_DB_PASSWORD: undefined }, 'APP_DB_PASSWORD'],
+  ['app db password empty', { APP_DB_PASSWORD: '' }, 'APP_DB_PASSWORD'],
+  ['app db password too short', { APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~' }, 'APP_DB_PASSWORD'],
+  ['app db password bad charset', { APP_DB_PASSWORD: "Rt57_Wn.c3-Vb8~Jq'Xe" }, 'APP_DB_PASSWORD'],
+  ['app db password placeholder', { APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~example' }, 'APP_DB_PASSWORD'],
+  ['app db password low variety', { APP_DB_PASSWORD: 'abababababababababab' }, 'APP_DB_PASSWORD'],
+  ['app db password equals superuser', { APP_DB_PASSWORD: 'Kd82-hQ.x9_Lm4~Zt7Pw' }, 'APP_DB_PASSWORD'],
+  ['first-register flag 1', { PAYLOAD_ALLOW_FIRST_REGISTER: '1' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
+  ['first-register flag 0', { PAYLOAD_ALLOW_FIRST_REGISTER: '0' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
+  ['bootstrap email without password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap password without email', { ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
+  ['bootstrap bad email', { ADMIN_BOOTSTRAP_EMAIL: 'not-an-email', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
+  ['bootstrap short password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_E' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap whitespace password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_ Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap placeholder password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'ChangeMe-Vx93-pLq.m7' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap low variety password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'abababababababab' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
 ]
 
 for (const [name, patch, variable] of bad) {
@@ -88,6 +133,15 @@ for (const [name, patch, variable] of bad) {
 }
 
 // Boundaries that must pass.
+assert.deepEqual(validateEnv(withEnv({ PAYLOAD_ALLOW_FIRST_REGISTER: '' })), [], 'empty first-register flag accepted')
+assert.deepEqual(
+  validateEnv(withEnv({ ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' })),
+  [],
+  'valid bootstrap credentials accepted',
+)
+assert.deepEqual(validateEnv(withEnv({ TURNSTILE_ALLOW_TEST_KEYS: '' })), [], 'empty allow flag accepted')
+assert.deepEqual(validateEnv(withEnv({ TURNSTILE_SECRET_KEY: 'Ab9XqLm4Tz7Pw2Kd8Hs3' })), [], '20-char secret accepted')
+assert.deepEqual(validateEnv(withEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAh' })), [], '10-char site key accepted')
 assert.deepEqual(validateEnv(withEnv({ PAYLOAD_SECRET: 'aBcDeFgHiJkLmNoPqRsTuVwXyZ012345' })), [], '32 chars accepted')
 assert.deepEqual(validateEnv(withEnv({ NEXT_PUBLIC_SITE_URL: 'https://shop.example.com/' })), [], 'trailing slash accepted')
 assert.deepEqual(validateEnv(withEnv({ NEXT_PUBLIC_SITE_URL: 'https://172.32.0.1' })), [], '172.32 is public')
@@ -105,8 +159,11 @@ assert.deepEqual(
   validateEnv({
     PAYLOAD_SECRET: 'Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U',
     POSTGRES_PASSWORD: 'ci-throwaway-pw-0123456789',
+    APP_DB_PASSWORD: 'ci-throwaway-app-9876543210',
     DATABASE_URI: 'postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations',
     NEXT_PUBLIC_SITE_URL: 'https://shop.example.com',
+    TURNSTILE_SECRET_KEY: good.TURNSTILE_SECRET_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: good.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   }),
   [],
   'CI throwaway set passes',
@@ -140,6 +197,16 @@ assert.equal(selectClientIp(hdr({ 'cf-connecting-ip': 'garbage' }), false), 'gar
 assert.equal(selectClientIp(hdr({ 'cf-connecting-ip': '2001:db8::1' }), false), '2001:db8::1')
 assert.equal(selectClientIp(hdr({}), false), 'unknown')
 
+// M52b: remoteip for siteverify is the raw, valid cf-connecting-ip, in production only.
+assert.equal(selectVerifyIp(hdr({ 'cf-connecting-ip': ' 203.0.113.9 ' }), true), '203.0.113.9')
+assert.equal(selectVerifyIp(hdr({ 'cf-connecting-ip': '2001:db8:1:2::1' }), true), '2001:db8:1:2::1', 'raw IPv6, not the /64 key')
+assert.equal(selectVerifyIp(hdr({ 'cf-connecting-ip': '::ffff:203.0.113.9' }), true), '::ffff:203.0.113.9', 'raw mapped form')
+for (const bad of ['garbage', '2001:db8::1%eth0', '999.1.1.1', '']) {
+  assert.equal(selectVerifyIp(hdr({ 'cf-connecting-ip': bad, 'x-forwarded-for': '1.2.3.4' }), true), null, `invalid "${bad}" -> null`)
+}
+assert.equal(selectVerifyIp(hdr({ 'x-forwarded-for': '1.2.3.4' }), true), null, 'xff never used')
+assert.equal(selectVerifyIp(hdr({ 'cf-connecting-ip': '203.0.113.9' }), false), null, 'never outside production')
+
 // CLI behaviour: exit codes, skip outside production, no values on stdout/stderr.
 const run = (env: Env) =>
   spawnSync('npx', ['tsx', 'scripts/check-env.ts'], {
@@ -160,9 +227,16 @@ const failed = run(badEnv)
 assert.equal(failed.status, 1, 'bad env exits 1')
 const output = failed.stdout + failed.stderr
 assert.match(output, /PAYLOAD_SECRET/)
-for (const v of [badEnv.PAYLOAD_SECRET, good.POSTGRES_PASSWORD, good.DATABASE_URI]) {
+for (const v of [badEnv.PAYLOAD_SECRET, good.POSTGRES_PASSWORD, good.DATABASE_URI, good.TURNSTILE_SECRET_KEY, good.NEXT_PUBLIC_TURNSTILE_SITE_KEY]) {
   assert.ok(!output.includes(v), 'CLI output never contains a secret value')
 }
+
+// A test secret in production fails, and the output names the variable without its value.
+const testKeyEnv = { ...good, TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA', NODE_ENV: 'production' }
+const testKeyRun = run(testKeyEnv)
+assert.equal(testKeyRun.status, 1, 'test secret exits 1')
+assert.match(testKeyRun.stdout + testKeyRun.stderr, /TURNSTILE_SECRET_KEY/)
+assert.ok(!(testKeyRun.stdout + testKeyRun.stderr).includes(testKeyEnv.TURNSTILE_SECRET_KEY), 'test key not echoed')
 
 // Missing everything in production is a failure, not a pass.
 assert.equal(run({ NODE_ENV: 'production' }).status, 1, 'empty production env exits 1')

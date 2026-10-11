@@ -58,6 +58,17 @@ export const Orders: CollectionConfig = {
         description: 'Human-referenceable order reference, distinct from the internal id.',
       },
     },
+    // M52b/ADR-036: the checkout attempt's idempotency key. Set only at creation by createOrder();
+    // the UNIQUE index is what makes a retried or double-submitted checkout create one order.
+    // Never shown to customers; hidden from the admin UI and immutable on every transport.
+    {
+      name: 'idempotencyKey',
+      type: 'text',
+      unique: true,
+      index: true,
+      access: { update: () => false },
+      admin: { hidden: true },
+    },
     // Guest customer/address — embedded, not a relation to a Customers collection (ADR-021).
     {
       name: 'name',
