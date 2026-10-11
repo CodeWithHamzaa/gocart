@@ -20,63 +20,38 @@ const nextConfig = {
 
     experimental: {
         ...(siteHost ? { serverActions: { allowedOrigins: [siteHost] } } : {}),
-        // M51: refuse to decode a source image above 40 megapixels (default ~268 MP), so one huge
-        // upload cannot exhaust a small VPS's memory. Larger images are served as the original.
-        imgOptMaxInputPixels: 40_000_000,
     },
 
-    // M51 (replaces `unoptimized: true`, a Vercel-style shortcut): product images go through
-    // Next's built-in optimizer (/_next/image, sharp, cached on disk under .next/cache/images).
-    // It is a public, CPU-bound endpoint, so it is limited to the store's own media:
-    //   - no `remotePatterns`; `localPatterns` admits only /api/media/file/<one segment>, where
-    //     Payload serves uploads (collections/Media.ts, ADR-020). Anything else is a 400.
-    //   - `formats` WebP only: AVIF encodes several times slower for a few percent smaller files,
-    //     the wrong trade on a ~$10 single-vCPU VPS (ADR-015). Revisit with a CDN cache.
-    //   - `w` must be one of 7 sizes and `q` must be 75, so one file has at most 7 variants per
-    //     output format. Every <Image> passes `sizes` so the browser picks from this list.
-    //   - SVG stays off (`dangerouslyAllowSVG` default).
-    // The optimizer's cache key is the raw `url` text, which `localPatterns` cannot fully pin
-    // (it ignores `#...` and an empty `?`, and Payload decodes `%2e` and `a.jpg;x` style forms to
-    // the same file). So the `rewrites` below send any `url` that is not the exact form Payload
-    // itself emits (/api/media/file/ + encodeURIComponent(filename)) to a 404 before the
-    // optimizer runs. The bound is then: at most 7 widths x 1 quality x 1 output format
-    // (per Accept type) for each real file. Distinct real files are bounded only by uploads.
-    // Cache lifetime: a variant lives for max(origin Cache-Control, minimumCacheTTL); one day
-    // matches the M45 rule below, so a replaced image shows within a day.
+    // ADR-036 (B1, interim mitigation; supersedes ADR-034's optimizer). `next@15.4.11` is affected
+    // by critical advisories in the Image Optimization API (GHSA-2xp9-vwfh-vxw4, unauthenticated RCE
+    // "when AVIF files are used", fixed only in 15.5.24+ / 16.3+), and Payload 3.90.2's peer range
+    // excludes every 15.5.x release, so a patched Next needs a major upgrade that is its own
+    // milestone. Until then the optimizer is switched OFF and its endpoint is closed:
+    //   - `unoptimized: true`: <Image> emits the original /api/media/file/... URL; nothing resizes
+    //     or re-encodes an upload on the server, so no uploaded file reaches sharp/libvips through
+    //     a public endpoint.
+    //   - the rewrite below sends EVERY /_next/image request to a 404, so the endpoint cannot be
+    //     reached even though Next still registers it.
+    //   - collections/Media.ts accepts only JPEG, PNG, WebP and GIF uploads (no AVIF, SVG, HEIC...).
+    // The cost is larger image downloads on mobile; revisit with the Next 16 upgrade, which must
+    // happen before launch (docs/DEPLOYMENT.md "Launch blockers").
     images: {
-        formats: ['image/webp'],
-        localPatterns: [{ pathname: '/api/media/file/*', search: '' }],
-        imageSizes: [64, 128, 256, 384],
-        deviceSizes: [640, 828, 1080],
-        qualities: [75],
-        minimumCacheTTL: 86400,
+        unoptimized: true,
     },
 
-    // M51: reject any /_next/image `url` that is not canonical Payload media (see above). The
-    // name is one path segment of unreserved characters (what encodeURIComponent leaves alone)
-    // or upper-case %XX escapes of the characters it does escape; an escape of an unreserved
-    // character (%2e, %61) or a lower-case one is a different spelling of the same file.
+    // ADR-036: /_next/image is closed (see above). `missing: []` is not used on purpose: the
+    // rewrite must apply to every request, whatever its query string.
     async rewrites() {
-        const escaped = '%(?!(?:2[1789ADE]|3[0-9]|4[1-9A-F]|5[0-9AF]|6[1-9A-F]|7[0-9AE]))[0-9A-F]{2}'
-        const name = `(?:[A-Za-z0-9._~!*'()-]|${escaped})+`
         return {
             beforeFiles: [
                 {
                     source: '/_next/image',
-                    missing: [{ type: 'query', key: 'url', value: `/api/media/file/${name}` }],
                     destination: '/_next/static/image-url-rejected',
                 },
             ],
         }
     },
 
-    // M45: Next.js streams <title>/<meta> into the <body> for ordinary browsers on statically
-    // cached pages (category pages) and only moves them into <head> with JavaScript; only bots
-    // matching this pattern get them in <head> up front. A crawler or link-preview scraper that
-    // does not run JavaScript (and Lighthouse, which flagged "no meta description") would miss
-    // them. Matching every user agent restores blocking metadata everywhere: the head is
-    // complete in the first HTML response. Cost: the head waits for generateMetadata, which on
-    // these pages is a cached read.
     htmlLimitedBots: /.*/,
 
     async headers() {

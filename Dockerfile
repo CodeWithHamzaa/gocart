@@ -41,9 +41,9 @@ FROM deps AS builder
 #   NEXT_PUBLIC_CURRENCY_SYMBOL  the currency symbol shown on prices.
 #   NEXT_PUBLIC_TURNSTILE_SITE_KEY  the PUBLIC Cloudflare Turnstile site key (M52b, ADR-035). Not a
 #                                secret (it is shipped to every browser). Empty means no widget is
-#                                rendered and every order/lookup takes the strict "degraded" rate
-#                                limit. The matching TURNSTILE_SECRET_KEY is a RUNTIME secret and is
-#                                never passed to the build.
+#                                rendered and NO order or lookup can be made (ADR-036: a verified
+#                                token is required). The matching TURNSTILE_SECRET_KEY is a RUNTIME
+#                                secret and is never passed to the build.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ARG NEXT_PUBLIC_CURRENCY_SYMBOL="Rs."
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=""
@@ -63,7 +63,7 @@ RUN case "$NEXT_PUBLIC_SITE_URL" in \
       http://localhost*) echo "WARNING: building with NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL — canonical URLs and the sitemap will point at localhost. Pass --build-arg NEXT_PUBLIC_SITE_URL=<public origin> for a real deployment." ;; \
     esac; \
     if [ -z "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" ]; then \
-      echo "WARNING: building with an empty NEXT_PUBLIC_TURNSTILE_SITE_KEY — no Turnstile widget will be rendered, so every order and lookup gets the strict degraded rate limit (ADR-035). Pass --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key> for a real deployment."; \
+      echo "WARNING: building with an empty NEXT_PUBLIC_TURNSTILE_SITE_KEY — no Turnstile widget will be rendered, so NO order or lookup can be made (ADR-036 requires a verified token). Pass --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key> for a real deployment."; \
     fi
 
 COPY . .
@@ -123,7 +123,8 @@ EXPOSE 3000
 
 # Runtime configuration (nothing is baked in): DATABASE_URI and PAYLOAD_SECRET are required.
 # TURNSTILE_SECRET_KEY (M52b) is also a runtime secret; it is not checked here because the app
-# degrades without it (ADR-035) — production enforces it via compose `:?` and check-env.
+# refuses every order and lookup without it (ADR-036) - production enforces it via compose `:?`
+# and check-env.
 # The schema must already exist — Payload does not push it in production; the `migrate` target
 # (M52a) creates it before this container starts.
 #

@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-// M52b (ADR-035, the owner's outage policy): when Cloudflare's Turnstile script cannot load,
-// the widget reports `failed` within 10 s, the submit buttons are enabled, and the order and
-// the lookup still succeed through the server's degraded path (today's strict per-IP limit).
+// M52b / ADR-036 (strict policy): when Cloudflare's Turnstile script cannot load, the widget
+// reports `failed` within 10 s, the submit buttons STAY DISABLED, the page says the check could not
+// load and to contact the store, and no order is created. There is no unverified path.
 // Does not depend on Cloudflare: page.route blocks challenges.cloudflare.com. Expects the same
 // build as the golden path (a Turnstile site key inlined), otherwise the widget is `disabled`.
 // Also checks that no indexable page loads anything from Cloudflare's challenge host.
@@ -11,7 +11,7 @@ import type { Page } from '@playwright/test'
 const CHALLENGE_HOST = 'https://challenges.cloudflare.com/**'
 const status = (page: Page) => page.locator('[data-turnstile-status]')
 
-test('Turnstile unreachable: a degraded order and lookup still succeed', async ({ page, request }) => {
+test('Turnstile unreachable: no order and no lookup can be made', async ({ page, request }) => {
   // Cart: the script request fails outright (blocked host, DNS failure).
   await page.route(CHALLENGE_HOST, (route) => route.abort('connectionrefused'))
 
@@ -39,13 +39,13 @@ test('Turnstile unreachable: a degraded order and lookup still succeed', async (
   await expect(page.getByText('SAVE ADDRESS')).toBeHidden()
 
   await expect(status(page)).toHaveAttribute('data-turnstile-status', 'failed', { timeout: 11_000 })
-  await expect(page.getByText("The security check couldn't load. You can still continue.")).toBeVisible()
+  await expect(page.getByText("The security check couldn't load", { exact: false })).toBeVisible()
+  await expect(page.getByText('contact us', { exact: false }).first()).toBeVisible()
   const placeOrder = page.getByRole('button', { name: /place order/i })
-  await expect(placeOrder).toBeEnabled()
-  await placeOrder.click()
-  await expect(page).toHaveURL(/\/order-confirmation$/)
-  const orderNumber = (await page.locator('body').innerText()).match(/GC-[A-Z0-9]+-[A-Z0-9]+/)?.[0]
-  expect(orderNumber, 'degraded order was created').toBeTruthy()
+  await expect(placeOrder).toBeDisabled()
+  // Even a forced click on the disabled button must not place anything.
+  await placeOrder.click({ force: true, timeout: 2_000 }).catch(() => {})
+  await expect(page).toHaveURL(/\/cart$/)
 
   // Lookup: the script request hangs instead, so only the 10-second cap ends the wait.
   await page.unroute(CHALLENGE_HOST)
@@ -55,13 +55,8 @@ test('Turnstile unreachable: a degraded order and lookup still succeed', async (
   await expect(page.locator('button[type="submit"]')).toBeDisabled()
   await expect(page.getByText('Running a quick security check…')).toBeVisible()
   await expect(status(page)).toHaveAttribute('data-turnstile-status', 'failed', { timeout: 11_500 })
-  await expect(page.locator('button[type="submit"]')).toBeEnabled()
-  await page.locator('input[name="orderNumber"]').fill(orderNumber!)
-  await page.locator('input[name="phone"]').fill(phone)
-  await page.locator('button[type="submit"]').click()
-  const body = page.locator('body')
-  await expect(body).toContainText('Placed')
-  await expect(body).toContainText(orderNumber!)
+  await expect(page.locator('button[type="submit"]')).toBeDisabled()
+  await expect(page.getByText("The security check couldn't load", { exact: false })).toBeVisible()
 })
 
 test('indexable pages never load Turnstile', async ({ page, request }) => {

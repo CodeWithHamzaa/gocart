@@ -93,8 +93,13 @@ x-logging: &default-logging
 # Reused by the services that run our own code or the tunnel connector. NOT applied to postgres:
 # its entrypoint starts as root, chowns the data directory and drops to the postgres user, which
 # needs capabilities (CHOWN, SETUID, SETGID, DAC_OVERRIDE, FOWNER); hardening it is M53's job.
-# `read_only: true` is deliberately not set anywhere yet: Next.js writes under .next and Payload
-# under /app/media, and that has not been tested (M53).
+# M52b/ADR-036 (M6): `read_only: true` is set on `app` (and on `migrate`) - the root filesystem
+# cannot be written, so a compromised process cannot plant or modify code. The only writable places
+# are the Docker volume mounted at /app/media (uploaded product images) and small tmpfs mounts that
+# vanish when the container stops. Verified on the standalone bundle in a read-only container:
+# every public route, admin login, an image upload and its download, and revalidating pages. NOT set
+# on `cloudflared` (not testable without a real tunnel token) or `postgres` (its entrypoint chowns
+# the data directory): both stay on the hardening below until verified in the target environment.
 x-hardening: &hardening
   security_opt:
     - no-new-privileges:true
@@ -152,6 +157,14 @@ services:
       DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      # M52b/ADR-036: the restricted role the running app uses. This one-shot step creates and
+      # grants it (scripts/db-roles.ts) while it holds the superuser connection; `app` never does.
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required (>= 16 chars, A-Z a-z 0-9 - . _ ~ only, different from POSTGRES_PASSWORD)}
+      # M52b/ADR-036: the first admin is created here from a secret (scripts/bootstrap-admin.ts),
+      # because the open create-first-user flow is closed. Required only while no user exists;
+      # remove both from the env file afterwards. They reach this one-shot container only.
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com}
       # M52b: validated by check-env only; migrate never calls Turnstile (it is on `backend` only).
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?TURNSTILE_SECRET_KEY is required (Cloudflare Turnstile secret key)}
@@ -159,6 +172,9 @@ services:
     networks:
       - backend
     <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,size=256m
     logging: *default-logging
 
   app:
@@ -178,7 +194,9 @@ services:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
+      # M52b/ADR-036: the app connects as the restricted `gocart_app` role (row access only), never
+      # as the Postgres superuser. A compromised app cannot change the schema or run programs.
+      DATABASE_URI: postgresql://gocart_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
       # M52b (ADR-035): server-side Turnstile verification. TURNSTILE_ALLOW_TEST_KEYS is never set here.
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?TURNSTILE_SECRET_KEY is required (Cloudflare Turnstile secret key)}

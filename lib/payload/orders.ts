@@ -108,7 +108,17 @@ function cleanText(value: unknown, max: number, required: boolean): string | nul
   return trimmed
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+export type CreateOrderOptions = {
+  // M52b/ADR-036: a client-generated, unguessable key for this checkout attempt. It is stored on
+  // the order under a UNIQUE index, so a retry (lost response, double tap, two tabs) can never
+  // create a second order: the retry gets the first order back.
+  idempotencyKey?: string | null
+}
+
+export async function createOrder(
+  input: CreateOrderInput,
+  options: CreateOrderOptions = {},
+): Promise<CreateOrderResult> {
   // Server-action input is untrusted regardless of its TypeScript type.
   const raw: unknown = input
   const rawItems = isRecord(raw) ? raw.items : undefined
@@ -287,6 +297,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         paymentMethod: 'COD',
         status: 'PLACED',
         isPaid: false,
+        ...(options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
       },
     })
 
@@ -303,6 +314,12 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
     return { ok: true, orderNumber, subtotal, shippingCost, orderTotal, items: resultItems }
   } catch (error) {
+    // Two requests with one idempotency key raced past the replay check and the loser hit the
+    // unique index: hand back the winner's order instead of an error (and never a second order).
+    if (options.idempotencyKey) {
+      const existing = await findOrderByIdempotencyKey(options.idempotencyKey, phone).catch(() => null)
+      if (existing) return existing
+    }
     // Log only the error class and code: Postgres/Payload messages can embed row
     // data (guest name/phone/address), so never log message, stack, or input.
     const err = error as { name?: unknown; code?: unknown } | null
@@ -311,6 +328,43 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       code: typeof err?.code === 'string' ? err.code : undefined,
     })
     return fail('SERVER_ERROR', 'We could not place your order. Please try again.')
+  }
+}
+
+// M52b/ADR-036: the order already created for an idempotency key, as the same response
+// createOrder gave the first time - or null. The phone must match, so a key alone reveals
+// nothing; keys are unguessable (22+ random characters) and only the placing browser holds one.
+// Built from the stored order, so prices are the snapshot taken at creation, not today's.
+export async function findOrderByIdempotencyKey(
+  key: string,
+  phone: string,
+): Promise<Extract<CreateOrderResult, { ok: true }> | null> {
+  const payload = await getPayload({ config })
+  const found = await payload.find({
+    collection: 'orders',
+    where: { idempotencyKey: { equals: key } },
+    limit: 1,
+    depth: 1,
+    pagination: false,
+    overrideAccess: true,
+  })
+  const doc = found.docs[0] as unknown as Record<string, unknown> | undefined
+  if (!doc || typeof doc.orderNumber !== 'string' || doc.phone !== phone) return null
+
+  const rawItems = Array.isArray(doc.items) ? (doc.items as Record<string, unknown>[]) : []
+  const items = rawItems.map((line) => {
+    const product = line.product
+    const name = isRecord(product) && typeof product.name === 'string' && product.name ? product.name : 'Product'
+    return { name, quantity: Number(line.quantity), unitPrice: Number(line.unitPrice) }
+  })
+  const round2 = (x: number) => Math.round(x * 100) / 100
+  return {
+    ok: true,
+    orderNumber: doc.orderNumber,
+    subtotal: round2(items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)),
+    shippingCost: Number(doc.shippingCost),
+    orderTotal: Number(doc.orderTotal),
+    items,
   }
 }
 

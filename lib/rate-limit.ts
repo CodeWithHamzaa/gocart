@@ -84,7 +84,7 @@ export function rateLimit(rawKey: string, { limit, windowMs }: Options): RateLim
 const BUCKET_SECRET = randomBytes(32)
 
 export type BucketLimiter = {
-  reserve: (key: string) => { allowed: boolean }
+  reserve: (key: string) => { allowed: boolean; retryAfterSec: number }
   release: (key: string) => void
 }
 
@@ -110,11 +110,11 @@ export function createBucketLimiter({
       const live = (state.get(index) ?? []).filter((stamp) => now - stamp < windowMs)
       if (live.length >= limit) {
         state.set(index, live)
-        return { allowed: false }
+        return { allowed: false, retryAfterSec: Math.max(1, Math.ceil((live[0] + windowMs - now) / 1000)) }
       }
       live.push(now)
       state.set(index, live)
-      return { allowed: true }
+      return { allowed: true, retryAfterSec: 0 }
     },
     // Refund the most recent reservation.
     release(key) {

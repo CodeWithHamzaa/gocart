@@ -9,13 +9,13 @@ import type { LookupOrderResult } from '@/lib/payload/orders'
 // M36: server action behind the guest order lookup form (ADR-024). Rate-limits BEFORE
 // any database query, then delegates to lookupOrder.
 //
-// M52b (ADR-035 decision 4): the limits live in lib/order-guard.ts — a per-IP flood ceiling
-// (every request), a Turnstile check (rejected -> VERIFICATION_FAILED; degraded -> today's
-// 20/hour per IP on a separate key), then M36's per-order-number cap, unchanged: 5 FAILED
-// lookups per hour, reserved before the query and kept only on NOT_FOUND (it blunts phone
-// guessing against a known order number by an attacker rotating IPs). Accepted trade-off
-// (owner-approved, 2026-10-09): someone who knows an order number can burn its 5 failed
-// attempts for an hour; the admin and the confirmation page remain available.
+// M52b (ADR-035, ADR-036): the limits live in lib/order-guard.ts - a Turnstile token is REQUIRED
+// (no token, a bad token or an unreachable Cloudflare all refuse the lookup), a per-IP attempts
+// gate, then M36's per-order-number cap, unchanged: 5 FAILED lookups per hour, reserved before
+// the query and kept only on NOT_FOUND (it blunts phone guessing against a known order number
+// by an attacker rotating IPs). Accepted trade-off (owner-approved, 2026-10-09): someone who
+// knows an order number can burn its 5 failed attempts for an hour; the admin and the
+// confirmation page remain available.
 
 export type LookupOrderActionResult = LookupOrderResult | GuardFailure
 

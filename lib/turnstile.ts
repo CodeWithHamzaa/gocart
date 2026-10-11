@@ -1,9 +1,17 @@
-// M52b: server-side Cloudflare Turnstile verification (ADR-035 decisions 2, 3 and 10).
-// Classifies every request as exactly one of verified / rejected / degraded. The rule:
-// `degraded` is never better than sending no token at all (the caller applies today's
-// strict per-IP limit to it), so every uncertain result degrades; `rejected` is only for a
-// token that is definitely bad. Pure: no next/* imports, so tsx scripts (check-env, the unit
-// tests) can import it. Never logs or sends the token, the IP or any customer field.
+// M52b: server-side Cloudflare Turnstile verification (ADR-035, amended by ADR-036 for the
+// strict policy). Classifies every request as exactly one of:
+//   verified     - Cloudflare confirmed a fresh token for this site and this action;
+//   rejected     - a SECURITY-VALIDATION failure: the token is missing, malformed, invalid,
+//                  expired/spent, or was issued for another action or hostname;
+//   unavailable  - an AVAILABILITY or CONFIGURATION failure: Cloudflare could not be reached or
+//                  answered nonsense, our concurrency cap is full, or the secret/hostname is not
+//                  usable. Nothing is known about the token.
+// Both non-verified outcomes REFUSE the request (fail closed): there is no degraded path that lets
+// an unverified order through. They stay separate because they mean different things to an
+// operator (an attack or a bug in the client vs an outage or a misconfiguration), are logged at
+// different levels and show the customer different messages.
+// Pure: no next/* imports, so tsx scripts (check-env, the unit tests) can import it. Never logs
+// or sends the token, the IP or any customer field.
 
 /** Constant on purpose (ADR-035 decision 3): an env-configurable URL could be pointed at a server that always answers success. */
 export const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
@@ -18,10 +26,18 @@ export const MAX_IN_FLIGHT = 50
 
 export type TurnstileAction = 'place_order' | 'order_lookup'
 
-export type RejectedReason = 'malformed-token' | 'invalid-token' | 'expired-or-duplicate'
-
-export type DegradedReason =
+export type RejectedReason =
   | 'missing-token'
+  | 'malformed-token'
+  | 'invalid-token'
+  | 'expired-or-duplicate'
+  // A solved challenge for another action or hostname: a client bug, a www/apex mismatch or a
+  // site key used where it should not be. Never verified; logged at error level because it is
+  // also what a misconfigured launch looks like.
+  | 'action-mismatch'
+  | 'hostname-mismatch'
+
+export type UnavailableReason =
   | 'not-configured'
   | 'test-key-not-allowed'
   | 'network'
@@ -30,15 +46,11 @@ export type DegradedReason =
   | 'bad-response'
   | 'service-error'
   | 'busy'
-  // A solved challenge for another hostname/action is far more likely a www/apex or
-  // configuration mismatch than an attack, so it degrades (logged as an error), never rejects.
-  | 'action-mismatch'
-  | 'hostname-mismatch'
 
 export type TurnstileResult =
   | { outcome: 'verified' }
   | { outcome: 'rejected'; reason: RejectedReason }
-  | { outcome: 'degraded'; reason: DegradedReason }
+  | { outcome: 'unavailable'; reason: UnavailableReason }
 
 export type VerifyOptions = { action: TurnstileAction; remoteIp: string | null }
 
@@ -67,6 +79,7 @@ export function isTurnstileTestKey(key: string): boolean {
 }
 
 const SECRET_ERROR_CODES = ['invalid-input-secret', 'missing-input-secret']
+// Reasons that point at a misconfiguration (or a client bug), not at an attacker or an outage.
 const CONFIG_REASONS: ReadonlyArray<string> = ['not-configured', 'test-key-not-allowed', 'action-mismatch', 'hostname-mismatch']
 
 class TooLarge extends Error {}
@@ -154,16 +167,16 @@ export function createTurnstileVerifier(deps: VerifierDeps): Verifier {
     remoteIp: string | null,
     secretRejected: { value: boolean },
   ): Promise<TurnstileResult> {
-    if (typeof token !== 'string' || token.trim() === '') return { outcome: 'degraded', reason: 'missing-token' }
+    if (typeof token !== 'string' || token.trim() === '') return { outcome: 'rejected', reason: 'missing-token' }
     if (token.length > MAX_TOKEN_LENGTH) return { outcome: 'rejected', reason: 'malformed-token' }
 
     const secret = deps.secret
-    if (!secret) return { outcome: 'degraded', reason: 'not-configured' }
+    if (!secret) return { outcome: 'unavailable', reason: 'not-configured' }
     const testKey = isTurnstileTestKey(secret)
-    if (testKey && !deps.allowTestKeys) return { outcome: 'degraded', reason: 'test-key-not-allowed' }
-    if (!testKey && !deps.expectedHostname) return { outcome: 'degraded', reason: 'not-configured' }
+    if (testKey && !deps.allowTestKeys) return { outcome: 'unavailable', reason: 'test-key-not-allowed' }
+    if (!testKey && !deps.expectedHostname) return { outcome: 'unavailable', reason: 'not-configured' }
 
-    if (inFlight.count >= maxInFlight) return { outcome: 'degraded', reason: 'busy' }
+    if (inFlight.count >= maxInFlight) return { outcome: 'unavailable', reason: 'busy' }
 
     // Exactly secret, response and (when known) remoteip. No retries, so no idempotency_key.
     const body = new URLSearchParams({ secret, response: token.trim() })
@@ -181,36 +194,36 @@ export function createTurnstileVerifier(deps: VerifierDeps): Verifier {
       if (res.status !== 200) {
         // Free the connection; nothing in the body is worth reading.
         void res.body?.cancel().catch(() => {})
-        return { outcome: 'degraded', reason: 'http-status' }
+        return { outcome: 'unavailable', reason: 'http-status' }
       }
       let text: string
       try {
         text = await abortable(readCappedText(res, MAX_RESPONSE_BYTES), signal)
       } catch (error) {
         if (signal.aborted) throw error
-        return { outcome: 'degraded', reason: 'bad-response' }
+        return { outcome: 'unavailable', reason: 'bad-response' }
       }
       try {
         data = JSON.parse(text)
       } catch {
-        return { outcome: 'degraded', reason: 'bad-response' }
+        return { outcome: 'unavailable', reason: 'bad-response' }
       }
     } catch {
-      return { outcome: 'degraded', reason: signal.aborted ? 'timeout' : 'network' }
+      return { outcome: 'unavailable', reason: signal.aborted ? 'timeout' : 'network' }
     } finally {
       inFlight.count--
     }
 
-    if (!isRecord(data) || typeof data.success !== 'boolean') return { outcome: 'degraded', reason: 'bad-response' }
+    if (!isRecord(data) || typeof data.success !== 'boolean') return { outcome: 'unavailable', reason: 'bad-response' }
 
     if (data.success) {
       // Test secrets answer with Cloudflare's own placeholder action/hostname, not ours.
       if (testKey) return { outcome: 'verified' }
       if (typeof data.action !== 'string' || typeof data.hostname !== 'string') {
-        return { outcome: 'degraded', reason: 'bad-response' }
+        return { outcome: 'unavailable', reason: 'bad-response' }
       }
-      if (data.action !== action) return { outcome: 'degraded', reason: 'action-mismatch' }
-      if (data.hostname.toLowerCase() !== deps.expectedHostname) return { outcome: 'degraded', reason: 'hostname-mismatch' }
+      if (data.action !== action) return { outcome: 'rejected', reason: 'action-mismatch' }
+      if (data.hostname.toLowerCase() !== deps.expectedHostname) return { outcome: 'rejected', reason: 'hostname-mismatch' }
       return { outcome: 'verified' }
     }
 
@@ -220,7 +233,7 @@ export function createTurnstileVerifier(deps: VerifierDeps): Verifier {
     if (codes.includes('invalid-input-response')) return { outcome: 'rejected', reason: 'invalid-token' }
     if (codes.includes('timeout-or-duplicate')) return { outcome: 'rejected', reason: 'expired-or-duplicate' }
     secretRejected.value = codes.some((c) => SECRET_ERROR_CODES.includes(c))
-    return { outcome: 'degraded', reason: 'service-error' }
+    return { outcome: 'unavailable', reason: 'service-error' }
   }
 }
 

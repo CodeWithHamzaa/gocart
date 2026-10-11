@@ -46,7 +46,7 @@ jobs:
           code="$(curl -sS -o /dev/null -w '%{http_code}' https://challenges.cloudflare.com/turnstile/v0/api.js)"
           echo "api.js HTTP $code"
           test "$code" = "200"
-      - name: lib/turnstile.ts classifies real siteverify responses (verified / rejected / rejected)
+      - name: lib/turnstile.ts classifies real siteverify responses (verified / rejected / rejected / unavailable)
         run: |
           cat > "$RUNNER_TEMP/turnstile-contract.mts" <<'TS'
           import assert from 'node:assert/strict'
@@ -64,6 +64,9 @@ jobs:
             { name: 'always-pass', secret: '1x0000000000000000000000000000000AA', expected: { outcome: 'verified' } },
             { name: 'always-fail', secret: '2x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'invalid-token' } },
             { name: 'token-spent', secret: '3x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'expired-or-duplicate' } },
+            // ADR-036: a secret Cloudflare does not know is a CONFIGURATION fault, not a bad token:
+            // it must be 'unavailable' (service-error, logged as an error), never 'rejected'.
+            { name: 'unknown-secret', secret: '0x4AAAAAAAcontractTestNotARealSecret00', allowTest: false, expected: { outcome: 'unavailable', reason: 'service-error' } },
           ]
           assert.equal(SITEVERIFY_URL, 'https://challenges.cloudflare.com/turnstile/v0/siteverify')
           let failed = 0
@@ -72,7 +75,7 @@ jobs:
             const verify = createTurnstileVerifier({
               fetch: loggingFetch,
               secret: c.secret,
-              allowTestKeys: true,
+              allowTestKeys: c.allowTest !== false,
               expectedHostname: 'localhost',
               timeoutMs: 10000,
             })
@@ -122,6 +125,10 @@ jobs:
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
       TURNSTILE_ALLOW_TEST_KEYS: '1'
+      # ADR-036: development/CI only - lets the e2e helper register its admin through Payload's
+      # first-register endpoint, which the app otherwise refuses. check-env rejects it in production.
+      PAYLOAD_ALLOW_FIRST_REGISTER: '1'
+      APP_DB_PASSWORD: ci-e2e-app-role-0123456789
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -132,8 +139,19 @@ jobs:
       - run: npx playwright install --with-deps chromium
       # Creates the schema (Payload pushes it outside production) and the demo records.
       - run: npm run seed
+      # ADR-036 (H3): order idempotency against the real database (needs the seeded products).
+      - run: npm run test:idempotency
+      # ADR-036 (H4): from here on the app runs as the restricted `gocart_app` role, which can read
+      # and write rows but cannot change the schema - so the golden path also proves the storefront
+      # and checkout work without DDL rights.
+      - name: Create the restricted database role
+        run: npx tsx scripts/db-roles.ts
       - run: npm run build
+        env:
+          DATABASE_URI: postgresql://gocart_app:ci-e2e-app-role-0123456789@localhost:5432/gocart_e2e
       - run: npm run test:e2e
+        env:
+          DATABASE_URI: postgresql://gocart_app:ci-e2e-app-role-0123456789@localhost:5432/gocart_e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -174,9 +192,13 @@ jobs:
     env:
       PAYLOAD_SECRET: Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U
       POSTGRES_PASSWORD: ci-throwaway-pw-0123456789
+      APP_DB_PASSWORD: ci-throwaway-app-9876543210
       NEXT_PUBLIC_SITE_URL: https://shop.example.com
       TURNSTILE_SECRET_KEY: Qm7vTz2KpW9xRb4NcY6hJd3LfG8sAu5E
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: Hs4kVn8QwZ2tPy6R
+      # ADR-036: the first admin is created from these during the deploy step (throwaway values).
+      ADMIN_BOOTSTRAP_EMAIL: ci-owner@example.com
+      ADMIN_BOOTSTRAP_PASSWORD: Vx93-pLq.m7_Ez4~Hs2Kd
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -202,6 +224,73 @@ jobs:
           NODE_ENV: production
           DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
         run: npm run deploy:migrate
+      - name: A second run is a no-op (idempotent; the admin already exists)
+        env:
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
+        run: |
+          npm run deploy:migrate | tee run2.log
+          grep -q "1 user(s) exist, nothing to do" run2.log
+      - name: The app role can read and write rows but cannot change the schema (ADR-036, H4)
+        env:
+          PGPASSWORD: ci-throwaway-app-9876543210
+        run: |
+          app() { psql -h localhost -U gocart_app -d gocart_migrations -tA -c "$1"; }
+          app "select count(*) from orders"
+          app "select count(*) from users" | grep -qx 1
+          for sql in "create table evil(x int)" "drop table orders" "alter table orders add column z int" "truncate orders" \
+                     "create role r2 superuser" "copy (select 1) to program 'id'" "create extension if not exists pg_trgm" \
+                     "delete from payload_migrations" "create temp table t(x int)" "create schema s2"; do
+            if app "$sql" >/dev/null 2>&1; then echo "UNEXPECTEDLY ALLOWED for gocart_app: $sql"; exit 1; fi
+          done
+          app "select rolsuper or rolcreaterole or rolcreatedb or rolreplication or rolbypassrls from pg_roles where rolname = 'gocart_app'" | grep -qx f
+      - name: The deploy step fails closed on an empty database with no bootstrap credentials (ADR-036, B2)
+        env:
+          PGPASSWORD: ci-throwaway-pw-0123456789
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_nocreds
+          ADMIN_BOOTSTRAP_EMAIL: ''
+          ADMIN_BOOTSTRAP_PASSWORD: ''
+        run: |
+          createdb -h localhost -U gocart gocart_nocreds
+          if npm run deploy:migrate; then echo "deploy:migrate succeeded with nobody able to administer the stack"; exit 1; fi
+          test "$(psql -h localhost -U gocart -d gocart_nocreds -tA -c 'select count(*) from users')" = "0"
+
+  # ADR-036: the REAL production compose stack (docker-compose.prod.yml: postgres -> migrate -> app)
+  # with throwaway but conforming values, checked from the outside by scripts/prod-stack-check.sh:
+  # the migrate step bootstraps the schema, the restricted app role and the first admin from a
+  # secret; the app runs with a read-only root filesystem as uid 1000 and connects as `gocart_app`;
+  # the first-admin window is closed even with an EMPTY users table; /_next/image is closed; uploads
+  # work on the read-only container and AVIF/SVG are refused. cloudflared is not started (it needs a
+  # real tunnel token). Nothing here calls Cloudflare Turnstile (the keys only have to pass check-env).
+  prod-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Throwaway environment file (never reused outside this job)
+        run: |
+          cat > "$RUNNER_TEMP/prod.env" <<'EOF'
+          POSTGRES_PASSWORD=Kd82-hQ.x9_Lm4~Zt7Pw
+          APP_DB_PASSWORD=Rt57_Wn.c3-Vb8~Jq2Xe
+          PAYLOAD_SECRET=q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Gm0Rj-AeUi
+          NEXT_PUBLIC_SITE_URL=https://shop.mystore.pk
+          TURNSTILE_SECRET_KEY=0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAAh7Gm2Lk9Zp4V
+          TUNNEL_TOKEN=dummy-not-a-real-token
+          ADMIN_BOOTSTRAP_EMAIL=ci-owner@mystore.pk
+          ADMIN_BOOTSTRAP_PASSWORD=Vx93-pLq.m7_Ez4~Hs2Kd
+          EOF
+      - name: Build and start postgres, migrate and app
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml up -d --build app
+      - name: Check the running stack
+        run: scripts/prod-stack-check.sh "$RUNNER_TEMP/prod.env"
+      - name: Logs (on failure)
+        if: failure()
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml logs --no-color --tail=200 || true
+      - name: Tear down
+        if: always()
+        run: docker compose --env-file "$RUNNER_TEMP/prod.env" -f docker-compose.prod.yml down -v || true
 
   # M49: the production image must build with NO database available, run as an unprivileged user,
   # refuse to start without its required settings, and carry no secrets.

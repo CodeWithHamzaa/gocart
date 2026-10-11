@@ -5,9 +5,10 @@
 // (app/(public)/orders/OrderLookup.tsx). ADR-035 decision 8. Cloudflare's script is injected
 // lazily on mount, once per page load, and never from a layout, so no indexable page loads it
 // (/cart and /orders are noindex). Explicit render, appearance 'interaction-only' (most
-// visitors see nothing). The parent disables its submit button only while the status is
-// 'loading', for at most 10 s; when the widget fails or there is no site key the form still
-// submits and the server degrades to today's strict per-IP limit (the owner's outage policy).
+// visitors see nothing). ADR-036 (strict policy): the parent enables its submit button ONLY when
+// the status is 'verified'. 'loading' lasts at most 10 s, then 'failed'; with no site key the status
+// is 'disabled'. In both cases the form cannot be submitted and the text below tells the visitor
+// to contact the store - the server refuses every request without a verified token anyway.
 import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { Ref } from 'react'
 
@@ -76,7 +77,9 @@ function loadTurnstile(): Promise<TurnstileApi> {
 
 const STATUS_TEXT: Partial<Record<TurnstileStatus, string>> = {
   loading: 'Running a quick security check…',
-  failed: "The security check couldn't load. You can still continue.",
+  failed:
+    "The security check couldn't load, so this can't be done online right now. Please reload the page and try again, or contact us.",
+  disabled: 'Online ordering is not available right now. Please contact us.',
 }
 
 export function TurnstileWidget({
@@ -105,7 +108,7 @@ export function TurnstileWidget({
     if (capTimerRef.current) clearTimeout(capTimerRef.current)
     capTimerRef.current = null
   }
-  // 'loading' never lasts more than 10 s: after that the form may submit and the server degrades.
+  // 'loading' never lasts more than 10 s: after that the status is 'failed' (a late success still wins).
   const startLoading = () => {
     clearCap()
     report({ token: null, status: 'loading' })

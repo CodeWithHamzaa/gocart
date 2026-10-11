@@ -2,8 +2,8 @@
 
 // M36: guest order lookup form (ADR-024). Calls only the lookupOrderAction server
 // action — no REST fetch, and the order number/phone never appear in the URL.
-// M52b (ADR-035): sends a Turnstile token; the button waits only while the check is loading
-// (10 s cap), and a failed or absent widget still submits (the server degrades).
+// M52b (ADR-035/036): sends a Turnstile token; the button stays disabled until the check has
+// produced one (an unreachable check means no lookup - the message says to contact the store).
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { readLastOrder } from '@/lib/order-confirmation'
@@ -98,7 +98,7 @@ export function OrderLookup() {
           <TurnstileWidget ref={turnstileRef} action="order_lookup" onChange={setTurnstile} />
           <button
             type="submit"
-            disabled={pending || turnstile.status === 'loading'}
+            disabled={pending || turnstile.status !== 'verified'}
             className="min-h-11 rounded bg-slate-800 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}

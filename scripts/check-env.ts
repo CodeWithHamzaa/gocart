@@ -7,8 +7,15 @@
 // M52b (ADR-035 decision 7): the two Turnstile keys — required, plausible, never Cloudflare's
 // public test keys (a test secret accepts the public dummy token: a bypass) — and
 // TURNSTILE_ALLOW_TEST_KEYS must be unset. The real key format is not documented, so no prefix rule.
+// M52b/ADR-036: also the app's database role password (APP_DB_PASSWORD, a different secret from
+// the superuser's), the first-admin bootstrap credentials, and the refusal of
+// PAYLOAD_ALLOW_FIRST_REGISTER (it re-opens the first-admin window; development and CI only).
 import { pathToFileURL } from 'node:url'
 import { isTurnstileTestKey } from '../lib/turnstile'
+
+/** The restricted Postgres role the running app connects as (scripts/db-roles.ts creates it). */
+export const APP_DB_USER = 'gocart_app'
+export const APP_DB_PASSWORD_PATTERN = /^[A-Za-z0-9._~-]+$/
 
 type Env = Record<string, string | undefined>
 
@@ -53,14 +60,37 @@ function denyPlaceholders(name: string, value: string, failures: string[]) {
   }
 }
 
-function checkPassword(value: string | undefined, failures: string[]) {
-  if (!value) return void failures.push('POSTGRES_PASSWORD: required (missing or empty)')
-  if (value.length < 16) failures.push('POSTGRES_PASSWORD: must be at least 16 characters')
-  if (new Set(value).size < 10) failures.push('POSTGRES_PASSWORD: must contain at least 10 distinct characters')
-  denyPlaceholders('POSTGRES_PASSWORD', value, failures)
-  if (!/^[A-Za-z0-9._~-]+$/.test(value)) {
-    failures.push('POSTGRES_PASSWORD: only A-Z a-z 0-9 - . _ ~ are allowed (it is interpolated unencoded into DATABASE_URI)')
+function checkPassword(name: string, value: string | undefined, failures: string[]) {
+  if (!value) return void failures.push(`${name}: required (missing or empty)`)
+  if (value.length < 16) failures.push(`${name}: must be at least 16 characters`)
+  if (new Set(value).size < 10) failures.push(`${name}: must contain at least 10 distinct characters`)
+  denyPlaceholders(name, value, failures)
+  if (!APP_DB_PASSWORD_PATTERN.test(value)) {
+    failures.push(`${name}: only A-Z a-z 0-9 - . _ ~ are allowed (it is interpolated unencoded into a connection string)`)
   }
+}
+
+/** Both set or both unset; when set, an email-shaped address and a strong password. Pure; never returns a value. */
+export function validateBootstrapCredentials(
+  email: string | undefined,
+  password: string | undefined,
+  required: boolean,
+): string[] {
+  const failures: string[] = []
+  if (!email && !password) {
+    if (required) failures.push('ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD: required to create the first admin (missing or empty)')
+    return failures
+  }
+  if (!email) failures.push('ADMIN_BOOTSTRAP_EMAIL: required when ADMIN_BOOTSTRAP_PASSWORD is set')
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) failures.push('ADMIN_BOOTSTRAP_EMAIL: must be a valid email address')
+  if (!password) failures.push('ADMIN_BOOTSTRAP_PASSWORD: required when ADMIN_BOOTSTRAP_EMAIL is set')
+  else {
+    if (password.length < 14) failures.push('ADMIN_BOOTSTRAP_PASSWORD: must be at least 14 characters')
+    if (/\s/.test(password)) failures.push('ADMIN_BOOTSTRAP_PASSWORD: must not contain whitespace')
+    if (new Set(password).size < 10) failures.push('ADMIN_BOOTSTRAP_PASSWORD: must contain at least 10 distinct characters')
+    denyPlaceholders('ADMIN_BOOTSTRAP_PASSWORD', password, failures)
+  }
+  return failures
 }
 
 function checkDatabaseUri(value: string | undefined, password: string | undefined, failures: string[]) {
@@ -132,10 +162,18 @@ function checkTurnstile(env: Env, failures: string[]) {
 export function validateEnv(env: Env): string[] {
   const failures: string[] = []
   checkSecret(env.PAYLOAD_SECRET, failures)
-  checkPassword(env.POSTGRES_PASSWORD, failures)
+  checkPassword('POSTGRES_PASSWORD', env.POSTGRES_PASSWORD, failures)
+  checkPassword('APP_DB_PASSWORD', env.APP_DB_PASSWORD, failures)
+  if (env.APP_DB_PASSWORD && env.APP_DB_PASSWORD === env.POSTGRES_PASSWORD) {
+    failures.push('APP_DB_PASSWORD: must differ from POSTGRES_PASSWORD (separate roles, separate secrets)')
+  }
   checkDatabaseUri(env.DATABASE_URI, env.POSTGRES_PASSWORD, failures)
   checkSiteUrl(env.NEXT_PUBLIC_SITE_URL, failures)
   checkTurnstile(env, failures)
+  failures.push(...validateBootstrapCredentials(env.ADMIN_BOOTSTRAP_EMAIL, env.ADMIN_BOOTSTRAP_PASSWORD, false))
+  if (env.PAYLOAD_ALLOW_FIRST_REGISTER) {
+    failures.push('PAYLOAD_ALLOW_FIRST_REGISTER: must be unset or empty in production (it lets any visitor create the first admin; development and CI only)')
+  }
   return failures
 }
 

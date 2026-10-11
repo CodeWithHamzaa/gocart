@@ -901,124 +901,94 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the compose/entrypoint changes.
 - **Commit message**: `Run Payload database migrations as an explicit production deploy step`
 
-### M52b — Turnstile verification and CGNAT-safe order rate limits
-- **New milestone, inserted 2026-10-11 (owner-approved)**: Pakistani mobile carriers put many customers
-  behind one IP address (CGNAT), so the per-IP limit of 5 orders per 15 minutes in `placeOrder` blocks real
-  buyers. Design: [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b),
-  which amends ADR-026 decision 6 and ADR-024's rate-limit clause. `Orders` access, guest checkout and
-  COD-only are unchanged.
-- **Goal**: Verify Cloudflare Turnstile on the server for order placement and order lookup, classifying each
-  request as verified, rejected or degraded. Replace the strict per-IP limit with a per-IP flood ceiling
-  (30 orders / 15 min; 60 lookups / hour). Keep today's strict limits (5 / 15 min; 20 / hour) for
-  degraded requests only, under separate keys: a missing token, or a Turnstile service that cannot be
-  reached. That is the owner's outage policy: sales keep running. Add per-phone order limits on the
-  normalised phone: 3 / hour and 10 / day, counting **successful verified orders only**; degraded orders
-  reserve no phone slot (amended 2026-10-11, ADR-035 decision 1.4). A rejected token never falls through to
-  the degraded path. An action or hostname mismatch is degraded with an error-level log, not rejected. No
-  new npm packages; siteverify is called with `fetch`: 3 s timeout, no retries, `redirect: 'error'`, a
-  body-size cap, and at most 50 concurrent calls (overflow → degraded `busy`).
-- **Files**:
-  - **New**:
-    - `lib/turnstile.ts`: pure. Exports `SITEVERIFY_URL`, `isTurnstileTestKey`, `createTurnstileVerifier(deps)`
-      and `verifyTurnstile`.
-    - `lib/order-guard.ts`: `createOrderGuard`, the default `admitPlaceOrder`/`admitLookup`, and the limit
-      constants.
-    - `components/TurnstileWidget.tsx`: `'use client'`, explicit render, lazy script, `reset()` handle,
-      `data-turnstile-status`.
-    - `scripts/turnstile.test.ts`: `tsx` + `node:assert`, covering the verifier and the guard.
-    - `e2e/turnstile-fallback.spec.ts`: widget script blocked → a degraded order and lookup still succeed.
-  - **Changed**:
-    - `lib/client-ip.ts`: `selectVerifyIp` and `getVerifyIp`; the raw, validated `cf-connecting-ip`, in
-      production only.
-    - `app/(public)/cart/actions.ts`: phone-shape short-circuit, then the guard, then `createOrder`,
-      releasing the phone reservation on failure; `turnstileToken` input; `VERIFICATION_FAILED` code.
-    - `app/(public)/orders/actions.ts`: the guard, with the per-order-number cap moved into it unchanged.
-    - `components/OrderSummary.jsx` and `app/(public)/orders/OrderLookup.tsx`: render the widget, send the
-      token, reset it after every submission that does not navigate away, disable the button only while
-      the widget is loading (10 s cap).
-    - `scripts/check-env.ts` and `scripts/check-env.test.ts`: rules for the two Turnstile keys; test keys
-      rejected; `TURNSTILE_ALLOW_TEST_KEYS` must be unset.
-    - `package.json`: a `test:turnstile` script only, no dependencies.
-    - `Dockerfile`: `ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY` in `builder`, with a warning when it is empty.
-    - `docker-compose.prod.yml`: the site key as a build arg (`:?`) for `app` and `migrate`;
-      `TURNSTILE_SECRET_KEY` (`:?`) for `app` and `migrate`; the site key at runtime for `migrate`; the
-      outbound-access comment updated.
-    - `docker-compose.yml` (dev): optional pass-through of the three variables, empty by default.
-    - `.github/workflows/ci.yml`: `test:turnstile` in `checks`; test keys plus `TURNSTILE_ALLOW_TEST_KEYS=1`
-      in `e2e`; conforming dummy keys in `migrations`; a new `turnstile-contract` job.
-    - `e2e/golden-path.spec.ts`: a phone number generated per run; asserts `data-turnstile-status="verified"`
-      before submitting.
-  - **Documentation**: `docs/DEPLOYMENT.md` (variables, Cloudflare Turnstile dashboard steps, rotation, the
-    rewritten rate-limits section); `docs/ARCHITECTURE.md` and `docs/PHASE_1_READINESS_REPORT.md`
-    (cross-references to ADR-035); `.env.example` (the two variables; joins `M52`'s open `.env.example`
-    item); `docs/DECISIONS.md` (ADR-035, written); `docs/CHANGELOG.md`; `docs/TASKS.md`.
+### M52b — Turnstile verification, CGNAT-safe order limits and the pre-launch security batch
+- **New milestone, inserted 2026-10-11 (owner-approved).** Pakistani mobile carriers put many customers
+  behind one IP address (CGNAT), so the per-IP limit of 5 orders per 15 minutes blocked real buyers.
+  Design: [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b),
+  **amended the same day by [ADR-036](./DECISIONS.md#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)**,
+  which also closes the findings of the M52b security assessment (B1-B2, H1-H4, M1-M6, L1-L3). Where the
+  two disagree, ADR-036 wins. `Orders` access, guest checkout and COD-only are unchanged.
+- **Goal**:
+  - **Turnstile is required** (H1): an order or lookup without a verified token is refused. The server
+    classifies each token as `verified`, `rejected` (security validation: missing, malformed, invalid,
+    expired or spent, wrong action or hostname) or `unavailable` (Cloudflare unreachable, a bad answer, our
+    50-call concurrency cap, or a configuration fault); both non-verified outcomes refuse, with different
+    codes and messages (M1). There is no degraded path.
+  - **CGNAT-safe limits without a victim lock-out** (M2, M3, L3): an attempts gate per IP (bounding
+    siteverify calls and database lookups), a verified-order ceiling per IP (30 / 15 min), and
+    per-(phone, IP) limits (3 / hour, 10 / day) that count successful verified orders only; a store-wide
+    per-phone count is a log-only alert. All use the non-evicting bucket limiter. A production request
+    with no valid client IP is refused (M4).
+  - **Order idempotency** (H3): an `idempotencyKey` per checkout attempt, a unique index, and a replay that
+    needs no token.
+  - **First admin from a secret** (B2) and **separate database roles** (H4): see ADR-036 decisions 5 and 6.
+  - **Interim Next.js mitigations** (B1): optimizer off, `/_next/image` closed, narrower upload types. The
+    Next 16 upgrade is **not** part of this milestone and remains a launch blocker.
+  - **Read-only root filesystem** for `app` and `migrate` (M6).
+  - No new npm packages. siteverify is called with `fetch`: 3 s timeout, no retries, `redirect: 'error'`, a
+    16 KB body cap, at most 50 concurrent calls.
+- **Files** (as built):
+  - **New**: `lib/turnstile.ts`, `lib/order-guard.ts`, `lib/idempotency.ts`,
+    `components/TurnstileWidget.tsx`, `scripts/turnstile.test.ts`, `scripts/idempotency.test.ts`,
+    `scripts/bootstrap-admin.ts`, `scripts/db-roles.ts`, `scripts/prod-stack-check.sh`,
+    `e2e/turnstile-fallback.spec.ts`, `e2e/idempotency.spec.ts`,
+    `migrations/20261011_181740_order_idempotency_key.{ts,json}`.
+  - **Changed**: `lib/client-ip.ts`, `lib/rate-limit.ts` (`reserve` returns `retryAfterSec`),
+    `lib/payload/orders.ts` (idempotency key, `findOrderByIdempotencyKey`), `collections/Orders.ts`
+    (`idempotencyKey`), `collections/Users.ts` (first-register guard), `collections/Media.ts` (upload
+    types), `app/(public)/cart/actions.ts`, `app/(public)/orders/actions.ts`, `components/OrderSummary.jsx`,
+    `app/(public)/orders/OrderLookup.tsx`, `next.config.mjs`, `scripts/check-env.ts` (+ test),
+    `package.json` (`deploy:migrate` runs `db-roles` and `bootstrap-admin`; `test:idempotency`),
+    `Dockerfile` (messages), `docker-compose.prod.yml`, `docker-compose.yml`, `playwright.config.ts`,
+    `.github/workflows/ci.yml`, `e2e/golden-path.spec.ts`, `e2e/mobile.spec.ts`, `.env.example`, and the docs
+    (`DEPLOYMENT.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CHANGELOG.md`, `TASKS.md`, `CLAUDE.md`,
+    `PHASE_1_READINESS_REPORT.md`).
 - **Dependencies**: M52, M33, M36
-- **Testing**:
-  - **Unit tests** (`npm run test:turnstile`, injected `fetch`, no network):
-    - **Classification**: every row of ADR-035 decision 2. That covers:
-      - a missing, empty or non-string token gives `degraded` with no fetch;
-      - a token over 2048 characters gives `rejected` with no fetch;
-      - an unset secret, and a test secret without the allow flag, give `degraded` with no fetch;
-      - with the allow flag, a test secret skips the action and hostname checks;
-      - success with matching action and hostname gives `verified`; a mismatched action or hostname gives
-        `degraded` with an error-level log (amended 2026-10-11; not `rejected`); missing
-        `action`/`hostname` fields give `degraded`;
-      - a redirect, an oversized body and the 51st concurrent call (`busy`) each give `degraded`;
-      - `invalid-input-response` and `timeout-or-duplicate` give `rejected`, including when mixed with
-        other codes;
-      - `internal-error`, the secret error codes and unknown codes give `degraded`;
-      - a non-200 status, malformed JSON, a thrown fetch, and a fetch that never resolves (aborted at the
-        injected timeout) give `degraded`.
-    - **Request body**: exactly `secret`, `response` and an optional `remoteip`; `remoteip` is left out when
-      it is null; the default URL equals `SITEVERIFY_URL`.
-    - **Guard**:
-      - a rejected token returns `VERIFICATION_FAILED`, uses no degraded budget (5 tokenless requests from
-        the same IP still succeed afterwards) and reserves no phone slot;
-      - degraded requests get 5 and then `RATE_LIMITED`, while verified requests from the same IP are
-        unaffected;
-      - CGNAT: 30 verified requests with distinct phones from one IP all succeed, and the 31st gets
-        `RATE_LIMITED`;
-      - the flood ceiling counts rejected requests;
-      - per phone (verified orders only): 3 then `RATE_LIMITED`, logging `[order-guard] phone-limit`, with a
-        message telling the customer to contact the store; degraded orders reserve no phone slot; a released
-        reservation does not count; the daily limit is tested with injected small limits; a denied daily
-        reservation releases the hourly one;
-      - lookup: the same patterns, and the order-number cap is kept only on `NOT_FOUND`.
-    - **`check-env`**: real-looking keys pass. These fail and are named without their value: missing keys,
-      test keys, keys containing whitespace, keys containing placeholder words, identical keys, and
-      `TURNSTILE_ALLOW_TEST_KEYS` set.
-  - **E2E** (CI; always-pass test keys and `TURNSTILE_ALLOW_TEST_KEYS=1`):
-    - the golden path reaches `data-turnstile-status="verified"`, places an order and finds it;
-    - `turnstile-fallback.spec.ts` blocks `challenges.cloudflare.com` with `page.route`; the status becomes
-      `failed` within 10 s, the button is enabled, and a degraded order and lookup succeed;
-    - the 320 px no-overflow test on `/cart` and `/orders` still passes;
-    - no request goes to `challenges.cloudflare.com` on `/`, `/shop`, a product page, `/categories` or a
-      category page.
-  - **Real production stack** (QA; replayed Server Action POSTs with a fixed `cf-connecting-ip`, as for
-    ADR-033; a QA-only compose override, not committed, supplies the test keys and the allow flag):
-    - the always-fail secret gives `VERIFICATION_FAILED` and creates no order;
-    - the spent-token secret gives `VERIFICATION_FAILED`;
-    - `extra_hosts: challenges.cloudflare.com:127.0.0.1` gives a fast degraded result; a blackhole address
-      gives degraded after about 3 s, and the order succeeds within the 5-per-15-minutes budget;
-    - a test secret *without* the allow flag gives degraded with an error log line;
-    - CGNAT: 25 verified orders with distinct phones from one IP all succeed, while tokenless requests from
-      that IP stop after 5;
-    - a 4th order on one phone within an hour is refused; an out-of-stock attempt does not count towards
-      the phone limit;
-    - `check-env` refuses a test key, a missing secret and the allow flag;
-    - the logs contain no token, IP, phone or customer field.
-  - **CI `turnstile-contract` job** (new): checks the real siteverify response shapes for the `1x`, `2x` and
-    `3x` test secrets, and that `api.js` returns 200.
-  - **Owner, at launch**: with real keys on the real hostname, an order and a lookup are verified, with no
-    `[turnstile]` log lines. Confirm the UNVERIFIED items listed in ADR-035.
-  - **QA result (2026-10-11)**: passed on the real production stack with every request degraded, because the
-    sandbox cannot reach Cloudflare. ADR-035's *Verified* section has the details. Still to be proven by CI
-    (the golden path reaching `verified`, and the `turnstile-contract` job) and by the owner at launch.
-  - `npm run type-check`, `npm run lint` and `npm run build` pass.
-- **Rollback**: `git revert` the milestone commit. This restores the 5-per-15-minutes per-IP placement limit
-  and the 20-per-hour lookup limit. The Turnstile variables become unused and can be removed from the env
-  file. Nothing in the schema, the data or `Orders` access changes, so no migration is involved.
-- **Commit message**: `Add Turnstile verification and CGNAT-safe order rate limits`
+- **Testing** (what exists; the result of each run is under *Verification status*):
+  - **Unit** (`npm run test:turnstile`, injected `fetch`, no network): every classification row (missing
+    token, oversize token, unset secret, test secret without the flag, matching and mismatching
+    action/hostname, missing fields, redirect, oversized body, the 51st concurrent call, `invalid-input-response`
+    and `timeout-or-duplicate` alone and mixed, `internal-error`, the secret error codes, unknown codes,
+    non-200, malformed JSON, a thrown fetch, a hanging fetch and a stalled body); the request body; the
+    environment handling; and the guard (tokenless, rejected, unavailable and a throwing verifier are all
+    refused; the attempts gate; the CGNAT ceiling; per-(phone, IP) limits including the case where an
+    attacker's connection cannot lock out the victim's; the phone-volume alert; refunds; atomic
+    reservation under 20 concurrent requests; replay; a missing client IP; the lookup caps).
+  - **`check-env`** (`npm run test:env`): the two Turnstile keys, `APP_DB_PASSWORD`, the bootstrap
+    credentials, and the refusal of `TURNSTILE_ALLOW_TEST_KEYS` / `PAYLOAD_ALLOW_FIRST_REGISTER`.
+  - **Real database** (`npm run test:idempotency`, after `npm run seed`): sequential and 12-way concurrent
+    requests with one key create one order; distinct keys create distinct orders; the unique index;
+    the key is immutable. CI `migrations` job: the deploy step bootstraps an empty database, a second run
+    is a no-op, the app role cannot change the schema, and the step fails closed with no bootstrap credentials.
+  - **E2E** (CI; Cloudflare's public test keys and the allow flags; the app runs as `gocart_app`): the golden
+    path reaches `verified`; a dropped response followed by a retry creates exactly one order;
+    `turnstile-fallback.spec.ts` blocks the script and checks that no order or lookup can be made;
+    the 320 px no-overflow test; no indexable page loads Turnstile.
+  - **CI `prod-stack`** (the real compose stack): migrate exits 0; the app runs read-only as uid 1000 and
+    connects as `gocart_app` holding no superuser or bootstrap secret; `/_next/image` is 404;
+    `first-register` and `POST /api/users` return 403 **with an empty users table**; re-running migrate
+    recreates the admin; a PNG upload works on the read-only container and AVIF/SVG are refused.
+  - **CI `turnstile-contract`**: the real siteverify response shapes for the `1x`/`2x`/`3x` test secrets and
+    an unknown secret, and that `api.js` returns 200.
+  - **Owner, at launch**: with real keys on the real hostname, a verified order and a lookup with no
+    `[turnstile]` log lines; the items marked UNVERIFIED in ADR-035 and ADR-036; the Next 16 upgrade
+    (`docs/DEPLOYMENT.md`, "Launch blockers").
+- **Verification status (2026-10-11)**: the authoring sandbox could not reach Cloudflare, and could not
+  pull base images inside Docker builds. Observed there, outside Docker: the unit tests, `check-env`,
+  type-check and lint; the deploy step and the role privileges on a real PostgreSQL 16; the idempotency
+  test (and its mutation check); all 15 Playwright tests and seven provider failure modes against a
+  **local simulation** of Cloudflare, with the app running as `gocart_app`; `first-register` refused with an
+  empty users table; `/_next/image` closed; a read-only container. **Not observed by anyone**: real
+  Cloudflare, and the repository's Dockerfile images in the compose stack (proven only if the CI
+  `prod-stack` job passes). The earlier "QA result: passed on the real production stack" for the first
+  design was observed with every request degraded and is **withdrawn as a statement about the current
+  design**: its verified-path items were never observed on a real stack.
+- **Rollback**: `git revert` the milestone commit. The `idempotency_key` column and its unique index are
+  harmless to leave in place (nothing reads them after the revert); to remove them run
+  `payload migrate:down` for `20261011_181740_order_idempotency_key` first. Reverting restores the open
+  first-admin flow and the single database role, so do not revert on a deployed stack without reading
+  ADR-036.
+- **Commit message**: `Add Turnstile verification, order idempotency and the pre-launch security batch`
 
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.

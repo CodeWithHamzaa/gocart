@@ -1,75 +1,91 @@
-// M52b: admission control for guest order placement and order lookup (ADR-035 decisions 1,
-// 4, 5 and 6; amends ADR-026 decision 6 and ADR-024's rate-limit clause). Server-only.
-// The server actions stay thin: they read the IP and the token, call this guard, then call
-// createOrder/lookupOrder. Customers behind one carrier-grade-NAT IP are told apart by a
-// Turnstile check plus a per-phone limit, so the per-IP limit becomes a flood ceiling; the old
-// strict per-IP limits apply only to `degraded` requests (no token, or Turnstile unreachable).
-// The per-phone limit applies to VERIFIED orders only (EM decision D1): otherwise anyone
-// without a solved challenge could exhaust a real customer's phone slots.
+// M52b (ADR-035) as amended by ADR-036: admission control for guest order placement and order
+// lookup. Server-only. The server actions stay thin: they read the IP and the token, call this
+// guard, then call createOrder/lookupOrder.
+//
+// STRICT POLICY (ADR-036, owner direction 2026-10-11): a Turnstile token is REQUIRED. A request
+// without one, with a bad one, or while Cloudflare cannot be asked, is refused - there is no
+// "degraded" path that lets an unverified order through. The only request that may proceed
+// without a fresh token is the replay of an order that already exists (idempotency, below).
+//
+// Order of checks, cheapest first; each refusal happens before anything more expensive runs:
+//   1. no token and no idempotency key -> refused at once, touching no limiter, no network, no DB;
+//   2. production request with no valid client IP -> refused (misconfiguration, error-logged);
+//   3. attempts gate per IP - every request that gets this far, whatever happens next, so
+//      siteverify calls and DB lookups per IP stay bounded;
+//   4. idempotent replay: the same key + the same phone returns the order already created,
+//      without a token (a token is single-use and was spent on the first request) and without
+//      consuming any order limit - a lost response must never become a second order;
+//   5. Turnstile: rejected (security validation) / unavailable (provider or configuration)
+//      -> refused with different codes and messages;
+//   6. verified-order limits: per-IP ceiling, per (phone, IP) hourly and daily. They count
+//      SUCCESSFUL orders only (a slot is reserved and refunded on failure).
+// Victim lock-out (M2): the phone limits are keyed by phone AND client IP, so someone ordering
+// with a victim's number from their own connection spends their own allowance, never the
+// victim's. A store-wide per-phone count is a log-only alert, never a refusal.
 // No next/* imports, so the unit tests (scripts/turnstile.test.ts) can drive it with an
 // injected verifier. All state is in-process (ADR-015 single instance).
 
-import { createBucketLimiter, rateLimit } from './rate-limit'
+import { createBucketLimiter } from './rate-limit'
 import { verifyTurnstile } from './turnstile'
-import type { TurnstileResult, Verifier } from './turnstile'
+import type { RejectedReason, TurnstileResult, UnavailableReason, Verifier } from './turnstile'
 
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
 
-// Changing these is a code change, not configuration (ADR-035 decision 5).
-export const PLACE_ORDER_FLOOD_LIMIT = 30
-export const PLACE_ORDER_FLOOD_WINDOW_MS = 15 * MINUTE
-export const PLACE_ORDER_DEGRADED_LIMIT = 5
-export const PLACE_ORDER_DEGRADED_WINDOW_MS = 15 * MINUTE
-export const PHONE_HOURLY_LIMIT = 3
-export const PHONE_HOURLY_WINDOW_MS = HOUR
-export const PHONE_DAILY_LIMIT = 10
-export const PHONE_DAILY_WINDOW_MS = 24 * HOUR
-export const LOOKUP_FLOOD_LIMIT = 60
-export const LOOKUP_FLOOD_WINDOW_MS = HOUR
-export const LOOKUP_DEGRADED_LIMIT = 20
-export const LOOKUP_DEGRADED_WINDOW_MS = HOUR
+// Changing these is a code change, not configuration (ADR-035 decision 5, ADR-036).
+export const PLACE_ATTEMPT_LIMIT = 60
+export const PLACE_ATTEMPT_WINDOW_MS = 15 * MINUTE
+export const PLACE_ORDER_IP_LIMIT = 30
+export const PLACE_ORDER_IP_WINDOW_MS = 15 * MINUTE
+export const PHONE_IP_HOURLY_LIMIT = 3
+export const PHONE_IP_HOURLY_WINDOW_MS = HOUR
+export const PHONE_IP_DAILY_LIMIT = 10
+export const PHONE_IP_DAILY_WINDOW_MS = 24 * HOUR
+export const PHONE_WATCH_LIMIT = 10 // alert only: never refuses
+export const PHONE_WATCH_WINDOW_MS = 24 * HOUR
+export const LOOKUP_ATTEMPT_LIMIT = 60
+export const LOOKUP_ATTEMPT_WINDOW_MS = HOUR
 export const LOOKUP_ORDER_NUMBER_LIMIT = 5
 export const LOOKUP_ORDER_NUMBER_WINDOW_MS = HOUR
 
 // Overridable only by tests (createOrderGuard's `limits`); production uses the defaults.
 export type GuardLimits = {
-  placeFlood: number
-  placeFloodWindowMs: number
-  placeDegraded: number
-  placeDegradedWindowMs: number
-  phoneHourly: number
-  phoneHourlyWindowMs: number
-  phoneDaily: number
-  phoneDailyWindowMs: number
-  lookupFlood: number
-  lookupFloodWindowMs: number
-  lookupDegraded: number
-  lookupDegradedWindowMs: number
+  placeAttempts: number
+  placeAttemptsWindowMs: number
+  placeOrdersPerIp: number
+  placeOrdersPerIpWindowMs: number
+  phoneIpHourly: number
+  phoneIpHourlyWindowMs: number
+  phoneIpDaily: number
+  phoneIpDailyWindowMs: number
+  phoneWatch: number
+  phoneWatchWindowMs: number
+  lookupAttempts: number
+  lookupAttemptsWindowMs: number
   lookupOrderNumber: number
   lookupOrderNumberWindowMs: number
 }
 
 const DEFAULT_LIMITS: GuardLimits = {
-  placeFlood: PLACE_ORDER_FLOOD_LIMIT,
-  placeFloodWindowMs: PLACE_ORDER_FLOOD_WINDOW_MS,
-  placeDegraded: PLACE_ORDER_DEGRADED_LIMIT,
-  placeDegradedWindowMs: PLACE_ORDER_DEGRADED_WINDOW_MS,
-  phoneHourly: PHONE_HOURLY_LIMIT,
-  phoneHourlyWindowMs: PHONE_HOURLY_WINDOW_MS,
-  phoneDaily: PHONE_DAILY_LIMIT,
-  phoneDailyWindowMs: PHONE_DAILY_WINDOW_MS,
-  lookupFlood: LOOKUP_FLOOD_LIMIT,
-  lookupFloodWindowMs: LOOKUP_FLOOD_WINDOW_MS,
-  lookupDegraded: LOOKUP_DEGRADED_LIMIT,
-  lookupDegradedWindowMs: LOOKUP_DEGRADED_WINDOW_MS,
+  placeAttempts: PLACE_ATTEMPT_LIMIT,
+  placeAttemptsWindowMs: PLACE_ATTEMPT_WINDOW_MS,
+  placeOrdersPerIp: PLACE_ORDER_IP_LIMIT,
+  placeOrdersPerIpWindowMs: PLACE_ORDER_IP_WINDOW_MS,
+  phoneIpHourly: PHONE_IP_HOURLY_LIMIT,
+  phoneIpHourlyWindowMs: PHONE_IP_HOURLY_WINDOW_MS,
+  phoneIpDaily: PHONE_IP_DAILY_LIMIT,
+  phoneIpDailyWindowMs: PHONE_IP_DAILY_WINDOW_MS,
+  phoneWatch: PHONE_WATCH_LIMIT,
+  phoneWatchWindowMs: PHONE_WATCH_WINDOW_MS,
+  lookupAttempts: LOOKUP_ATTEMPT_LIMIT,
+  lookupAttemptsWindowMs: LOOKUP_ATTEMPT_WINDOW_MS,
   lookupOrderNumber: LOOKUP_ORDER_NUMBER_LIMIT,
   lookupOrderNumberWindowMs: LOOKUP_ORDER_NUMBER_WINDOW_MS,
 }
 
 export type GuardFailure = {
   ok: false
-  code: 'RATE_LIMITED' | 'VERIFICATION_FAILED'
+  code: 'RATE_LIMITED' | 'VERIFICATION_FAILED' | 'VERIFICATION_UNAVAILABLE'
   message: string
 }
 
@@ -78,9 +94,17 @@ export const PLACE_ORDER_VERIFICATION_MESSAGE =
   "The security check didn't complete. Please wait for it to finish, then press Place Order again."
 export const LOOKUP_VERIFICATION_MESSAGE =
   "The security check didn't complete. Please wait for it to finish, then press Check order again."
-// Points at the contact details in the footer (from Settings) rather than fetching them here.
+export const PLACE_ORDER_EXPIRED_MESSAGE =
+  'The security check has expired. It renews by itself - please wait a moment, then press Place Order again.'
+export const LOOKUP_EXPIRED_MESSAGE =
+  'The security check has expired. It renews by itself - please wait a moment, then press Check order again.'
+// The store's contact details are in the footer (from Settings); not fetched here.
+export const PLACE_ORDER_UNAVAILABLE_MESSAGE =
+  "We can't run our security check right now, so we can't take your order online. Please try again in a few minutes, or contact us to place your order."
+export const LOOKUP_UNAVAILABLE_MESSAGE =
+  "We can't run our security check right now. Please try again in a few minutes, or contact us about your order."
 export const PHONE_LIMIT_MESSAGE =
-  'Too many orders have been placed with this phone number recently. Please try again later, or contact us to place your order.'
+  'Too many orders have been placed with this phone number from your connection recently. Please try again later, or contact us to place your order.'
 export const LOOKUP_RATE_LIMITED_MESSAGE = 'Too many attempts. Please wait a while and try again.'
 
 const minutesText = (retryAfterSec: number) => {
@@ -88,26 +112,47 @@ const minutesText = (retryAfterSec: number) => {
   return `${minutes} minute${minutes === 1 ? '' : 's'}`
 }
 
-// The verifier never throws by design; if it ever does, treat it as uncertain (degraded).
+// The verifier never throws by design; if it ever does, treat it as unavailable.
 async function safeVerify(verify: Verifier, ...args: Parameters<Verifier>): Promise<TurnstileResult> {
   try {
     return await verify(...args)
   } catch {
-    return { outcome: 'degraded', reason: 'network' }
+    return { outcome: 'unavailable', reason: 'network' }
   }
 }
 
 const rateLimited = (message: string): GuardFailure => ({ ok: false, code: 'RATE_LIMITED', message })
 const verificationFailed = (message: string): GuardFailure => ({ ok: false, code: 'VERIFICATION_FAILED', message })
+const verificationUnavailable = (message: string): GuardFailure => ({
+  ok: false,
+  code: 'VERIFICATION_UNAVAILABLE',
+  message,
+})
 
-export type PlaceOrderAdmission = { ok: true; release: () => void } | GuardFailure
+const hasToken = (token: unknown): boolean => typeof token === 'string' && token.trim() !== ''
+
+/** The idempotency key shape the client generates (a UUID or any 22-64 URL-safe characters). */
+export const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{22,64}$/
+export function normalizeIdempotencyKey(value: unknown): string | null {
+  return typeof value === 'string' && IDEMPOTENCY_KEY_PATTERN.test(value) ? value : null
+}
+
+/** What a replay finds: the order already created for this key and phone, or nothing. */
+export type ReplayFinder = (key: string, phone: string) => Promise<unknown | null>
+
+export type PlaceOrderAdmission<R = unknown> =
+  | { ok: true; kind: 'new'; release: () => void }
+  | { ok: true; kind: 'replay'; result: R }
+  | GuardFailure
 export type LookupAdmission = { ok: true; settle: (notFound: boolean) => void } | GuardFailure
 
-export type PlaceOrderRequest = {
+export type PlaceOrderRequest<R = unknown> = {
   ip: string // rate-limit key from getClientIp()
   phone: string // normalised and already validated (03XXXXXXXXX)
   token: unknown // turnstileToken from the client, untrusted
+  idempotencyKey?: unknown // untrusted; only a well-formed key is used
   remoteIp: string | null // getVerifyIp(): raw cf-connecting-ip in production, else null
+  findExisting?: (key: string, phone: string) => Promise<R | null>
 }
 
 export type LookupRequest = {
@@ -117,91 +162,156 @@ export type LookupRequest = {
   remoteIp: string | null
 }
 
-/** Fresh limiters per instance (tests are isolated by instance, and by IP for the shared rateLimit map). */
-type GuardLogger = Pick<Console, 'warn'>
+type GuardLogger = Pick<Console, 'warn' | 'error'>
 
 export function createOrderGuard({
   verify,
   limits,
   logger = console,
+  requireClientIp = process.env.NODE_ENV === 'production',
 }: {
   verify: Verifier
   limits?: Partial<GuardLimits>
   logger?: GuardLogger
+  /** Production: a request with no valid client IP is refused instead of sharing an 'unknown' bucket. */
+  requireClientIp?: boolean
 }) {
   const l = { ...DEFAULT_LIMITS, ...limits }
-  // One line per refusal, with which window tripped; never the phone, IP or name.
+  // Fixed-size, non-evicting bucket limiters throughout (rate-limit.ts): a flood of distinct
+  // keys can never push a victim's counter out and reset it, it can only collide into MORE
+  // restriction. One line per refusal, never the phone, IP or name.
+  const placeAttempts = createBucketLimiter({ limit: l.placeAttempts, windowMs: l.placeAttemptsWindowMs })
+  const placeOrdersPerIp = createBucketLimiter({ limit: l.placeOrdersPerIp, windowMs: l.placeOrdersPerIpWindowMs })
+  const phoneIpHourly = createBucketLimiter({ limit: l.phoneIpHourly, windowMs: l.phoneIpHourlyWindowMs })
+  const phoneIpDaily = createBucketLimiter({ limit: l.phoneIpDaily, windowMs: l.phoneIpDailyWindowMs })
+  const phoneWatch = createBucketLimiter({ limit: l.phoneWatch, windowMs: l.phoneWatchWindowMs })
+  const lookupAttempts = createBucketLimiter({ limit: l.lookupAttempts, windowMs: l.lookupAttemptsWindowMs })
+  const orderNumbers = createBucketLimiter({ limit: l.lookupOrderNumber, windowMs: l.lookupOrderNumberWindowMs })
+
+  // At most one error line a minute for the missing-IP misconfiguration (it would repeat per request).
+  let lastNoIpLog = 0
+  const noClientIp = (ip: string): boolean => {
+    if (!requireClientIp || ip !== 'unknown') return false
+    const now = Date.now()
+    if (now - lastNoIpLog >= MINUTE) {
+      lastNoIpLog = now
+      logger.error('[order-guard] no valid client IP (cf-connecting-ip missing or malformed); requests are refused')
+    }
+    return true
+  }
+
   const phoneLimited = (window: 'hourly' | 'daily') => {
     logger.warn('[order-guard] phone-limit', { window })
     return rateLimited(PHONE_LIMIT_MESSAGE)
   }
-  const phoneHourly = createBucketLimiter({ limit: l.phoneHourly, windowMs: l.phoneHourlyWindowMs })
-  const phoneDaily = createBucketLimiter({ limit: l.phoneDaily, windowMs: l.phoneDailyWindowMs })
-  const orderNumbers = createBucketLimiter({ limit: l.lookupOrderNumber, windowMs: l.lookupOrderNumberWindowMs })
 
-  async function admitPlaceOrder({ ip, phone, token, remoteIp }: PlaceOrderRequest): Promise<PlaceOrderAdmission> {
-    // Flood ceiling: counts every request that reaches it, whatever the Turnstile outcome, so
-    // siteverify calls and database work per IP stay bounded.
-    const flood = rateLimit(`place-order:${ip}`, { limit: l.placeFlood, windowMs: l.placeFloodWindowMs })
-    if (!flood.allowed) {
-      return rateLimited(`Too many orders from your connection. Please try again in about ${minutesText(flood.retryAfterSec)}.`)
+  function refusal(check: Exclude<TurnstileResult, { outcome: 'verified' }>, place: boolean): GuardFailure {
+    if (check.outcome === 'unavailable') {
+      return verificationUnavailable(place ? PLACE_ORDER_UNAVAILABLE_MESSAGE : LOOKUP_UNAVAILABLE_MESSAGE)
+    }
+    const expired = check.reason === 'expired-or-duplicate'
+    if (place) return verificationFailed(expired ? PLACE_ORDER_EXPIRED_MESSAGE : PLACE_ORDER_VERIFICATION_MESSAGE)
+    return verificationFailed(expired ? LOOKUP_EXPIRED_MESSAGE : LOOKUP_VERIFICATION_MESSAGE)
+  }
+
+  async function admitPlaceOrder<R = unknown>({
+    ip,
+    phone,
+    token,
+    idempotencyKey,
+    remoteIp,
+    findExisting,
+  }: PlaceOrderRequest<R>): Promise<PlaceOrderAdmission<R>> {
+    const key = normalizeIdempotencyKey(idempotencyKey)
+    // 1. Nothing to verify and nothing to replay: refuse for free.
+    if (!hasToken(token) && !key) return verificationFailed(PLACE_ORDER_VERIFICATION_MESSAGE)
+
+    // 2. Production traffic always arrives through Cloudflare, so a missing address is a fault.
+    if (noClientIp(ip)) {
+      return verificationUnavailable(PLACE_ORDER_UNAVAILABLE_MESSAGE)
     }
 
-    const check = await safeVerify(verify, token, { action: 'place_order', remoteIp })
-    // A rejected token never falls through to the degraded path and never touches a phone bucket.
-    if (check.outcome === 'rejected') return verificationFailed(PLACE_ORDER_VERIFICATION_MESSAGE)
-    if (check.outcome === 'degraded') {
-      // Today's strict limit, on its own key so tokenless requests cannot spend the budget of
-      // verified customers on the same IP.
-      const degraded = rateLimit(`place-order-degraded:${ip}`, {
-        limit: l.placeDegraded,
-        windowMs: l.placeDegradedWindowMs,
-      })
-      if (!degraded.allowed) {
-        return rateLimited(
-          `We couldn't complete the security check, and too many orders have come from your connection. Please reload the page and try again, or wait about ${minutesText(degraded.retryAfterSec)}.`,
-        )
+    // 3. Attempts gate: counts everything that reaches the expensive steps.
+    const attempt = placeAttempts.reserve(ip)
+    if (!attempt.allowed) {
+      return rateLimited(`Too many attempts from your connection. Please try again in about ${minutesText(attempt.retryAfterSec)}.`)
+    }
+
+    // 4. Idempotent replay (a lost response, a double tap): no token, no order limits.
+    if (key && findExisting) {
+      let existing: R | null = null
+      try {
+        existing = await findExisting(key, phone)
+      } catch {
+        existing = null
       }
-      // Bounded by the degraded budget alone; reserves no phone slot (D1).
-      return { ok: true, release() {} }
+      if (existing) return { ok: true, kind: 'replay', result: existing }
+    }
+    if (!hasToken(token)) return verificationFailed(PLACE_ORDER_VERIFICATION_MESSAGE)
+
+    // 5. Turnstile. A token that is not verified never reaches a phone bucket or createOrder.
+    const check = await safeVerify(verify, token, { action: 'place_order', remoteIp })
+    if (check.outcome !== 'verified') return refusal(check, true)
+
+    // 6. Verified orders only. Reserved now, refunded by release() unless the order is created,
+    // so only successful orders count.
+    const reserved: Array<{ limiter: ReturnType<typeof createBucketLimiter>; key: string }> = []
+    const reserve = (limiter: ReturnType<typeof createBucketLimiter>, k: string) => {
+      const r = limiter.reserve(k)
+      if (r.allowed) reserved.push({ limiter, key: k })
+      return r
+    }
+    const undo = () => {
+      for (const { limiter, key: k } of reserved.splice(0)) limiter.release(k)
     }
 
-    // Verified only. Reserved now, refunded by release() unless the order is created, so only
-    // successful orders count.
-    if (!phoneHourly.reserve(phone).allowed) return phoneLimited('hourly')
-    if (!phoneDaily.reserve(phone).allowed) {
-      phoneHourly.release(phone)
+    const perIp = reserve(placeOrdersPerIp, ip)
+    if (!perIp.allowed) {
+      return rateLimited(`Too many orders from your connection. Please try again in about ${minutesText(perIp.retryAfterSec)}.`)
+    }
+    const pairKey = `${phone}|${ip}`
+    if (!reserve(phoneIpHourly, pairKey).allowed) {
+      undo()
+      return phoneLimited('hourly')
+    }
+    if (!reserve(phoneIpDaily, pairKey).allowed) {
+      undo()
       return phoneLimited('daily')
     }
+    // Store-wide volume on one phone number: an alert for the admin, never a refusal, so nobody
+    // can lock a customer out by ordering with their number (M2).
+    if (!reserve(phoneWatch, phone).allowed) logger.warn('[order-guard] phone-volume', { window: 'daily' })
+
     let released = false
     return {
       ok: true,
+      kind: 'new',
       release() {
         if (released) return
         released = true
-        phoneHourly.release(phone)
-        phoneDaily.release(phone)
+        undo()
       },
     }
   }
 
   async function admitLookup({ ip, orderNumber, token, remoteIp }: LookupRequest): Promise<LookupAdmission> {
-    const flood = rateLimit(`lookup-ip:${ip}`, { limit: l.lookupFlood, windowMs: l.lookupFloodWindowMs })
-    if (!flood.allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
-
-    const check = await safeVerify(verify, token, { action: 'order_lookup', remoteIp })
-    if (check.outcome === 'rejected') return verificationFailed(LOOKUP_VERIFICATION_MESSAGE)
-    if (check.outcome === 'degraded') {
-      const degraded = rateLimit(`lookup-degraded:${ip}`, {
-        limit: l.lookupDegraded,
-        windowMs: l.lookupDegradedWindowMs,
-      })
-      if (!degraded.allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
+    if (!hasToken(token)) return verificationFailed(LOOKUP_VERIFICATION_MESSAGE)
+    if (noClientIp(ip)) {
+      return verificationUnavailable(LOOKUP_UNAVAILABLE_MESSAGE)
     }
 
+    const attempt = lookupAttempts.reserve(ip)
+    if (!attempt.allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
+
+    const check = await safeVerify(verify, token, { action: 'order_lookup', remoteIp })
+    if (check.outcome !== 'verified') return refusal(check, false)
+
     // M36's per-order-number cap, unchanged: 5 FAILED lookups per hour. Reserved before the
-    // query (parallel requests cannot exceed it), kept only on NOT_FOUND. A fixed-size bucket
-    // limiter, so a flood of other keys can never evict and reset a victim's counter.
+    // query (parallel requests cannot exceed it), kept only on NOT_FOUND. It blunts phone
+    // guessing against a known order number by an attacker rotating IPs. Accepted trade-off
+    // (owner-approved, 2026-10-09): someone who knows an order number can burn its 5 failed
+    // attempts for an hour; the admin and the confirmation page remain available. Only a
+    // VERIFIED request can reach it.
     if (!orderNumbers.reserve(orderNumber).allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
     let settled = false
     return {
@@ -221,3 +331,5 @@ const defaultGuard = createOrderGuard({ verify: verifyTurnstile })
 
 export const admitPlaceOrder = defaultGuard.admitPlaceOrder
 export const admitLookup = defaultGuard.admitLookup
+
+export type { RejectedReason, UnavailableReason }

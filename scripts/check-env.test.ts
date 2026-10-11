@@ -8,6 +8,8 @@ import { normalizeIp, selectClientIp, selectVerifyIp } from '../lib/client-ip'
 const good = {
   PAYLOAD_SECRET: 'q7Hs2Lk9Zp4Vx8Nc1Tb6Wd3Fy5Gm0Rj-AeUi',
   POSTGRES_PASSWORD: 'Kd82-hQ.x9_Lm4~Zt7Pw',
+  // M52b/ADR-036: the app's own database role, a different secret from the superuser's.
+  APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~Jq2Xe',
   DATABASE_URI: 'postgresql://gocart:Kd82-hQ.x9_Lm4~Zt7Pw@postgres:5432/gocart',
   NEXT_PUBLIC_SITE_URL: 'https://shop.example.com',
   // M52b: real-looking (not Cloudflare's test keys); the real format is undocumented.
@@ -99,6 +101,23 @@ const bad: Array<[string, Env, string]> = [
   ['turnstile keys identical', { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J' }, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
   ['turnstile allow flag 1', { TURNSTILE_ALLOW_TEST_KEYS: '1' }, 'TURNSTILE_ALLOW_TEST_KEYS'],
   ['turnstile allow flag 0', { TURNSTILE_ALLOW_TEST_KEYS: '0' }, 'TURNSTILE_ALLOW_TEST_KEYS'],
+  // ADR-036: separate database roles and the first-admin lock.
+  ['app db password missing', { APP_DB_PASSWORD: undefined }, 'APP_DB_PASSWORD'],
+  ['app db password empty', { APP_DB_PASSWORD: '' }, 'APP_DB_PASSWORD'],
+  ['app db password too short', { APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~' }, 'APP_DB_PASSWORD'],
+  ['app db password bad charset', { APP_DB_PASSWORD: "Rt57_Wn.c3-Vb8~Jq'Xe" }, 'APP_DB_PASSWORD'],
+  ['app db password placeholder', { APP_DB_PASSWORD: 'Rt57_Wn.c3-Vb8~example' }, 'APP_DB_PASSWORD'],
+  ['app db password low variety', { APP_DB_PASSWORD: 'abababababababababab' }, 'APP_DB_PASSWORD'],
+  ['app db password equals superuser', { APP_DB_PASSWORD: 'Kd82-hQ.x9_Lm4~Zt7Pw' }, 'APP_DB_PASSWORD'],
+  ['first-register flag 1', { PAYLOAD_ALLOW_FIRST_REGISTER: '1' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
+  ['first-register flag 0', { PAYLOAD_ALLOW_FIRST_REGISTER: '0' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
+  ['bootstrap email without password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap password without email', { ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
+  ['bootstrap bad email', { ADMIN_BOOTSTRAP_EMAIL: 'not-an-email', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
+  ['bootstrap short password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_E' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap whitespace password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_ Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap placeholder password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'ChangeMe-Vx93-pLq.m7' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap low variety password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'abababababababab' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
 ]
 
 for (const [name, patch, variable] of bad) {
@@ -114,6 +133,12 @@ for (const [name, patch, variable] of bad) {
 }
 
 // Boundaries that must pass.
+assert.deepEqual(validateEnv(withEnv({ PAYLOAD_ALLOW_FIRST_REGISTER: '' })), [], 'empty first-register flag accepted')
+assert.deepEqual(
+  validateEnv(withEnv({ ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' })),
+  [],
+  'valid bootstrap credentials accepted',
+)
 assert.deepEqual(validateEnv(withEnv({ TURNSTILE_ALLOW_TEST_KEYS: '' })), [], 'empty allow flag accepted')
 assert.deepEqual(validateEnv(withEnv({ TURNSTILE_SECRET_KEY: 'Ab9XqLm4Tz7Pw2Kd8Hs3' })), [], '20-char secret accepted')
 assert.deepEqual(validateEnv(withEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAh' })), [], '10-char site key accepted')
@@ -134,6 +159,7 @@ assert.deepEqual(
   validateEnv({
     PAYLOAD_SECRET: 'Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U',
     POSTGRES_PASSWORD: 'ci-throwaway-pw-0123456789',
+    APP_DB_PASSWORD: 'ci-throwaway-app-9876543210',
     DATABASE_URI: 'postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations',
     NEXT_PUBLIC_SITE_URL: 'https://shop.example.com',
     TURNSTILE_SECRET_KEY: good.TURNSTILE_SECRET_KEY,

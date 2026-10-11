@@ -9,6 +9,7 @@ import { writeLastOrder } from '@/lib/order-confirmation';
 import { useRouter } from 'next/navigation';
 import { formatPKR } from '@/lib/currency'
 import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
+import { newIdempotencyKey } from '@/lib/idempotency'
 
 const OrderSummary = ({ totalPrice, items }) => {
 
@@ -27,10 +28,15 @@ const OrderSummary = ({ totalPrice, items }) => {
     // null = loading or failed; Place Order stays disabled rather than show a wrong total.
     const [shippingSettings, setShippingSettings] = useState(null);
     const [settingsFailed, setSettingsFailed] = useState(false);
-    // M52b (ADR-035): Turnstile token for the server's CGNAT-safe limits. The button waits only
-    // while the check is loading (10 s cap); a failed or absent widget still lets the order through.
+    // M52b (ADR-035/036): a verified Turnstile token is REQUIRED; the button stays disabled until
+    // the check has produced one, and an unreachable check means no online order (the message
+    // under the widget says to contact the store).
     const [turnstile, setTurnstile] = useState(initialTurnstileState);
     const turnstileRef = useRef(null);
+    // ADR-036: one idempotency key per checkout attempt. A retry after a lost response or a double
+    // tap reuses it, so the server returns the first order instead of creating a second; it is
+    // dropped on success and whenever the cart or the address changes (a different order).
+    const attemptKey = useRef(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -57,6 +63,11 @@ const OrderSummary = ({ totalPrice, items }) => {
         return () => controller.abort();
     }, []);
 
+    const attemptSignature = JSON.stringify([(items || []).map((item) => [item.id, item.quantity]), selectedAddress]);
+    useEffect(() => {
+        attemptKey.current = null;
+    }, [attemptSignature]);
+
     const shipping = shippingSettings
         ? (totalPrice >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.shippingFlatRate)
         : null;
@@ -75,6 +86,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             return;
         }
 
+        if (!attemptKey.current) attemptKey.current = newIdempotencyKey();
         setPlacing(true);
         // M35: stays true after a successful order until navigation unmounts the page.
         let keepDisabled = false;
@@ -89,10 +101,12 @@ const OrderSummary = ({ totalPrice, items }) => {
                     area: selectedAddress.area,
                 },
                 turnstileToken: turnstile.token,
+                idempotencyKey: attemptKey.current,
             });
 
             if (result.ok) {
                 keepDisabled = true;
+                attemptKey.current = null;
                 // M35 (ADR-027): hand the server's response to /order-confirmation via
                 // sessionStorage; delivery details come from the form the guest filled in.
                 const saved = writeLastOrder({
@@ -192,7 +206,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 </p>
             )}
             <TurnstileWidget ref={turnstileRef} action='place_order' onChange={setTurnstile} className='pb-3' />
-            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status === 'loading'} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
 
             {/* M44: a newly saved address is selected straight away; before, the customer had to find
                 it in the dropdown and Place Order failed with "select an address". */}

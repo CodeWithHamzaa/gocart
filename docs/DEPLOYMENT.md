@@ -3,14 +3,20 @@
 Production deployment of GoCart Pakistan. **This file covers the Cloudflare Tunnel origin boundary,
 environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the database migration
 workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
-limits (`M52b`, [ADR-035](./DECISIONS.md)).** `M53` adds health checks; `M54` adds backups; `M59` is
-the full runbook.
+limits (`M52b`, [ADR-035](./DECISIONS.md), amended by [ADR-036](./DECISIONS.md): a verified token is
+required, orders are idempotent, the first admin comes from a secret, the app uses a restricted database
+role). `M53` adds health checks; `M54` adds backups; `M59` is the full runbook.**
+
+> **Launch blockers (read first).** The stack is **not cleared for launch**. See
+> [Launch blockers](#launch-blockers) at the end of this file: the Next.js upgrade (critical advisories on
+> `next@15.4.11`), the first real-Cloudflare checks and the first-deploy checks.
 
 Order of work for a first deploy: [Secrets and the env file](#secrets-and-the-env-file) ->
 [Cloudflare: one-time steps](#cloudflare-one-time-steps) (create the tunnel, do NOT attach the public
 hostname yet) -> [Cloudflare Turnstile: one-time setup](#cloudflare-turnstile-one-time-setup) (create the
-widget, put both keys in the env file) -> [first deploy](#deploying-a-release) -> [create the first admin](#create-the-first-admin-before-the-site-is-public)
--> attach the public hostname.
+widget, put both keys in the env file) -> choose the first admin's email and password and put them in the env
+file ([First admin](#the-first-admin-comes-from-a-secret)) -> [first deploy](#deploying-a-release) -> attach the
+public hostname -> remove the two admin secrets from the env file.
 
 Every command below uses the production stack file and an explicit env file kept outside the
 checkout (see the header of `docker-compose.prod.yml`). Shorthand used in this document:
@@ -33,7 +39,10 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
 - `migrate` is built from the `migrate` target of the `Dockerfile` (full dependencies plus source;
   the minimal `production` image cannot run the Payload CLI). It runs `npm run deploy:migrate`, which
   is `scripts/check-env.ts` (environment validation, `M52`), then `payload migrate`, then
-  `scripts/verify-migrations.ts`. An invalid environment fails `migrate` before the database is touched.
+  `scripts/db-roles.ts` (creates and grants the restricted `gocart_app` role the running app uses,
+  ADR-036), then `scripts/verify-migrations.ts`, then `scripts/bootstrap-admin.ts` (creates the first
+  admin from a secret, or does nothing if a user exists). An invalid environment fails `migrate` before
+  the database is touched. `migrate` is the only container that holds the Postgres superuser password.
 - The verifier is a **smoke check, not a schema comparison**. It exits non-zero unless: at least one
   migration file exists, every migration file has a row in `payload_migrations`, no row has
   `batch = -1`, and every collection and the `Settings` global can be read. This closes the two cases
@@ -48,11 +57,10 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
   (see "Never migrate a database populated by development" below) becomes a failure after 5 minutes.
   The same limit can kill a legitimately slow migration (large backfill); raise the `timeout` value
   in the Dockerfile `migrate` CMD before shipping such a migration.
-- An **empty database needs no seeding**: the committed initial migration creates the whole schema.
-  The catalog starts empty and the first admin user is created through `/admin` (the create-first-user
-  screen). Until that is done, that screen is open to anyone who can reach the app, so create the
-  first admin before the public hostname is attached: see
-  [Create the first admin](#create-the-first-admin-before-the-site-is-public).
+- An **empty database needs no seeding**: the committed migrations create the whole schema, and the
+  first admin is created by the migrate step from `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`
+  (see [The first admin comes from a secret](#the-first-admin-comes-from-a-secret)). The catalog starts
+  empty. The `/admin` create-first-user flow is closed for visitors (ADR-036).
 
 Requires **Docker Compose >= 2.17** (`service_completed_successfully`). Verified on Compose v5.6.0.
 
@@ -190,6 +198,9 @@ deploy with the variable name and the rule, never the value):
 | `TURNSTILE_SECRET_KEY` | (`M52b`) the Turnstile widget's **secret** key; runtime only, given to `app` (siteverify) and `migrate` (`check-env`). 20-200 characters, no whitespace, none of the forbidden words above, **not** a Cloudflare test key (anything shaped like `1x0000000000000000000000000000000AA`), and different from the site key. A credential. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (`M52b`) the same widget's **public** site key (it is shipped to every browser; not a secret). 10-100 characters, no whitespace, no forbidden word, not a test key. **Build-time** for `app` (changing it needs `build`/`--build`); also passed to `migrate` at runtime so `check-env` can validate it. |
 | `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and CI only; `docker-compose.prod.yml` never passes it. |
+| `APP_DB_PASSWORD` | (ADR-036) the password of the restricted `gocart_app` database role the running app connects as. Same rules as `POSTGRES_PASSWORD` (16+ characters, `A-Z a-z 0-9 - . _ ~`, 10+ distinct, no forbidden word) and it **must differ from `POSTGRES_PASSWORD`**. Given to `migrate` (which creates the role) and used by compose to build `app`'s `DATABASE_URI`; `app` never sees `POSTGRES_PASSWORD`. Unlike `POSTGRES_PASSWORD` it is re-applied on every deploy, so it can be rotated (change the env file, then run the deploy gate). |
+| `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` | (ADR-036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
+| `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails otherwise): it re-opens the first-admin window. Development and CI only. |
 
 (The word list and host rules above follow the fix being made to `scripts/check-env.ts` at the time of
 writing; `scripts/check-env.ts` is the authority if they ever differ.)
@@ -212,24 +223,27 @@ at a domain you do not own. `TUNNEL_TOKEN` is only checked non-empty (by compose
 ```sh
 # /path/outside/checkout/gocart-prod.env   (mode 600; never commit)
 POSTGRES_PASSWORD=REPLACE-ME-output-of-openssl-rand-hex-24
+APP_DB_PASSWORD=REPLACE-ME-a-different-output-of-openssl-rand-hex-24
 PAYLOAD_SECRET=REPLACE-ME-output-of-openssl-rand-hex-32
 NEXT_PUBLIC_SITE_URL=https://shop.example.com
 TUNNEL_TOKEN=REPLACE-ME-paste-the-token-from-the-cloudflare-dashboard
 TURNSTILE_SECRET_KEY=REPLACE-ME-secret-key-of-the-turnstile-widget
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=REPLACE-ME-site-key-of-the-turnstile-widget
+# Only until the first admin exists, then delete these two lines:
+ADMIN_BOOTSTRAP_EMAIL=owner@your-domain.example
+ADMIN_BOOTSTRAP_PASSWORD=REPLACE-ME-a-long-random-password-for-the-first-admin
 ```
 
 The two Turnstile placeholders contain `REPLACE`, so `check-env` rejects them if copied unchanged. Do
 **not** put `TURNSTILE_ALLOW_TEST_KEYS` in this file.
 
-Generate the two secrets with `openssl rand -hex 24` (`POSTGRES_PASSWORD`) and `openssl rand -hex 32`
-(`PAYLOAD_SECRET`). The first start validates them: a rejected value fails `migrate` before any data
+Generate the secrets with `openssl rand -hex 24` (`POSTGRES_PASSWORD` and, separately, `APP_DB_PASSWORD`)
+and `openssl rand -hex 32` (`PAYLOAD_SECRET`). The first start validates them: a rejected value fails `migrate` before any data
 is touched, naming the variable and rule.
 
-**`.env.example` has NOT been updated.** It could not be read or edited in the session that wrote this,
-so it still does not document `TUNNEL_TOKEN`, the strength rules or the `POSTGRES_PASSWORD` character set
-(ADR-033 requires it to; that remains open under `M52`). Until it does, the guide is this section plus
-the header of `docker-compose.prod.yml`.
+`.env.example` documents the development variables (including Cloudflare's public Turnstile test keys and
+`PAYLOAD_ALLOW_FIRST_REGISTER=1`, which are for development only) and lists the production-only
+variables; this section is the authority for production.
 
 **Never paste the output of `docker compose config` or `docker inspect` anywhere** (chat, tickets, PRs,
 logs shared with others): they print `TUNNEL_TOKEN`, `PAYLOAD_SECRET` and the database password in
@@ -296,7 +310,7 @@ dashboard; it cannot be automated or verified from this repository.
 1. In the Cloudflare dashboard, open **Turnstile** and **add a widget (site)** for the store's
    production hostname (the host of `NEXT_PUBLIC_SITE_URL`, e.g. `shop.example.com`). Choose
    **Managed** mode. The widget must be for exactly that hostname (watch `www.` versus the bare
-   domain): a token whose `hostname` or `action` does not match is **degraded**, not accepted (see
+   domain): a token whose `hostname` or `action` does not match is **rejected**, never accepted (see
    step 5).
 2. Copy the **site key** into `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **secret key** into
    `TURNSTILE_SECRET_KEY` in the out-of-band env file. Never paste the secret key into chat, tickets,
@@ -308,10 +322,10 @@ dashboard; it cannot be automated or verified from this repository.
    `edge` network (an ordinary NAT bridge). No network change is needed; do not make `edge` internal.
 5. **After go-live, check the logs** (`$PROD logs app | grep '\[turnstile\]'`). Place one real order
    and do one order lookup through the real hostname: **they should produce NO `[turnstile]` log
-   lines.** In particular, an ERROR line `[turnstile] degraded { reason: 'hostname-mismatch' }` or
+   lines.** In particular, an ERROR line `[turnstile] rejected { reason: 'hostname-mismatch' }` or
    `{ reason: 'action-mismatch' }` means the widget's hostname in the Cloudflare dashboard or
-   `NEXT_PUBLIC_SITE_URL` is wrong (for example `www.` versus the bare domain), and **every customer is on
-   the strict degraded budget** (5 orders per 15 minutes per IP, and no CGNAT relief). Fix the widget
+   `NEXT_PUBLIC_SITE_URL` is wrong (for example `www.` versus the bare domain), and **every customer is
+   refused**: ADR-036 has no degraded path, so a mismatch is a total checkout outage. Fix the widget
    hostname in the dashboard, or fix `NEXT_PUBLIC_SITE_URL` and rebuild.
 
 **Unverified until a real deploy**: the widget on the real hostname, a `verified` siteverify with the
@@ -329,36 +343,42 @@ documentation before launch.
   against the new value; a no-op for the schema) and `$PROD up -d app` (recreates `app` with the new
   environment). No rebuild.
 - If the site and secret keys are rotated together (a new widget), rebuild: an old site key with a new
-  secret (or the reverse) makes every token fail to verify. Rejected tokens never fall through to the
-  degraded path, so customers would see "The security check didn't complete" until both match.
+  secret (or the reverse) makes every token fail to verify, and every order is refused ("The security check
+  didn't complete" or "We can't run our security check right now") until both match.
 - If the secret key is exposed, rotate it in the Turnstile dashboard and follow the secret steps above.
 
-### When Turnstile is unreachable (degraded mode)
+### When Turnstile is unreachable or a token is bad (strict mode, ADR-036)
 
-The owner's outage policy is that sales keep running. If the widget cannot load in the browser (blocked
-script, Cloudflare outage, old browser) the customer can still press Place Order / Check order. If
-siteverify cannot be reached, times out (3 seconds, no retries) or answers with anything other than a
-definite verdict, the request is **degraded**: it gets today's strict per-IP limit (5 orders per 15
-minutes, 20 lookups per hour) in a **separate** bucket. Degraded orders are bounded **only** by that
-per-IP budget; the per-phone limits count verified orders only. Customers who did verify are not
-affected by degraded traffic from the same IP. A token that Cloudflare definitely rejects (invalid,
-expired or already used) is refused, never degraded.
+A verified token is **required**. There is no degraded path: the owner decided on 2026-10-11 that an
+order or lookup without a verified token must be refused. Consequences you should expect:
 
-Degraded reasons, as they appear in `[turnstile] degraded { reason: ... }`:
+- If the widget cannot load in the browser (blocked script, an ISP that blocks Cloudflare, a very old
+  browser), the button stays disabled and the page tells the customer to contact the store. Orders for
+  those customers are entered by hand in `/admin`.
+- If siteverify cannot be reached, times out (3 seconds, no retries) or answers anything other than a
+  definite verdict, the order is refused with "We can't run our security check right now … contact us".
+  Because the storefront itself is served through the same Cloudflare Tunnel, a Cloudflare outage that
+  matters is usually an outage of the site as well.
+- A token that is missing, invalid, expired or already used, or issued for another hostname or action, is
+  refused with "The security check didn't complete" (or an "it has expired, it renews by itself" variant).
 
-| Reason | Meaning | Log level |
+Reasons as they appear in `[turnstile] <outcome> { reason: ... }`:
+
+| Outcome / reason | Meaning | Log level |
 |---|---|---|
-| `missing-token` | no token sent (widget failed to load, or a bot) | not logged |
-| `network`, `timeout`, `http-status`, `bad-response`, `service-error` | Cloudflare unreachable, slow (over 3 s) or answered without a definite verdict | warning (`service-error` is an error when Cloudflare refuses our secret) |
-| `busy` | more than 50 verifications already in flight in this process; the request skips siteverify | warning |
-| `hostname-mismatch`, `action-mismatch` | Cloudflare verified the token, but for another hostname or action: a configuration error (see setup step 5) | **error** |
-| `not-configured`, `test-key-not-allowed` | `TURNSTILE_SECRET_KEY` missing, `NEXT_PUBLIC_SITE_URL` unusable, or a test key without the dev/CI allow flag; production prevents these with compose `:?` and `check-env` | **error** |
+| rejected `missing-token` | no token sent (widget failed to load, or a bot) | not logged |
+| rejected `malformed-token`, `invalid-token`, `expired-or-duplicate` | the token is definitely bad | warning |
+| rejected `hostname-mismatch`, `action-mismatch` | Cloudflare verified the token, but for another hostname or action: a configuration error (see setup step 5) | **error** |
+| unavailable `network`, `timeout`, `http-status`, `bad-response` | Cloudflare unreachable, slow (over 3 s) or answered without a definite verdict | warning |
+| unavailable `service-error` | Cloudflare returned an error code; **error** level when it refused our secret | warning / **error** |
+| unavailable `busy` | more than 50 verifications already in flight in this process; the request skips siteverify | warning |
+| unavailable `not-configured`, `test-key-not-allowed` | `TURNSTILE_SECRET_KEY` missing, `NEXT_PUBLIC_SITE_URL` unusable, or a test key without the dev/CI allow flag; production prevents these with compose `:?` and `check-env` | **error** |
 
-Watch the app logs for `[turnstile]` lines after launch: any error-level line is a configuration problem
-to fix at once; many warning lines with `network`, `timeout` or `http-status` mean the app cannot reach
-Cloudflare; many `busy` lines mean a burst large enough that verification is being skipped. Tokens, IPs,
-phone numbers and customer fields are never logged. (Log levels and reasons follow `lib/turnstile.ts`
-as described by the security review; that file is the authority if they differ.)
+Watch the app logs for `[turnstile]` and `[order-guard]` lines after launch: any error-level line is a
+configuration problem to fix at once (customers are being refused); many `network`, `timeout` or
+`http-status` warnings mean the app cannot reach Cloudflare; `[order-guard] phone-volume` means more than
+10 verified orders in 24 hours on one phone number (look at those orders in `/admin`). Tokens, IPs, phone
+numbers and customer fields are never logged.
 
 ### Privacy
 
@@ -368,126 +388,134 @@ browser. The server sends Cloudflare only the token, the secret and the visitor'
 (name, phone, address, cart) is sent. If the store publishes a privacy notice, it should mention
 Cloudflare Turnstile (owner).
 
-## Create the first admin before the site is public
+## The first admin comes from a secret
 
-Payload's create-first-user flow is open while no user exists: `/admin/create-first-user` renders and
-`POST /api/users/first-register` creates an admin for **whoever sends it first**. Verified against the
-production stack on an empty database: `GET /api/users/init` returns `{"initialized":false}`, the
-create-first-user screen is served, an unauthenticated `first-register` returns 200 and creates the
-user, and from then on `first-register` and `POST /api/users` return 403 (`initialized: true`).
-`collections/Users.ts` leaves this built-in behaviour as is. So the first admin must exist before the
-public hostname is attached to the tunnel.
+Payload's built-in create-first-user flow (`POST /api/users/first-register` and the `/admin` create-first-user
+screen) makes **whoever reaches the site first** an admin with access to all order data. It is **closed**
+(ADR-036): `collections/Users.ts` refuses an unauthenticated user creation with 403 unless it comes from the
+server-side bootstrap script or the process was started with `PAYLOAD_ALLOW_FIRST_REGISTER=1` (development
+and CI; `check-env` rejects it in production and the production compose never passes it).
 
-Because the app publishes no port, create it from inside the stack (the credentials are read from
-stdin, so they are not in the process list or the shell history; type a space before the command to
-keep it out of history if your shell supports that):
+The production admin is created by the migrate step (`scripts/bootstrap-admin.ts`, the last step of
+`npm run deploy:migrate`), from `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
 
-```sh
-$PROD up -d --build        # first deploy; the tunnel has no public hostname yet, so nothing is exposed
-read -r -p "admin email: " ADMIN_EMAIL; read -r -s -p "password: " ADMIN_PW; echo
-printf '%s\n%s\n' "$ADMIN_EMAIL" "$ADMIN_PW" | $PROD exec -T app node -e "
-let b='';process.stdin.on('data',d=>b+=d).on('end',async()=>{const [email,password]=b.split('\n');
-const r=await fetch('http://127.0.0.1:3000/api/users/first-register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
-console.log('first-register status',r.status);process.exit(r.ok?0:1)})"
-unset ADMIN_EMAIL ADMIN_PW
-```
+1. Choose the email and a long random password (14+ characters, no whitespace, 10+ distinct characters,
+   no forbidden word) and put both in the env file with the other secrets.
+2. Deploy as usual. If no user exists, the admin is created; if one exists, nothing happens (the step says
+   the credentials are unused). If no user exists **and the credentials are missing or invalid, the migrate
+   step fails and the app does not start** (it fails closed rather than leave a stack nobody can administer).
+3. **Remove both lines from the env file** after the first successful deploy, and sign in at
+   `https://<your-domain>/admin`.
 
-Expect `first-register status 200`. Then attach the public hostname in the Cloudflare dashboard and sign in
-at `https://<your-domain>/admin`.
-
-**After ANY database wipe, volume loss or restore to an empty database, detach the public hostname FIRST,
-recreate the admin with the script above, and only then re-attach the hostname.** Say plainly what this is:
-only an operational control. While the `users` table is empty, Payload lets an unauthenticated request
-create the first admin (verified above), so a code-level guard is an open owner decision. It is not built.
-
-Reported, not built: the app could refuse to serve (or serve only `/admin`) until an admin exists, or
-the first admin could be seeded from a secret; either would close this window without relying on
-ordering. Neither exists; the ordering above is the control. Also note that if the database is ever
-wiped, the window reopens.
+This works the same after a database wipe, volume loss or restore into an empty database: put the two
+secrets back, run the deploy gate, remove them again. There is **no window** in which a visitor can register,
+so the order of "attach the public hostname" and "create the admin" no longer matters. To add more admins,
+sign in and use `/admin` (an authenticated admin may create users). To reset a lost admin password with the
+site down, set the two variables to a new pair **and** remove the old user in the database
+(`delete from users where email = '...'`), then run the deploy gate; that is a human-approval operation on a
+real database.
 
 ## Rate limits in the real world
 
 Pakistani mobile carriers put many subscribers behind one public IPv4 address (carrier-grade NAT), so
-one IP can be many real customers. Since `M52b` ([ADR-035](./DECISIONS.md)) the per-IP limit is only a
-**flood ceiling**; customers who pass Turnstile are limited per phone number, not by the other people
-sharing their IP. All limits are code constants in `lib/order-guard.ts` (changing them is a code change,
-not configuration):
+one IP can be many real customers. Since `M52b` ([ADR-035](./DECISIONS.md), amended by
+[ADR-036](./DECISIONS.md)) an order or lookup needs a **verified Turnstile token**, and the limits count
+verified customers separately instead of by IP alone. All limits are code constants in `lib/order-guard.ts`
+(changing them is a code change, not configuration):
 
 | What | Limit | Counts |
 |---|---|---|
-| Order placement, flood ceiling per IP | 30 per 15 minutes | every request with a well-formed phone, whatever the Turnstile outcome |
-| Order placement, degraded (no token, Turnstile unreachable, `busy`, hostname/action mismatch) per IP | 5 per 15 minutes, separate bucket | every degraded request; the only limit on degraded orders besides the flood ceiling |
-| Per phone number (normalised `03XXXXXXXXX`), verified orders only | 3 per hour **and** 10 per 24 hours | successful **verified** orders only (a failed order is refunded; degraded orders are not counted here, they are bounded by the degraded per-IP budget) |
-| Order lookup, flood ceiling per IP | 60 per hour | every request with a well-formed order number |
-| Order lookup, degraded per IP | 20 per hour, separate bucket | every degraded request |
-| Failed lookups per order number | 5 per hour | `NOT_FOUND` only |
+| Order placement, attempts per IP | 60 per 15 minutes | every request with a well-formed phone and a token or idempotency key, whatever the outcome (bounds siteverify calls and database lookups) |
+| Order placement, verified orders per IP | 30 per 15 minutes | successful verified orders |
+| Per phone number **and IP** (normalised `03XXXXXXXXX`) | 3 per hour **and** 10 per 24 hours | successful verified orders only (a failed order is refunded) |
+| Per phone number, all IPs | alert only: `[order-guard] phone-volume` above 10 per 24 hours | never refuses |
+| Order lookup, attempts per IP | 60 per hour | every request with a token |
+| Failed lookups per order number | 5 per hour | `NOT_FOUND` only, verified requests only |
 
 Things to know before launch:
 
-- **Verified customers on a shared CGNAT IP are not limited by each other** below the flood ceiling of
-  30 orders per 15 minutes per IP. Anyone on that IP can still use up the ceiling for 15 minutes; that is
-  the same class of problem as before, with a six times higher bar.
-- **New restriction on real customers**: one phone number can place at most 3 verified orders an hour
-  and 10 a day. The customer-facing message tells them to contact the store; the admin can still enter
-  orders by hand in `/admin`.
-- During a Turnstile outage, or for a visitor whose widget cannot load, behaviour is exactly the
-  pre-`M52b` limit (5 orders per 15 minutes per IP), in its own bucket.
+- **No token, no order.** A request without a token costs nothing (it touches no limiter, no network call
+  and no database) and is refused. A repeat of an order that already exists (same idempotency key and
+  phone) is answered with that order and consumes no limit.
+- **Verified customers on a shared CGNAT IP are not limited by each other** below the per-IP ceiling of
+  30 orders per 15 minutes. Anyone on that IP can still use up the ceiling for 15 minutes with real
+  solved challenges; that is the same class of problem as before with a far higher bar.
+- **Nobody can lock a customer out of their own phone number from another connection**: the per-phone
+  limits are keyed by phone *and IP*. An attacker with solved challenges and rotating IPs can still place
+  fake orders on a victim's number; the cost per order is a solved token, and the alert above and `/admin`
+  are the detection. The real remedy is proof of phone ownership (SMS OTP, deferred by ADR-015).
 - **Limiter state is in-process and resets on restart** (every deploy or container restart starts all
   counters at zero). Acceptable for the single instance of ADR-015; a second app instance would need a
-  shared store.
+  shared store. The limiters are fixed-size and non-evicting: a flood of distinct keys can only make the
+  limits stricter for some keys (a hash collision), never reset a counter.
 - IPv6 clients are limited per `/64`, not per address.
-- If the `cf-connecting-ip` header is missing (for example "Remove visitor IP headers" is enabled),
-  production sees the single shared `unknown` bucket and **all visitors share one flood ceiling and one
-  degraded budget**: a self-inflicted outage. It fails closed (never a bypass), so check for it after any
-  Cloudflare zone change.
+- **A missing or invalid `cf-connecting-ip` header refuses every order and lookup** in production
+  (`VERIFICATION_UNAVAILABLE`, and one error line a minute: `[order-guard] no valid client IP`). All
+  production traffic arrives through the tunnel, so this means a Cloudflare setting (for example "Remove
+  visitor IP headers") or a second ingress. Check for it after any Cloudflare zone change.
 - **What to check at launch**: one real order and one order lookup through the real hostname, from a
-  real phone on mobile data, should produce **no** `[turnstile]` log lines (a `hostname-mismatch` or
-  `action-mismatch` error line means every customer is on the degraded budget: see
-  [setup step 5](#cloudflare-turnstile-one-time-setup)); and "Remove visitor IP headers" is still off.
+  real phone on mobile data, should produce **no** `[turnstile]` or `[order-guard]` log lines (an error line
+  means customers are being refused: see [setup step 5](#cloudflare-turnstile-one-time-setup)); and
+  "Remove visitor IP headers" is still off.
 - Unverified until a real deploy: these limits behind real Cloudflare headers with real mobile-carrier
   traffic.
 
+## Database roles
+
+The `migrate` service connects as the Postgres superuser (`POSTGRES_USER`, `POSTGRES_PASSWORD`) and, after
+`payload migrate`, runs `scripts/db-roles.ts`. The running `app` connects as **`gocart_app`**
+(`APP_DB_PASSWORD`): `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`, 20 connections,
+`statement_timeout` 30 s. It can `SELECT, INSERT, UPDATE, DELETE` on the application tables and use their
+sequences; it **cannot** create or alter objects, create roles or extensions, `TRUNCATE`, run server-side
+programs (`COPY ... PROGRAM`), create temporary tables, or write to `payload_migrations`. The grants are
+re-applied on every deploy, so new tables are covered automatically. Consequences: a compromised app can
+read and change this one database's rows (including orders), but cannot change the schema or take over the
+database server; **schema changes only ever happen through the migrate step.** Development
+(`docker-compose.yml`) keeps one superuser because `next dev` pushes the schema.
+
 ## Image optimisation
 
-`M51` enables Next.js's built-in optimizer at `/_next/image`, configured in `next.config.mjs`: WebP
-only, a closed list of widths (64, 128, 256, 384, 640, 828, 1080), quality 75, a one-day minimum cache
-TTL, and sources limited to local `/api/media/file/**`. It needs no outbound network: it only fetches the
-app's own files.
+`M51` ([ADR-034](./DECISIONS.md)) enabled Next.js's built-in image optimizer. **It is switched off again**
+(ADR-036): `next@15.4.11` has critical advisories in the Image Optimization API (see
+[Launch blockers](#launch-blockers)). `next.config.mjs` sets `images.unoptimized: true` (product images are
+served as uploaded, from `/api/media/file/...`) and sends every `/_next/image` request to a 404. Uploads
+are restricted to JPEG, PNG, WebP and GIF (no AVIF, SVG or HEIC).
 
-- **Cache location.** Variants are cached under `.next/cache/images` **inside the container's writable
-  layer, not a volume**. A recreated container (every deploy) starts cold, so the first visit per image and
-  width runs `sharp` (roughly 40-200 ms each on a development machine; expect more on a ~$10 single-vCPU
-  VPS). A cold-cache burst after each deploy is normal and cheap at launch catalog size; you can warm it by
-  requesting the home and shop pages after a deploy.
-- **Growth.** Next 15.4 has no size cap on this cache. Growth is bounded by (media files x 7 widths) and it
-  disappears when the container is recreated.
-- **M53 note.** If the container root filesystem later becomes `read_only`, `/app/.next/cache` needs a
-  tmpfs or a volume.
-- **Upload rules for admins.** `next.config.mjs` sets `experimental.imgOptMaxInputPixels: 40_000_000`
-  (40 megapixels, for example about 7000x5700). Larger source images are **not** optimised: the original
-  file is served instead. Resize product photos to under about 4000 px on the long edge (and a few MB)
-  before uploading. Do **not** upload SVG (the optimizer rejects it and the image would break) and do not
-  put private files in Media (it is public-read).
-- **Oversize images are a real cost.** An image over 40 MP is served as the original, and each requested
-  width still caches a full copy of it (QA: a 54 MP / 18.6 MB test image produced about 130 MB of cache), and
-  mobile devices download the full original. Resize before upload; this is not just advice.
-- **Log noise.** A probe containing a NUL byte (`%00`) logs a Payload stack trace. It is cosmetic and the
-  response is 400.
-- **Accepted URLs.** The optimizer only accepts image URLs of the exact form Payload generates,
-  `/api/media/file/<one path segment>`, with the query string pinned empty (`search: ''`). Anything else is
-  rejected with a 404 before it reaches the optimizer. Verified (QA) on the Docker production image
-  with 17 real uploaded files (including non-Latin names): 0 false rejections, and a set of about 45 abuse
-  variants created no cache entries. Behind real Cloudflare it is unverified.
-- **Replaced images** get a new filename (for example `lamp-1.jpg`), so there is no stale-image problem.
-- **Cloudflare (not built, not verified: real Cloudflare behaviour).** `/_next/image` has no file
-  extension, so Cloudflare does not cache it by default. If you add a cache rule, limit it to
-  `/_next/image*`, respect the origin `Cache-Control`, and include `Accept` in the cache key (the optimizer
-  varies on `Accept`). Because the endpoint is public and CPU-bound, a Cloudflare rate-limiting rule on
-  `/_next/image` is the practical control.
+- **Upload rules for admins.** Resize product photos to under about 1600 px on the long edge and a few
+  hundred KB (WebP or JPEG) before uploading: the file the visitor downloads is the file you upload.
+  Do not upload SVG or AVIF (refused) and do not put private files in Media (it is public-read).
+- **Revisit** with the Next.js upgrade: the optimizer, its cache sizing and the Cloudflare cache rules in
+  ADR-034 apply again only if it is re-enabled.
+
+## Read-only containers
+
+`app` and `migrate` run with `read_only: true` (ADR-036). Writable places: `/tmp` (tmpfs), `/app/.next/cache`
+(tmpfs, `app` only, 128 MB, empty after each restart) and the `app-media` volume at `/app/media`. If a
+future change writes anywhere else you will see `EROFS` errors in `$PROD logs app`; fix the code or add a
+tmpfs, do not remove `read_only`. `postgres` and `cloudflared` are not read-only (see ADR-036).
+
+## Launch blockers
+
+The stack is **not cleared for launch** until every item is done or explicitly accepted by the owner:
+
+1. **Upgrade Next.js to a patched version (critical).** `next@15.4.11` is affected by 30 advisories, two
+   critical (`GHSA-2xp9-vwfh-vxw4`, Image Optimization API RCE with AVIF; `GHSA-p293-qw3h-jr36`, Windows-only
+   RCE) and several high (including `GHSA-m99w-x7hq-7vfj`, a Server Actions DoS that applies to the public
+   checkout). All are fixed only in 15.5.x or later, and Payload 3.90.x excludes 15.5.x, so the upgrade is to
+   **Next 16.3.3 or later** with Payload 3.90.x, a major upgrade with its own regression pass (for example
+   `next lint` is removed in Next 16). The interim mitigations (optimizer off, `/_next/image` closed,
+   narrower upload types) remove the image-optimizer surface only; they do **not** address the Server Action
+   DoS or the other advisories. Re-run `npm audit` after the upgrade.
+2. **Real Cloudflare checks** (never observed by anyone so far): with real Turnstile keys on the real
+   hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines; the CI
+   `turnstile-contract` job and the golden path are green.
+3. **First deploy checks**: the migrate step succeeded, `/admin` login works with the bootstrap credentials,
+   the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
+   token, and the CI `prod-stack` job is green.
+4. **Backups** (`M54`) and **health checks** (`M53`).
 
 ## Not covered yet
 
 Health checks (`M53`: `cloudflared` should then depend on `app` being healthy, not merely started);
-backups and restore drills (`M54`); hardening beyond `no-new-privileges` and `cap_drop: ALL` on the
-`app`, `migrate` and `cloudflared` containers (`read_only` root filesystems and `postgres` hardening
-were not attempted); the full deploy runbook (`M59`).
+backups and restore drills (`M54`); `read_only` for `cloudflared` and `postgres` hardening (not testable
+here); the full deploy runbook (`M59`).

@@ -1,20 +1,22 @@
 'use server'
 
 import { getClientIp, getVerifyIp } from '@/lib/client-ip'
-import { admitPlaceOrder } from '@/lib/order-guard'
+import { admitPlaceOrder, normalizeIdempotencyKey } from '@/lib/order-guard'
 import type { GuardFailure } from '@/lib/order-guard'
-import { createOrder } from '@/lib/payload/orders'
+import { createOrder, findOrderByIdempotencyKey } from '@/lib/payload/orders'
 import type { CreateOrderInput, CreateOrderResult } from '@/lib/payload/orders'
 import { normalizePhone, validatePhone } from '@/lib/validation/pk'
 
 // M33: server action behind the cart's Place Order button (ADR-026). Lives outside
 // lib/payload/ because that directory is server-code-only and must not export
 // 'use server' functions to the client. Delegates all validation and pricing to createOrder.
-// M52b (ADR-035): admission goes through lib/order-guard.ts — a per-IP flood ceiling, a
-// Turnstile check (rejected -> VERIFICATION_FAILED; degraded -> today's strict per-IP limit)
-// and, for verified orders only, per-phone limits that count successful orders only.
+// M52b (ADR-035, ADR-036): admission goes through lib/order-guard.ts - a Turnstile token is
+// REQUIRED (no token, a bad token or an unreachable Cloudflare all refuse the order), per-IP
+// attempt and order ceilings, and per (phone, IP) limits that count successful orders only.
+// ADR-036: the client sends an idempotency key per checkout attempt; a retry with the same
+// key returns the order already created instead of creating another.
 
-export type PlaceOrderInput = CreateOrderInput & { turnstileToken?: string | null }
+export type PlaceOrderInput = CreateOrderInput & { turnstileToken?: string | null; idempotencyKey?: string | null }
 
 export type PlaceOrderResult = CreateOrderResult | GuardFailure
 
@@ -32,23 +34,27 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   // touches no limiter, spends no Turnstile token and makes no network call.
   if (!record || validatePhone(phone)) return createOrder(input)
 
-  const admission = await admitPlaceOrder({
+  const idempotencyKey = normalizeIdempotencyKey(record.idempotencyKey)
+  const admission = await admitPlaceOrder<CreateOrderResult>({
     ip: await getClientIp(),
     phone,
     token: record.turnstileToken,
+    idempotencyKey,
     remoteIp: await getVerifyIp(),
+    findExisting: findOrderByIdempotencyKey,
   })
   if (!admission.ok) return admission
+  if (admission.kind === 'replay') return admission.result
 
-  // The token is for this action only; createOrder sees just the order fields.
+  // The token and the key are for admission only; createOrder sees just the order fields.
   const orderInput = { items: record.items, customer: record.customer } as CreateOrderInput
   let created = false
   try {
-    const result = await createOrder(orderInput)
+    const result = await createOrder(orderInput, { idempotencyKey })
     created = result.ok
     return result
   } finally {
-    // Only successful orders count towards the phone limits.
+    // Only successful orders count towards the limits.
     if (!created) admission.release()
   }
 }

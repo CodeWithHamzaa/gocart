@@ -21,7 +21,9 @@ export const Media: CollectionConfig = {
   },
   upload: {
     staticDir: path.resolve(dirname, '../media'),
-    mimeTypes: ['image/*'],
+    // ADR-036 (B1 interim mitigation): only the formats the storefront needs. `image/*` also
+    // admitted AVIF, SVG and HEIC; AVIF is what GHSA-2xp9-vwfh-vxw4 (Next image optimizer RCE) needs.
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   },
   fields: [
     {
