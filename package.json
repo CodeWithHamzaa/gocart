@@ -15,6 +15,7 @@
     "migrate:status": "payload migrate:status",
     "check-env": "tsx scripts/check-env.ts",
     "test:env": "tsx scripts/check-env.test.ts",
+    "test:turnstile": "tsx scripts/turnstile.test.ts",
     "deploy:migrate": "tsx scripts/check-env.ts && payload migrate && tsx scripts/verify-migrations.ts",
     "test:e2e": "playwright test"
   },

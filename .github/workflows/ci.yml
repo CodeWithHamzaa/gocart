@@ -23,6 +23,72 @@ jobs:
       - run: npm run lint
       # M52: table test of the production environment rules (scripts/check-env.ts). No database.
       - run: npm run test:env
+      # M52b (ADR-035): Turnstile verifier + order guard unit tests (injected fetch, no network).
+      - run: npm run test:turnstile
+
+  # M52b (ADR-035): contract test of OUR Turnstile classifier against the REAL Cloudflare siteverify.
+  # The response shapes ADR-035 relies on are UNVERIFIED from the authoring sandbox (no network to
+  # Cloudflare); GitHub runners can reach it. Uses only Cloudflare's PUBLIC test secrets and dummy
+  # token (not credentials), so printing the raw responses is safe and documents the real shapes.
+  # Separate job so a Cloudflare hiccup is visibly a contract failure, not a type-check failure.
+  turnstile-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Widget script is served (api.js -> HTTP 200)
+        run: |
+          code="$(curl -sS -o /dev/null -w '%{http_code}' https://challenges.cloudflare.com/turnstile/v0/api.js)"
+          echo "api.js HTTP $code"
+          test "$code" = "200"
+      - name: lib/turnstile.ts classifies real siteverify responses (verified / rejected / rejected)
+        run: |
+          cat > "$RUNNER_TEMP/turnstile-contract.mts" <<'TS'
+          import assert from 'node:assert/strict'
+          import { pathToFileURL } from 'node:url'
+          const mod = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/lib/turnstile.ts`).href)
+          const { createTurnstileVerifier, SITEVERIFY_URL } = mod
+          const TOKEN = 'XXXX.DUMMY.TOKEN.XXXX'
+          // Real global fetch; a clone of each response is printed so the log records the raw shape.
+          const loggingFetch: typeof fetch = async (input, init) => {
+            const res = await fetch(input, init)
+            console.log(`  HTTP ${res.status} ${JSON.stringify(await res.clone().text())}`)
+            return res
+          }
+          const cases = [
+            { name: 'always-pass', secret: '1x0000000000000000000000000000000AA', expected: { outcome: 'verified' } },
+            { name: 'always-fail', secret: '2x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'invalid-token' } },
+            { name: 'token-spent', secret: '3x0000000000000000000000000000000AA', expected: { outcome: 'rejected', reason: 'expired-or-duplicate' } },
+          ]
+          assert.equal(SITEVERIFY_URL, 'https://challenges.cloudflare.com/turnstile/v0/siteverify')
+          let failed = 0
+          for (const c of cases) {
+            console.log(`${c.name}:`)
+            const verify = createTurnstileVerifier({
+              fetch: loggingFetch,
+              secret: c.secret,
+              allowTestKeys: true,
+              expectedHostname: 'localhost',
+              timeoutMs: 10000,
+            })
+            const result = await verify(TOKEN, { action: 'place_order', remoteIp: null })
+            console.log(`  classified as ${JSON.stringify(result)}`)
+            try {
+              assert.deepEqual(result, c.expected)
+            } catch {
+              failed++
+              console.error(`  FAIL: expected ${JSON.stringify(c.expected)}`)
+            }
+          }
+          if (failed) process.exit(1)
+          console.log('turnstile contract: OK')
+          TS
+          npx tsx "$RUNNER_TEMP/turnstile-contract.mts"
 
   # M56a: production build + the golden-path E2E test against a freshly seeded PostgreSQL.
   # The credentials below belong to a throwaway database that exists only for this job.
@@ -43,10 +109,19 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+    # Job level on purpose: `npm run build` inlines NEXT_PUBLIC_TURNSTILE_SITE_KEY and the started
+    # server reads TURNSTILE_SECRET_KEY, so both steps must see the same values.
+    # M52b (ADR-035): Cloudflare's PUBLIC always-pass test keys (not secrets), allowed only because
+    # TURNSTILE_ALLOW_TEST_KEYS=1. The golden path therefore loads the real widget script and calls
+    # the real siteverify (network access to challenges.cloudflare.com is required; accepted by
+    # ADR-035). Production rejects test keys and never sets the allow flag.
     env:
       DATABASE_URI: postgresql://gocart:gocart@localhost:5432/gocart_e2e
       PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-else
       NEXT_PUBLIC_SITE_URL: http://localhost:3100
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      TURNSTILE_ALLOW_TEST_KEYS: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,6 +150,10 @@ jobs:
   # malformed values even in CI, so this job uses throwaway but CONFORMING ones (password >= 16
   # chars of A-Z a-z 0-9 . _ ~ -; secret >= 32 chars, >= 12 distinct, no placeholder words; an
   # https public-looking site URL). The values belong to a database that exists only for this job.
+  # M52b: the two Turnstile keys are throwaway values that only have to PASS check-env (lengths,
+  # no whitespace, no placeholder word, not a Cloudflare test key, different from each other).
+  # They are not real keys and nothing in this job calls Cloudflare. TURNSTILE_ALLOW_TEST_KEYS is
+  # deliberately unset (check-env rejects it in production).
   migrations:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -96,6 +175,8 @@ jobs:
       PAYLOAD_SECRET: Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U
       POSTGRES_PASSWORD: ci-throwaway-pw-0123456789
       NEXT_PUBLIC_SITE_URL: https://shop.example.com
+      TURNSTILE_SECRET_KEY: Qm7vTz2KpW9xRb4NcY6hJd3LfG8sAu5E
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: Hs4kVn8QwZ2tPy6R
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -130,9 +211,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the production image (no database)
-        run: docker build --target production --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart:ci .
+        # M52b: a dummy, non-empty public Turnstile site key (not a real key; nothing calls Cloudflare).
+        run: docker build --target production --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=Hs4kVn8QwZ2tPy6R -t gocart:ci .
       - name: Build the migrate image (M52a; used by the one-shot migrate service)
-        run: docker build --target migrate --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart-migrate:ci .
+        run: docker build --target migrate --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=Hs4kVn8QwZ2tPy6R -t gocart-migrate:ci .
       - name: Migrate image runs as an unprivileged user
         run: |
           uid="$(docker run --rm --entrypoint id gocart-migrate:ci -u)"
@@ -140,7 +222,7 @@ jobs:
           test "$uid" = "1000"
       - name: No secrets baked into the migrate image environment
         run: |
-          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI|TURNSTILE_SECRET_KEY'; then
             echo "a secret or connection string is baked into the migrate image"
             exit 1
           fi
@@ -157,7 +239,7 @@ jobs:
           fi
       - name: No secrets baked into the image environment
         run: |
-          if docker inspect --format '{{json .Config.Env}}' gocart:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+          if docker inspect --format '{{json .Config.Env}}' gocart:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI|TURNSTILE_SECRET_KEY'; then
             echo "a secret or connection string is baked into the image"
             exit 1
           fi

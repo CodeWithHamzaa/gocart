@@ -1,5 +1,5 @@
 import { PlusIcon, SquarePenIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import AddressModal from './AddressModal';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import { placeOrder } from '@/app/(public)/cart/actions';
 import { writeLastOrder } from '@/lib/order-confirmation';
 import { useRouter } from 'next/navigation';
 import { formatPKR } from '@/lib/currency'
+import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
 
 const OrderSummary = ({ totalPrice, items }) => {
 
@@ -26,6 +27,10 @@ const OrderSummary = ({ totalPrice, items }) => {
     // null = loading or failed; Place Order stays disabled rather than show a wrong total.
     const [shippingSettings, setShippingSettings] = useState(null);
     const [settingsFailed, setSettingsFailed] = useState(false);
+    // M52b (ADR-035): Turnstile token for the server's CGNAT-safe limits. The button waits only
+    // while the check is loading (10 s cap); a failed or absent widget still lets the order through.
+    const [turnstile, setTurnstile] = useState(initialTurnstileState);
+    const turnstileRef = useRef(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -83,6 +88,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                     city: selectedAddress.city,
                     area: selectedAddress.area,
                 },
+                turnstileToken: turnstile.token,
             });
 
             if (result.ok) {
@@ -124,7 +130,11 @@ const OrderSummary = ({ totalPrice, items }) => {
         } catch (error) {
             toast.error('We could not place your order. Please try again.');
         } finally {
-            if (!keepDisabled) setPlacing(false);
+            if (!keepDisabled) {
+                setPlacing(false);
+                // Tokens are single-use: get a fresh one for the next attempt.
+                turnstileRef.current?.reset();
+            }
         }
     }
 
@@ -181,7 +191,8 @@ const OrderSummary = ({ totalPrice, items }) => {
                     {settingsFailed ? 'Could not load shipping charges. Please refresh the page.' : 'Calculating shipping...'}
                 </p>
             )}
-            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+            <TurnstileWidget ref={turnstileRef} action='place_order' onChange={setTurnstile} className='pb-3' />
+            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status === 'loading'} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
 
             {/* M44: a newly saved address is selected straight away; before, the customer had to find
                 it in the dropdown and Place Order failed with "select an address". */}

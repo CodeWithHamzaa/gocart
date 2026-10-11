@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-68 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+69 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M52b`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -901,6 +901,125 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the compose/entrypoint changes.
 - **Commit message**: `Run Payload database migrations as an explicit production deploy step`
 
+### M52b — Turnstile verification and CGNAT-safe order rate limits
+- **New milestone, inserted 2026-10-11 (owner-approved)**: Pakistani mobile carriers put many customers
+  behind one IP address (CGNAT), so the per-IP limit of 5 orders per 15 minutes in `placeOrder` blocks real
+  buyers. Design: [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b),
+  which amends ADR-026 decision 6 and ADR-024's rate-limit clause. `Orders` access, guest checkout and
+  COD-only are unchanged.
+- **Goal**: Verify Cloudflare Turnstile on the server for order placement and order lookup, classifying each
+  request as verified, rejected or degraded. Replace the strict per-IP limit with a per-IP flood ceiling
+  (30 orders / 15 min; 60 lookups / hour). Keep today's strict limits (5 / 15 min; 20 / hour) for
+  degraded requests only, under separate keys: a missing token, or a Turnstile service that cannot be
+  reached. That is the owner's outage policy: sales keep running. Add per-phone order limits on the
+  normalised phone: 3 / hour and 10 / day, counting **successful verified orders only**; degraded orders
+  reserve no phone slot (amended 2026-10-11, ADR-035 decision 1.4). A rejected token never falls through to
+  the degraded path. An action or hostname mismatch is degraded with an error-level log, not rejected. No
+  new npm packages; siteverify is called with `fetch`: 3 s timeout, no retries, `redirect: 'error'`, a
+  body-size cap, and at most 50 concurrent calls (overflow → degraded `busy`).
+- **Files**:
+  - **New**:
+    - `lib/turnstile.ts`: pure. Exports `SITEVERIFY_URL`, `isTurnstileTestKey`, `createTurnstileVerifier(deps)`
+      and `verifyTurnstile`.
+    - `lib/order-guard.ts`: `createOrderGuard`, the default `admitPlaceOrder`/`admitLookup`, and the limit
+      constants.
+    - `components/TurnstileWidget.tsx`: `'use client'`, explicit render, lazy script, `reset()` handle,
+      `data-turnstile-status`.
+    - `scripts/turnstile.test.ts`: `tsx` + `node:assert`, covering the verifier and the guard.
+    - `e2e/turnstile-fallback.spec.ts`: widget script blocked → a degraded order and lookup still succeed.
+  - **Changed**:
+    - `lib/client-ip.ts`: `selectVerifyIp` and `getVerifyIp`; the raw, validated `cf-connecting-ip`, in
+      production only.
+    - `app/(public)/cart/actions.ts`: phone-shape short-circuit, then the guard, then `createOrder`,
+      releasing the phone reservation on failure; `turnstileToken` input; `VERIFICATION_FAILED` code.
+    - `app/(public)/orders/actions.ts`: the guard, with the per-order-number cap moved into it unchanged.
+    - `components/OrderSummary.jsx` and `app/(public)/orders/OrderLookup.tsx`: render the widget, send the
+      token, reset it after every submission that does not navigate away, disable the button only while
+      the widget is loading (10 s cap).
+    - `scripts/check-env.ts` and `scripts/check-env.test.ts`: rules for the two Turnstile keys; test keys
+      rejected; `TURNSTILE_ALLOW_TEST_KEYS` must be unset.
+    - `package.json`: a `test:turnstile` script only, no dependencies.
+    - `Dockerfile`: `ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY` in `builder`, with a warning when it is empty.
+    - `docker-compose.prod.yml`: the site key as a build arg (`:?`) for `app` and `migrate`;
+      `TURNSTILE_SECRET_KEY` (`:?`) for `app` and `migrate`; the site key at runtime for `migrate`; the
+      outbound-access comment updated.
+    - `docker-compose.yml` (dev): optional pass-through of the three variables, empty by default.
+    - `.github/workflows/ci.yml`: `test:turnstile` in `checks`; test keys plus `TURNSTILE_ALLOW_TEST_KEYS=1`
+      in `e2e`; conforming dummy keys in `migrations`; a new `turnstile-contract` job.
+    - `e2e/golden-path.spec.ts`: a phone number generated per run; asserts `data-turnstile-status="verified"`
+      before submitting.
+  - **Documentation**: `docs/DEPLOYMENT.md` (variables, Cloudflare Turnstile dashboard steps, rotation, the
+    rewritten rate-limits section); `docs/ARCHITECTURE.md` and `docs/PHASE_1_READINESS_REPORT.md`
+    (cross-references to ADR-035); `.env.example` (the two variables; joins `M52`'s open `.env.example`
+    item); `docs/DECISIONS.md` (ADR-035, written); `docs/CHANGELOG.md`; `docs/TASKS.md`.
+- **Dependencies**: M52, M33, M36
+- **Testing**:
+  - **Unit tests** (`npm run test:turnstile`, injected `fetch`, no network):
+    - **Classification**: every row of ADR-035 decision 2. That covers:
+      - a missing, empty or non-string token gives `degraded` with no fetch;
+      - a token over 2048 characters gives `rejected` with no fetch;
+      - an unset secret, and a test secret without the allow flag, give `degraded` with no fetch;
+      - with the allow flag, a test secret skips the action and hostname checks;
+      - success with matching action and hostname gives `verified`; a mismatched action or hostname gives
+        `degraded` with an error-level log (amended 2026-10-11; not `rejected`); missing
+        `action`/`hostname` fields give `degraded`;
+      - a redirect, an oversized body and the 51st concurrent call (`busy`) each give `degraded`;
+      - `invalid-input-response` and `timeout-or-duplicate` give `rejected`, including when mixed with
+        other codes;
+      - `internal-error`, the secret error codes and unknown codes give `degraded`;
+      - a non-200 status, malformed JSON, a thrown fetch, and a fetch that never resolves (aborted at the
+        injected timeout) give `degraded`.
+    - **Request body**: exactly `secret`, `response` and an optional `remoteip`; `remoteip` is left out when
+      it is null; the default URL equals `SITEVERIFY_URL`.
+    - **Guard**:
+      - a rejected token returns `VERIFICATION_FAILED`, uses no degraded budget (5 tokenless requests from
+        the same IP still succeed afterwards) and reserves no phone slot;
+      - degraded requests get 5 and then `RATE_LIMITED`, while verified requests from the same IP are
+        unaffected;
+      - CGNAT: 30 verified requests with distinct phones from one IP all succeed, and the 31st gets
+        `RATE_LIMITED`;
+      - the flood ceiling counts rejected requests;
+      - per phone (verified orders only): 3 then `RATE_LIMITED`, logging `[order-guard] phone-limit`, with a
+        message telling the customer to contact the store; degraded orders reserve no phone slot; a released
+        reservation does not count; the daily limit is tested with injected small limits; a denied daily
+        reservation releases the hourly one;
+      - lookup: the same patterns, and the order-number cap is kept only on `NOT_FOUND`.
+    - **`check-env`**: real-looking keys pass. These fail and are named without their value: missing keys,
+      test keys, keys containing whitespace, keys containing placeholder words, identical keys, and
+      `TURNSTILE_ALLOW_TEST_KEYS` set.
+  - **E2E** (CI; always-pass test keys and `TURNSTILE_ALLOW_TEST_KEYS=1`):
+    - the golden path reaches `data-turnstile-status="verified"`, places an order and finds it;
+    - `turnstile-fallback.spec.ts` blocks `challenges.cloudflare.com` with `page.route`; the status becomes
+      `failed` within 10 s, the button is enabled, and a degraded order and lookup succeed;
+    - the 320 px no-overflow test on `/cart` and `/orders` still passes;
+    - no request goes to `challenges.cloudflare.com` on `/`, `/shop`, a product page, `/categories` or a
+      category page.
+  - **Real production stack** (QA; replayed Server Action POSTs with a fixed `cf-connecting-ip`, as for
+    ADR-033; a QA-only compose override, not committed, supplies the test keys and the allow flag):
+    - the always-fail secret gives `VERIFICATION_FAILED` and creates no order;
+    - the spent-token secret gives `VERIFICATION_FAILED`;
+    - `extra_hosts: challenges.cloudflare.com:127.0.0.1` gives a fast degraded result; a blackhole address
+      gives degraded after about 3 s, and the order succeeds within the 5-per-15-minutes budget;
+    - a test secret *without* the allow flag gives degraded with an error log line;
+    - CGNAT: 25 verified orders with distinct phones from one IP all succeed, while tokenless requests from
+      that IP stop after 5;
+    - a 4th order on one phone within an hour is refused; an out-of-stock attempt does not count towards
+      the phone limit;
+    - `check-env` refuses a test key, a missing secret and the allow flag;
+    - the logs contain no token, IP, phone or customer field.
+  - **CI `turnstile-contract` job** (new): checks the real siteverify response shapes for the `1x`, `2x` and
+    `3x` test secrets, and that `api.js` returns 200.
+  - **Owner, at launch**: with real keys on the real hostname, an order and a lookup are verified, with no
+    `[turnstile]` log lines. Confirm the UNVERIFIED items listed in ADR-035.
+  - **QA result (2026-10-11)**: passed on the real production stack with every request degraded, because the
+    sandbox cannot reach Cloudflare. ADR-035's *Verified* section has the details. Still to be proven by CI
+    (the golden path reaching `verified`, and the `turnstile-contract` job) and by the owner at launch.
+  - `npm run type-check`, `npm run lint` and `npm run build` pass.
+- **Rollback**: `git revert` the milestone commit. This restores the 5-per-15-minutes per-IP placement limit
+  and the 20-per-hour lookup limit. The Turnstile variables become unused and can be removed from the env
+  file. Nothing in the schema, the data or `Orders` access changes, so no migration is involved.
+- **Commit message**: `Add Turnstile verification and CGNAT-safe order rate limits`
+
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
 - **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
@@ -1040,8 +1159,8 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | After `M23`, `M25` |
 | `M44`–`M45` | Mobile-first audit and performance | After `M28` |
 | `M46`–`M48` | Reviews/Coupons: decide and land minimal v1 scope | After `M25`, `M33` |
-| `M49`–`M54` | Docker production hardening, health checks, backups | After `M5` |
+| `M49`–`M54` (incl. `M52a`, `M52b`) | Docker production hardening, health checks, backups; Turnstile and CGNAT-safe rate limits (`M52b`) | After `M5` (`M52b` after `M52`, `M33`, `M36`) |
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**68 milestones total** — `M1`–`M59` plus nine decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**69 milestones total** — `M1`–`M59` plus ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).

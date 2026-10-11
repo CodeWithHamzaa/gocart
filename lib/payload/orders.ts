@@ -20,6 +20,9 @@ import {
 // M33a: stock is enforced here too — every line's Products.inStock is checked from the
 // same fetch that supplies prices, failing closed, and any unavailable line rejects
 // the whole order.
+// M52b (ADR-035 decision 1): INVARIANT — every input check, including the phone, runs before
+// the first getPayload() call. placeOrder relies on it: a malformed phone goes straight here,
+// skipping the rate limiters and Turnstile, because it is certain to fail with no DB access.
 //
 // Types are hand-written, not generated — same reasoning as products.ts.
 
@@ -313,7 +316,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
 // M36: guest order lookup by (orderNumber, phone) — ADR-024. Server-only; reachable
 // from the client only through the lookupOrderAction server action, which rate-limits
-// first. Two-factor on purpose: the order number alone never reveals anything, and a
+// first (M52b: through lib/order-guard.ts, ADR-035). Two-factor on purpose: the order number alone never reveals anything, and a
 // wrong phone is indistinguishable from an unknown number (no existence oracle).
 // Uses the `phone` field (ADR-024's text says guestPhone; the collection field is
 // `phone`). Never lists or enumerates; returns only the fields named below.

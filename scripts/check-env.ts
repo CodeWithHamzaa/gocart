@@ -4,7 +4,11 @@
 // built-ins only. TUNNEL_TOKEN is deliberately not read: compose enforces it and passes it only
 // to cloudflared. The strict rules live here, not in payload.config.ts, because that file is
 // also loaded by `next build`, the seed script and the CI Playwright job (weak throwaway values).
+// M52b (ADR-035 decision 7): the two Turnstile keys — required, plausible, never Cloudflare's
+// public test keys (a test secret accepts the public dummy token: a bypass) — and
+// TURNSTILE_ALLOW_TEST_KEYS must be unset. The real key format is not documented, so no prefix rule.
 import { pathToFileURL } from 'node:url'
+import { isTurnstileTestKey } from '../lib/turnstile'
 
 type Env = Record<string, string | undefined>
 
@@ -105,6 +109,25 @@ function checkSiteUrl(value: string | undefined, failures: string[]) {
   }
 }
 
+function checkTurnstileKey(name: string, value: string | undefined, min: number, max: number, failures: string[]) {
+  if (!value) return void failures.push(`${name}: required (missing or empty)`)
+  if (/\s/.test(value)) failures.push(`${name}: must not contain whitespace`)
+  if (value.length < min || value.length > max) failures.push(`${name}: must be ${min}-${max} characters`)
+  if (isTurnstileTestKey(value)) failures.push(`${name}: must not be a Cloudflare Turnstile test key`)
+  denyPlaceholders(name, value, failures)
+}
+
+function checkTurnstile(env: Env, failures: string[]) {
+  checkTurnstileKey('TURNSTILE_SECRET_KEY', env.TURNSTILE_SECRET_KEY, 20, 200, failures)
+  checkTurnstileKey('NEXT_PUBLIC_TURNSTILE_SITE_KEY', env.NEXT_PUBLIC_TURNSTILE_SITE_KEY, 10, 100, failures)
+  if (env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SECRET_KEY === env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    failures.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY: must differ from TURNSTILE_SECRET_KEY')
+  }
+  if (env.TURNSTILE_ALLOW_TEST_KEYS) {
+    failures.push('TURNSTILE_ALLOW_TEST_KEYS: must be unset or empty in production (development and CI only)')
+  }
+}
+
 /** Pure: returns one human-readable failure per broken rule; never includes a value. */
 export function validateEnv(env: Env): string[] {
   const failures: string[] = []
@@ -112,6 +135,7 @@ export function validateEnv(env: Env): string[] {
   checkPassword(env.POSTGRES_PASSWORD, failures)
   checkDatabaseUri(env.DATABASE_URI, env.POSTGRES_PASSWORD, failures)
   checkSiteUrl(env.NEXT_PUBLIC_SITE_URL, failures)
+  checkTurnstile(env, failures)
   return failures
 }
 

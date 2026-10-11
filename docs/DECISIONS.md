@@ -511,7 +511,7 @@ The actual, verified bug `M30` exists to fix is narrower than "which state libra
 
 ## ADR-024: Guest order lookup via a dedicated `(orderNumber, phone)` endpoint — `Orders` collection access stays admin-only
 
-**Status**: **Accepted (2026-08-18)** — recorded ahead of the `M30`–`M36` checkout group, closing readiness finding [C7](./PHASE_1_READINESS_REPORT.md#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires). Implementation is `M36`'s job; this ADR records the mechanism so `M36` isn't improvised.
+**Status**: **Accepted (2026-08-18)** — recorded ahead of the `M30`–`M36` checkout group, closing readiness finding [C7](./PHASE_1_READINESS_REPORT.md#c7--m13s-access-control-rules-forbid-exactly-what-m36-requires). Implementation is `M36`'s job; this ADR records the mechanism so `M36` isn't improvised. *Amended 2026-10-11 by [ADR-035](#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b) (owner-approved): the lookup's IP rate limit becomes a flood ceiling plus Turnstile verification, with today's limit kept for unverified requests. The `(orderNumber, phone)` mechanism and `Orders` access are unchanged.*
 
 **Context**: `M13` set `Orders` access to public-create/admin-read, with an explicit acceptance test that anonymous `GET /api/orders` must fail — correctly implemented and verified working (`M6`–`M13a`'s completion notes). `M36` requires guest order lookup ("My Orders" with no account) from the public storefront. Both are individually correct and, as originally specified, mutually exclusive: nothing in `M13` or `M36` names the reconciling mechanism. The readiness report's own risk assessment is blunt about the likely failure mode absent a decision: *"the likely improvised fix is relaxing Orders read access — which leaks every customer's name, phone, and address"* — a real risk given `Orders` (`M11`) embeds guest name/phone/address directly on each document (ADR-021), so open collection read would be a customer-data leak, not a cosmetic issue.
 
@@ -587,7 +587,7 @@ Each result matches the live pre-`M29` `/shop` baseline exactly, including HTTP 
 
 ## ADR-026: Orders are created only by a server-side function — `Orders` collection `create` access closes to admins
 
-**Status**: **Accepted (2026-10-09)** — approved by the human owner (the project's sole reviewer) the same day it was proposed. It changes authorization on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action, and it reverses `M13`'s acceptance criterion *"anonymous `POST /api/orders` succeeds"*. It does **not** supersede an Accepted ADR (see *Relationship to existing ADRs*).
+**Status**: **Accepted (2026-10-09)** — approved by the human owner (the project's sole reviewer) the same day it was proposed. It changes authorization on a collection that holds guest PII, which `.claude/docs/GATES.md` lists as a human-approval action, and it reverses `M13`'s acceptance criterion *"anonymous `POST /api/orders` succeeds"*. It does **not** supersede an Accepted ADR (see *Relationship to existing ADRs*). *Decision 6 was amended 2026-10-11 by [ADR-035](#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b) (owner-approved): Turnstile verification, a per-IP flood ceiling, the strict per-IP limit kept for unverified requests, and a per-phone limit. Decisions 1–5 and 7 are unchanged.*
 
 **Context**: `M13` set `Orders` to public-create/admin-read so that guest checkout (ADR-005) could write an order without an account, and verified exactly that: anonymous `POST /api/orders` succeeds, anonymous `GET /api/orders` fails. `M33`'s goal, as written, is *"an actual `POST` to the `Orders` collection, using the cart contents and guest address"* — i.e. the browser calls the collection endpoint directly. That combination was verified to be unsafe against a live server on 2026-10-09, during `M33`'s dry run:
 
@@ -938,3 +938,194 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 **Minor open items**: (a) each width of an image over 40 MP caches a full copy of the original (the 54 MP file: 7 × 18.5 MB, about 130 MB of cache) and mobile downloads the 18.6 MB original for a 64 px thumbnail — cap upload dimensions/size in admin (owner, later; `M53`/`M54` or admin config). (b) `%00` passes the rewrite (a valid upper-case escape) and returns 400, but Payload logs a multi-line `TypeError` stack for it; it is unauthenticated, cheap and creates no cache entry — excluding `%00`/control characters in the rule would remove the noise (not done). (c) Rewrite 404s return the full HTML not-found page (about 5.4 KB) rather than a tiny body. (d) QA saw a footer layout shift (CLS 0.5–0.69) on `/categories` in a long browsing sequence, originating from the footer appearing, not from images; nine fresh direct loads showed none. It is not tied to `M51` and is flagged for separate investigation.
 
 **Not verified**: real Cloudflare behaviour in front of `/_next/image`; cache persistence across a container recreate; AVIF (deliberately off).
+
+---
+
+## ADR-035: Cloudflare Turnstile on order placement and lookup, a per-phone order limit, and a per-IP flood ceiling — CGNAT-safe rate limits (`M52b`)
+
+**Status**: **Accepted (2026-10-11)** — the design was approved by the owner in session: (1) Cloudflare Turnstile verified on the server for order placement and order lookup; (2) a limit per normalised phone number, using the existing non-evictable `createBucketLimiter`; (3) the per-IP limit raised to a flood ceiling; (4) the **outage policy (an owner decision)**: if Turnstile cannot be reached, fall back to today's strict per-IP limit so sales keep running; no new npm packages. The owner left the remaining choices to the team; the ones below are the architect's. **This ADR amends** [ADR-026](#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins) decision 6 (order creation is rate-limited by IP) and the rate-limit sentence of [ADR-024](#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only) (lookup is rate-limited by IP). It does **not** change `Orders` access (create and read stay admin-only), guest checkout ([ADR-005](#adr-005-guest-checkout-no-customer-accounts)) or COD-only ([ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)). It adopts the alternative that ADR-026 recorded as *"CAPTCHA / bot challenge at checkout … Deferred, not rejected"*. It adds no npm dependency. It adds one third-party service, Turnstile, which comes from the provider already in the baseline ([ADR-015](#adr-015-initial-production-infrastructure-baseline), [ADR-033](#adr-033-cloudflare-tunnel-is-the-origin-boundary--and-production-environment-validation-is-a-deploy-gate-m52)).
+
+**Context**:
+
+- Today `placeOrder` (`app/(public)/cart/actions.ts`) allows **5 orders per 15 minutes per client IP** (`rateLimit('place-order:${ip}')`). `lookupOrderAction` allows 20 lookups per hour per IP, plus 5 *failed* lookups per hour per order number (a bucket limiter).
+- Pakistani mobile carriers put many subscribers behind one public IPv4 address (carrier-grade NAT, CGNAT). Many real customers then share one IP key, and 5 orders in 15 minutes blocks real buyers. `docs/DEPLOYMENT.md` ("Rate limits in the real world") already flagged this. [ADR-033](#adr-033-cloudflare-tunnel-is-the-origin-boundary--and-production-environment-validation-is-a-deploy-gate-m52) made the IP *trustworthy* (only a valid `cf-connecting-ip` is used; IPv6 is keyed by /64; a missing or invalid header gives `'unknown'`). It does not stop customers *sharing* an IP.
+- The IP cannot tell one customer from many. The fix needs two other signals: one that each request came from a real browser that passed a challenge (Turnstile), and a key for each customer (the phone number, already stored in its one canonical form `03XXXXXXXXX` by `normalizePhone()`, [ADR-029](#adr-029-pkr-display-format-and-pakistani-guest-checkout-validation-rules-m55-m56)).
+- **Research caveat**: this ADR was written without web access. The Turnstile facts it relies on come from the architect's knowledge of Cloudflare's documentation and are listed under *UNVERIFIED* below. The design does not depend on any of them being exact: every uncertain response is handled by the fallback described in decision 2.
+
+**Decision**:
+
+1. **Order placement runs in this order (cheapest check first).** Implemented in `placeOrder` plus a new `lib/order-guard.ts`:
+   1. **Phone shape.** `phone = normalizePhone(input.customer.phone)`. If `validatePhone(phone)` fails, return `createOrder(input)` at once. That call is certain to fail *before any database access*, because `createOrder` runs all its validation before its first `getPayload()` call. This step touches no limiter, uses no Turnstile token and makes no network call. It follows the existing rule in `lookupOrderAction`, where malformed input never reaches a limiter key or the database. The ordering inside `createOrder` is now a documented invariant.
+   2. **Per-IP flood ceiling**: 30 requests per 15 minutes on `place-order:${ip}` (`rateLimit`). It counts **every** request that reaches this step, whatever the Turnstile outcome, so siteverify calls and database work per IP stay bounded.
+   3. **Turnstile verification** (decision 2) gives exactly one of three outcomes: `verified`, `rejected` or `degraded`.
+      - `rejected` → return `VERIFICATION_FAILED` at once. A rejected request **never** falls through to the degraded path, never touches a phone bucket and never reaches `createOrder`.
+      - `degraded` → apply today's strict limit, **5 per 15 minutes**, under a **separate** key `place-order-degraded:${ip}`. Requests without a token therefore cannot use up the budget of verified customers on the same IP. Over the limit → `RATE_LIMITED`.
+      - `verified` → no further IP limit beyond the flood ceiling.
+   4. **Per-phone limits apply to verified orders only** (*amended 2026-10-11 after the security review; the first draft applied them on both paths*). There are two bucket limiters keyed by the normalised phone: **3 per hour** and **10 per 24 hours**. A slot is reserved in each before `createOrder` and refunded when `createOrder` returns `ok: false` or throws, so **only successful verified orders count**. Degraded orders reserve **no** phone slot; the per-IP degraded budget of 5 per 15 minutes is what bounds them. Why: if degraded orders counted, anyone who knows a customer's phone number could block that customer for a day by sending tokenless orders. Counting attempts instead of successes was rejected for the same reason, and because an out-of-stock cart, a typo or a server error would use up a genuine customer's budget. If the daily reservation is denied, the hourly one is released first. A refusal logs `[order-guard] phone-limit` at warning level, with no phone number.
+   5. `createOrder(input)` runs unchanged.
+2. **Classifying the Turnstile result** (`lib/turnstile.ts`). The rule: **`degraded` must never be better than sending no token at all.** That makes it safe to send every uncertain result to `degraded`. `rejected` is used only when the token is definitely bad.
+   - **Before any network call**:
+     - token not a string, or empty after trimming → `degraded` (`missing-token`).
+     - token longer than 2048 characters → `rejected` (`malformed-token`); no widget produces one.
+     - `TURNSTILE_SECRET_KEY` unset → `degraded` (`not-configured`, logged as an error).
+     - the secret is a Cloudflare test key and `TURNSTILE_ALLOW_TEST_KEYS !== '1'` → `degraded` (`test-key-not-allowed`, logged as an error). A test secret accepts the public dummy token, so allowing it in production would be a bypass.
+     - the secret is real but the expected hostname cannot be derived from `NEXT_PUBLIC_SITE_URL` → `degraded` (`not-configured`).
+   - **`verified`** when the HTTP status is 200, the JSON body has `success === true`, and either the secret is an allowed test key (action and hostname are not checked, because test responses do not carry ours) or `action === <expected action>` and `hostname` (lower-cased) equals the hostname of `NEXT_PUBLIC_SITE_URL`.
+   - **`rejected`** only when the HTTP status is 200, `success === false`, and `error-codes` contains `invalid-input-response` (`invalid-token`) or `timeout-or-duplicate` (`expired-or-duplicate`). If one of these codes appears with others, it decides the outcome.
+   - **`degraded`, logged at error level**, when `success === true` but the `action` or `hostname` does not match (`action-mismatch`, `hostname-mismatch`). *Amended 2026-10-11 after the security review; the first draft rejected these.* A mismatch almost always means a misconfiguration (a wrong site URL, or a site key used on another hostname). Rejecting would turn that misconfiguration into a total checkout outage. Degrading costs nothing in security, because degraded is never better than sending no token.
+   - **`degraded`** in every other case:
+     - network error (`network`).
+     - the 3-second timeout fires (`timeout`).
+     - an HTTP status other than 200 (`http-status`).
+     - a body that is not JSON, a `success` that is not a boolean, or `success: true` without string `action`/`hostname` (`bad-response`).
+     - `success: false` with only other codes, such as `internal-error`, `bad-request`, `missing-input-response`, `invalid-input-secret`, `missing-input-secret` or unknown codes (`service-error`; the two secret codes are logged as errors).
+   - A rejected visitor can resend without a token and land on `degraded`. That is intended: it gets them exactly today's budget, never more.
+3. **Calling siteverify**: `POST https://challenges.cloudflare.com/turnstile/v0/siteverify` with a form-encoded body (`URLSearchParams`), using the built-in `fetch` with `cache: 'no-store'`, `redirect: 'error'` (a redirect is never followed; it ends as `degraded`) and `signal: AbortSignal.timeout(3000)`. The timeout also covers reading the body. The response body is read only up to a fixed size cap; anything larger is `degraded` (`bad-response`). *Added 2026-10-11 after the security review*: at most **50 siteverify calls run at once, across the whole process**. A request beyond that is `degraded` (`busy`) without any network call, so a flood during a slow Cloudflare response cannot pile up pending calls. **No retries, and therefore no `idempotency_key`.** A retry would double the worst-case wait during an outage, and degrading already keeps sales running; adding a retry later requires `idempotency_key`. The body holds exactly `secret`, `response` and, when known, `remoteip`. **`remoteip` is the raw `cf-connecting-ip` and is sent only in production and only if it parses as an IP address** (the same validation as `normalizeIp`). It is never the `/64` key and never `'unknown'`; otherwise it is left out. `cdata` is not used. **No customer data (name, phone, address, cart) is ever sent to Cloudflare.** The verify URL is a constant in the code. It is **not** configurable through an environment variable, because a misconfigured or attacker-influenced URL that answers `success: true` would bypass the check. Tests replace `fetch` through a dependency-injection seam instead (decision 9).
+4. **Order lookup** (`lookupOrderAction`) follows the same pattern:
+   - A malformed order number still returns `lookupOrder(input)` at once (unchanged: no limiter, no database).
+   - Then the flood ceiling: **60 per hour** on `lookup-ip:${ip}` (raised from 20, counts every request).
+   - Then Turnstile with action `order_lookup`. `rejected` → `VERIFICATION_FAILED`. `degraded` → **20 per hour** on a separate key `lookup-degraded:${ip}` (today's per-IP value).
+   - Then the existing **per-order-number cap of 5 failed lookups per hour**, unchanged and applied on every path: reserved before the query, kept only on `NOT_FOUND`.
+   - There is no per-phone limit on lookup. The order-number cap is what stops someone guessing phone numbers.
+5. **Limits** (constants exported from `lib/order-guard.ts`; changing them is a code change, not configuration):
+
+   | Path | Key | Mechanism | Limit | What counts |
+   |---|---|---|---|---|
+   | Placement flood ceiling | `place-order:${ip}` | `rateLimit` | 30 / 15 min | every request with a well-formed phone |
+   | Placement, degraded | `place-order-degraded:${ip}` | `rateLimit` | 5 / 15 min | every degraded request |
+   | Per phone, hourly | normalised phone | `createBucketLimiter` | 3 / 60 min | successful orders |
+   | Per phone, daily | normalised phone | `createBucketLimiter` | 10 / 24 h | successful orders |
+   | Lookup flood ceiling | `lookup-ip:${ip}` | `rateLimit` | 60 / 60 min | every request with a well-formed order number |
+   | Lookup, degraded | `lookup-degraded:${ip}` | `rateLimit` | 20 / 60 min | every degraded request |
+   | Per order number (unchanged) | normalised order number | `createBucketLimiter` | 5 / 60 min | `NOT_FOUND` only |
+
+   All limits are in-process and reset on restart. That is acceptable under ADR-015's single instance, unchanged from ADR-026.
+6. **Errors returned to the client.** Failure messages never echo the submitted values:
+   - The result types gain a new code, `VERIFICATION_FAILED`: `"The security check didn't complete. Please wait for it to finish, then press Place Order again."`. Lookup uses the same text with "Check order".
+   - `RATE_LIMITED` stays the code for every limiter refusal, each with its own message:
+     - flood ceiling (placement): today's message, *"Too many orders from your connection. Please try again in about N minute(s)."*
+     - degraded limit (placement): *"We couldn't complete the security check, and too many orders have come from your connection. Please reload the page and try again, or wait about N minute(s)."*
+     - per-phone limit: *"Too many orders have been placed with this phone number recently. Please try again later or contact the store."* (The exact wording is in the code; it must tell the customer to contact the store.)
+     - lookup: today's message for all lookup limits.
+7. **Configuration**:
+   - **`TURNSTILE_SECRET_KEY`** is a runtime secret. It is given to `app`, and to `migrate` so that `check-env` can validate it (the same pattern as `PAYLOAD_SECRET`). Both are required in `docker-compose.prod.yml` with `:?`.
+   - **`NEXT_PUBLIC_TURNSTILE_SITE_KEY`** is public and inlined into the bundle at build time. It is a Dockerfile `ARG` in the `builder` stage (empty by default, with a build warning when empty, like `NEXT_PUBLIC_SITE_URL`) and a compose build arg (`:?`) for `app` and `migrate`. It is also passed to `migrate` as a runtime variable for `check-env`. Changing it means rebuilding.
+   - **`TURNSTILE_ALLOW_TEST_KEYS`** is used only in development and CI. `docker-compose.prod.yml` never passes it.
+   - **`scripts/check-env.ts` (production) adds**:
+     - `TURNSTILE_SECRET_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: each required, no whitespace, a plausible length (secret 20–200 characters, site key 10–100), not a Cloudflare test key, and no placeholder word.
+     - The two keys must differ (catches a copy-paste mistake).
+     - `TURNSTILE_ALLOW_TEST_KEYS` must be unset or empty.
+     - A test key is recognised by `isTurnstileTestKey()` (`/^[0-9]x0{10,}[A-Za-z]{2}$/`), exported from `lib/turnstile.ts` and shared by `check-env` and the runtime check. The real key format is UNVERIFIED, so no prefix rule is applied.
+   - **Development with no keys**: no widget is rendered and every request is `degraded`, which is exactly today's behaviour. To exercise the widget locally, use Cloudflare's always-pass test keys together with `TURNSTILE_ALLOW_TEST_KEYS=1`.
+8. **The client** (a new `components/TurnstileWidget.tsx`, `'use client'`, used only by `components/OrderSummary.jsx` and `app/(public)/orders/OrderLookup.tsx`):
+   - **Loading.** The script `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit` is injected lazily on mount, once per page load (a module-level promise), with a 10-second cap on loading. It is never added to a layout, so **no indexable page loads it**: `/cart` and `/orders` are both `noindex` ([ADR-007](#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass) is unaffected). The script is never self-hosted or proxied.
+   - **Rendering.** Explicit render with these options:
+     - `sitekey`, and `action` (`place_order` or `order_lookup`).
+     - `appearance: 'interaction-only'`, so most visitors see nothing.
+     - `size`: `'compact'` when the container is narrower than 300 px, otherwise `'flexible'`, so the 320 px no-overflow test keeps passing.
+     - `theme: 'light'`, `language: 'auto'`, `refresh-expired: 'auto'`, and the callbacks `callback`, `expired-callback`, `error-callback` and `timeout-callback`.
+     - On unmount the widget is removed with `turnstile.remove`.
+   - **State.** The component reports `{ token, status }`, where `status` is one of `'disabled'` (no site key), `'loading'`, `'verified'` or `'failed'`. It sets `data-turnstile-status` on its container, which the tests use. A short `aria-live="polite"` status line reads *"Running a quick security check…"* while loading, and *"The security check couldn't load. You can still continue."* when it has failed.
+   - **The submit button** is disabled only while `status === 'loading'`, for at most 10 seconds; after that the status becomes `'failed'`. **When the widget fails or is absent, submitting is still allowed** and the server degrades. That is the owner's outage policy, and it means no visitor is locked out by the widget alone.
+   - **Token.** It is sent as `turnstileToken` in the server-action input. Tokens are single-use, so the widget is reset with `turnstile.reset` after every submission that does not navigate away (every failure and every thrown error).
+   - **Language.** The store's copy is English. The widget follows the browser language; whether Urdu is offered is UNVERIFIED and does not affect the flow.
+   - **CSP.** There is no CSP today (`next.config.mjs` sets none). If one is ever added, `/cart` and `/orders` must allow `script-src` and `frame-src` `https://challenges.cloudflare.com`.
+9. **Code structure and test seams** (no new dependencies):
+   - **`lib/turnstile.ts`** is pure. It never imports `next/*`, so `tsx` and `check-env` can import it. It exports:
+     - `SITEVERIFY_URL`, `isTurnstileTestKey()`;
+     - `createTurnstileVerifier(deps)`, where `deps` is `{ fetch, secret, allowTestKeys, expectedHostname, timeoutMs, verifyUrl }`;
+     - `verifyTurnstile(token, { action, remoteIp })`, which reads the environment at call time.
+   - **`lib/order-guard.ts`** exports:
+     - `createOrderGuard({ verify, limits? })`, which builds fresh limiters per instance so tests are isolated;
+     - a default instance, whose `admitPlaceOrder(...)` returns `{ ok: true, release }` or the failure;
+     - `admitLookup(...)`, which returns `{ ok: true, settle(notFound) }` or the failure.
+   - **`lib/client-ip.ts`** gains `selectVerifyIp(get, production)` and `getVerifyIp()`.
+   - The two server actions remain thin: they read the IP, call the guard, then call `createOrder`/`lookupOrder`.
+   - Unit tests use `tsx` and `node:assert`, like `check-env.test.ts`.
+10. **Logging**:
+    - One line per `rejected` or `degraded` outcome, except `missing-token`, which bots would make noisy: `[turnstile] <outcome>` with `{ action, reason }`.
+    - Configuration reasons (`not-configured`, `test-key-not-allowed`, and the secret error codes) are logged at error level. Every other `rejected` or `degraded` reason is logged at warning level.
+    - **Never logged**: the token, the IP, `remoteip`, the phone, any customer field, or Cloudflare's raw response.
+
+**Alternatives considered and rejected**:
+
+- **A per-phone limit and a higher per-IP limit, with no challenge.** This was option 2 on its own. A bot rotating random valid-looking phone numbers would face only the higher IP ceiling, and since phones are free to invent the phone limit would not stop it. The flood ceiling would then be the only control against fake COD orders, and it would have to be low, which is the CGNAT problem again.
+- **SMS one-time password at checkout.** Strong proof that the customer owns the phone, but SMS is deferred by ADR-015, it costs money per order, delivery on Pakistani networks would block sales when it fails, and it adds a new provider and a secret. A possible future step if fake orders continue despite Turnstile.
+- **Cloudflare WAF rate-limiting rules alone.** These also key on IP, so they have the same CGNAT problem. The Free plan's rate-limiting rules are very limited (UNVERIFIED in detail), and they live in the dashboard, not in the repository. They remain a reasonable *extra* layer at the edge (ADR-034 already recommends one for `/_next/image`). They are not a replacement.
+- **Fail closed when Turnstile is unreachable.** Rejected by the owner (outage policy): an outage at Cloudflare would stop all sales.
+- **Fail open (treat an outage as verified).** An attacker cannot cause an outage, but during one every request would get the verified budget. Degrading to today's limit keeps sales running without opening a gap.
+- **Turnstile only, with no per-phone limit.** Paid human or automated solving services make tokens cheap. The per-phone limit stops repeated fake orders aimed at one victim's number, and duplicate orders from one customer.
+- **Counting attempts per phone, not successes.** See decision 1.4.
+- **An environment override for the verify URL, for tests.** Rejected as a production footgun (decision 3). Tests inject `fetch`; real-stack outage tests block the hostname at the container level.
+- **Retries with `idempotency_key`, or a circuit breaker.** Not needed: an outage costs at most 3 seconds per request before degrading, and the flood ceiling bounds the volume. Left for later if outage logs show they would help.
+
+**Consequences**:
+
+- Customers behind CGNAT who pass the check are limited by the flood ceiling (30 per 15 minutes per IP) and their own phone limits, not by one another. During a Turnstile outage, or for a visitor whose widget cannot load, the behaviour is exactly today's.
+- **New restriction on real customers**: a phone number can place at most 3 verified orders an hour and 10 a day. Families sharing one number are well inside that. The admin can still enter orders by hand in `/admin`.
+- **Residual risks**:
+  - Paid solving with rotating IPs and phones can still create fake orders. Each token costs the attacker, and each order is bounded by the IP and phone limits and visible to the admin.
+  - **Victim lock-out (accepted 2026-10-11 by the Engineering Manager under authority delegated by the owner)**: an attacker who pays a CAPTCHA-solving service can place 3 verified fake COD orders an hour (10 a day) with a victim's phone number. That locks the victim out of ordering for up to 24 hours. Mitigations:
+    - the limit message tells the customer to contact the store;
+    - each refusal logs `[order-guard] phone-limit`;
+    - the fake orders are visible in `/admin`.
+  - Future options for both risks: SMS OTP, or a store-wide alert on order volume.
+  - Anyone sharing a CGNAT IP can use up that IP's 30-request flood ceiling for 15 minutes. That is the same class of problem as today, with a six times higher bar.
+- **The app now makes outbound HTTPS calls** to `challenges.cloudflare.com`. The `edge` network is an ordinary NAT bridge (ADR-033), so no network change is needed. The comment in `docker-compose.prod.yml` saying nothing needs outbound access must be updated.
+- **Two new production variables.** Both are created in the Cloudflare dashboard (Turnstile → add a site for the store's hostname, Managed mode). The site key is build-time, so rotating it means rebuilding. Rotating the secret means updating the env file, then `run --rm migrate` (`check-env`) and `up -d app`. The CI `migrations` job needs conforming dummy values.
+- **CI e2e calls Cloudflare over the network**: the always-pass test keys load the real widget script and call the real siteverify. That is accepted. It is the only automated proof that the integration works, and production depends on Cloudflare anyway. If Cloudflare is unreachable in CI, the golden path fails at its `verified` assertion. The fallback spec does not depend on Cloudflare, because it blocks the script.
+- **Privacy**: Turnstile runs Cloudflare's script in the visitor's browser on `/cart` and `/orders` and collects browser signals. Cloudflare already processes every request as the site's proxy (ADR-033). No customer data is sent. If the store publishes a privacy notice, it should mention this (owner).
+- **Accessibility**: Cloudflare states that Turnstile meets WCAG 2.1 AA (UNVERIFIED). In any case, a visitor who cannot complete the challenge falls back to the degraded path rather than being locked out.
+- **Documentation**: `docs/DEPLOYMENT.md` must cover the new variables, the dashboard steps and the rewritten "Rate limits in the real world" section. `docs/ARCHITECTURE.md` and the readiness report should cross-reference this ADR. `.env.example` joins `M52`'s open `.env.example` item.
+
+**Not done here, by design**: a warning log when a request lands in the shared `'unknown'` IP bucket (it would detect a missing `cf-connecting-ip`; moved to `M53`, health and logging); Turnstile on `/admin` login (it is protected by Payload's own auth; Cloudflare Access remains out of scope, ADR-033); Enterprise-only features (ephemeral IDs, pre-clearance); `cdata`; retries and a circuit breaker; a shared limiter store for multiple instances; WAF rules.
+
+**UNVERIFIED** (from knowledge of Cloudflare's documentation; no web access in the authoring session; QA or the owner should confirm against the current docs before launch):
+
+- **siteverify**:
+  - the URL and the form-encoded fields `secret`, `response`, `remoteip` and `idempotency_key`;
+  - the response fields `success`, `error-codes`, `challenge_ts`, `hostname`, `action` and `cdata`;
+  - the error codes named in decision 2;
+  - whether validation failures are returned with HTTP 200;
+  - whether `remoteip` is used as a signal only and never as a strict match. If launch monitoring shows `invalid-token` rejections linked to mobile IP changes, stop sending `remoteip`, which is a one-line change.
+- **Tokens**: they expire after 300 seconds, are single-use (reuse gives `timeout-or-duplicate`), and are at most 2048 characters.
+- **Test keys and the dummy token**:
+  - test site keys `1x00000000000000000000AA` (passes, visible), `2x00000000000000000000AB` (blocks, visible), `1x00000000000000000000BB` / `2x00000000000000000000BB` (invisible pass/block) and `3x00000000000000000000FF` (forces an interactive challenge);
+  - test secret keys `1x0000000000000000000000000000000AA` (passes), `2x0000000000000000000000000000000AA` (fails) and `3x0000000000000000000000000000000AA` (token already spent);
+  - the test site keys produce the dummy token `XXXX.DUMMY.TOKEN.XXXX`; test secrets accept only that token, and real secrets reject it;
+  - whether the always-pass test secret accepts the dummy token more than once;
+  - the `hostname` and `action` values in test responses (which is why they are not checked for test keys).
+- **Widget**:
+  - explicit rendering (`?render=explicit`, `turnstile.render`/`reset`/`remove`);
+  - widget modes are set per site key in the dashboard (Managed, Non-interactive, Invisible);
+  - `appearance: 'interaction-only'`, the `'flexible'` size (minimum about 300 px) and the `'compact'` size;
+  - `action` allows at most 32 characters from `[A-Za-z0-9_-]`;
+  - how `error-callback` and automatic retry interact.
+- **Other**:
+  - the supported widget languages, including whether Urdu is one;
+  - the CSP sources needed;
+  - the WCAG 2.1 AA claim;
+  - the shape of real key strings.
+
+**Verification required**: the `M52b` Testing line in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) is the QA plan for this ADR.
+
+**Verified by QA (2026-10-11), on the real production Docker stack.** The sandbox cannot reach `challenges.cloudflare.com`, so **every request ended as `degraded`**.
+
+What was observed:
+
+- **Degraded limits**: tokenless orders succeed until 5 per 15 minutes per IP, then get the degraded `RATE_LIMITED` message. Another IP is unaffected.
+- **Outage cost**: a hanging Cloudflare costs about 3.0–3.2 s per request and orders still succeed; a DNS failure costs about 15 ms.
+- **Phone normalisation**: `+92…` and whitespace-padded forms share one counter. Urdu digits and dashes are rejected.
+- **Concurrency**: 8 concurrent requests for one phone from 8 IPs gave exactly 3 successes. This ran *before* decision 1.4 was changed so that degraded orders no longer count; it proves the reservation is atomic, not the current counting rule.
+- **Refunds**: a failed `createOrder` releases its phone slots.
+- **Configuration**: `check-env` refuses test keys and the allow flag in production, and an `up` with a test secret never starts the app.
+- **Logs**: no PII, tokens or IPs after about 250 requests.
+- **Unit tests**: caught 10 of 10 deliberate mutations.
+- **E2E**: the fallback, mobile and SEO specs pass. The golden path fails in the sandbox only because Cloudflare is blocked there.
+
+**Still to be proven**:
+
+- **By CI**:
+  - the golden path reaching `verified` with the real always-pass test keys;
+  - a new `turnstile-contract` job that checks the real siteverify response shapes for the `1x`/`2x`/`3x` test secrets, and that `api.js` returns 200.
+- **By the owner at launch**: with real keys on the real hostname, a verified order and lookup, with no `[turnstile]` log lines.

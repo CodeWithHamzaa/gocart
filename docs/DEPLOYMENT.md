@@ -1,13 +1,15 @@
 # Deployment
 
 Production deployment of GoCart Pakistan. **This file covers the Cloudflare Tunnel origin boundary,
-environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)) and the database migration
-workflow (`M52a`, [ADR-032](./DECISIONS.md)).** `M53` adds health checks; `M54` adds backups; `M59` is
+environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the database migration
+workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
+limits (`M52b`, [ADR-035](./DECISIONS.md)).** `M53` adds health checks; `M54` adds backups; `M59` is
 the full runbook.
 
 Order of work for a first deploy: [Secrets and the env file](#secrets-and-the-env-file) ->
 [Cloudflare: one-time steps](#cloudflare-one-time-steps) (create the tunnel, do NOT attach the public
-hostname yet) -> [first deploy](#deploying-a-release) -> [create the first admin](#create-the-first-admin-before-the-site-is-public)
+hostname yet) -> [Cloudflare Turnstile: one-time setup](#cloudflare-turnstile-one-time-setup) (create the
+widget, put both keys in the env file) -> [first deploy](#deploying-a-release) -> [create the first admin](#create-the-first-admin-before-the-site-is-public)
 -> attach the public hostname.
 
 Every command below uses the production stack file and an explicit env file kept outside the
@@ -185,6 +187,9 @@ deploy with the variable name and the rule, never the value):
 | `PAYLOAD_SECRET` | at least 32 characters, no whitespace, at least 12 distinct characters, and none of the same forbidden words as above (case-insensitive substring). `openssl rand -hex 32` gives 64 hex characters. |
 | `NEXT_PUBLIC_SITE_URL` | `https:`, a bare origin (no path, query or credentials), a public host: rejected are localhost (including a trailing dot), loopback, `0.0.0.0`, IPv4-mapped IPv6, private/link-local/CGNAT (`100.64.0.0/10`) ranges, `.local`/`.internal`/`.lan`/`.home.arpa` names and single-label hosts. **Build-time**: changing it needs `build`/`--build`. |
 | `TUNNEL_TOKEN` | required by compose (non-empty) and nothing more; `check-env` never sees it. A credential. |
+| `TURNSTILE_SECRET_KEY` | (`M52b`) the Turnstile widget's **secret** key; runtime only, given to `app` (siteverify) and `migrate` (`check-env`). 20-200 characters, no whitespace, none of the forbidden words above, **not** a Cloudflare test key (anything shaped like `1x0000000000000000000000000000000AA`), and different from the site key. A credential. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (`M52b`) the same widget's **public** site key (it is shipped to every browser; not a secret). 10-100 characters, no whitespace, no forbidden word, not a test key. **Build-time** for `app` (changing it needs `build`/`--build`); also passed to `migrate` at runtime so `check-env` can validate it. |
+| `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and CI only; `docker-compose.prod.yml` never passes it. |
 
 (The word list and host rules above follow the fix being made to `scripts/check-env.ts` at the time of
 writing; `scripts/check-env.ts` is the authority if they ever differ.)
@@ -210,7 +215,12 @@ POSTGRES_PASSWORD=REPLACE-ME-output-of-openssl-rand-hex-24
 PAYLOAD_SECRET=REPLACE-ME-output-of-openssl-rand-hex-32
 NEXT_PUBLIC_SITE_URL=https://shop.example.com
 TUNNEL_TOKEN=REPLACE-ME-paste-the-token-from-the-cloudflare-dashboard
+TURNSTILE_SECRET_KEY=REPLACE-ME-secret-key-of-the-turnstile-widget
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=REPLACE-ME-site-key-of-the-turnstile-widget
 ```
+
+The two Turnstile placeholders contain `REPLACE`, so `check-env` rejects them if copied unchanged. Do
+**not** put `TURNSTILE_ALLOW_TEST_KEYS` in this file.
 
 Generate the two secrets with `openssl rand -hex 24` (`POSTGRES_PASSWORD`) and `openssl rand -hex 32`
 (`PAYLOAD_SECRET`). The first start validates them: a rejected value fails `migrate` before any data
@@ -275,6 +285,89 @@ What the tunnel guarantees, and what it does not (ADR-033):
   `unhealthy` until at least one connection is registered, and has only been seen failing with a dummy
   token.
 
+## Cloudflare Turnstile: one-time setup
+
+`M52b` ([ADR-035](./DECISIONS.md)) verifies a Cloudflare Turnstile token on the server for order
+placement (`/cart`) and order lookup (`/orders`). Turnstile is what lets many real customers behind one
+carrier-grade-NAT IP order without hitting each other's limit (see
+[Rate limits in the real world](#rate-limits-in-the-real-world)). Done by the owner in the Cloudflare
+dashboard; it cannot be automated or verified from this repository.
+
+1. In the Cloudflare dashboard, open **Turnstile** and **add a widget (site)** for the store's
+   production hostname (the host of `NEXT_PUBLIC_SITE_URL`, e.g. `shop.example.com`). Choose
+   **Managed** mode. The widget must be for exactly that hostname (watch `www.` versus the bare
+   domain): a token whose `hostname` or `action` does not match is **degraded**, not accepted (see
+   step 5).
+2. Copy the **site key** into `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **secret key** into
+   `TURNSTILE_SECRET_KEY` in the out-of-band env file. Never paste the secret key into chat, tickets,
+   shell history or a PR. Never use Cloudflare's test keys in production: they accept a public dummy
+   token, so they would turn the check off (`check-env` rejects them).
+3. Deploy as usual (the site key is inlined at build time, so the first deploy must `--build`). The
+   `migrate` step validates both keys before the database is touched.
+4. Outbound access: the app calls `https://challenges.cloudflare.com/turnstile/v0/siteverify` over the
+   `edge` network (an ordinary NAT bridge). No network change is needed; do not make `edge` internal.
+5. **After go-live, check the logs** (`$PROD logs app | grep '\[turnstile\]'`). Place one real order
+   and do one order lookup through the real hostname: **they should produce NO `[turnstile]` log
+   lines.** In particular, an ERROR line `[turnstile] degraded { reason: 'hostname-mismatch' }` or
+   `{ reason: 'action-mismatch' }` means the widget's hostname in the Cloudflare dashboard or
+   `NEXT_PUBLIC_SITE_URL` is wrong (for example `www.` versus the bare domain), and **every customer is on
+   the strict degraded budget** (5 orders per 15 minutes per IP, and no CGNAT relief). Fix the widget
+   hostname in the dashboard, or fix `NEXT_PUBLIC_SITE_URL` and rebuild.
+
+**Unverified until a real deploy**: the widget on the real hostname, a `verified` siteverify with the
+real keys, the `hostname`/`action` values Cloudflare returns, and the exact real-key formats. CI only
+exercises Cloudflare's always-pass test keys (which skip the hostname/action check). The Turnstile
+facts ADR-035 relies on are listed there as UNVERIFIED; confirm them against Cloudflare's current
+documentation before launch.
+
+### Rotating the Turnstile keys
+
+- **Site key** (public, build-time): put the new value in the env file, then deploy a release
+  ([gated on the migration](#default-gated-on-the-migration): `build`, `run --rm migrate`, `up -d`).
+  A running image keeps the old site key until it is rebuilt.
+- **Secret key** (runtime): update the env file, then `$PROD run --rm migrate` (re-runs `check-env`
+  against the new value; a no-op for the schema) and `$PROD up -d app` (recreates `app` with the new
+  environment). No rebuild.
+- If the site and secret keys are rotated together (a new widget), rebuild: an old site key with a new
+  secret (or the reverse) makes every token fail to verify. Rejected tokens never fall through to the
+  degraded path, so customers would see "The security check didn't complete" until both match.
+- If the secret key is exposed, rotate it in the Turnstile dashboard and follow the secret steps above.
+
+### When Turnstile is unreachable (degraded mode)
+
+The owner's outage policy is that sales keep running. If the widget cannot load in the browser (blocked
+script, Cloudflare outage, old browser) the customer can still press Place Order / Check order. If
+siteverify cannot be reached, times out (3 seconds, no retries) or answers with anything other than a
+definite verdict, the request is **degraded**: it gets today's strict per-IP limit (5 orders per 15
+minutes, 20 lookups per hour) in a **separate** bucket. Degraded orders are bounded **only** by that
+per-IP budget; the per-phone limits count verified orders only. Customers who did verify are not
+affected by degraded traffic from the same IP. A token that Cloudflare definitely rejects (invalid,
+expired or already used) is refused, never degraded.
+
+Degraded reasons, as they appear in `[turnstile] degraded { reason: ... }`:
+
+| Reason | Meaning | Log level |
+|---|---|---|
+| `missing-token` | no token sent (widget failed to load, or a bot) | not logged |
+| `network`, `timeout`, `http-status`, `bad-response`, `service-error` | Cloudflare unreachable, slow (over 3 s) or answered without a definite verdict | warning (`service-error` is an error when Cloudflare refuses our secret) |
+| `busy` | more than 50 verifications already in flight in this process; the request skips siteverify | warning |
+| `hostname-mismatch`, `action-mismatch` | Cloudflare verified the token, but for another hostname or action: a configuration error (see setup step 5) | **error** |
+| `not-configured`, `test-key-not-allowed` | `TURNSTILE_SECRET_KEY` missing, `NEXT_PUBLIC_SITE_URL` unusable, or a test key without the dev/CI allow flag; production prevents these with compose `:?` and `check-env` | **error** |
+
+Watch the app logs for `[turnstile]` lines after launch: any error-level line is a configuration problem
+to fix at once; many warning lines with `network`, `timeout` or `http-status` mean the app cannot reach
+Cloudflare; many `busy` lines mean a burst large enough that verification is being skipped. Tokens, IPs,
+phone numbers and customer fields are never logged. (Log levels and reasons follow `lib/turnstile.ts`
+as described by the security review; that file is the authority if they differ.)
+
+### Privacy
+
+The Turnstile script is loaded from Cloudflare (never self-hosted or proxied) **only on `/cart` and
+`/orders`**, both `noindex`; no other page loads it. It collects browser signals in the visitor's
+browser. The server sends Cloudflare only the token, the secret and the visitor's IP; **no customer data**
+(name, phone, address, cart) is sent. If the store publishes a privacy notice, it should mention
+Cloudflare Turnstile (owner).
+
 ## Create the first admin before the site is public
 
 Payload's create-first-user flow is open while no user exists: `/admin/create-first-user` renders and
@@ -314,16 +407,45 @@ wiped, the window reopens.
 
 ## Rate limits in the real world
 
-Order placement and order lookup are limited per client IP (`lib/client-ip.ts`; order placement is 5
-orders per 15 minutes per IP). Things to know before launch:
+Pakistani mobile carriers put many subscribers behind one public IPv4 address (carrier-grade NAT), so
+one IP can be many real customers. Since `M52b` ([ADR-035](./DECISIONS.md)) the per-IP limit is only a
+**flood ceiling**; customers who pass Turnstile are limited per phone number, not by the other people
+sharing their IP. All limits are code constants in `lib/order-guard.ts` (changing them is a code change,
+not configuration):
 
-- Pakistani mobile carriers use heavy carrier-grade NAT, so many legitimate customers can share one IP
-  address and the per-IP order limit may affect them. This is pre-existing behaviour; the owner should
-  review the limit.
+| What | Limit | Counts |
+|---|---|---|
+| Order placement, flood ceiling per IP | 30 per 15 minutes | every request with a well-formed phone, whatever the Turnstile outcome |
+| Order placement, degraded (no token, Turnstile unreachable, `busy`, hostname/action mismatch) per IP | 5 per 15 minutes, separate bucket | every degraded request; the only limit on degraded orders besides the flood ceiling |
+| Per phone number (normalised `03XXXXXXXXX`), verified orders only | 3 per hour **and** 10 per 24 hours | successful **verified** orders only (a failed order is refunded; degraded orders are not counted here, they are bounded by the degraded per-IP budget) |
+| Order lookup, flood ceiling per IP | 60 per hour | every request with a well-formed order number |
+| Order lookup, degraded per IP | 20 per hour, separate bucket | every degraded request |
+| Failed lookups per order number | 5 per hour | `NOT_FOUND` only |
+
+Things to know before launch:
+
+- **Verified customers on a shared CGNAT IP are not limited by each other** below the flood ceiling of
+  30 orders per 15 minutes per IP. Anyone on that IP can still use up the ceiling for 15 minutes; that is
+  the same class of problem as before, with a six times higher bar.
+- **New restriction on real customers**: one phone number can place at most 3 verified orders an hour
+  and 10 a day. The customer-facing message tells them to contact the store; the admin can still enter
+  orders by hand in `/admin`.
+- During a Turnstile outage, or for a visitor whose widget cannot load, behaviour is exactly the
+  pre-`M52b` limit (5 orders per 15 minutes per IP), in its own bucket.
+- **Limiter state is in-process and resets on restart** (every deploy or container restart starts all
+  counters at zero). Acceptable for the single instance of ADR-015; a second app instance would need a
+  shared store.
 - IPv6 clients are limited per `/64`, not per address.
-- If the header is missing (for example "Remove visitor IP headers" is enabled), production sees the single
-  shared `unknown` bucket and **all visitors share one budget**: a self-inflicted outage. It fails closed
-  (never a bypass), so check for it after any Cloudflare zone change.
+- If the `cf-connecting-ip` header is missing (for example "Remove visitor IP headers" is enabled),
+  production sees the single shared `unknown` bucket and **all visitors share one flood ceiling and one
+  degraded budget**: a self-inflicted outage. It fails closed (never a bypass), so check for it after any
+  Cloudflare zone change.
+- **What to check at launch**: one real order and one order lookup through the real hostname, from a
+  real phone on mobile data, should produce **no** `[turnstile]` log lines (a `hostname-mismatch` or
+  `action-mismatch` error line means every customer is on the degraded budget: see
+  [setup step 5](#cloudflare-turnstile-one-time-setup)); and "Remove visitor IP headers" is still off.
+- Unverified until a real deploy: these limits behind real Cloudflare headers with real mobile-carrier
+  traffic.
 
 ## Image optimisation
 

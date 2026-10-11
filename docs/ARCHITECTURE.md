@@ -104,6 +104,12 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
 - **Initial production infrastructure baseline is decided** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)): Cloudflare Free (DNS/proxy) in front of a single ~$10–12/month VPS running the Dockerized app and a self-hosted PostgreSQL instance, plus Resend's free tier for transactional email. COD remains the only payment method. SMS is deferred to a future phase. Backups are managed manually for the initial launch — `M54` is still the milestone that formalizes persistence/backup strategy. This baseline is chosen to stay replaceable/upgradable (e.g. VPS → managed Postgres) without an application rewrite.
 - **Production topology** ([ADR-032](./DECISIONS.md), [ADR-033](./DECISIONS.md)): `docker-compose.prod.yml` runs `postgres` → a one-shot `migrate` service (environment validation, `payload migrate`, verifier; fail-closed, the app waits for it) → `app` → `cloudflared`. No service publishes a host port; the origin is reachable only through a Cloudflare Tunnel (networks `backend` internal, `edge` shared by `app` and `cloudflared` only). Production never pushes the schema; migrations are committed in `/migrations`. Real-tunnel validation and the first-admin guard decision are still open (see ADR-033).
+- **Abuse controls on order placement and lookup** ([ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b), `M52b`; amends ADR-026 decision 6 and ADR-024's rate-limit clause). Carrier-grade NAT puts many Pakistani mobile customers behind one IP, so a strict per-IP limit is not enough. Instead:
+  - Cloudflare Turnstile is verified on the server, and each request is classified as verified, rejected or degraded.
+  - Every request counts against a per-IP flood ceiling.
+  - Degraded requests (no token, or Turnstile unreachable) fall back to the old strict per-IP limit under a separate key, so sales continue during an outage.
+  - Per-phone limits count verified orders only.
+  - Limits are in-process (single instance, ADR-015). `Orders` access, guest checkout and COD-only are unchanged.
 
 ## Settled structural decisions
 

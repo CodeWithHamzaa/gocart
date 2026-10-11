@@ -52,6 +52,18 @@ services:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:-dev-only-insecure-secret-do-not-use-in-production}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       NEXT_PUBLIC_CURRENCY_SYMBOL: ${NEXT_PUBLIC_CURRENCY_SYMBOL:-Rs.}
+      # Cloudflare Turnstile (M52b, ADR-035), optional and EMPTY by default: with no keys no widget is
+      # rendered and every order/lookup takes the strict "degraded" per-IP limit, which is exactly
+      # the pre-M52b behaviour and needs no network access to Cloudflare. To exercise the widget
+      # locally, export Cloudflare's public always-pass TEST keys before `docker compose up`:
+      #   NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+      #   TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+      #   TURNSTILE_ALLOW_TEST_KEYS=1
+      # DEVELOPMENT/CI ONLY: test keys accept a public dummy token, so they are a bypass anywhere
+      # real. Production rejects them (check-env) and never passes TURNSTILE_ALLOW_TEST_KEYS.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      TURNSTILE_ALLOW_TEST_KEYS: ${TURNSTILE_ALLOW_TEST_KEYS:-}
       # File watching over bind mounts is unreliable on Docker Desktop (macOS/Windows); set
       # WATCHPACK_POLLING=true in your shell there if hot reload does not trigger.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
