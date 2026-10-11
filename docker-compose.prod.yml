@@ -14,7 +14,8 @@
 # Start order: postgres (healthy) -> migrate (one-shot) -> app -> cloudflared. `migrate` runs
 # env validation (M52), `payload migrate` and a verifier (npm run deploy:migrate) from the
 # Dockerfile's `migrate` target, bounded to 5 minutes. An EMPTY database is bootstrapped by the committed migrations in
-# /migrations; the first admin is then created in /admin. Production never pushes the schema.
+# /migrations; the first admin is created by the same step from ADMIN_BOOTSTRAP_EMAIL/PASSWORD
+# (ADR-036); the open /admin create-first-user flow is closed. Production never pushes the schema.
 #   - FIRST deploy: a failed migrate means `app` (and so `cloudflared`) is never started (it stays
 #     "Created"). An invalid environment (check-env) fails `migrate` the same way.
 #   - REDEPLOY (documented default, owner-changeable): gate on the migration - `build`, then
@@ -39,7 +40,7 @@
 #     database. NO other service may ever join `edge`, and nothing may add a `ports:` entry to
 #     `app` or `postgres` (every such change needs an ADR). Docker-published ports bypass ufw.
 #   - The public hostname -> http://app:3000 mapping lives in the Cloudflare dashboard (leave the
-#     "HTTP Host Header" override UNSET). Setup steps and the first-admin ordering: docs/DEPLOYMENT.md.
+#     "HTTP Host Header" override UNSET). Setup steps and the first admin: docs/DEPLOYMENT.md.
 #   - Without a published port the host cannot `curl localhost:3000`. To probe the app:
 #       docker compose --env-file <file> -f docker-compose.prod.yml exec app \
 #         wget -qO- http://127.0.0.1:3000/api/users/init
