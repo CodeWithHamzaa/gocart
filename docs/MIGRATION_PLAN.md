@@ -1020,7 +1020,8 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 ### M54 — Backup/persistence strategy for Postgres and media
 - **Goal**: Ensure Postgres data and uploaded media survive container restarts/redeploys, with a documented backup approach.
 - **Media is a local Docker volume, not object storage** ([ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor)), so it carries the same manual-backup burden as Postgres under [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline) — this milestone's persistent-volumes scope must cover both, not just the database.
-- **Files**: `docker-compose.prod.yml` (named volumes), `docs/ARCHITECTURE.md` (backup notes, if not already covered)
+- **Files**: `docker-compose.prod.yml` (named volumes, already present; comments only), `scripts/backup.sh`, `scripts/backup-verify.sh` (new), `scripts/prod-stack-check.sh` (M54 section), `docs/DEPLOYMENT.md`, `docs/ARCHITECTURE.md`
+- **Status (2026-10-11)**: implemented, partly verified. Scripts tested on a local PostgreSQL 16 (plain and encrypted, restore into a scratch database, wrong passphrase and truncated dump refused, retention). The Docker paths and the stop/start persistence check run in CI (`prod-stack`); the manual restore procedure and a real-VPS backup are unverified.
 - **Dependencies**: M50, M8
 - **Testing**: Stop and restart the full stack; confirm previously seeded/created data and uploaded media are still present.
 - **Rollback**: Revert compose volume changes.
