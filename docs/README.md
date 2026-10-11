@@ -12,6 +12,7 @@ Detailed, living documentation for the GoCart Pakistan transformation. Root-leve
 | [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md) | Category browsing behavior spec — routes, hierarchy, SEO, states, pagination (`M27a`/`M27b`) |
 | [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) | **The authoritative implementation sequence** — milestones `M1`–`M59` plus `M2a`, `M27a`, `M27b` |
 | [TASKS.md](./TASKS.md) | Status roll-up and gates (status only — order lives in the migration plan) |
+| [PROJECT_STATUS.md](./PROJECT_STATUS.md) | Long-form status narrative moved out of `CLAUDE.md` (a log, not instructions) |
 | [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) | Readiness audits gating the start of implementation |
 | [AI_TEAM_READINESS_REPORT.md](./AI_TEAM_READINESS_REPORT.md) | Development-time AI engineering team: architecture, roles, gates, permissions, `M29` dry run |
 | [CHANGELOG.md](./CHANGELOG.md) | Notable changes over time |
