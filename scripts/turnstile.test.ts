@@ -226,6 +226,22 @@ for (const status of [500, 502, 429, 403, 404, 201]) {
   await expectOutcome(`HTTP ${status}`, harness(() => json({ success: true, hostname: HOST, action: 'place_order' }, status)), TOKEN, { outcome: 'unavailable', reason: 'http-status' }, { fetches: 1 })
 }
 {
+  // Real Cloudflare answers an unknown secret with HTTP 400 + invalid-input-secret (CI contract run,
+  // 2026-10-11): still unavailable, but logged as a configuration ERROR like the 200 form.
+  for (const code of ['invalid-input-secret', 'missing-input-secret']) {
+    const h = harness(() => json({ 'error-codes': [code], success: false, messages: [] }, 400))
+    await expectOutcome(`HTTP 400 ${code}`, h, TOKEN, { outcome: 'unavailable', reason: 'service-error' }, { fetches: 1 })
+    assert.equal(h.logs.length, 1)
+    assert.equal(h.logs[0].level, 'error', '400 with a secret error is an error-level log')
+  }
+  // Any other 400 stays a plain http-status warning, and a 400 never yields a verdict on the token.
+  for (const body of [json({ 'error-codes': ['invalid-input-response'], success: false }, 400), json({ 'error-codes': ['bad-request'], success: false }, 400), new Response('<html>', { status: 400 }), json({ success: true, hostname: HOST, action: 'place_order' }, 400)]) {
+    const h = harness(() => body)
+    await expectOutcome('HTTP 400 other', h, TOKEN, { outcome: 'unavailable', reason: 'http-status' }, { fetches: 1 })
+    assert.equal(h.logs[0].level, 'warn')
+  }
+}
+{
   // A non-200 body is cancelled (connection freed), never read.
   let cancelled = false
   const body = new ReadableStream({ pull() {}, cancel() { cancelled = true } })

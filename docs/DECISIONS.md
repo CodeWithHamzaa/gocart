@@ -1117,7 +1117,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - **Unit tests**: caught 10 of 10 deliberate mutations at that time (12 of 12 after the fix batch). Dated, not current.
 - **E2E**: the fallback, mobile and SEO specs passed; the golden path failed in that sandbox only because Cloudflare was blocked there.
 
-**Never observed against real Cloudflare, by anyone** (a statement that ADR-036's batch repeats): the real siteverify response shapes for a real secret, the real `hostname` and `action` values, and the real widget at 320 px. These are open until the CI `turnstile-contract` job and the golden path run, and until the owner's launch check.
+**Real-Cloudflare observations, added later the same day from the first CI run on a GitHub runner** (see ADR-036 *Verified*): `api.js` answers HTTP 302 (a browser follows it; the first contract check wrongly assumed 200); Cloudflare's public test secrets answer HTTP 200 with the shapes this ADR assumed (`success:true` with `hostname:"example.com"` and no `action`; `invalid-input-response`; `timeout-or-duplicate`); an unknown secret answers **HTTP 400** with `invalid-input-secret` (the ADR assumed 200). Still **never observed**: the response for a *real* secret (the real `hostname` and `action` values) and the real widget at 320 px, which are open until the owner's launch check.
 
 **Still to be proven**:
 
@@ -1185,7 +1185,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 
 **Not verified (open; say so rather than assume)**:
 
-- **Real Cloudflare**: the real siteverify shapes for a real secret (including the real `hostname` and `action` values), `api.js`, the real widget at 320 px. Checked only by the CI `turnstile-contract` job (test secrets plus an unknown-secret case) and the golden path in CI, and by the owner's launch check (a verified order and lookup with real keys on the real hostname and no `[turnstile]` log lines).
+- **Real Cloudflare, partly observed (CI `turnstile-contract`, first run on a GitHub runner, 2026-10-11):** `api.js` answers 302 (followed by a browser); Cloudflare's test secrets answer 200 with `success:true` + `hostname:"example.com"` (no `action`) / `invalid-input-response` / `timeout-or-duplicate`, which `lib/turnstile.ts` classifies as `verified` / `rejected` / `rejected`; an unknown secret answers **HTTP 400** + `invalid-input-secret` (the code now reads a 400 body and logs it as a configuration error; the outcome is `unavailable` either way). **Still unobserved:** the response for a real secret (the real `hostname` and `action` values) and the real widget at 320 px. Checked only by the CI `turnstile-contract` job (test secrets plus an unknown-secret case) and the golden path in CI, and by the owner's launch check (a verified order and lookup with real keys on the real hostname and no `[turnstile]` log lines).
 - **The real compose stack and the repository's Dockerfile images** (`migrate` and `app` with `read_only`, the `gocart_app` URI): exercised by the CI `prod-stack` job; the authoring sandbox could not pull base images or reach the registry from a build. `read_only` on `migrate` is therefore unproven until that job has passed.
 - **`cloudflared` and `postgres` with a read-only root** (deliberately not enabled).
 - **The Next.js 16 upgrade** (not done) and the exploitability of every advisory other than the image-optimizer ones (texts unavailable).

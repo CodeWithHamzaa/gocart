@@ -192,7 +192,24 @@ export function createTurnstileVerifier(deps: VerifierDeps): Verifier {
         signal,
       )
       if (res.status !== 200) {
-        // Free the connection; nothing in the body is worth reading.
+        // Observed against real Cloudflare (2026-10-11): an unknown secret answers HTTP 400 with
+        // {"success":false,"error-codes":["invalid-input-secret"]}. Never a verdict on a token (the
+        // outcome is `unavailable` either way) but a CONFIGURATION fault the operator must see, so a
+        // 400 body is read (capped, inside the timeout) just far enough to log it at error level.
+        if (res.status === 400) {
+          try {
+            const parsed: unknown = JSON.parse(await abortable(readCappedText(res, MAX_RESPONSE_BYTES), signal))
+            const codes = isRecord(parsed) && Array.isArray(parsed['error-codes']) ? (parsed['error-codes'] as unknown[]) : []
+            if (codes.some((c) => typeof c === 'string' && SECRET_ERROR_CODES.includes(c))) {
+              secretRejected.value = true
+              return { outcome: 'unavailable', reason: 'service-error' }
+            }
+          } catch {
+            // unreadable body: fall through to the plain status reason
+          }
+          return { outcome: 'unavailable', reason: 'http-status' }
+        }
+        // Free the connection; nothing in any other body is worth reading.
         void res.body?.cancel().catch(() => {})
         return { outcome: 'unavailable', reason: 'http-status' }
       }
