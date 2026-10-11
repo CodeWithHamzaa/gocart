@@ -44,7 +44,7 @@
 #   - Without a published port the host cannot `curl localhost:3000`. To probe the app:
 #       docker compose --env-file <file> -f docker-compose.prod.yml exec app \
 #         wget -qO- http://127.0.0.1:3000/api/users/init
-#     (busybox wget ships in the node:alpine image; curl does not). M53 adds a real healthcheck.
+#     (busybox wget ships in the node:alpine image; curl does not). M53 added a real healthcheck (`docker compose ps` shows `app` healthy).
 # ======================================================================================
 #
 # Standalone file, NOT an override of docker-compose.yml. It has its own project name
@@ -223,7 +223,14 @@ services:
       # mounted here inherits that owner and the non-root app can write to it. Backups: scripts/backup.sh (M54).
       - app-media:/app/media
     logging: *default-logging
-    # Healthcheck: M53.
+    healthcheck:
+      # M53/ADR-038: /api/health queries the database; busybox wget exits non-zero on the 503 it returns
+      # when the database is unreachable. start_period covers the first Payload boot.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
   # The origin boundary (ADR-033): a remotely-managed Cloudflare Tunnel. It connects OUT to
   # Cloudflare and relays public traffic to http://app:3000 (hostname mapping is configured in the
@@ -242,7 +249,7 @@ services:
       TUNNEL_METRICS: 127.0.0.1:2000
     depends_on:
       app:
-        condition: service_started # M53 switches this to service_healthy
+        condition: service_healthy # M53
     networks:
       - edge
     <<: *hardening

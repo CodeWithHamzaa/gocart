@@ -1227,3 +1227,17 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 **Verified (2026-10-11, authoring sandbox)**: `npm ci`-equivalent install; `tsc --noEmit`; `npm run lint` (0 errors, 8 warnings); `npm run test:turnstile`, `test:env`, `test:idempotency`, `test:users-guard`; `db-roles` and seed on a fresh PostgreSQL 16; the standalone production build with Turbopack; the standalone server as `gocart_app`: every public route 200, `/admin` 200, unknown product / category / out-of-range page / unknown path 404, `first-register` and `POST /api/users` 403 with an empty users table, `/_next/image` 404; all 15 Playwright tests against a local simulation of Cloudflare with the app running as `gocart_app`; and, in a real browser, the Payload admin UI (login, dashboard, the orders list and one order, a product edit view) with no uncaught page errors.
 
 **Not verified here**: the repository's Docker images and the compose stack on Next 16 (CI `image` and `prod-stack`), the golden path through the real Turnstile widget (CI `e2e`), and the "upload from URL" admin path through the overridden `undici` (it needs outbound network).
+
+## ADR-038: Health endpoint and container healthchecks (`M53`)
+
+**Status**: **Accepted (2026-10-11)** — implemented on `claude/m53-health-checks`; an operational decision inside `M53`'s stated scope, reverses no Accepted ADR.
+
+**Decisions**:
+1. **`GET /api/health` is a readiness probe, not a liveness ping.** It runs one `count` on `categories` through Payload's Local API (the same restricted `gocart_app` role the app uses), with a 3-second timeout. A process that is up but cannot reach the database is not healthy for a store whose only job is writing orders, and a bare 200 from the Node process would hide that.
+2. **Public, no detail.** Returns `200 {"status":"ok"}` or `503 {"status":"unavailable"}` with `Cache-Control: no-store`. The cause goes to the server log (`[health] check failed: ...`) only; no version, no host, no error text reaches the internet. The route is under `/api/`, which `cloudflared` already forwards, so it is reachable publicly; it holds no data and the query is a cheap `count`.
+3. **Compose healthcheck uses busybox `wget`** (present in the `node:alpine` image; curl is not) against `127.0.0.1:3000/api/health`: interval 30s, timeout 5s, 3 retries, 40s start period. `cloudflared` now waits for `app` to be `service_healthy` instead of `service_started`.
+4. **Logging baseline stays as `M50`/`M52` set it** (json-file rotation on every service; the app logs to stdout/stderr). No log shipper or error-tracking SaaS is added: that would be a new dependency and an ADR-015 cost decision.
+
+**Not done (deliberately out of `M53`'s Goal)**: container memory limits, `read_only` for `cloudflared`/`postgres`, an external uptime monitor (the owner should point one at `/api/health`), and a "no admin yet" readiness signal for the first-admin window (ADR-036 closed that window differently).
+
+**Verified**: local PostgreSQL 16 with the real migrated schema and `next dev`: 200 with the database up, 503 and a `[health]` log line within ~50 ms with it stopped, 200 again after restart. **Verified in CI (PR #23)**: the compose healthcheck and the `app` container reporting `healthy`, asserted by the `M53` section of `scripts/prod-stack-check.sh` in the `prod-stack` job, which also exercises the production build serving the route.
