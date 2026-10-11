@@ -396,7 +396,8 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M44`–`M45` | Mobile-first audit and performance | **Done** (2026-10-10) — see CHANGELOG and ADR-030; Lighthouse gains are modest (the baseline was already 97–99 locally) |
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49` | Production Dockerfile stage | **Done** (2026-10-10) — verified by building and running the image; see CHANGELOG and ADR-031 |
-| `M50`–`M54` (incl. new `M52a`) | Compose stacks, image optimisation, secrets, migrations, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
+| `M50` | Compose stacks (dev and prod) | **Done** (2026-10-10) — verified by running both stacks; see CHANGELOG. The prod stack cannot yet bootstrap an empty database (`M52a`) |
+| `M51`–`M54` (incl. new `M52a`) | Image optimisation, secrets, migrations, health checks, backups | Not Started — `M52a` inserted (2026-08-18) to close `R9` (explicit production migration step) |
 | `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
 | `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |

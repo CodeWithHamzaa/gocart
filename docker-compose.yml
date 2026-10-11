@@ -1,10 +1,16 @@
-# Local development services for GoCart Pakistan.
+# Development stack for GoCart Pakistan: PostgreSQL (M1) and the Next.js + Payload app (M50).
 #
-# M1 provisions PostgreSQL only — the datastore every later milestone builds against
-# (ADR-002). The application container arrives at M5/M50; until then the Next.js app
-# runs on the host and reaches this database over the published port below.
+#   docker compose up -d postgres   database only; run `npm run dev` on the host against the
+#                                   published loopback port (this is what the README documents)
+#   docker compose up               database + app, both in Docker: http://localhost:3000
+#                                   (the app port is loopback-only; APP_BIND overrides it)
 #
-# Start it with:  docker compose up -d postgres
+# The app service builds the Dockerfile's `dev` target and bind-mounts the source, so edits on the
+# host hot-reload in the container. `next dev` pushes the schema to an empty database itself, so
+# no migration step is needed here. The production stack is docker-compose.prod.yml (separate
+# project name, separate volumes) and is NOT an override of this file.
+#
+# Inside the compose network the app reaches the database at host `postgres` (not localhost).
 name: gocart
 
 services:
@@ -30,5 +36,40 @@ services:
       retries: 5
       start_period: 10s
 
+  app:
+    build:
+      context: .
+      target: dev
+    container_name: gocart-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Host is the service name `postgres`; the port is the container port, not POSTGRES_PORT.
+      DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:-gocart}@postgres:5432/${POSTGRES_DB:-gocart}
+      # DEVELOPMENT ONLY. A well-known value that signs admin sessions; never use it anywhere
+      # reachable from a network. Production requires its own secret (docker-compose.prod.yml).
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-dev-only-insecure-secret-do-not-use-in-production}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_CURRENCY_SYMBOL: ${NEXT_PUBLIC_CURRENCY_SYMBOL:-Rs.}
+      # File watching over bind mounts is unreliable on Docker Desktop (macOS/Windows); set
+      # WATCHPACK_POLLING=true in your shell there if hot reload does not trigger.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
+    ports:
+      # Loopback only, like postgres: this container runs with a well-known dev secret. Set
+      # APP_BIND to expose it deliberately. No restart policy: it should not return after a reboot.
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      # Source for hot reload. Environment values above take precedence over any host .env
+      # that this mount exposes, so a host DATABASE_URI pointing at localhost is ignored here.
+      - .:/app
+      # Anonymous volumes keep the image's installed node_modules and the container's own
+      # .next cache from being shadowed by (or leaking into) the host directory.
+      - /app/node_modules
+      - /app/.next
+      # Uploaded media (collections/Media.ts writes to /app/media).
+      - app-media:/app/media
+
 volumes:
   postgres-data:
+  app-media:

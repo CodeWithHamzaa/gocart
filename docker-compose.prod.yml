@@ -1,0 +1,87 @@
+# Production stack for GoCart Pakistan (M50): the Dockerfile's `production` target + PostgreSQL.
+#
+#   docker compose --env-file /path/outside/checkout/gocart-prod.env \
+#     -f docker-compose.prod.yml up -d --build
+#
+# Keep that env file (mode 600) outside the checkout; never commit it. Because of the `:?`
+# checks below, EVERY command on this file (down, ps, logs, config) needs the same --env-file.
+# Compose also auto-loads a project-directory `.env`, so always pass an explicit --env-file and
+# never run prod from a dev checkout whose `.env` holds dev values.
+#
+# ======================================================================================
+# KNOWN LIMITATION - THIS STACK CANNOT BOOTSTRAP AN EMPTY DATABASE YET
+# Payload does not create tables when NODE_ENV=production, and no migrations exist until M52a
+# (explicit `payload migrate` deploy step, closes readiness finding R9). Started against an
+# empty database the app boots, but every page that reads data fails. Until M52a lands, this
+# file is only useful against a database whose schema already exists. Do not treat a green
+# `docker compose up` as proof of a working deployment.
+# ======================================================================================
+#
+# Standalone file, NOT an override of docker-compose.yml. It has its own project name
+# (`gocart-prod`), so its containers, network and volumes (gocart-prod_postgres-data,
+# gocart-prod_app-media) can never collide with the dev stack's (gocart_*), even on one machine.
+#
+# Required (no defaults on purpose; compose refuses to start without them):
+#   POSTGRES_PASSWORD  must be URL-safe (letters, digits, - . _ ~): it is interpolated into
+#                      DATABASE_URI without encoding, so characters like @ : / ? # % would break
+#                      the connection string. e.g. `openssl rand -hex 24`.
+#                      Symptom if violated: the app 500s with a misleading getaddrinfo ENOTFOUND on
+#                      the part after '@'. (A preflight check is for M52/M52a.)
+#   PAYLOAD_SECRET     signs admin sessions; generate a long random value, e.g. `openssl rand -hex 32`.
+#   NEXT_PUBLIC_SITE_URL  the public origin (e.g. https://shop.example.com); build-time, so
+#                      changing it needs `--build`.
+# Optional: POSTGRES_USER, POSTGRES_DB, NEXT_PUBLIC_CURRENCY_SYMBOL (build-time), APP_BIND, APP_PORT.
+# Secrets documentation and the finalized .env.example are M52; never commit real values.
+name: gocart-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gocart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (URL-safe characters only)}
+      POSTGRES_DB: ${POSTGRES_DB:-gocart}
+    # No `ports:` on purpose: the database is reachable only from the app over the compose network.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gocart} -d ${POSTGRES_DB:-gocart}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Backups and restart-survival verification: M54.
+
+  app:
+    build:
+      context: .
+      target: production
+      args:
+        # Inlined into the JavaScript at build time (see the Dockerfile).
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com (build-time)}
+        NEXT_PUBLIC_CURRENCY_SYMBOL: ${NEXT_PUBLIC_CURRENCY_SYMBOL:-Rs.}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+    ports:
+      # Loopback only. Docker-published ports bypass ufw/INPUT-chain rules (use the DOCKER-USER
+      # chain), so nothing but loopback is safe until M52 restricts the origin to Cloudflare
+      # (rate limiting trusts cf-connecting-ip / x-forwarded-for). Cloudflare cannot reach a
+      # loopback bind, so M52 decides ingress (e.g. tunnel vs reverse proxy + allowlist).
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      # Uploaded media. The image creates /app/media owned by uid 1000, so a fresh volume
+      # mounted here inherits that owner and the non-root app can write to it. Backups: M54.
+      - app-media:/app/media
+    # Healthcheck: M53. Migrations before traffic: M52a.
+
+volumes:
+  postgres-data:
+  app-media:
