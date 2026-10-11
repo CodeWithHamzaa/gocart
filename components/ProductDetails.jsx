@@ -46,13 +46,13 @@ const ProductDetails = ({ product, shipping }) => {
                 <div className="flex sm:flex-col gap-3">
                     {images.map((image, index) => (
                         <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer">
-                            <Image src={image} className="group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} />
+                            <Image src={image} className="group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} sizes="45px" />
                         </button>
                     ))}
                 </div>
                 <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg ">
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
-                    {mainImage && <Image src={mainImage} alt={product.name} width={250} height={250} priority fetchPriority="high" />}
+                    {mainImage && <Image src={mainImage} alt={product.name} width={250} height={250} sizes="250px" priority fetchPriority="high" />}
                 </div>
             </div>
             <div className="flex-1 min-w-0">

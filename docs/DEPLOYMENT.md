@@ -325,6 +325,44 @@ orders per 15 minutes per IP). Things to know before launch:
   shared `unknown` bucket and **all visitors share one budget**: a self-inflicted outage. It fails closed
   (never a bypass), so check for it after any Cloudflare zone change.
 
+## Image optimisation
+
+`M51` enables Next.js's built-in optimizer at `/_next/image`, configured in `next.config.mjs`: WebP
+only, a closed list of widths (64, 128, 256, 384, 640, 828, 1080), quality 75, a one-day minimum cache
+TTL, and sources limited to local `/api/media/file/**`. It needs no outbound network: it only fetches the
+app's own files.
+
+- **Cache location.** Variants are cached under `.next/cache/images` **inside the container's writable
+  layer, not a volume**. A recreated container (every deploy) starts cold, so the first visit per image and
+  width runs `sharp` (roughly 40-200 ms each on a development machine; expect more on a ~$10 single-vCPU
+  VPS). A cold-cache burst after each deploy is normal and cheap at launch catalog size; you can warm it by
+  requesting the home and shop pages after a deploy.
+- **Growth.** Next 15.4 has no size cap on this cache. Growth is bounded by (media files x 7 widths) and it
+  disappears when the container is recreated.
+- **M53 note.** If the container root filesystem later becomes `read_only`, `/app/.next/cache` needs a
+  tmpfs or a volume.
+- **Upload rules for admins.** `next.config.mjs` sets `experimental.imgOptMaxInputPixels: 40_000_000`
+  (40 megapixels, for example about 7000x5700). Larger source images are **not** optimised: the original
+  file is served instead. Resize product photos to under about 4000 px on the long edge (and a few MB)
+  before uploading. Do **not** upload SVG (the optimizer rejects it and the image would break) and do not
+  put private files in Media (it is public-read).
+- **Oversize images are a real cost.** An image over 40 MP is served as the original, and each requested
+  width still caches a full copy of it (QA: a 54 MP / 18.6 MB test image produced about 130 MB of cache), and
+  mobile devices download the full original. Resize before upload; this is not just advice.
+- **Log noise.** A probe containing a NUL byte (`%00`) logs a Payload stack trace. It is cosmetic and the
+  response is 400.
+- **Accepted URLs.** The optimizer only accepts image URLs of the exact form Payload generates,
+  `/api/media/file/<one path segment>`, with the query string pinned empty (`search: ''`). Anything else is
+  rejected with a 404 before it reaches the optimizer. Verified (QA) on the Docker production image
+  with 17 real uploaded files (including non-Latin names): 0 false rejections, and a set of about 45 abuse
+  variants created no cache entries. Behind real Cloudflare it is unverified.
+- **Replaced images** get a new filename (for example `lamp-1.jpg`), so there is no stale-image problem.
+- **Cloudflare (not built, not verified: real Cloudflare behaviour).** `/_next/image` has no file
+  extension, so Cloudflare does not cache it by default. If you add a cache rule, limit it to
+  `/_next/image*`, respect the origin `Cache-Control`, and include `Accept` in the cache key (the optimizer
+  varies on `Accept`). Because the endpoint is public and CPU-bound, a Cloudflare rate-limiting rule on
+  `/_next/image` is the practical control.
+
 ## Not covered yet
 
 Health checks (`M53`: `cloudflared` should then depend on `app` being healthy, not merely started);

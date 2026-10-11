@@ -13,7 +13,7 @@ This document describes the system **as it exists today** (inherited from the op
 - **Payment**: `PaymentMethod` enum already has `COD` and `STRIPE`; nothing processes Stripe today, it's just a schema value
 - **Currency**: hardcoded `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example`
 - **Routes**: `app/(public)/*` storefront, `app/admin/*` platform admin (approve vendors, manage stores/coupons), `app/store/*` vendor dashboard (add/manage products, view orders)
-- **Deployment**: no Dockerfile, no `docker-compose.yml`, `next.config.mjs` sets `images.unoptimized = true` (Vercel-style default, not production-hardened)
+- **Deployment**: no Dockerfile, no `docker-compose.yml`, `next.config.mjs` set `images.unoptimized = true` (Vercel-style default) as inherited; `M51` has since enabled Next's local image optimizer ([ADR-034](./DECISIONS.md))
 - **CMS**: none — content/products are plain Postgres rows via the (unwired) Prisma schema
 
 ## Target architecture
@@ -91,7 +91,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 
 ### SEO
 
-- Per-page `generateMetadata`, dynamic `sitemap.xml`/`robots.txt` (Next.js built-in file conventions), JSON-LD `Product`/`Organization` structured data, optimized images (revisit `images.unoptimized: true` — that's a Vercel-remote-loader shortcut, not appropriate for a self-hosted Dockerized prod setup).
+- Per-page `generateMetadata`, dynamic `sitemap.xml`/`robots.txt` (Next.js built-in file conventions), JSON-LD `Product`/`Organization` structured data, optimized images (`M51` removed `images.unoptimized: true` and enabled Next's built-in optimizer for local media, WebP only — see [ADR-034](./DECISIONS.md)).
 
 ### Mobile-first
 

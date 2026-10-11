@@ -20,7 +20,7 @@ const ProductCard = ({ product, priority = false }) => {
         <Link href={`/product/${product.id}`} className=' group max-xl:mx-auto'>
             <div className='bg-[#F5F5F5] h-40  sm:w-60 sm:h-68 rounded-lg flex items-center justify-center'>
                 {imageUrl && (
-                    <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={firstImage?.alt || product.name} />
+                    <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' sizes='(min-width: 640px) 160px, 120px' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={firstImage?.alt || product.name} />
                 )}
             </div>
             {/* M44: name and price stack on a phone (a two-column grid leaves a card ~124px wide at

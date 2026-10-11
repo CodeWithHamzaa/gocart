@@ -399,7 +399,8 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M50` | Compose stacks (dev and prod) | **Done** (2026-10-10) — verified by running both stacks; see CHANGELOG. The prod stack cannot yet bootstrap an empty database (`M52a`) |
 | `M52a` | Run Payload migrations as an explicit production deploy step | **Done** (2026-10-11) — closes `R9`; verified on real stacks, see CHANGELOG and ADR-032 (the new CI `migrations` job has not yet run on a GitHub runner) |
 | `M52` | Production env/secrets validation and Cloudflare-only origin (Tunnel) | **Implemented and verified on real stacks** (2026-10-11), see CHANGELOG and ADR-033 — **not marked fully Done**: `.env.example` is not updated (access denied in the session), the real tunnel/Cloudflare header behaviour is unverified, and the first-admin guard is an open owner decision |
-| `M51`, `M53`, `M54` | Image optimisation, health checks, backups | Not Started |
+| `M51` | Real image optimisation for self-hosted deployment | **Done** (2026-10-11) — verified on the Docker production image; see CHANGELOG and ADR-034 (Cloudflare caching/rate-limit behaviour unverified) |
+| `M53`, `M54` | Health checks, backups | Not Started |
 | `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
 | `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |

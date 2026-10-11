@@ -12,6 +12,7 @@ const dirname = path.dirname(filename)
 export const Media: CollectionConfig = {
   slug: 'media',
   // M13: public-read/admin-write — product images must be publicly viewable.
+  // M51: this collection is public-read and is served through the image optimizer: never store private files in it.
   access: {
     read: () => true,
     create: ({ req: { user } }) => Boolean(user),

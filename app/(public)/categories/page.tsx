@@ -60,6 +60,7 @@ export default async function CategoriesPage() {
                           alt={typeof image === 'object' && image?.alt ? image.alt : category.title}
                           width={200}
                           height={200}
+                          sizes="112px"
                           className="max-h-28 w-auto group-hover:scale-105 transition duration-300"
                         />
                       </div>
