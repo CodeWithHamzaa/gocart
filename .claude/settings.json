@@ -26,9 +26,7 @@
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(docker compose ps:*)",
-      "Bash(docker compose logs:*)"
-    ],
-    "ask": [
+      "Bash(docker compose logs:*)",
       "Bash(git push:*)",
       "Bash(git merge:*)",
       "Bash(git rebase:*)",
@@ -58,7 +56,7 @@
       "Bash(dropdb:*)",
       "Bash(docker build:*)"
     ],
-    "deny": [
+    "ask": [
       "Bash(npm publish:*)",
       "Read(./.env)",
       "Read(./.env.*)",
