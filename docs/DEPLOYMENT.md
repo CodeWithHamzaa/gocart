@@ -8,8 +8,9 @@ required, orders are idempotent, the first admin comes from a secret, the app us
 role). `M53` adds health checks; `M54` adds backups; `M59` is the full runbook.**
 
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
-> [Launch blockers](#launch-blockers) at the end of this file: the Next.js upgrade (critical advisories on
-> `next@15.4.11`), the first real-Cloudflare checks and the first-deploy checks.
+> [Launch blockers](#launch-blockers) at the end of this file: the real-Cloudflare checks with real keys, the
+> Cloudflare WAF rule, the first-deploy checks, backups and health checks. (The Next.js advisories were closed by
+> `M52c`, Next 16.3.8.)
 
 Order of work for a first deploy: [Secrets and the env file](#secrets-and-the-env-file) ->
 [Cloudflare: one-time steps](#cloudflare-one-time-steps) (create the tunnel, do NOT attach the public
@@ -481,8 +482,9 @@ cluster (there are none in this stack); **schema changes only ever happen throug
 ## Image optimisation
 
 `M51` ([ADR-034](./DECISIONS.md)) enabled Next.js's built-in image optimizer. **It is switched off again**
-(ADR-036): `next@15.4.11` has critical advisories in the Image Optimization API (see
-[Launch blockers](#launch-blockers)). `next.config.mjs` sets `images.unoptimized: true` (product images are
+(ADR-036) because `next@15.4.11` had critical advisories in the Image Optimization API. `M52c` (ADR-037)
+upgraded to Next 16.3.8, which has none; re-enabling the optimizer is now an owner decision (performance
+versus a public CPU-bound endpoint), not a security necessity. `next.config.mjs` sets `images.unoptimized: true` (product images are
 served as uploaded, from `/api/media/file/...`) and sends every `/_next/image` request to a 404. Uploads
 are restricted to JPEG, PNG, WebP and GIF (no AVIF, SVG or HEIC).
 
@@ -503,14 +505,9 @@ tmpfs, do not remove `read_only`. `postgres` and `cloudflared` are not read-only
 
 The stack is **not cleared for launch** until every item is done or explicitly accepted by the owner:
 
-1. **Upgrade Next.js to a patched version (critical).** `next@15.4.11` is affected by 30 advisories, two
-   critical (`GHSA-2xp9-vwfh-vxw4`, Image Optimization API RCE with AVIF; `GHSA-p293-qw3h-jr36`, Windows-only
-   RCE) and several high (including `GHSA-m99w-x7hq-7vfj`, a Server Actions DoS that applies to the public
-   checkout). All are fixed only in 15.5.x or later, and Payload 3.90.x excludes 15.5.x, so the upgrade is to
-   **Next 16.3.3 or later** with Payload 3.90.x, a major upgrade with its own regression pass (for example
-   `next lint` is removed in Next 16). The interim mitigations (optimizer off, `/_next/image` closed,
-   narrower upload types) remove the image-optimizer surface only; they do **not** address the Server Action
-   DoS or the other advisories. Re-run `npm audit` after the upgrade.
+1. ~~Upgrade Next.js to a patched version~~ **Done by `M52c` (ADR-037): `next@16.3.8`.** `npm audit` shows no critical and no
+   `next` advisory; 9 high remain through `braces` in build/development tooling (no patched release exists). Re-run
+   `npm audit` before launch and after every dependency change.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
    hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
    passes the `turnstile-contract` job and a golden path through the real widget and siteverify, but with
