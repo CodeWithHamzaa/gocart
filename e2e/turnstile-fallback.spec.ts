@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import type { Page } from '@playwright/test'
 
 // M52b / ADR-036 (strict policy): when Cloudflare's Turnstile script cannot load, the widget

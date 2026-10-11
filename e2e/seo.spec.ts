@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { adminHeaders } from './admin'
 
 // M40–M43 guard rails: what a crawler gets from a plain HTTP request (no JavaScript), the

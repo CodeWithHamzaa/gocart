@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { adminHeaders } from './admin'
 
 // M44 guard rails, at the narrowest phone width we support (320px): no horizontal scroll on any

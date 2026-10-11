@@ -22,10 +22,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    // ADR-036: `next start` runs in production mode, where the order guard refuses a request with no
-    // valid client IP (in production the tunnel always sets cf-connecting-ip). A documentation-range
-    // address stands in for it; it is the same for every test, which the limits tolerate.
-    extraHTTPHeaders: { 'cf-connecting-ip': '203.0.113.7' },
+    // ADR-036: the client IP header the production guard needs is added per request to the app's own
+    // origin only (e2e/fixtures.ts), never to Cloudflare's widget traffic.
     // Mobile-first store: the golden path runs at a phone viewport.
     ...devices['Pixel 7'],
     // Root in a container (this sandbox) cannot use Chromium's sandbox; CI runners can.

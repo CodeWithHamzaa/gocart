@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 // M56a: the money path, end to end, against a freshly seeded database (scripts/seed.ts):
 // browse -> product detail -> add to cart -> guest checkout -> COD order created -> guest

@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { adminHeaders } from './admin'
+import { TEST_CLIENT_IP } from './fixtures'
 
 // ADR-036 (H3): a lost response must never become a second order. The server really processes
 // the first Place Order click, but the browser never receives the answer (the usual mobile-network
@@ -42,12 +43,12 @@ test('a lost response and a retry create one order, and the retry shows it', asy
       bodies.push(req.postData() ?? '')
       if (dropped === 0) {
         dropped++
-        await route.fetch() // the server creates the order...
+        await route.fetch({ headers: { ...req.headers(), 'cf-connecting-ip': TEST_CLIENT_IP } }) // the server creates the order...
         await route.abort('failed') // ...and the browser never hears about it
         return
       }
     }
-    await route.continue()
+    await route.fallback() // not continue(): fallback keeps the context-level client-IP header (e2e/fixtures.ts)
   })
 
   const status = page.locator('[data-turnstile-status]')
