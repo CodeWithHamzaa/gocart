@@ -12,7 +12,7 @@
 //      (a tokenless request WITH a well-formed key does go on: it takes an attempts slot and one
 //      indexed DB lookup, because it may be the retry of an order that already exists);
 //   2. production request with no valid client IP -> refused (misconfiguration, error-logged);
-//   3. attempts gate per IP - every request that gets this far, whatever happens next, so
+//   3. attempts gates per IP and per IPv6 /48, plus a per-client cap on in-flight verifications - every request that gets this far, whatever happens next, so
 //      siteverify calls and DB lookups per IP stay bounded;
 //   4. idempotent replay: the same key + the same phone returns the order already created,
 //      without a token (a token is single-use and was spent on the first request) and without
@@ -35,7 +35,9 @@ const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
 
 // Changing these is a code change, not configuration (ADR-035 decision 5, ADR-036).
-export const PLACE_ATTEMPT_LIMIT = 60
+// Generous on purpose: only requests that carry a token or an idempotency key count, a real customer needs
+// a handful, and a neighbour on the same CGNAT address must not be able to lock the others out cheaply.
+export const PLACE_ATTEMPT_LIMIT = 150
 export const PLACE_ATTEMPT_WINDOW_MS = 15 * MINUTE
 export const PLACE_ORDER_IP_LIMIT = 30
 export const PLACE_ORDER_IP_WINDOW_MS = 15 * MINUTE
@@ -45,8 +47,16 @@ export const PHONE_IP_DAILY_LIMIT = 10
 export const PHONE_IP_DAILY_WINDOW_MS = 24 * HOUR
 export const PHONE_WATCH_LIMIT = 10 // alert only: never refuses
 export const PHONE_WATCH_WINDOW_MS = 24 * HOUR
-export const LOOKUP_ATTEMPT_LIMIT = 60
+export const LOOKUP_ATTEMPT_LIMIT = 150
 export const LOOKUP_ATTEMPT_WINDOW_MS = HOUR
+// ADR-036 (security review H-1): a junk token costs an attacker nothing but holds one of the 50
+// siteverify slots for a Cloudflare round trip, so the slots are also limited PER CLIENT: at most
+// PER_IP_CONCURRENT verifications in flight for one address key, and PER_NET_CONCURRENT for one
+// IPv6 /48 (an attacker routinely owns a whole /48 = 65,536 /64 keys) or IPv4 address; and the
+// attempts of a whole /48 are capped as one client.
+export const PER_IP_CONCURRENT = 4
+export const PER_NET_CONCURRENT = 12
+export const NET_ATTEMPT_LIMIT = 1000
 export const LOOKUP_ORDER_NUMBER_LIMIT = 5
 export const LOOKUP_ORDER_NUMBER_WINDOW_MS = HOUR
 
@@ -64,6 +74,9 @@ export type GuardLimits = {
   phoneWatchWindowMs: number
   lookupAttempts: number
   lookupAttemptsWindowMs: number
+  netAttempts: number
+  perIpConcurrent: number
+  perNetConcurrent: number
   lookupOrderNumber: number
   lookupOrderNumberWindowMs: number
 }
@@ -81,6 +94,9 @@ const DEFAULT_LIMITS: GuardLimits = {
   phoneWatchWindowMs: PHONE_WATCH_WINDOW_MS,
   lookupAttempts: LOOKUP_ATTEMPT_LIMIT,
   lookupAttemptsWindowMs: LOOKUP_ATTEMPT_WINDOW_MS,
+  netAttempts: NET_ATTEMPT_LIMIT,
+  perIpConcurrent: PER_IP_CONCURRENT,
+  perNetConcurrent: PER_NET_CONCURRENT,
   lookupOrderNumber: LOOKUP_ORDER_NUMBER_LIMIT,
   lookupOrderNumberWindowMs: LOOKUP_ORDER_NUMBER_WINDOW_MS,
 }
@@ -190,6 +206,39 @@ export function createOrderGuard({
   const lookupAttempts = createBucketLimiter({ limit: l.lookupAttempts, windowMs: l.lookupAttemptsWindowMs })
   const orderNumbers = createBucketLimiter({ limit: l.lookupOrderNumber, windowMs: l.lookupOrderNumberWindowMs })
 
+  const netAttempts = createBucketLimiter({ limit: l.netAttempts, windowMs: l.placeAttemptsWindowMs })
+  const lookupNetAttempts = createBucketLimiter({ limit: l.netAttempts, windowMs: l.lookupAttemptsWindowMs })
+
+  // IPv6 clients are keyed by /64 (lib/client-ip.ts); the network an attacker controls is the /48.
+  const netOf = (ip: string): string => {
+    const m = ip.match(/^([0-9a-f]+):([0-9a-f]+):([0-9a-f]+):[0-9a-f]+::\/64$/)
+    return m ? `${m[1]}:${m[2]}:${m[3]}::/48` : ip
+  }
+  // In-flight verifications per client key; entries exist only while a verification is running.
+  const inFlight = new Map<string, number>()
+  const enter = (keys: Array<[string, number]>): (() => void) | null => {
+    for (const [k, max] of keys) if ((inFlight.get(k) ?? 0) >= max) return null
+    for (const [k] of keys) inFlight.set(k, (inFlight.get(k) ?? 0) + 1)
+    return () => {
+      for (const [k] of keys) {
+        const n = (inFlight.get(k) ?? 1) - 1
+        if (n <= 0) inFlight.delete(k)
+        else inFlight.set(k, n)
+      }
+    }
+  }
+  const TRY_AGAIN = 'Please wait a moment and try again.'
+  const verifyFor = async (ip: string, token: unknown, options: Parameters<Verifier>[1]) => {
+    const net = netOf(ip)
+    const leave = enter(net === ip ? [[ip, l.perIpConcurrent]] : [[ip, l.perIpConcurrent], [net, l.perNetConcurrent]])
+    if (!leave) return null
+    try {
+      return await safeVerify(verify, token, options)
+    } finally {
+      leave()
+    }
+  }
+
   // At most one error line a minute for the missing-IP misconfiguration (it would repeat per request).
   let lastNoIpLog = 0
   const noClientIp = (ip: string): boolean => {
@@ -239,6 +288,9 @@ export function createOrderGuard({
       return rateLimited(`Too many attempts from your connection. Please try again in about ${minutesText(attempt.retryAfterSec)}.`)
     }
 
+    const netGate = netAttempts.reserve(netOf(ip))
+    if (!netGate.allowed) return rateLimited(`Too many attempts from your network. Please try again in about ${minutesText(netGate.retryAfterSec)}.`)
+
     // 4. Idempotent replay (a lost response, a double tap): no token, no order limits.
     if (key && findExisting) {
       let existing: R | null = null
@@ -252,7 +304,8 @@ export function createOrderGuard({
     if (!hasToken(token)) return verificationFailed(PLACE_ORDER_VERIFICATION_MESSAGE)
 
     // 5. Turnstile. A token that is not verified never reaches a phone bucket or createOrder.
-    const check = await safeVerify(verify, token, { action: 'place_order', remoteIp })
+    const check = await verifyFor(ip, token, { action: 'place_order', remoteIp })
+    if (!check) return rateLimited(TRY_AGAIN)
     if (check.outcome !== 'verified') return refusal(check, true)
 
     // 6. Verified orders only. Reserved now, refunded by release() unless the order is created,
@@ -304,8 +357,10 @@ export function createOrderGuard({
 
     const attempt = lookupAttempts.reserve(ip)
     if (!attempt.allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
+    if (!lookupNetAttempts.reserve(netOf(ip)).allowed) return rateLimited(LOOKUP_RATE_LIMITED_MESSAGE)
 
-    const check = await safeVerify(verify, token, { action: 'order_lookup', remoteIp })
+    const check = await verifyFor(ip, token, { action: 'order_lookup', remoteIp })
+    if (!check) return rateLimited(TRY_AGAIN)
     if (check.outcome !== 'verified') return refusal(check, false)
 
     // M36's per-order-number cap, unchanged: 5 FAILED lookups per hour. Reserved before the

@@ -48,7 +48,8 @@ pass "/_next/image is closed (404)"
 db_uri="$("${PROD[@]}" exec -T app printenv DATABASE_URI)"
 case "$db_uri" in postgresql://gocart_app:*) ;; *) fail "the app does not connect as gocart_app" ;; esac
 if "${PROD[@]}" exec -T app env | grep -Eq '^(POSTGRES_PASSWORD|ADMIN_BOOTSTRAP_|APP_DB_PASSWORD)='; then fail "the app container holds a secret it must not have"; fi
-pass "the app connects as gocart_app and holds no superuser or bootstrap secret"
+if "${PROD[@]}" exec -T app env | grep -Eq '^(PAYLOAD_ALLOW_FIRST_REGISTER|TURNSTILE_ALLOW_TEST_KEYS)=.'; then fail "the app environment carries a dev/CI-only flag"; fi
+pass "the app connects as gocart_app and holds no superuser, bootstrap secret or dev/CI-only flag"
 psql_as gocart_app "$APP_DB_PASSWORD" "select count(*) from orders" >/dev/null || fail "gocart_app cannot read orders"
 for sql in "create table evil(x int)" "drop table orders" "alter table orders add column z int" "truncate orders" \
            "create role r2 superuser" "copy (select 1) to program 'id'" "delete from payload_migrations" "create schema s2"; do

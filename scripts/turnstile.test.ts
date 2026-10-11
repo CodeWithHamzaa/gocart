@@ -512,7 +512,7 @@ for (const bad of [undefined, null, 42, '', 'short', 'a'.repeat(21), 'a'.repeat(
 
 // --- Rejected/unavailable requests never touch the order limits (L3, M2) -----------------------
 {
-  const g = fakeGuard({ limits: { placeAttempts: 1000 } })
+  const g = fakeGuard({ limits: { placeAttempts: 1000, netAttempts: 100000 } })
   const phone = nextPhone()
   for (let i = 0; i < 200; i++) await g.admitPlaceOrder({ ip: IP_A, phone, token: i % 2 ? 'bad' : 'down', remoteIp: null })
   for (let i = 0; i < 3; i++) {
@@ -673,15 +673,15 @@ for (const bad of [undefined, null, 42, '', 'short', 'a'.repeat(21), 'a'.repeat(
   assert.deepEqual(g.calls[0].options, { action: 'order_lookup', remoteIp: null })
 }
 {
-  // Attempts gate: 60 per hour per IP, counted before verification.
+  // Attempts gate: 150 per hour per IP, counted before verification.
   const g = fakeGuard()
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 150; i++) {
     const r = await g.admitLookup({ ip: IP_A, orderNumber: ORDER_A, token: 'ok', remoteIp: null })
     assert.equal(r.ok, true, `lookup ${i + 1}`)
     if (r.ok) r.settle(false)
   }
-  assertRateLimited(await g.admitLookup({ ip: IP_A, orderNumber: ORDER_A, token: 'ok', remoteIp: null }), LOOKUP_RATE_LIMITED_MESSAGE, '61st lookup')
-  assert.equal(g.calls.length, 60)
+  assertRateLimited(await g.admitLookup({ ip: IP_A, orderNumber: ORDER_A, token: 'ok', remoteIp: null }), LOOKUP_RATE_LIMITED_MESSAGE, '151st lookup')
+  assert.equal(g.calls.length, 150)
 }
 {
   // Rejected lookups never touch the per-order-number cap; only verified NOT_FOUND lookups do.
@@ -708,6 +708,54 @@ for (const bad of [undefined, null, 42, '', 'short', 'a'.repeat(21), 'a'.repeat(
   }
   const concurrent = await Promise.all(Array.from({ length: 12 }, (_, i) => g.admitLookup({ ip: `198.51.100.${220 + i}`, orderNumber: ORDER_B, token: 'ok', remoteIp: null })))
   assert.equal(concurrent.filter((r) => r.ok).length, 5, 'concurrent lookups cannot exceed the order-number cap')
+}
+
+
+// --- Verification slots are limited PER CLIENT (security review H-1) -----------------------------------
+{
+  // A junk-token flood from one address cannot hold more than a few of the 50 shared siteverify slots.
+  const releaseAll: Array<() => void> = []
+  const guard = createOrderGuard({
+    logger: { warn() {}, error() {} },
+    requireClientIp: false,
+    verify: () => new Promise((resolve) => releaseAll.push(() => resolve({ outcome: 'rejected', reason: 'invalid-token' }))),
+  })
+  const send = (ip: string) => guard.admitPlaceOrder({ ip, phone: nextPhone(), token: 'junk', remoteIp: null })
+  const pending = Array.from({ length: 4 }, () => send('198.51.100.90'))
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(releaseAll.length, 4, 'four verifications in flight for one IP')
+  // (raced against a timer so a missing cap fails the test instead of hanging it)
+  const fifth = await Promise.race([send('198.51.100.90'), new Promise((r) => setTimeout(() => r('HUNG: no per-IP cap'), 500))])
+  assert.deepEqual(fifth, { ok: false, code: 'RATE_LIMITED', message: 'Please wait a moment and try again.' }, '5th concurrent request from the same IP is refused without a siteverify call')
+  assert.equal(releaseAll.length, 4, 'no extra siteverify call')
+  const other = send('198.51.100.91')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(releaseAll.length, 5, 'another IP still gets a slot')
+  releaseAll.splice(0).forEach((r) => r())
+  await Promise.all([...pending, other])
+  const after = send('198.51.100.90')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(releaseAll.length, 1, 'slots are released when verifications finish')
+  releaseAll.splice(0).forEach((r) => r())
+  await after
+
+  // One IPv6 /48 (65,536 /64 keys) is one client: 12 in flight, however many /64s it spreads over.
+  const net = (i: number) => `2001:db8:77:${i.toString(16)}::/64`
+  const burst = Array.from({ length: 12 }, (_, i) => send(net(i)))
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(releaseAll.length, 12)
+  const thirteenth = await Promise.race([send(net(99)), new Promise((r) => setTimeout(() => r({ ok: 'HUNG: no /48 cap' }), 500))])
+  assert.equal((thirteenth as { ok: unknown }).ok, false, '13th concurrent request from the same /48 is refused')
+  assert.equal(releaseAll.length, 12, 'and makes no siteverify call')
+  releaseAll.splice(0).forEach((r) => r())
+  await Promise.all(burst)
+  // The /48 gate counts all of its /64s together.
+  const g2 = fakeGuard({ limits: { netAttempts: 5 } })
+  for (let i = 0; i < 5; i++) assert.equal((await g2.admitPlaceOrder({ ip: net(i), phone: nextPhone(), token: 'bad', remoteIp: null })).ok, false)
+  assert.equal(g2.calls.length, 5)
+  assertRateLimited(await g2.admitPlaceOrder({ ip: net(200), phone: nextPhone(), token: 'ok', remoteIp: null }), /Too many attempts from your network/, '6th attempt from the /48')
+  assert.equal(g2.calls.length, 5, 'no siteverify call past the /48 gate')
+  assert.equal((await g2.admitPlaceOrder({ ip: '2001:db8:78:1::/64', phone: nextPhone(), token: 'ok', remoteIp: null })).ok, true, 'another /48 is unaffected')
 }
 
 console.log('order guard tests passed (strict policy: tokenless/rejected/unavailable refused, attempts gate, CGNAT ceiling, per phone+IP limits, no victim lock-out, replay, concurrency, missing client IP, lookup)')

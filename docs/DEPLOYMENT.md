@@ -200,7 +200,7 @@ deploy with the variable name and the rule, never the value):
 | `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and CI only; `docker-compose.prod.yml` never passes it. |
 | `APP_DB_PASSWORD` | (ADR-036) the password of the restricted `gocart_app` database role the running app connects as. Same rules as `POSTGRES_PASSWORD` (16+ characters, `A-Z a-z 0-9 - . _ ~`, 10+ distinct, no forbidden word) and it **must differ from `POSTGRES_PASSWORD`**. Given to `migrate` (which creates the role) and used by compose to build `app`'s `DATABASE_URI`; `app` never sees `POSTGRES_PASSWORD`. Unlike `POSTGRES_PASSWORD` it is re-applied on every deploy, so it can be rotated (change the env file, then run the deploy gate). |
 | `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` | (ADR-036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
-| `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails otherwise): it re-opens the first-admin window. Development and CI only. |
+| `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails if it reaches the `migrate` container; compose never passes it to any service, which is the real control and is asserted by the `prod-stack` CI job): it re-opens the first-admin window. Development and CI only. |
 
 (The word list and host rules above follow the fix being made to `scripts/check-env.ts` at the time of
 writing; `scripts/check-env.ts` is the authority if they ever differ.)
@@ -425,11 +425,11 @@ verified customers separately instead of by IP alone. All limits are code consta
 
 | What | Limit | Counts |
 |---|---|---|
-| Order placement, attempts per IP | 60 per 15 minutes | every request with a well-formed phone and a token or idempotency key, whatever the outcome (bounds siteverify calls and database lookups) |
+| Order placement, attempts per IP | 150 per 15 minutes (and 1,000 per IPv6 /48; at most 4 verifications in flight per IP, 12 per /48) | every request with a well-formed phone and a token or idempotency key, whatever the outcome (bounds siteverify calls and database lookups) |
 | Order placement, verified orders per IP | 30 per 15 minutes | successful verified orders |
 | Per phone number **and IP** (normalised `03XXXXXXXXX`) | 3 per hour **and** 10 per 24 hours | successful verified orders only (a failed order is refunded) |
-| Per phone number, all IPs | alert only: `[order-guard] phone-volume` above 10 per 24 hours | never refuses |
-| Order lookup, attempts per IP | 60 per hour | every request with a token |
+| Per phone number, all IPs | log line only: `[order-guard] phone-volume` above 10 per 24 hours (nothing notifies you; check the logs) | never refuses |
+| Order lookup, attempts per IP | 150 per hour (and 1,000 per IPv6 /48) | every request with a token |
 | Failed lookups per order number | 5 per hour | `NOT_FOUND` only, verified requests only |
 
 Things to know before launch:
@@ -517,7 +517,8 @@ The stack is **not cleared for launch** until every item is done or explicitly a
 3. **First deploy checks**: the migrate step succeeded, `/admin` login works with the bootstrap credentials,
    the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
    token, and the CI `prod-stack` job is green.
-4. **Backups** (`M54`) and **health checks** (`M53`).
+4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (for example 30 requests per minute per IP, action Block or Managed Challenge). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
+5. **Backups** (`M54`) and **health checks** (`M53`).
 
 ## Not covered yet
 
