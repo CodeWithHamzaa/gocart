@@ -43,9 +43,13 @@ jobs:
       - run: npm ci
       - name: Widget script is served (api.js -> HTTP 200)
         run: |
-          code="$(curl -sS -o /dev/null -w '%{http_code}' https://challenges.cloudflare.com/turnstile/v0/api.js)"
-          echo "api.js HTTP $code"
+          # Observed on a GitHub runner (2026-10-11): the URL answers 302, a browser <script src> follows
+          # it. So the contract is "the redirect chain ends in 200 on a Cloudflare host", not "200 at once".
+          out="$(curl -sS -L -o /dev/null -w '%{http_code} %{num_redirects} %{url_effective}' https://challenges.cloudflare.com/turnstile/v0/api.js)"
+          echo "api.js (following redirects): $out"
+          code="${out%% *}"
           test "$code" = "200"
+          case "$out" in *://challenges.cloudflare.com/*) ;; *) echo "api.js ended on a non-Cloudflare host"; exit 1 ;; esac
       - name: lib/turnstile.ts classifies real siteverify responses (verified / rejected / rejected / unavailable)
         run: |
           cat > "$RUNNER_TEMP/turnstile-contract.mts" <<'TS'
