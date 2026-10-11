@@ -35,7 +35,10 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
+  // M52a: migrations are committed files in /migrations and run by the production
+  // `migrate` service (ADR-032). prodMigrations is deliberately not set.
   db: postgresAdapter({
+    migrationDir: path.resolve(dirname, 'migrations'),
     pool: {
       connectionString: process.env.DATABASE_URI,
     },

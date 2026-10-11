@@ -62,6 +62,55 @@ jobs:
             test-results/
           retention-days: 7
 
+  # M52a: migrations are committed files (ADR-032). This job fails when a collection or the
+  # Settings global changed without a migration (schema drift), and proves that the production
+  # step (`npm run deploy:migrate`: payload migrate + verifier) bootstraps an EMPTY database.
+  # The credentials below belong to a throwaway database that exists only for this job.
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: gocart
+          POSTGRES_PASSWORD: gocart
+          POSTGRES_DB: gocart_migrations
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gocart -d gocart_migrations"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-else
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: No schema drift (every schema change has a committed migration)
+        env:
+          # migrate:create only diffs the config against the newest committed snapshot; it
+          # never connects to a database, so this URI is a dummy.
+          DATABASE_URI: postgresql://dummy:dummy@127.0.0.1:1/dummy
+        run: |
+          npm run migrate:create -- --skip-empty
+          if [ -n "$(git status --porcelain migrations)" ]; then
+            echo "Schema drift: a collection or global changed without a committed migration."
+            echo "Run 'npm run migrate:create -- <name>' locally, review the files, and commit them."
+            git status --porcelain migrations
+            exit 1
+          fi
+      - name: Migrations bootstrap an empty database (what the production migrate service runs)
+        env:
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:gocart@localhost:5432/gocart_migrations
+        run: npm run deploy:migrate
+
   # M49: the production image must build with NO database available, run as an unprivileged user,
   # refuse to start without its required settings, and carry no secrets.
   image:
@@ -71,6 +120,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build the production image (no database)
         run: docker build --target production -t gocart:ci .
+      - name: Build the migrate image (M52a; used by the one-shot migrate service)
+        run: docker build --target migrate -t gocart-migrate:ci .
+      - name: Migrate image runs as an unprivileged user
+        run: |
+          uid="$(docker run --rm --entrypoint id gocart-migrate:ci -u)"
+          echo "uid=$uid"
+          test "$uid" = "1000"
+      - name: No secrets baked into the migrate image environment
+        run: |
+          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+            echo "a secret or connection string is baked into the migrate image"
+            exit 1
+          fi
       - name: Runs as an unprivileged user
         run: |
           uid="$(docker run --rm --entrypoint id gocart:ci -u)"

@@ -9,12 +9,22 @@
 # never run prod from a dev checkout whose `.env` holds dev values.
 #
 # ======================================================================================
-# KNOWN LIMITATION - THIS STACK CANNOT BOOTSTRAP AN EMPTY DATABASE YET
-# Payload does not create tables when NODE_ENV=production, and no migrations exist until M52a
-# (explicit `payload migrate` deploy step, closes readiness finding R9). Started against an
-# empty database the app boots, but every page that reads data fails. Until M52a lands, this
-# file is only useful against a database whose schema already exists. Do not treat a green
-# `docker compose up` as proof of a working deployment.
+# DATABASE MIGRATIONS (M52a, ADR-032) - the schema is created automatically, no seeding
+# Start order: postgres (healthy) -> migrate (one-shot) -> app. `migrate` runs
+# `payload migrate` plus a verifier (npm run deploy:migrate) from the Dockerfile's `migrate`
+# target, bounded to 5 minutes. An EMPTY database is bootstrapped by the committed migrations in
+# /migrations; the first admin is then created in /admin. Production never pushes the schema.
+#   - FIRST deploy: a failed migrate means `app` is never started (it stays "Created").
+#   - REDEPLOY (documented default, owner-changeable): gate on the migration - `build`, then
+#     `run --rm migrate`, then `up -d`. A failed migrate then leaves the old app serving.
+#     A plain `up -d --build` is for a first deploy or acceptable downtime only: observed with
+#     Compose v5.6, it stops and recreates the OLD app BEFORE migrate runs, so a failed migrate
+#     leaves the site DOWN. See docs/DEPLOYMENT.md.
+#   - Each migration file runs in its own transaction; if several are pending and a later one
+#     fails, the earlier ones stay applied and only the failing file is rolled back.
+#   - `migrate` does NOT re-run on a host reboot (app/postgres restart via unless-stopped).
+#   - Needs Docker Compose >= 2.17 (depends_on: condition: service_completed_successfully).
+# Never point this stack at a database that `next dev` / `npm run seed` has populated.
 # ======================================================================================
 #
 # Standalone file, NOT an override of docker-compose.yml. It has its own project name
@@ -26,7 +36,7 @@
 #                      DATABASE_URI without encoding, so characters like @ : / ? # % would break
 #                      the connection string. e.g. `openssl rand -hex 24`.
 #                      Symptom if violated: the app 500s with a misleading getaddrinfo ENOTFOUND on
-#                      the part after '@'. (A preflight check is for M52/M52a.)
+#                      the part after '@'. (A preflight check is for M52.)
 #   PAYLOAD_SECRET     signs admin sessions; generate a long random value, e.g. `openssl rand -hex 32`.
 #   NEXT_PUBLIC_SITE_URL  the public origin (e.g. https://shop.example.com); build-time, so
 #                      changing it needs `--build`.
@@ -54,6 +64,28 @@ services:
       start_period: 10s
     # Backups and restart-survival verification: M54.
 
+  # One-shot schema step (M52a). Same image source and database settings as `app`, but no
+  # published ports, no media volume and no extra secrets. restart "no": it must run once per
+  # `up` and exit; a non-zero exit stops `app` from starting.
+  # WARNING: only `npm run deploy:migrate` is supported here; NEVER run migrate:fresh/reset/down on a real DB (drops `orders`).
+  migrate:
+    build:
+      context: .
+      target: migrate
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com (build-time)}
+        NEXT_PUBLIC_CURRENCY_SYMBOL: ${NEXT_PUBLIC_CURRENCY_SYMBOL:-Rs.}
+    restart: "no"
+    stdin_open: false
+    tty: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+
   app:
     build:
       context: .
@@ -66,6 +98,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
@@ -80,7 +114,7 @@ services:
       # Uploaded media. The image creates /app/media owned by uid 1000, so a fresh volume
       # mounted here inherits that owner and the non-root app can write to it. Backups: M54.
       - app-media:/app/media
-    # Healthcheck: M53. Migrations before traffic: M52a.
+    # Healthcheck: M53.
 
 volumes:
   postgres-data:

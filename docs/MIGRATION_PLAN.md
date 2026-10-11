@@ -882,9 +882,17 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Goal**: Production deploys run `payload migrate` as an explicit step — before the app starts
   serving traffic — with schema auto-push disabled in the production build/runtime. A failed migration
   must block the deploy, not silently fall through to a stale or partially-migrated schema.
-- **Files**: `docker-compose.prod.yml` (a migration step/init container ahead of the app service, or an
-  entrypoint script that runs migrations then execs the server), `docs/DEPLOYMENT.md`/`docs/ARCHITECTURE.md`
-  (document the migration workflow so `M59`'s runbook doesn't improvise it either)
+- **Files**: `Dockerfile` (new `migrate` target, placed before `production`), `docker-compose.prod.yml`
+  (one-shot `migrate` service; `app` waits for it), `payload.config.ts` (`migrationDir`), `package.json`
+  (`migrate`, `migrate:create`, `migrate:status`, `deploy:migrate`), `migrations/` (the committed
+  initial migration + snapshot + `index.ts`), `scripts/verify-migrations.ts` (post-migration verifier),
+  `eslint.config.mjs` (ignore `migrations/**`), `.github/workflows/ci.yml` (schema-drift + empty-database
+  bootstrap job; `docker build --target migrate`), `docs/DEPLOYMENT.md` (new: the migration workflow, so
+  `M59`'s runbook doesn't improvise it)
+- **Scope expansion (recorded)**: the original Files line named only the compose file and the docs.
+  Design per [ADR-032](./DECISIONS.md): migrations had to be generated and committed (none existed), the
+  Payload CLI cannot run in the standalone image (so a Dockerfile target), and a verifier plus a CI drift
+  check close the fail-open paths found in design.
 - **Dependencies**: `M50` (compose), `M52` (`DATABASE_URI`/secrets available to run migrations against)
 - **Testing**: Deploying against a database one schema version behind actually migrates rather than
   silently pushing or skipping; a deliberately broken migration blocks the app from starting rather

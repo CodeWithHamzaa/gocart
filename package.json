@@ -10,6 +10,10 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "migrate": "payload migrate",
+    "migrate:create": "payload migrate:create",
+    "migrate:status": "payload migrate:status",
+    "deploy:migrate": "payload migrate && tsx scripts/verify-migrations.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
