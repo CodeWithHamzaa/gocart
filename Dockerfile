@@ -1,5 +1,6 @@
 # Images for the Next.js + Payload app.
 #   dev        (M5)  : the development image — `npm run dev` with the source baked in.
+#   migrate    (M52a): a one-shot runner for `npm run deploy:migrate` (payload migrate + verifier).
 #   production (M49) : a minimal, non-root image running the standalone server.
 #
 # The LAST stage is the default target, so a plain `docker build .` produces the production
@@ -60,6 +61,31 @@ RUN PAYLOAD_SECRET=build-time-placeholder-not-the-runtime-secret \
     npm run build
 
 
+# ---------------------------------------------------------------- migrations (M52a)
+# The standalone `production` image cannot run the Payload CLI (no payload bin, no tsx, no
+# drizzle-kit — ADR-031/ADR-032), so migrations run from this target: the full dependency tree
+# plus the source. It is used only as the one-shot `migrate` service in docker-compose.prod.yml
+# and is never exposed or deployed on its own. It MUST stay before `production`, which has to
+# remain the last stage (the default target of a plain `docker build .`).
+FROM deps AS migrate
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+# /app itself must be writable by the unprivileged user (tools write caches next to the project);
+# node_modules stays root-owned and read-only. .dockerignore keeps .env*, docs and e2e out.
+RUN chown node:node /app
+COPY --chown=node:node . .
+
+USER node
+
+# Bounded and non-interactive on purpose. `payload migrate` waits for a confirmation prompt when
+# it finds rows pushed by `next dev`; with no terminal that would hang forever, so stdin is
+# closed and the whole step is capped at 5 minutes (then killed). timeout exits non-zero when it
+# fires, which makes the compose service fail and keeps `app` from starting.
+CMD ["sh", "-c", "exec timeout -k 10 300 npm run deploy:migrate </dev/null"]
+
+
 # ---------------------------------------------------------------- production (M49)
 FROM node:22-alpine AS production
 
@@ -85,7 +111,8 @@ USER node
 EXPOSE 3000
 
 # Runtime configuration (nothing is baked in): DATABASE_URI and PAYLOAD_SECRET are required.
-# The schema must already exist — Payload does not push it in production (M52a runs migrations).
+# The schema must already exist — Payload does not push it in production; the `migrate` target
+# (M52a) creates it before this container starts.
 #
 # Without these the app would start but answer every request with a 500; checking up front makes
 # the container exit at once with a message, so a restart policy and `docker ps` show it.

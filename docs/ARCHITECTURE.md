@@ -13,7 +13,7 @@ This document describes the system **as it exists today** (inherited from the op
 - **Payment**: `PaymentMethod` enum already has `COD` and `STRIPE`; nothing processes Stripe today, it's just a schema value
 - **Currency**: hardcoded `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example`
 - **Routes**: `app/(public)/*` storefront, `app/admin/*` platform admin (approve vendors, manage stores/coupons), `app/store/*` vendor dashboard (add/manage products, view orders)
-- **Deployment**: no Dockerfile, no `docker-compose.yml`, `next.config.mjs` sets `images.unoptimized = true` (Vercel-style default, not production-hardened)
+- **Deployment**: no Dockerfile, no `docker-compose.yml`, `next.config.mjs` set `images.unoptimized = true` (Vercel-style default) as inherited; `M51` has since enabled Next's local image optimizer ([ADR-034](./DECISIONS.md))
 - **CMS**: none — content/products are plain Postgres rows via the (unwired) Prisma schema
 
 ## Target architecture
@@ -91,7 +91,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 
 ### SEO
 
-- Per-page `generateMetadata`, dynamic `sitemap.xml`/`robots.txt` (Next.js built-in file conventions), JSON-LD `Product`/`Organization` structured data, optimized images (revisit `images.unoptimized: true` — that's a Vercel-remote-loader shortcut, not appropriate for a self-hosted Dockerized prod setup).
+- Per-page `generateMetadata`, dynamic `sitemap.xml`/`robots.txt` (Next.js built-in file conventions), JSON-LD `Product`/`Organization` structured data, optimized images (`M51` removed `images.unoptimized: true` and enabled Next's built-in optimizer for local media, WebP only — see [ADR-034](./DECISIONS.md)).
 
 ### Mobile-first
 
@@ -103,6 +103,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 - `docker-compose.yml` for local dev: app + Postgres + a volume-mounted Payload media directory (local Docker volume, per [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) — not an object-storage stub for v1).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
 - **Initial production infrastructure baseline is decided** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)): Cloudflare Free (DNS/proxy) in front of a single ~$10–12/month VPS running the Dockerized app and a self-hosted PostgreSQL instance, plus Resend's free tier for transactional email. COD remains the only payment method. SMS is deferred to a future phase. Backups are managed manually for the initial launch — `M54` is still the milestone that formalizes persistence/backup strategy. This baseline is chosen to stay replaceable/upgradable (e.g. VPS → managed Postgres) without an application rewrite.
+- **Production topology** ([ADR-032](./DECISIONS.md), [ADR-033](./DECISIONS.md)): `docker-compose.prod.yml` runs `postgres` → a one-shot `migrate` service (environment validation, `payload migrate`, verifier; fail-closed, the app waits for it) → `app` → `cloudflared`. No service publishes a host port; the origin is reachable only through a Cloudflare Tunnel (networks `backend` internal, `edge` shared by `app` and `cloudflared` only). Production never pushes the schema; migrations are committed in `/migrations`. Real-tunnel validation and the first-admin guard decision are still open (see ADR-033).
 
 ## Settled structural decisions
 

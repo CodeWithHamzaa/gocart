@@ -1,4 +1,5 @@
-# Production stack for GoCart Pakistan (M50): the Dockerfile's `production` target + PostgreSQL.
+# Production stack for GoCart Pakistan (M50, M52a, M52): the Dockerfile's `production` target +
+# PostgreSQL + a one-shot migrate step + the Cloudflare Tunnel connector (`cloudflared`).
 #
 #   docker compose --env-file /path/outside/checkout/gocart-prod.env \
 #     -f docker-compose.prod.yml up -d --build
@@ -9,30 +10,86 @@
 # never run prod from a dev checkout whose `.env` holds dev values.
 #
 # ======================================================================================
-# KNOWN LIMITATION - THIS STACK CANNOT BOOTSTRAP AN EMPTY DATABASE YET
-# Payload does not create tables when NODE_ENV=production, and no migrations exist until M52a
-# (explicit `payload migrate` deploy step, closes readiness finding R9). Started against an
-# empty database the app boots, but every page that reads data fails. Until M52a lands, this
-# file is only useful against a database whose schema already exists. Do not treat a green
-# `docker compose up` as proof of a working deployment.
+# DATABASE MIGRATIONS (M52a, ADR-032) - the schema is created automatically, no seeding
+# Start order: postgres (healthy) -> migrate (one-shot) -> app -> cloudflared. `migrate` runs
+# env validation (M52), `payload migrate` and a verifier (npm run deploy:migrate) from the
+# Dockerfile's `migrate` target, bounded to 5 minutes. An EMPTY database is bootstrapped by the committed migrations in
+# /migrations; the first admin is then created in /admin. Production never pushes the schema.
+#   - FIRST deploy: a failed migrate means `app` (and so `cloudflared`) is never started (it stays
+#     "Created"). An invalid environment (check-env) fails `migrate` the same way.
+#   - REDEPLOY (documented default, owner-changeable): gate on the migration - `build`, then
+#     `run --rm migrate`, then `up -d`. A failed migrate then leaves the old app serving.
+#     A plain `up -d --build` is for a first deploy or acceptable downtime only: observed with
+#     Compose v5.6, it stops and recreates the OLD app BEFORE migrate runs, so a failed migrate
+#     leaves the site DOWN. See docs/DEPLOYMENT.md.
+#   - Each migration file runs in its own transaction; if several are pending and a later one
+#     fails, the earlier ones stay applied and only the failing file is rolled back.
+#   - `migrate` does NOT re-run on a host reboot (app/postgres restart via unless-stopped).
+#   - Needs Docker Compose >= 2.17 (depends_on: condition: service_completed_successfully).
+# Never point this stack at a database that `next dev` / `npm run seed` has populated.
+# ======================================================================================
+#
+# ======================================================================================
+# ORIGIN BOUNDARY (M52, ADR-033) - Cloudflare Tunnel; NO service publishes a host port
+# The only internet-facing component is `cloudflared`, which dials OUT to Cloudflare. `app` has no
+# `ports:`; it is reachable only from `cloudflared`, over the `edge` network. Rate limiting trusts
+# `cf-connecting-ip` (lib/client-ip.ts), which is safe only because nothing else can reach `app`.
+#   - Networks: `backend` (internal: true; postgres, migrate, app) and `edge` (app, cloudflared).
+#     cloudflared holds the tunnel credential and runs a third-party binary, so it cannot reach the
+#     database. NO other service may ever join `edge`, and nothing may add a `ports:` entry to
+#     `app` or `postgres` (every such change needs an ADR). Docker-published ports bypass ufw.
+#   - The public hostname -> http://app:3000 mapping lives in the Cloudflare dashboard (leave the
+#     "HTTP Host Header" override UNSET). Setup steps and the first-admin ordering: docs/DEPLOYMENT.md.
+#   - Without a published port the host cannot `curl localhost:3000`. To probe the app:
+#       docker compose --env-file <file> -f docker-compose.prod.yml exec app \
+#         wget -qO- http://127.0.0.1:3000/api/users/init
+#     (busybox wget ships in the node:alpine image; curl does not). M53 adds a real healthcheck.
 # ======================================================================================
 #
 # Standalone file, NOT an override of docker-compose.yml. It has its own project name
-# (`gocart-prod`), so its containers, network and volumes (gocart-prod_postgres-data,
+# (`gocart-prod`), so its containers, networks and volumes (gocart-prod_postgres-data,
 # gocart-prod_app-media) can never collide with the dev stack's (gocart_*), even on one machine.
 #
-# Required (no defaults on purpose; compose refuses to start without them):
-#   POSTGRES_PASSWORD  must be URL-safe (letters, digits, - . _ ~): it is interpolated into
-#                      DATABASE_URI without encoding, so characters like @ : / ? # % would break
-#                      the connection string. e.g. `openssl rand -hex 24`.
-#                      Symptom if violated: the app 500s with a misleading getaddrinfo ENOTFOUND on
-#                      the part after '@'. (A preflight check is for M52/M52a.)
-#   PAYLOAD_SECRET     signs admin sessions; generate a long random value, e.g. `openssl rand -hex 32`.
-#   NEXT_PUBLIC_SITE_URL  the public origin (e.g. https://shop.example.com); build-time, so
+# Required (no defaults on purpose; compose refuses to start without them). The `migrate` service
+# then runs scripts/check-env.ts first, which enforces the rules below and fails the deploy,
+# naming the variable and the rule (never the value), before the database is touched:
+#   POSTGRES_PASSWORD  at least 16 characters, at least 10 distinct, only A-Z a-z 0-9 - . _ ~ (it is interpolated unencoded
+#                      into DATABASE_URI, so @ : / ? # % would break the connection string). It only
+#                      takes effect when the postgres volume is first initialised; changing it later
+#                      does NOT change the password stored in the database. e.g. `openssl rand -hex 24`.
+#   PAYLOAD_SECRET     signs admin sessions; at least 32 characters, no whitespace, at least 12
+#                      distinct characters. Neither it nor POSTGRES_PASSWORD may contain (any case)
+#                      dev-only / placeholder / changeme / change-me / replace / example / ci-only /
+#                      password. e.g. `openssl rand -hex 32`.
+#   NEXT_PUBLIC_SITE_URL  the public origin: https, a bare origin (no path/query/credentials), a
+#                      public host (not localhost, .local/.internal/.lan, a single-label name, or a
+#                      private/loopback/CGNAT/IPv4-mapped address). scripts/check-env.ts is the authority. Build-time, so
 #                      changing it needs `--build`.
-# Optional: POSTGRES_USER, POSTGRES_DB, NEXT_PUBLIC_CURRENCY_SYMBOL (build-time), APP_BIND, APP_PORT.
-# Secrets documentation and the finalized .env.example are M52; never commit real values.
+#   TUNNEL_TOKEN       the Cloudflare tunnel token; passed ONLY to `cloudflared`. Treat it as a
+#                      credential: rotate it in the Cloudflare dashboard if it is ever exposed.
+# Optional: POSTGRES_USER, POSTGRES_DB, NEXT_PUBLIC_CURRENCY_SYMBOL (build-time).
+# Never commit real values. Reference and a sample env file: docs/DEPLOYMENT.md (.env.example is NOT
+# yet updated; this header and that file are the guide). Never paste `docker compose config` or
+# `docker inspect` output anywhere: it prints every secret, including TUNNEL_TOKEN, in plaintext.
 name: gocart-prod
+
+# Reused by every service. json-file with rotation keeps a small VPS disk from filling with logs.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Reused by the services that run our own code or the tunnel connector. NOT applied to postgres:
+# its entrypoint starts as root, chowns the data directory and drops to the postgres user, which
+# needs capabilities (CHOWN, SETUID, SETGID, DAC_OVERRIDE, FOWNER); hardening it is M53's job.
+# `read_only: true` is deliberately not set anywhere yet: Next.js writes under .next and Payload
+# under /app/media, and that has not been tested (M53).
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
 
 services:
   postgres:
@@ -40,9 +97,12 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-gocart}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (URL-safe characters only)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (>= 16 chars, A-Z a-z 0-9 - . _ ~ only)}
       POSTGRES_DB: ${POSTGRES_DB:-gocart}
-    # No `ports:` on purpose: the database is reachable only from the app over the compose network.
+    # No `ports:` on purpose: the database is reachable only from migrate/app over `backend`,
+    # an internal network (no route to or from the outside, and cloudflared is not on it).
+    networks:
+      - backend
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -52,7 +112,39 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging: *default-logging
     # Backups and restart-survival verification: M54.
+
+  # One-shot schema step (M52a). Same image source and database settings as `app`, but no
+  # published ports, no media volume and no extra secrets. restart "no": it must run once per
+  # `up` and exit; a non-zero exit stops `app` from starting.
+  # M52: it first runs scripts/check-env.ts, which needs all four of PAYLOAD_SECRET, DATABASE_URI,
+  # POSTGRES_PASSWORD and NEXT_PUBLIC_SITE_URL at RUNTIME (the build arg below is not visible to a
+  # running container), so they are all set here. TUNNEL_TOKEN is deliberately not.
+  # WARNING: only `npm run deploy:migrate` is supported here; NEVER run migrate:fresh/reset/down on a real DB (drops `orders`).
+  migrate:
+    build:
+      context: .
+      target: migrate
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com (build-time)}
+        NEXT_PUBLIC_CURRENCY_SYMBOL: ${NEXT_PUBLIC_CURRENCY_SYMBOL:-Rs.}
+    restart: "no"
+    stdin_open: false
+    tty: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com}
+    networks:
+      - backend
+    <<: *hardening
+    logging: *default-logging
 
   app:
     build:
@@ -66,21 +158,64 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URI: postgresql://${POSTGRES_USER:-gocart}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gocart}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
-    ports:
-      # Loopback only. Docker-published ports bypass ufw/INPUT-chain rules (use the DOCKER-USER
-      # chain), so nothing but loopback is safe until M52 restricts the origin to Cloudflare
-      # (rate limiting trusts cf-connecting-ip / x-forwarded-for). Cloudflare cannot reach a
-      # loopback bind, so M52 decides ingress (e.g. tunnel vs reverse proxy + allowlist).
-      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    # NO `ports:` (ADR-033). The app is reachable only as http://app:3000 from `cloudflared` on
+    # `edge`. `backend` gives it the database. `edge` is an ordinary (NAT) bridge, so the app can
+    # also make OUTBOUND connections; nothing needs that today (the /_next/image optimizer (M51) only
+    # fetches app-local files; fonts are self-hosted at build time), but a future outbound dependency (e.g. transactional email,
+    # ADR-015) will need it.
+    networks:
+      - backend
+      - edge
+    <<: *hardening
     volumes:
       # Uploaded media. The image creates /app/media owned by uid 1000, so a fresh volume
       # mounted here inherits that owner and the non-root app can write to it. Backups: M54.
       - app-media:/app/media
-    # Healthcheck: M53. Migrations before traffic: M52a.
+    logging: *default-logging
+    # Healthcheck: M53.
+
+  # The origin boundary (ADR-033): a remotely-managed Cloudflare Tunnel. It connects OUT to
+  # Cloudflare and relays public traffic to http://app:3000 (hostname mapping is configured in the
+  # Cloudflare dashboard, not here). It holds TUNNEL_TOKEN (nothing else gets it) and is on `edge`
+  # only, so it cannot reach postgres. The tag is pinned to an exact release; bump it deliberately
+  # (check https://github.com/cloudflare/cloudflared/releases). `--no-autoupdate` is also in the
+  # image entrypoint; repeated here so it survives an entrypoint change. The container runs as
+  # uid 65532 (nonroot) from a distroless image.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required (Cloudflare Zero Trust > Networks > Tunnels)}
+      # Metrics/ready endpoint on loopback INSIDE this container only (not reachable from `app`).
+      TUNNEL_METRICS: 127.0.0.1:2000
+    depends_on:
+      app:
+        condition: service_started # M53 switches this to service_healthy
+    networks:
+      - edge
+    <<: *hardening
+    healthcheck:
+      # `cloudflared tunnel ready` exits 0 only once at least one tunnel connection is registered.
+      test: ["CMD", "cloudflared", "tunnel", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+networks:
+  # No route to or from the outside (internal: true). Database traffic only.
+  backend:
+    internal: true
+  # The only network cloudflared is on. app and cloudflared ONLY: never add another service.
+  edge:
 
 volumes:
   postgres-data:

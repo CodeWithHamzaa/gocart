@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+# Least privilege: no job here writes to the repository, packages or checks.
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -17,6 +21,8 @@ jobs:
       - run: npm ci
       - run: npm run type-check
       - run: npm run lint
+      # M52: table test of the production environment rules (scripts/check-env.ts). No database.
+      - run: npm run test:env
 
   # M56a: production build + the golden-path E2E test against a freshly seeded PostgreSQL.
   # The credentials below belong to a throwaway database that exists only for this job.
@@ -62,6 +68,60 @@ jobs:
             test-results/
           retention-days: 7
 
+  # M52a: migrations are committed files (ADR-032). This job fails when a collection or the
+  # Settings global changed without a migration (schema drift), and proves that the production
+  # step (`npm run deploy:migrate`: check-env + payload migrate + verifier) bootstraps an EMPTY
+  # database. M52 (ADR-033): deploy:migrate starts with scripts/check-env.ts, which rejects weak or
+  # malformed values even in CI, so this job uses throwaway but CONFORMING ones (password >= 16
+  # chars of A-Z a-z 0-9 . _ ~ -; secret >= 32 chars, >= 12 distinct, no placeholder words; an
+  # https public-looking site URL). The values belong to a database that exists only for this job.
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: gocart
+          POSTGRES_PASSWORD: ci-throwaway-pw-0123456789
+          POSTGRES_DB: gocart_migrations
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gocart -d gocart_migrations"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PAYLOAD_SECRET: Zk3pQw8LmT5vXr2NbY7cHd4JfG9sAe6U
+      POSTGRES_PASSWORD: ci-throwaway-pw-0123456789
+      NEXT_PUBLIC_SITE_URL: https://shop.example.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: No schema drift (every schema change has a committed migration)
+        env:
+          # migrate:create only diffs the config against the newest committed snapshot; it
+          # never connects to a database, so this URI is a dummy.
+          DATABASE_URI: postgresql://dummy:dummy@127.0.0.1:1/dummy
+        run: |
+          npm run migrate:create -- --skip-empty
+          if [ -n "$(git status --porcelain migrations)" ]; then
+            echo "Schema drift: a collection or global changed without a committed migration."
+            echo "Run 'npm run migrate:create -- <name>' locally, review the files, and commit them."
+            git status --porcelain migrations
+            exit 1
+          fi
+      - name: Migrations bootstrap an empty database (what the production migrate service runs)
+        env:
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
+        run: npm run deploy:migrate
+
   # M49: the production image must build with NO database available, run as an unprivileged user,
   # refuse to start without its required settings, and carry no secrets.
   image:
@@ -70,7 +130,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the production image (no database)
-        run: docker build --target production -t gocart:ci .
+        run: docker build --target production --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart:ci .
+      - name: Build the migrate image (M52a; used by the one-shot migrate service)
+        run: docker build --target migrate --build-arg NEXT_PUBLIC_SITE_URL=https://shop.example.com -t gocart-migrate:ci .
+      - name: Migrate image runs as an unprivileged user
+        run: |
+          uid="$(docker run --rm --entrypoint id gocart-migrate:ci -u)"
+          echo "uid=$uid"
+          test "$uid" = "1000"
+      - name: No secrets baked into the migrate image environment
+        run: |
+          if docker inspect --format '{{json .Config.Env}}' gocart-migrate:ci | grep -E 'PAYLOAD_SECRET|DATABASE_URI'; then
+            echo "a secret or connection string is baked into the migrate image"
+            exit 1
+          fi
       - name: Runs as an unprivileged user
         run: |
           uid="$(docker run --rm --entrypoint id gocart:ci -u)"

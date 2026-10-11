@@ -866,12 +866,13 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ### M52 — Production environment/secrets handling
 - **Goal**: Document and structure how `DATABASE_URI` (per [ADR-010](./DECISIONS.md#adr-010-the-postgresql-connection-string-is-named-database_uri)), `PAYLOAD_SECRET`, and any other secrets are supplied in production (without committing real values).
-- **Files**: `.env.example` (finalized), `docker-compose.prod.yml`
+- **Files**: `.env.example` (finalized; **still open**, not yet changed), `docker-compose.prod.yml`, `docs/DEPLOYMENT.md`, `.github/workflows/ci.yml`, `scripts/check-env.ts`, `scripts/check-env.test.ts`, `lib/client-ip.ts`, `next.config.mjs`, `package.json` (`check-env`, `test:env`, `deploy:migrate`), `docs/DECISIONS.md` ([ADR-033](./DECISIONS.md))
+- **Scope expansion (recorded 2026-10-11)**: the original two-file scope grew to the list above when the launch-blocking origin requirement below was resolved by [ADR-033](./DECISIONS.md) (owner decision: Cloudflare Tunnel is the origin boundary) and production environment validation became a deploy gate. Mechanism: `cloudflared` as a compose service (pinned `cloudflare/cloudflared:2026.10.0`), no host ports, `backend` (internal) and `edge` networks, `check-env` as the first step of `deploy:migrate`. Not done at this milestone: the real-tunnel verification (owner), `.env.example`.
 - **Dependencies**: M50
 - **Testing**: A fresh clone can be configured for production using only `.env.example` as a guide and real secrets supplied out-of-band.
-- **Rollback**: Revert the two files.
+- **Rollback**: Revert the files above (`git revert` the milestone commit); the stack returns to the `M52a` compose file with its loopback-published app port.
 - **Commit message**: `Document production environment and secrets configuration`
-- **🚧 Launch-blocking requirement (security review of `M36`, owner-recorded 2026-10-09)**: the app derives the client IP for rate limiting from `cf-connecting-ip` / the first `x-forwarded-for` entry (`lib/client-ip.ts`). Those headers are client-controlled unless the origin accepts traffic **only** from Cloudflare. Before launch, the production setup (`M50`/`M52`) must restrict the origin (VPS firewall or reverse-proxy allowlist of Cloudflare ranges), and should verify that Next server actions work behind the proxy (`experimental.serverActions.allowedOrigins` may be needed). Without this, the per-IP limits on order placement and order lookup can be bypassed. Not verifiable in the dev sandbox.
+- **🚧 Launch-blocking requirement (security review of `M36`, owner-recorded 2026-10-09)**: the app derives the client IP for rate limiting from `cf-connecting-ip` / the first `x-forwarded-for` entry (`lib/client-ip.ts`). Those headers are client-controlled unless the origin accepts traffic **only** from Cloudflare. Before launch, the production setup (`M50`/`M52`) must restrict the origin (originally worded as a VPS firewall or reverse-proxy allowlist of Cloudflare ranges; **resolved by design as a Cloudflare Tunnel, [ADR-033](./DECISIONS.md)**, which removes the published port altogether; the real-tunnel path is verified only by the owner), and should verify that Next server actions work behind the proxy (`experimental.serverActions.allowedOrigins` may be needed). Without this, the per-IP limits on order placement and order lookup can be bypassed. Not verifiable in the dev sandbox.
 
 ### M52a — Run Payload migrations as an explicit production deploy step
 - **New milestone, inserted 2026-08-18** — closes readiness risk [R9](./PHASE_1_READINESS_REPORT.md#r9--no-production-database-migration-step):
@@ -882,9 +883,17 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Goal**: Production deploys run `payload migrate` as an explicit step — before the app starts
   serving traffic — with schema auto-push disabled in the production build/runtime. A failed migration
   must block the deploy, not silently fall through to a stale or partially-migrated schema.
-- **Files**: `docker-compose.prod.yml` (a migration step/init container ahead of the app service, or an
-  entrypoint script that runs migrations then execs the server), `docs/DEPLOYMENT.md`/`docs/ARCHITECTURE.md`
-  (document the migration workflow so `M59`'s runbook doesn't improvise it either)
+- **Files**: `Dockerfile` (new `migrate` target, placed before `production`), `docker-compose.prod.yml`
+  (one-shot `migrate` service; `app` waits for it), `payload.config.ts` (`migrationDir`), `package.json`
+  (`migrate`, `migrate:create`, `migrate:status`, `deploy:migrate`), `migrations/` (the committed
+  initial migration + snapshot + `index.ts`), `scripts/verify-migrations.ts` (post-migration verifier),
+  `eslint.config.mjs` (ignore `migrations/**`), `.github/workflows/ci.yml` (schema-drift + empty-database
+  bootstrap job; `docker build --target migrate`), `docs/DEPLOYMENT.md` (new: the migration workflow, so
+  `M59`'s runbook doesn't improvise it)
+- **Scope expansion (recorded)**: the original Files line named only the compose file and the docs.
+  Design per [ADR-032](./DECISIONS.md): migrations had to be generated and committed (none existed), the
+  Payload CLI cannot run in the standalone image (so a Dockerfile target), and a verifier plus a CI drift
+  check close the fail-open paths found in design.
 - **Dependencies**: `M50` (compose), `M52` (`DATABASE_URI`/secrets available to run migrations against)
 - **Testing**: Deploying against a database one schema version behind actually migrates rather than
   silently pushing or skipping; a deliberately broken migration blocks the app from starting rather
