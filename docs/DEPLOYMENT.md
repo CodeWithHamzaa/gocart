@@ -434,8 +434,10 @@ verified customers separately instead of by IP alone. All limits are code consta
 
 Things to know before launch:
 
-- **No token, no order.** A request without a token costs nothing (it touches no limiter, no network call
-  and no database) and is refused. A repeat of an order that already exists (same idempotency key and
+- **No token, no order.** A request with neither a token nor an idempotency key costs nothing (it touches no
+  limiter, no network call and no database) and is refused. A request with a key but no token takes one
+  attempts slot and one indexed database lookup (it may be the retry of an existing order) and is refused
+  unless that order exists. A repeat of an order that already exists (same idempotency key and
   phone) is answered with that order and consumes no limit.
 - **Verified customers on a shared CGNAT IP are not limited by each other** below the per-IP ceiling of
   30 orders per 15 minutes. Anyone on that IP can still use up the ceiling for 15 minutes with real
@@ -465,12 +467,15 @@ Things to know before launch:
 The `migrate` service connects as the Postgres superuser (`POSTGRES_USER`, `POSTGRES_PASSWORD`) and, after
 `payload migrate`, runs `scripts/db-roles.ts`. The running `app` connects as **`gocart_app`**
 (`APP_DB_PASSWORD`): `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`, 20 connections,
-`statement_timeout` 30 s. It can `SELECT, INSERT, UPDATE, DELETE` on the application tables and use their
+`statement_timeout` 30 s and `idle_in_transaction_session_timeout` 60 s (guard rails against bugs, **not** limits
+against a compromised app: a role can reset its own session defaults, and the next deploy restores them). It can `SELECT, INSERT, UPDATE, DELETE` on the application tables and use their
 sequences; it **cannot** create or alter objects, create roles or extensions, `TRUNCATE`, run server-side
 programs (`COPY ... PROGRAM`), create temporary tables, or write to `payload_migrations`. The grants are
 re-applied on every deploy, so new tables are covered automatically. Consequences: a compromised app can
-read and change this one database's rows (including orders), but cannot change the schema or take over the
-database server; **schema changes only ever happen through the migrate step.** Development
+read and change this one database's rows (including orders and **user rows, so it could add an admin or
+replace a password hash** - row access is what the app needs), but cannot change the schema or take over the
+database server. Known residue, accepted: it can create large objects and `CONNECT` to other databases in the
+cluster (there are none in this stack); **schema changes only ever happen through the migrate step.** Development
 (`docker-compose.yml`) keeps one superuser because `next dev` pushes the schema.
 
 ## Image optimisation

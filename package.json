@@ -17,6 +17,7 @@
     "test:env": "tsx scripts/check-env.test.ts",
     "test:turnstile": "tsx scripts/turnstile.test.ts",
     "test:idempotency": "tsx scripts/idempotency.test.ts",
+    "test:users-guard": "tsx scripts/users-guard.test.ts",
     "deploy:migrate": "tsx scripts/check-env.ts && payload migrate && tsx scripts/db-roles.ts && tsx scripts/verify-migrations.ts && tsx scripts/bootstrap-admin.ts",
     "test:e2e": "playwright test"
   },

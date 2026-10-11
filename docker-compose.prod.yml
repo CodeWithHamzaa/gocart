@@ -205,14 +205,18 @@ services:
     # `edge`. `backend` (internal: true) gives it the database and has no outside route. `edge` is an
     # ordinary (NAT) bridge, so the app's OUTBOUND connections go through it. The app needs outbound
     # HTTPS to exactly one host today: challenges.cloudflare.com (Turnstile siteverify, M52b, ADR-035;
-    # 3 s timeout, and an unreachable host degrades to the strict per-IP limit rather than failing
-    # orders). The /_next/image optimizer (M51) only fetches app-local files and fonts are
-    # self-hosted at build time. A future outbound dependency (e.g. transactional email, ADR-015)
-    # also uses `edge`. Do not make `edge` internal: Turnstile verification would silently degrade.
+    # 3 s timeout; ADR-036: an unreachable host REFUSES the order, there is no degraded path). The
+    # /_next/image optimizer is off (ADR-036) and fonts are self-hosted at build time. A future outbound dependency (e.g. transactional email, ADR-015)
+    # also uses `edge`. Do not make `edge` internal: every order would be refused.
     networks:
       - backend
       - edge
     <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      # Next.js build cache location; small and bounded, empty after every restart.
+      - /app/.next/cache:rw,noexec,nosuid,uid=1000,gid=1000,size=128m
     volumes:
       # Uploaded media. The image creates /app/media owned by uid 1000, so a fresh volume
       # mounted here inherits that owner and the non-root app can write to it. Backups: M54.

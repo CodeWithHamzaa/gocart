@@ -141,6 +141,8 @@ jobs:
       - run: npm run seed
       # ADR-036 (H3): order idempotency against the real database (needs the seeded products).
       - run: npm run test:idempotency
+      # ADR-036 (B2): the Users guard is exercised through the Local API (no HTTP needed).
+      - run: npm run test:users-guard
       # ADR-036 (H4): from here on the app runs as the restricted `gocart_app` role, which can read
       # and write rows but cannot change the schema - so the golden path also proves the storefront
       # and checkout work without DDL rights.
@@ -229,6 +231,7 @@ jobs:
           NODE_ENV: production
           DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_migrations
         run: |
+          set -o pipefail
           npm run deploy:migrate | tee run2.log
           grep -q "1 user(s) exist, nothing to do" run2.log
       - name: The app role can read and write rows but cannot change the schema (ADR-036, H4)

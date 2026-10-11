@@ -554,6 +554,16 @@ for (const bad of [undefined, null, 42, '', 'short', 'a'.repeat(21), 'a'.repeat(
   assertRateLimited(await g.admitPlaceOrder({ ip: IP_A, phone, token: 'ok', remoteIp: null }), PHONE_LIMIT_MESSAGE, '4th')
 }
 {
+  // A failed order refunds EVERY slot, including the per-IP ceiling: failed createOrder calls must not
+  // eat a CGNAT address's 30-per-15-minutes allowance.
+  const g = fakeGuard()
+  for (let i = 0; i < 40; i++) {
+    const r = await place(g)
+    assert.equal(r.ok, true, `order ${i + 1} admitted: the ceiling is not consumed by failed orders`)
+    if (r.ok && r.kind === 'new') r.release()
+  }
+}
+{
   // M2: nobody can lock a customer out of their own phone number from another connection.
   const g = fakeGuard()
   const victim = '03001112222'

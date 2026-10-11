@@ -8,7 +8,9 @@
 // without a fresh token is the replay of an order that already exists (idempotency, below).
 //
 // Order of checks, cheapest first; each refusal happens before anything more expensive runs:
-//   1. no token and no idempotency key -> refused at once, touching no limiter, no network, no DB;
+//   1. no token and no idempotency key -> refused at once, touching no limiter, no network, no DB
+//      (a tokenless request WITH a well-formed key does go on: it takes an attempts slot and one
+//      indexed DB lookup, because it may be the retry of an order that already exists);
 //   2. production request with no valid client IP -> refused (misconfiguration, error-logged);
 //   3. attempts gate per IP - every request that gets this far, whatever happens next, so
 //      siteverify calls and DB lookups per IP stay bounded;

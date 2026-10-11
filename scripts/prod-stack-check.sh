@@ -19,17 +19,20 @@ http_status() { # method path [json-body]
   app_js "fetch('http://127.0.0.1:3000$2',{method:'$1',redirect:'manual',headers:{'content-type':'application/json'}$( [ -n "${3:-}" ] && printf ",body:'%s'" "$3" )}).then(r=>console.log(r.status))"
 }
 psql_as() { # user password sql
-  "${PROD[@]}" exec -T -e PGPASSWORD="$2" postgres psql -h 127.0.0.1 -U "$1" -d "${POSTGRES_DB:-gocart}" -tA -c "$3"
+  "${PROD[@]}" exec -T -e PGPASSWORD="$2" postgres psql -h postgres -U "$1" -d "${POSTGRES_DB:-gocart}" -tA -c "$3"
 }
 
 # --- the stack is up and the migrate step succeeded ---------------------------------------------------
 migrate_id="$("${PROD[@]}" ps -aq migrate)"
 [ "$(docker inspect "$migrate_id" --format '{{.State.ExitCode}}')" = "0" ] || fail "migrate did not exit 0"
-pass "migrate exited 0"
+[ "$(docker inspect "$migrate_id" --format '{{.HostConfig.ReadonlyRootfs}}')" = "true" ] || fail "migrate root filesystem is writable"
+pass "migrate exited 0 on a read-only root filesystem"
+ready=""
 for i in $(seq 1 60); do
-  [ "$(http_status GET / 2>/dev/null || true)" = "200" ] && break
+  if [ "$(http_status GET / 2>/dev/null || true)" = "200" ]; then ready=1; break; fi
   sleep 2
 done
+[ -n "$ready" ] || fail "the app did not become ready within 120 s"
 for path in / /shop /cart /orders /categories /admin /sitemap.xml /robots.txt; do
   [ "$(http_status GET "$path")" = "200" ] || fail "GET $path is not 200"
 done
@@ -44,7 +47,7 @@ pass "/_next/image is closed (404)"
 # --- H4: separate database roles ---------------------------------------------------------------------
 db_uri="$("${PROD[@]}" exec -T app printenv DATABASE_URI)"
 case "$db_uri" in postgresql://gocart_app:*) ;; *) fail "the app does not connect as gocart_app" ;; esac
-if "${PROD[@]}" exec -T app env | grep -E '^(POSTGRES_PASSWORD|ADMIN_BOOTSTRAP_|APP_DB_PASSWORD)='; then fail "the app container holds a secret it must not have"; fi
+if "${PROD[@]}" exec -T app env | grep -Eq '^(POSTGRES_PASSWORD|ADMIN_BOOTSTRAP_|APP_DB_PASSWORD)='; then fail "the app container holds a secret it must not have"; fi
 pass "the app connects as gocart_app and holds no superuser or bootstrap secret"
 psql_as gocart_app "$APP_DB_PASSWORD" "select count(*) from orders" >/dev/null || fail "gocart_app cannot read orders"
 for sql in "create table evil(x int)" "drop table orders" "alter table orders add column z int" "truncate orders" \
@@ -72,7 +75,8 @@ psql_as "${POSTGRES_USER:-gocart}" "$POSTGRES_PASSWORD" "truncate users cascade"
 pass "first-register and user creation refused with an empty users table (403), nothing created"
 
 # --- B2 + M6: re-running the deploy step recreates the admin; uploads work and unsafe types are refused
-"${PROD[@]}" run --rm migrate >/dev/null || fail "re-running migrate failed"
+"${PROD[@]}" run --rm -T migrate >/dev/null || fail "re-running migrate failed"
+[ "$(app_js "fetch('http://127.0.0.1:3000/api/users/init').then(r=>r.json()).then(j=>console.log(j.initialized))")" = "true" ] || fail "re-running migrate did not recreate the admin"
 pass "re-running migrate recreated the admin from the bootstrap secret (idempotent deploy)"
 PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 AVIF='AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZg=='
