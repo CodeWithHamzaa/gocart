@@ -10,17 +10,20 @@ const DB_TIMEOUT_MS = 3000
 const headers = { 'Cache-Control': 'no-store' }
 
 export async function GET() {
+  let timer: ReturnType<typeof setTimeout> | undefined
   try {
-    const payload = await getPayload({ config })
+    // Initialisation (the database connect) is inside the bound too, not just the query.
     await Promise.race([
-      payload.count({ collection: 'categories' }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`database check timed out after ${DB_TIMEOUT_MS}ms`)), DB_TIMEOUT_MS),
-      ),
+      getPayload({ config }).then((payload) => payload.count({ collection: 'categories' })),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`database check timed out after ${DB_TIMEOUT_MS}ms`)), DB_TIMEOUT_MS)
+      }),
     ])
     return Response.json({ status: 'ok' }, { headers })
   } catch (err) {
     console.error('[health] check failed:', err instanceof Error ? err.message : 'unknown error')
     return Response.json({ status: 'unavailable' }, { status: 503, headers })
+  } finally {
+    clearTimeout(timer)
   }
 }

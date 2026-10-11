@@ -122,17 +122,18 @@ done
 [ "$(app_js "fetch('http://127.0.0.1:3000/api/media?limit=1').then(r=>r.json()).then(j=>fetch('http://127.0.0.1:3000/api/media/file/'+j.docs[0].filename)).then(r=>console.log(r.status))")" = "200" ] || fail "the uploaded media did not survive stop/start"
 pass "full stop/start (volumes kept): database rows and uploaded media survive"
 
-echo "prod-stack checks passed"
-
 # --- M53: health endpoint and container healthcheck ------------------------------------------------------
 [ "$(http_status GET /api/health)" = "200" ] || fail "/api/health is not 200"
 [ "$(app_js "fetch('http://127.0.0.1:3000/api/health').then(r=>r.json()).then(j=>console.log(Object.keys(j).join()+':'+j.status))")" = "status:ok" ] || fail "/api/health body is not exactly {status:'ok'}"
 pass "/api/health returns 200 {status:ok}"
 app_id="$("${PROD[@]}" ps -q app)" # the M54 section recreated the container
+state="unknown"
 for _ in $(seq 1 24); do
-  state="$(docker inspect "$app_id" --format '{{.State.Health.Status}}')"
+  state="$(docker inspect "$app_id" --format '{{.State.Health.Status}}' 2>/dev/null || echo unknown)"
   [ "$state" = "healthy" ] && break
   sleep 5
 done
 [ "$state" = "healthy" ] || fail "app container health is '$state', not healthy"
 pass "the app container reports healthy"
+
+echo "prod-stack checks passed"
