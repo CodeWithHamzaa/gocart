@@ -584,10 +584,10 @@ The stack is **not cleared for launch** until every item is done or explicitly a
    the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
    token, and the CI `prod-stack` job stays green (it passed on the commit this section was written against).
 4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (on a paid plan, for example 30 requests per minute per IP, action Block or Managed Challenge; the Free plan is reported, unverified, to allow one rule with a 10-second counting window, a 10-second block and the Block action only, so use about 10 POSTs per 10 seconds per IP there). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
-5. **Backups** (`M54`): the scripts and the procedure exist; still open: a first real backup and a `backup-verify.sh` run on the real VPS, copies kept off the host, and a schedule. **Health checks** (`M53`).
+5. **Backups** (`M54`): the scripts and the procedure exist; still open: a first real backup and a `backup-verify.sh` run on the real VPS, copies kept off the host, and a schedule. **Health checks** (`M53`, implemented): point an external uptime monitor at `https://<host>/api/health` (expects 200); `docker compose ps` should show `app` as `healthy`.
 
 ## Not covered yet
 
-Health checks (`M53`: `cloudflared` should then depend on `app` being healthy, not merely started);
+Memory limits and an external uptime monitor;
 an automated backup schedule and a restore drill on a real stack (`M54` has the scripts and the manual procedure); `read_only` for `cloudflared` and `postgres` hardening (not testable
 here); the full deploy runbook (`M59`).

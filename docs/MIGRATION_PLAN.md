@@ -1011,7 +1011,8 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 
 ### M53 — Health checks and logging
 - **Goal**: Add container health checks and baseline error/log capture suitable for a small production deployment.
-- **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new)
+- **Files**: `docker-compose.prod.yml` (healthcheck blocks), `app/api/health/route.ts` (new), `scripts/prod-stack-check.sh` (M53 section)
+- **Status (2026-10-11)**: implemented, partly verified ([ADR-038](./DECISIONS.md)). The route is verified locally against PostgreSQL 16; the compose healthcheck is asserted by `scripts/prod-stack-check.sh` in CI only.
 - **Dependencies**: M50
 - **Testing**: `docker compose -f docker-compose.prod.yml ps` shows the app container as healthy; hitting `/api/health` returns a 200.
 - **Rollback**: Remove the healthcheck config and the new route.
