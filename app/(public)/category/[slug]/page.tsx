@@ -84,13 +84,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     targetPage > 1 ? `${basePath}?page=${targetPage}` : basePath
 
   return (
-    <div className="mx-6">
+    <div className="mx-4 sm:mx-6">
       {page > 1 && <link rel="prev" href={pageHref(page - 1)} />}
       {page < totalPages && <link rel="next" href={pageHref(page + 1)} />}
 
       <div className="max-w-7xl mx-auto min-h-[70vh]">
         {/* Breadcrumb */}
-        <div className="text-gray-600 text-sm mt-8 mb-5">
+        <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-5">
           <Link href="/">Home</Link> / <Link href="/categories">Categories</Link>
           {parent ? (
             <>
@@ -101,7 +101,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           )}
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800">{category.title}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">{category.title}</h1>
         {category.description && (
           <p className="text-slate-500 text-sm mt-2 max-w-2xl">{category.description}</p>
         )}
@@ -113,7 +113,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
               <Link
                 key={child.id}
                 href={`/category/${child.slug}`}
-                className="inline-flex items-center min-h-11 px-4 bg-slate-100 rounded-lg text-slate-600 text-sm hover:bg-slate-600 hover:text-white transition-all"
+                className="inline-flex items-center min-h-11 px-5 rounded-full bg-white ring-1 ring-line text-ink-soft text-sm font-medium hover:bg-ink hover:text-white hover:ring-ink transition-all"
               >
                 {child.title}
               </Link>
@@ -123,7 +123,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
         {/* Product grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 xl:gap-8 my-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 my-8 sm:my-10">
             {products.map((product, index) => (
               <ProductCard key={product.id} product={product} priority={index < 4} />
             ))}
@@ -132,8 +132,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
             <p>No products in this category yet.</p>
             <div className="flex gap-4 text-sm">
-              <Link href="/categories" className="inline-flex items-center min-h-11 text-green-700">Browse categories</Link>
-              <Link href="/shop" className="inline-flex items-center min-h-11 text-green-700">View all products</Link>
+              <Link href="/categories" className="inline-flex items-center min-h-11 text-brand-700">Browse categories</Link>
+              <Link href="/shop" className="inline-flex items-center min-h-11 text-brand-700">View all products</Link>
             </div>
           </div>
         )}
@@ -142,9 +142,9 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 my-10 text-sm text-slate-600">
             {page > 1 ? (
-              <Link href={pageHref(page - 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-100 hover:bg-slate-200">Previous</Link>
+              <Link href={pageHref(page - 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-white ring-1 ring-line hover:bg-well">Previous</Link>
             ) : (
-              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-50 text-slate-500">Previous</span>
+              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-well text-slate-500">Previous</span>
             )}
             <div className="flex gap-2">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
@@ -152,16 +152,16 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded ${n === page ? 'bg-slate-800 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
+                  className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded-full ${n === page ? 'bg-ink text-white' : 'bg-white ring-1 ring-line hover:bg-well'}`}
                 >
                   {n}
                 </Link>
               ))}
             </div>
             {page < totalPages ? (
-              <Link href={pageHref(page + 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-100 hover:bg-slate-200">Next</Link>
+              <Link href={pageHref(page + 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-white ring-1 ring-line hover:bg-well">Next</Link>
             ) : (
-              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded bg-slate-50 text-slate-500">Next</span>
+              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-well text-slate-500">Next</span>
             )}
           </div>
         )}

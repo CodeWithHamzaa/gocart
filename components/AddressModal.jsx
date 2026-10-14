@@ -89,7 +89,7 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
                     <input name="area" onChange={handleAddressChange} value={address.area} className="min-h-11 p-2 px-4 outline-none border border-slate-200 rounded w-full focus:border-slate-500" type="text" placeholder="Area" required />
                 </div>
                 {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-red-500">{errors.city || errors.area}</p>}
-                <button className="min-h-11 bg-slate-800 text-white text-sm font-medium py-3 rounded-md hover:bg-slate-900 active:scale-95 transition-all">SAVE ADDRESS</button>
+                <button className="min-h-11 bg-ink text-white text-sm font-medium py-3 rounded-md hover:bg-ink-soft active:scale-95 transition-all">SAVE ADDRESS</button>
             </div>
             <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute top-3 right-3 inline-flex items-center justify-center size-11 text-slate-500 hover:text-slate-700">
                 <XIcon size={28} aria-hidden="true" />

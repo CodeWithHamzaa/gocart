@@ -8,19 +8,22 @@ import ProductCard from './ProductCard'
 //
 // Renders nothing when no products are flagged, rather than an empty section
 // with a heading and a "View more" link that would lead to an unrelated list.
+// M45a: same grid as LatestProducts.
 const BestSelling = ({ products = [], total = 0 }) => {
 
     if (products.length === 0) return null
 
     return (
-        <div className='px-6 my-30 max-w-6xl mx-auto'>
-            <Title title='Best Selling' description={`Showing ${products.length} of ${total} products`} href='/shop' />
-            <div className='mt-12  grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12'>
-                {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
+        <section className='mx-4 sm:mx-6 mt-14 sm:mt-20'>
+            <div className='max-w-7xl mx-auto'>
+                <Title title='Best Selling' description={`Showing ${products.length} of ${total} products`} href='/shop' />
+                <div className='mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4'>
+                    {products.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
             </div>
-        </div>
+        </section>
     )
 }
 

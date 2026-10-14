@@ -10,7 +10,7 @@ export default function CategoriesLoading() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="bg-slate-50 rounded-2xl p-6 flex flex-col gap-3">
+            <div key={i} className="bg-white rounded-3xl p-5 sm:p-6 flex flex-col gap-3 shadow-soft ring-1 ring-line/70">
               <div className="bg-slate-100 h-32 rounded-lg animate-pulse" />
               <div className="h-5 w-2/3 bg-slate-100 rounded animate-pulse" />
               <div className="h-4 w-full bg-slate-100 rounded animate-pulse" />

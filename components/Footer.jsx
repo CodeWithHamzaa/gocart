@@ -44,20 +44,22 @@ const Footer = async () => {
     ].filter((section) => section.links.length > 0);
 
 
+    // M45a: a dark graphite footer band (premium storefront look); same content and links.
     return (
-        <footer className="mx-6 bg-white">
+        <footer className="mt-10 bg-ink text-white/70">
+            <div className="mx-4 sm:mx-6">
             <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col md:flex-row items-start justify-between gap-10 py-10 border-b border-slate-500/30 text-slate-500">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-10 py-12 border-b border-white/10">
                     <div>
-                        <Link href="/" className="text-4xl font-semibold text-slate-700">
-                            <span className="text-green-600">go</span>cart<span className="text-green-600 text-5xl leading-0">.</span>
+                        <Link href="/" className="text-3xl font-bold tracking-tight text-white">
+                            gocart<span className="text-brand-400">.</span>
                         </Link>
-                        <p className="max-w-[410px] mt-6 text-sm">Welcome to gocart, your ultimate destination for the latest and smartest gadgets. From smartphones and smartwatches to essential accessories, we bring you the best in innovation — all in one place.</p>
+                        <p className="max-w-[410px] mt-5 text-sm leading-relaxed">Welcome to gocart, your ultimate destination for the latest and smartest gadgets. From smartphones and smartwatches to essential accessories, we bring you the best in innovation — all in one place.</p>
                     </div>
-                    <div className="flex flex-wrap justify-between w-full md:w-[45%] gap-5 text-sm ">
+                    <div className="flex flex-wrap justify-between w-full md:w-[50%] gap-8 text-sm ">
                         {linkSections.map((section, index) => (
                             <div key={index}>
-                                <h2 className="font-medium text-slate-700 md:mb-3 mb-2">{section.title}</h2>
+                                <h2 className="text-xs font-semibold tracking-[0.16em] text-white md:mb-3 mb-2">{section.title}</h2>
                                 <ul>
                                     {section.links.map((link, i) => (
                                         <li key={i} className="flex items-center gap-2">
@@ -65,8 +67,8 @@ const Footer = async () => {
                                             {link.path === null
                                                 ? <span className="max-w-52 whitespace-pre-line py-2">{link.text}</span>
                                                 : link.path.startsWith('tel:') || link.path.startsWith('mailto:')
-                                                    ? <a href={link.path} className="inline-flex items-center min-h-11 hover:underline transition">{link.text}</a>
-                                                    : <Link href={link.path} className="inline-flex items-center min-h-11 min-w-11 hover:underline transition">{link.text}</Link>}
+                                                    ? <a href={link.path} className="inline-flex items-center min-h-11 hover:text-white transition">{link.text}</a>
+                                                    : <Link href={link.path} className="inline-flex items-center min-h-11 min-w-11 hover:text-white transition">{link.text}</Link>}
                                         </li>
                                     ))}
                                 </ul>
@@ -74,9 +76,10 @@ const Footer = async () => {
                         ))}
                     </div>
                 </div>
-                <p className="py-4 text-sm text-slate-500">
+                <p className="py-5 text-sm">
                     © {new Date().getFullYear()} {settings.storeName}. All rights reserved.
                 </p>
+            </div>
             </div>
         </footer>
     );

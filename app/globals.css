@@ -1,14 +1,32 @@
 @import "tailwindcss";
 
-@layer components {
-    @keyframes marqueeScroll {
-        0% {
-            transform: translateX(0%);
-        }
-        100% {
-            transform: translateX(-50%);
-        }
-    }
+/* M45a: the storefront design tokens ("Graphite & Jade"). Every value is a Tailwind theme
+   variable, so components use native utilities (bg-ink, text-brand-700, bg-well, shadow-soft,
+   rounded-4xl) instead of one-off hex values. Contrast pairs used for text all meet WCAG AA:
+   ink on canvas, brand-700 on white/brand-50, white on ink/brand-700/sale-600. */
+@theme {
+    --color-ink: #0e1116;
+    --color-ink-soft: #3a3f47;
+    --color-muted: #5b616b;
+    --color-canvas: #f7f7f5;
+    --color-well: #efefeb;
+    --color-line: #e6e6e1;
+
+    --color-brand-50: #ecf8f3;
+    --color-brand-100: #d3f0e4;
+    --color-brand-200: #a7e0cb;
+    --color-brand-400: #3cc497;
+    --color-brand-500: #16a37b;
+    --color-brand-600: #0e8a66;
+    --color-brand-700: #0b6e52;
+    --color-brand-800: #0a5843;
+
+    --color-sale-50: #fff1ea;
+    --color-sale-600: #c2410c;
+
+    --shadow-soft: 0 1px 2px rgb(14 17 22 / 0.04), 0 8px 24px -12px rgb(14 17 22 / 0.12);
+    --shadow-lift: 0 2px 4px rgb(14 17 22 / 0.04), 0 18px 40px -16px rgb(14 17 22 / 0.22);
+    --shadow-float: 0 30px 60px -20px rgb(14 17 22 / 0.45);
 }
 
 @layer base {
@@ -19,4 +37,8 @@
 
 .no-scrollbar::-webkit-scrollbar {
     display: none;
+}
+
+.no-scrollbar {
+    scrollbar-width: none;
 }

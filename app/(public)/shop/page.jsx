@@ -31,18 +31,19 @@ export default async function Shop({ searchParams }) {
     const { docs: products } = await getProducts({ search })
 
     return (
-        <div className="min-h-[70vh] mx-6">
+        <div className="min-h-[70vh] mx-4 sm:mx-6">
             <div className=" max-w-7xl mx-auto">
-                <h1 className="text-2xl text-slate-500 my-6 flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-muted my-6 sm:my-8 flex items-center gap-2">
                     {search ? (
-                        <Link href="/shop" className="flex items-center gap-2">
-                            <MoveLeftIcon size={20} /> All <span className="text-slate-700 font-medium">Products</span>
+                        <Link href="/shop" className="flex items-center gap-2 min-h-11">
+                            <MoveLeftIcon size={20} /> All <span className="text-ink">Products</span>
                         </Link>
                     ) : (
-                        <>All <span className="text-slate-700 font-medium">Products</span></>
+                        <>All <span className="text-ink">Products</span></>
                     )}
                 </h1>
-                <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
+                {/* M45a: a real grid (2 / 3 / 4 columns) instead of a wrapping row of fixed-width cards. */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 mb-24">
                     {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                 </div>
             </div>

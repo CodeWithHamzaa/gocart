@@ -206,7 +206,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 </p>
             )}
             <TurnstileWidget ref={turnstileRef} action='place_order' onChange={setTurnstile} className='pb-3' />
-            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+            <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='w-full min-h-11 bg-slate-700 text-white py-3 rounded hover:bg-ink-soft active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
 
             {/* M44: a newly saved address is selected straight away; before, the customer had to find
                 it in the dropdown and Place Order failed with "select an address". */}

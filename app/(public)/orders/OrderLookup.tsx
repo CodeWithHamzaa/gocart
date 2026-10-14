@@ -99,7 +99,7 @@ export function OrderLookup() {
           <button
             type="submit"
             disabled={pending || turnstile.status !== 'verified'}
-            className="min-h-11 rounded bg-slate-800 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+            className="min-h-11 rounded bg-ink px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-soft active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}
           </button>

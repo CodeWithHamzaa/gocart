@@ -3,13 +3,15 @@ import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import "../globals.css";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSettings } from "@/lib/payload/settings";
 import { DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 // M45: display "swap" shows text in the fallback font immediately instead of blocking on the font.
-const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+// M45a: 700 is the display weight for headings and prices.
+const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
 
 // M55a: the Footer reads the Settings global. Statically rendered pages would freeze
 // that at build time, so the public tree revalidates (at most 60s stale) and an admin
@@ -33,13 +35,14 @@ export async function generateMetadata() {
 export default function PublicLayout({ children }) {
     return (
         <html lang="en">
-            <body className={`${outfit.className} antialiased`}>
+            <body className={`${outfit.className} antialiased bg-canvas text-ink`}>
                 <StoreProvider>
                     <Toaster />
                     {/* M44: keyboard and screen-reader users can jump past the header. */}
                     <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded focus:bg-white focus:px-4 focus:py-3 focus:text-slate-800 focus:shadow">
                         Skip to content
                     </a>
+                    <AnnouncementBar />
                     <Navbar />
                     <main id="main">{children}</main>
                     <Footer />
