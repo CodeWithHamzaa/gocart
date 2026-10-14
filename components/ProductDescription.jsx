@@ -4,17 +4,16 @@
 // No remaining state (M25 removed the Reviews tab), so this drops 'use
 // client' and renders as a server component, same direction as M23's
 // Redux-shedding cleanup.
+// M45a: a soft card on the storefront tokens; the text keeps its line breaks.
 const ProductDescription = ({ product }) => {
 
-    return (
-        <div className="my-18 text-sm text-slate-600">
+    if (!product.description) return null
 
-            {/* Description */}
-            <div className="flex border-b border-slate-200 mb-6 max-w-2xl">
-                <p className="border-b-[1.5px] font-semibold px-3 py-2 font-medium">Description</p>
-            </div>
-            <p className="max-w-xl">{product.description}</p>
-        </div>
+    return (
+        <section className="my-10 sm:my-14 max-w-3xl rounded-3xl bg-white p-6 shadow-soft ring-1 ring-line/70 sm:p-8">
+            <h2 className="text-lg font-bold tracking-tight text-ink">Description</h2>
+            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink-soft [overflow-wrap:anywhere]">{product.description}</p>
+        </section>
     )
 }
 

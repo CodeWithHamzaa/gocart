@@ -11,25 +11,39 @@ import { formatPKR } from '@/lib/currency'
 //   treating the entry as a string path.
 // M45: `priority` is set by the listing pages for the first row of cards (likely the largest
 // contentful paint), which makes the browser fetch those images first instead of lazily.
+// M45a: the rounded "floating" card. The image sits in its own tinted well inside a white card,
+// and the badges are real data only: the discount is computed from mrp/price and shown only when
+// there is one, and an out-of-stock product says so. No wishlist heart (there is no wishlist) and
+// no rating (ADR-016). The card fills its grid cell, so the listing decides the column count.
 const ProductCard = ({ product, priority = false }) => {
 
     const firstImage = product.images?.[0]
     const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
+    const discount = product.mrp > product.price ? Math.round((product.mrp - product.price) / product.mrp * 100) : 0
+    const outOfStock = product.inStock !== true
 
     return (
-        <Link href={`/product/${product.id}`} className=' group max-xl:mx-auto'>
-            <div className='bg-[#F5F5F5] h-40  sm:w-60 sm:h-68 rounded-lg flex items-center justify-center'>
+        <Link href={`/product/${product.id}`} className='group flex h-full min-w-0 flex-col rounded-3xl bg-white p-2 shadow-soft ring-1 ring-line/70 transition duration-300 hover:-translate-y-1 hover:shadow-lift sm:p-2.5'>
+            <div className='relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-well'>
                 {imageUrl && (
-                    <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' sizes='(min-width: 640px) 160px, 120px' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={firstImage?.alt || product.name} />
+                    <Image width={500} height={500} className='h-3/4 w-3/4 object-contain transition duration-500 group-hover:scale-108' sizes='(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={firstImage?.alt || product.name} />
+                )}
+                {discount > 0 && (
+                    <span className='absolute left-2 top-2 rounded-full bg-sale-600 px-2 py-1 text-[11px] font-semibold leading-none text-white'>{discount}% OFF</span>
+                )}
+                {outOfStock && (
+                    <span className='absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-1 text-[11px] font-medium leading-none text-ink-soft ring-1 ring-line'>Out of stock</span>
                 )}
             </div>
-            {/* M44: name and price stack on a phone (a two-column grid leaves a card ~124px wide at
-                320px, too narrow for a long name beside a price that must not wrap) and sit side
-                by side from `sm`. A long unbroken name wraps instead of pushing the card wider
-                than its column — a product called "Headphones" must not scroll the page. */}
-            <div className='flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-3 text-sm text-slate-800 pt-2 max-w-60'>
-                <p className='min-w-0 [overflow-wrap:anywhere]'>{product.name}</p>
-                <p className='whitespace-nowrap'>{formatPKR(product.price)}</p>
+            {/* M44: a long unbroken name wraps instead of pushing the card wider than its column —
+                a product called "Headphones" must not scroll the page. Prices wrap under each other
+                rather than overflow at 320px. */}
+            <div className='flex flex-1 flex-col gap-1.5 px-1.5 pb-1.5 pt-3'>
+                <p className='line-clamp-2 text-sm font-medium text-ink [overflow-wrap:anywhere]'>{product.name}</p>
+                <p className='mt-auto flex flex-wrap items-baseline gap-x-2'>
+                    <span className='whitespace-nowrap text-sm font-bold text-ink sm:text-base'>{formatPKR(product.price)}</span>
+                    {discount > 0 && <span className='whitespace-nowrap text-xs text-muted line-through'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</span>}
+                </p>
             </div>
         </Link>
     )

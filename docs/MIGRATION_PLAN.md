@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-69 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M48a`, `M52a`, `M52b`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+69 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -776,6 +776,14 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: Run a mobile Lighthouse/PageSpeed pass on the storefront; confirm meaningful improvement over the pre-audit baseline.
 - **Rollback**: Revert the specific performance changes found to regress anything.
 - **Commit message**: `Improve mobile load performance (images, fonts, bundle size)`
+
+### M45a — Premium storefront visual refresh
+- **Goal**: Give the storefront a premium look ("Graphite & Jade" design tokens in `app/globals.css`: graphite ink on a warm canvas, a jade accent, large radii, soft shadows) without changing behaviour, data, Payload config, checkout or the order guards. Hero with floating tiles of real products; round, tinted category row; rounded product cards with real badges only (discount from `mrp`/`price`, out of stock); product page with an arched image well, an image counter, pill badges and one action bar (Add to Cart + Buy Now) pinned to the bottom below `lg`. Out of scope, deliberately: size/colour selectors (products have no variants; that needs a schema milestone), wishlist hearts, ratings (ADR-016), a profile tab (no customer login) and any claim the store does not back.
+- **Files**: `app/globals.css`, `app/(public)/layout.jsx`, `app/(public)/page.jsx`, `app/(public)/product/[productId]/page.jsx`, `app/(public)/shop/page.jsx`, `app/(public)/category*`, `components/{AnnouncementBar,CategoryRow}.tsx` (new), `components/{Hero,Navbar,ProductCard,ProductDetails,ProductDescription,Counter,Title,LatestProducts,BestSelling,OurSpec,Footer}.jsx`; colour-token swaps only in the cart/checkout/order components. Removes `components/CategoriesMarquee.jsx`.
+- **Dependencies**: M44, M45, M55a, M56a
+- **Testing**: `npm run type-check`, `npm run lint` (0 errors), `npm run build`; no horizontal scroll at 320/390/1440px on every storefront route; the full Playwright suite (one "Add to Cart", the M40 category links and product in the home HTML, 44px header targets) passes in CI.
+- **Rollback**: Revert the PR; no data or schema involved.
+- **Commit message**: `Premium storefront visual refresh (M45a)`
 
 ---
 

@@ -57,7 +57,7 @@ export function OrderConfirmation() {
             check your order with your order number and phone number.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/orders" className={`${linkButton} bg-slate-800 text-white hover:bg-slate-900`}>
+            <Link href="/orders" className={`${linkButton} bg-ink text-white hover:bg-ink-soft`}>
               Check order status
             </Link>
             <Link href="/shop" className={`${linkButton} border border-slate-300 text-slate-700 hover:bg-slate-50`}>
@@ -75,7 +75,7 @@ export function OrderConfirmation() {
     <div className="mx-6 my-12 text-slate-600">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="shrink-0 text-green-600" size={32} aria-hidden="true" />
+          <CheckCircle2 className="shrink-0 text-brand-600" size={32} aria-hidden="true" />
           <h1 className="text-2xl font-semibold text-slate-800 sm:text-3xl">Order placed!</h1>
         </div>
 
@@ -152,7 +152,7 @@ export function OrderConfirmation() {
         <p className="mt-2 text-sm">Cash on Delivery (COD)</p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link href="/shop" className={`${linkButton} bg-slate-800 text-white hover:bg-slate-900`}>
+          <Link href="/shop" className={`${linkButton} bg-ink text-white hover:bg-ink-soft`}>
             Continue shopping
           </Link>
           <Link href="/orders" className={`${linkButton} border border-slate-300 text-slate-700 hover:bg-slate-50`}>

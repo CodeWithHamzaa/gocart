@@ -5,17 +5,28 @@ import React from 'react'
 // M44: the description is plain text and "View more" is its own link. It used to be one
 // <Link> wrapping a <p> and a <button> (an interactive element nested inside a link, which is
 // invalid HTML), with a 20px-high tap target and low-contrast green text.
-const Title = ({ title, description, visibleButton = true, href = '' }) => {
+// M45a: a storefront section header — title and description on the left, "View all" on the
+// right — instead of a centred block. `centered` keeps the old layout for explanatory sections.
+const Title = ({ title, description, visibleButton = true, href = '', centered = false }) => {
+
+    if (centered) {
+        return (
+            <div className='flex flex-col items-center text-center'>
+                <h2 className='text-2xl sm:text-3xl font-bold tracking-tight text-ink'>{title}</h2>
+                {description && <p className='mt-2 max-w-lg text-sm text-muted'>{description}</p>}
+            </div>
+        )
+    }
 
     return (
-        <div className='flex flex-col items-center'>
-            <h2 className='text-2xl font-semibold text-slate-800'>{title}</h2>
-            <div className='flex flex-wrap items-center justify-center gap-x-5 text-sm text-slate-600 mt-2'>
-                <p className='max-w-lg text-center'>{description}</p>
-                {visibleButton && href && (
-                    <Link href={href} className='text-green-700 inline-flex items-center gap-1 min-h-11 px-1'>View more <ArrowRight size={14} /></Link>
-                )}
+        <div className='flex items-end justify-between gap-4'>
+            <div className='min-w-0'>
+                <h2 className='text-xl sm:text-2xl font-bold tracking-tight text-ink'>{title}</h2>
+                {description && <p className='mt-1 text-sm text-muted'>{description}</p>}
             </div>
+            {visibleButton && href && (
+                <Link href={href} className='inline-flex shrink-0 items-center gap-1 min-h-11 text-sm font-medium text-brand-700'>View all <ArrowRight size={15} aria-hidden='true' /></Link>
+            )}
         </div>
     )
 }

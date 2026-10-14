@@ -1,5 +1,6 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
+import CategoryRow from "@/components/CategoryRow";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
 import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
@@ -42,16 +43,35 @@ export default async function Home() {
         getSettings(),
         getTopLevelCategories(),
     ]);
-    // Every category, parents then their children, as plain links for the home page marquee.
+    // Every category, parents then their children, as plain links for the home page category row.
     const categories = topLevelCategories.flatMap((category) => [category, ...category.children]);
     const startingPrice = typeof cheapest.docs[0]?.price === 'number' ? cheapest.docs[0].price : null;
+    const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
+
+    // M45a: the hero's floating tiles are real, in-stock products with an image — featured first,
+    // then the latest — de-duplicated, at most three. No extra query: both lists are already here.
+    const seen = new Set();
+    const showcase = [...featured.docs, ...latest.docs]
+        .filter((product) => {
+            if (seen.has(product.id) || product.inStock !== true) return false;
+            seen.add(product.id);
+            return true;
+        })
+        .map((product) => {
+            const image = product.images?.[0];
+            const imageUrl = typeof image === 'string' ? image : image?.url;
+            return imageUrl ? { id: product.id, name: product.name, price: product.price, imageUrl } : null;
+        })
+        .filter(Boolean)
+        .slice(0, 3);
 
     return (
         <div>
-            <Hero freeShippingThreshold={settings.freeShippingThreshold} startingPrice={startingPrice} categories={categories} />
+            <Hero shipping={shipping} startingPrice={startingPrice} showcase={showcase} />
+            <CategoryRow categories={categories} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} />
-            <OurSpecs shipping={{ flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }} />
+            <OurSpecs shipping={shipping} />
         </div>
     );
 }
