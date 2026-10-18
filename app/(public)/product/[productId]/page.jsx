@@ -51,7 +51,9 @@ export default async function Product({ params }) {
         : null
 
     return (
-        <div className="mx-6">
+        // M45a: the bottom padding below `lg` keeps the pinned action bar (ProductDetails) from
+        // covering the end of the page.
+        <div className="mx-4 sm:mx-6 pb-24 lg:pb-0">
             {/* M43: schema.org Product + Offer from real data; serializeJsonLd escapes "<". */}
             <script
                 type="application/ld+json"
@@ -61,9 +63,9 @@ export default async function Product({ params }) {
 
                 {/* Breadcrums — M27a: the category segment is now a real link to
                     /category/[slug], replacing the unlinked plain text. */}
-                <div className="  text-gray-600 text-sm mt-8 mb-5">
-                    <Link href="/">Home</Link> / <Link href="/shop">Products</Link>
-                    {category && <> / <Link href={`/category/${category.slug}`}>{category.title}</Link></>}
+                <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-6 [overflow-wrap:anywhere]">
+                    <Link href="/" className="hover:text-ink">Home</Link> / <Link href="/shop" className="hover:text-ink">Products</Link>
+                    {category && <> / <Link href={`/category/${category.slug}`} className="hover:text-ink">{category.title}</Link></>}
                 </div>
 
                 {/* Product Details */}

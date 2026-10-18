@@ -137,7 +137,7 @@ export default function Cart() {
     ) : (
         <div className="min-h-[80vh] mx-6 flex flex-col gap-4 items-center justify-center text-slate-600">
             <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
-            <Link href="/shop" className="inline-flex items-center justify-center min-h-11 px-6 rounded bg-slate-800 text-white text-sm font-medium hover:bg-slate-900">Browse products</Link>
+            <Link href="/shop" className="inline-flex items-center justify-center min-h-11 px-6 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft">Browse products</Link>
         </div>
     )
 }

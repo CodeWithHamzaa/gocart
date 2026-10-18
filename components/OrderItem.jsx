@@ -7,7 +7,7 @@ const STATUS_STYLES = {
     CONFIRMED: { label: 'Confirmed', className: 'bg-yellow-100 text-yellow-700' },
     PROCESSING: { label: 'Processing', className: 'bg-blue-100 text-blue-700' },
     SHIPPED: { label: 'Shipped', className: 'bg-indigo-100 text-indigo-700' },
-    DELIVERED: { label: 'Delivered', className: 'bg-green-100 text-green-700' },
+    DELIVERED: { label: 'Delivered', className: 'bg-brand-50 text-brand-700' },
     CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-700' },
     RETURNED: { label: 'Returned', className: 'bg-orange-100 text-orange-700' },
 }

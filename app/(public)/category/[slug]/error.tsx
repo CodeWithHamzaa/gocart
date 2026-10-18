@@ -14,7 +14,7 @@ export default function CategoryError({ reset }: { error: Error; reset: () => vo
         </p>
         <button
           onClick={() => reset()}
-          className="bg-slate-800 text-white px-6 py-2.5 text-sm font-medium rounded hover:bg-slate-900 transition"
+          className="bg-ink text-white px-6 py-2.5 text-sm font-medium rounded hover:bg-ink-soft transition"
         >
           Try again
         </button>

@@ -36,13 +36,13 @@ export default async function CategoriesPage() {
   const categories = await getTopLevelCategories()
 
   return (
-    <div className="mx-6">
+    <div className="mx-4 sm:mx-6">
       <div className="max-w-7xl mx-auto min-h-[70vh]">
-        <div className="text-gray-600 text-sm mt-8 mb-5">
+        <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-5">
           <Link href="/">Home</Link> / Categories
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 mb-8">Categories</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink mb-6 sm:mb-8">Categories</h1>
 
         {categories.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
@@ -51,10 +51,10 @@ export default async function CategoriesPage() {
               const imageUrl = typeof image === 'object' && image ? image.url : null
 
               return (
-                <div key={category.id} className="bg-slate-50 rounded-2xl p-6 flex flex-col gap-3">
+                <div key={category.id} className="bg-white rounded-3xl p-5 sm:p-6 flex flex-col gap-3 shadow-soft ring-1 ring-line/70">
                   <Link href={`/category/${category.slug}`} className="flex flex-col gap-3 group">
                     {imageUrl && (
-                      <div className="bg-white h-32 rounded-lg flex items-center justify-center overflow-hidden">
+                      <div className="bg-well h-36 rounded-2xl flex items-center justify-center overflow-hidden">
                         <Image
                           src={imageUrl}
                           alt={typeof image === 'object' && image?.alt ? image.alt : category.title}
@@ -65,7 +65,7 @@ export default async function CategoriesPage() {
                         />
                       </div>
                     )}
-                    <h2 className="text-lg font-semibold text-slate-800 group-hover:text-green-600 transition">
+                    <h2 className="text-lg font-semibold text-slate-800 group-hover:text-brand-700 transition">
                       {category.title}
                     </h2>
                     {category.description && (
@@ -79,7 +79,7 @@ export default async function CategoriesPage() {
                         <Link
                           key={child.id}
                           href={`/category/${child.slug}`}
-                          className="inline-flex items-center min-h-11 px-4 bg-white rounded-full text-sm text-slate-600 hover:bg-slate-600 hover:text-white transition-all"
+                          className="inline-flex items-center min-h-11 px-4 bg-canvas ring-1 ring-line rounded-full text-sm text-ink-soft hover:bg-ink hover:text-white hover:ring-ink transition-all"
                         >
                           {child.title}
                         </Link>
@@ -93,7 +93,7 @@ export default async function CategoriesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
             <p>No categories yet.</p>
-            <Link href="/shop" className="inline-flex items-center min-h-11 text-green-700 text-sm">View all products</Link>
+            <Link href="/shop" className="inline-flex items-center min-h-11 text-brand-700 text-sm">View all products</Link>
           </div>
         )}
       </div>
