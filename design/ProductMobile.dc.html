@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rangla — Lawn 3-Piece (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B3FD9}a:hover{color:#3F27A8}
+summary{list-style:none}summary::-webkit-details-marker{display:none}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2500px; box-sizing: border-box; background: #FFFFFF; color: #1C1A2E; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column">
+
+<section aria-label="Product images" style="position: relative; height: 440px; background: {{tint}}; display: flex; align-items: center; justify-content: center; overflow: hidden">
+<div style="position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center">
+<a href="CategoryMobile.dc.html" aria-label="Back to Fashion" style="width: 44px; height: 44px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: #1C1A2E; box-shadow: 0 4px 12px rgba(40, 24, 120, 0.1)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="Share" style="width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: #1C1A2E; box-shadow: 0 4px 12px rgba(40, 24, 120, 0.1)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"></path></svg>
+</button>
+<button type="button" aria-label="{{wishLabel}}" aria-pressed="{{wished}}" onClick="{{toggleWish}}" style="width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(40, 24, 120, 0.1)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="{{heartFill}}" stroke="{{heartStroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg>
+</button>
+</div>
+</div>
+<div aria-hidden="true" style="position: absolute; width: 280px; height: 280px; border-radius: 999px; background: #FFFFFF; opacity: 0.6"></div>
+<svg role="img" aria-label="{{viewLabel}} in {{colourName}}" style="position: relative" width="220" height="220" viewBox="0 0 24 24" fill="none" stroke="{{ink}}" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{viewIcon}}"></path></svg>
+<span style="position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); background: #FFFFFF; font-weight: 600; font-size: 11px; padding: 4px 10px; border-radius: 999px; white-space: nowrap">[PRODUCT PHOTO] · {{viewLabel}}</span>
+<div role="tablist" aria-label="Image views" style="position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="4">
+<button type="button" role="tab" aria-selected="{{v.selected}}" aria-label="{{v.label}}" onClick="{{v.pick}}" style="width: 32px; height: 32px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0">
+<span style="width: {{v.w}}; height: 6px; border-radius: 999px; background: {{v.dot}}"></span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<main style="display: flex; flex-direction: column; gap: 20px; padding: 18px 16px 28px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<span style="font-size: 12px; font-weight: 700; color: #5B3FD9; text-transform: uppercase; letter-spacing: 0.06em">[BRAND NAME]</span>
+<span style="background: #5B3FD9; color: #FFFFFF; font-weight: 700; font-size: 11px; padding: 2px 10px; border-radius: 999px">New</span>
+</div>
+<h1 style="margin: 0; font-weight: 800; font-size: 24px; line-height: 1.2; letter-spacing: -0.02em">Women's Printed Lawn 3-Piece</h1>
+<span style="font-size: 13px; color: #5F5B73">Shirt, dupatta &amp; trouser</span>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin-top: 6px">
+<span style="font-weight: 800; font-size: 26px; color: #5B3FD9">Rs. {{price}}</span>
+<s style="font-size: 14px; color: #6E6A82">Rs. {{was}}</s>
+<span style="background: #FFE4EA; color: #C81E5B; font-weight: 700; font-size: 12px; padding: 2px 8px; border-radius: 6px">{{off}}% OFF</span>
+</div>
+<span style="font-size: 12px; color: #5F5B73">Inclusive of all taxes</span>
+</div>
+
+<fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 10px">Colour: <span style="font-weight: 500; color: #5F5B73">{{colourName}}</span></legend>
+<div style="display: flex; gap: 8px">
+<sc-for list="{{colours}}" as="c" hint-placeholder-count="4">
+<button type="button" aria-label="{{c.name}}" aria-pressed="{{c.on}}" onClick="{{c.pick}}" style="width: 46px; height: 46px; border-radius: 999px; border: 2px solid {{c.ring}}; background: #FFFFFF; padding: 4px">
+<span style="display: block; width: 100%; height: 100%; border-radius: 999px; background: {{c.hex}}"></span>
+</button>
+</sc-for>
+</div>
+</fieldset>
+
+<fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 10px">Stitching</legend>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{stitches}}" as="s" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="min-height: 56px; padding: 8px 12px; border-radius: 14px; border: 2px solid {{s.ring}}; background: {{s.bg}}; color: #1C1A2E; font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: center">
+<span style="font-weight: 700; font-size: 14px">{{s.label}}</span>
+<span style="font-size: 11px; color: #5F5B73">{{s.note}}</span>
+</button>
+</sc-for>
+</div>
+</fieldset>
+
+<sc-if value="{{isStitched}}" hint-placeholder-val="{{ false }}">
+<fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 10px">Size</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{sizes}}" as="z" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{z.on}}" onClick="{{z.pick}}" style="min-width: 52px; height: 44px; border-radius: 12px; border: 2px solid {{z.ring}}; background: {{z.bg}}; color: {{z.color}}; font: inherit; font-weight: 700; font-size: 14px">{{z.label}}</button>
+</sc-for>
+</div>
+</fieldset>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; padding: 4px 14px; border-radius: 16px; border: 1px solid #EEEAF6">
+<div style="display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #EEEAF6">
+<span style="flex: none; width: 36px; height: 36px; border-radius: 999px; background: #EFEBFF; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B3FD9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v10H2z"></path><path d="M13 9h4l4 4v3h-8"></path><circle cx="6" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<span style="font-size: 13px"><strong>Free delivery</strong> · [DELIVERY ESTIMATE]</span>
+</div>
+<div style="display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #EEEAF6">
+<span style="flex: none; width: 36px; height: 36px; border-radius: 999px; background: #E3F7EC; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18v12H3z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+<span style="font-size: 13px"><strong>Cash on delivery</strong> available</span>
+</div>
+<div style="display: flex; gap: 12px; align-items: center; padding: 10px 0">
+<span style="flex: none; width: 36px; height: 36px; border-radius: 999px; background: #FFE8EF; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D6336C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12a4 4 0 0 1 0 8H8"></path><path d="M8 6l-4 4 4 4"></path></svg></span>
+<span style="font-size: 13px"><strong>[RETURN WINDOW]-day returns</strong></span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; border-top: 1px solid #EEEAF6">
+<details open style="border-bottom: 1px solid #EEEAF6">
+<summary style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; cursor: pointer">Description<span aria-hidden="true" style="color: #5B3FD9; font-size: 20px">+</span></summary>
+<div style="padding-bottom: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #3B384D">
+<p style="margin: 0">A breezy printed lawn suit for everyday summer wear, with a lightweight dupatta and dyed trouser. [EDIT PRODUCT DESCRIPTION]</p>
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px">
+<dt style="color: #5F5B73">Shirt</dt><dd style="margin: 0; font-weight: 600">Printed lawn · [LENGTH] m</dd>
+<dt style="color: #5F5B73">Dupatta</dt><dd style="margin: 0; font-weight: 600">Printed chiffon · [LENGTH] m</dd>
+<dt style="color: #5F5B73">Trouser</dt><dd style="margin: 0; font-weight: 600">Dyed cotton · [LENGTH] m</dd>
+</dl>
+</div>
+</details>
+<details style="border-bottom: 1px solid #EEEAF6">
+<summary style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; cursor: pointer">Fabric &amp; care<span aria-hidden="true" style="color: #5B3FD9; font-size: 20px">+</span></summary>
+<ul style="margin: 0 0 16px; padding-left: 20px; font-size: 14px; color: #3B384D"><li>Hand wash or gentle cold machine wash</li><li>Wash dark colours separately</li><li>Iron on medium heat, reverse side</li></ul>
+</details>
+<details style="border-bottom: 1px solid #EEEAF6">
+<summary style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; cursor: pointer">Reviews (0)<span aria-hidden="true" style="color: #5B3FD9; font-size: 20px">+</span></summary>
+<div style="padding-bottom: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #5F5B73">No reviews yet. Be the first to share how it fits.
+<button type="button" style="align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 2px solid #5B3FD9; background: #FFFFFF; color: #5B3FD9; font: inherit; font-weight: 700">Write a review</button>
+</div>
+</details>
+</div>
+
+<section aria-labelledby="m-like" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="m-like" style="margin: 0; font-weight: 800; font-size: 18px; letter-spacing: -0.02em">You may also like</h2>
+<div style="display: flex; gap: 12px; overflow-x: auto; margin-right: -16px; padding: 2px 16px 8px 0">
+<sc-for list="{{related}}" as="p" hint-placeholder-count="4">
+<a href="CategoryMobile.dc.html" style="flex: none; width: 148px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #EEEAF6; border-radius: 16px; padding: 10px; color: #1C1A2E; text-decoration: none">
+<span style="aspect-ratio: 1 / 1; border-radius: 12px; background: {{p.tint}}; display: flex; align-items: center; justify-content: center">
+<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#1C1A2E" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+</span>
+<span style="font-weight: 600; font-size: 13px; line-height: 1.35; min-height: 35px">{{p.name}}</span>
+<span style="font-weight: 800; font-size: 14px; color: #5B3FD9">Rs. {{p.price}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<sc-if value="{{added}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; padding: 10px 14px; border-radius: 12px; background: #E3F7EC; color: #157544; font-size: 13px; font-weight: 600">Added to cart — {{addedText}} · <a href="CartMobile.dc.html" style="color: #157544">View cart</a></p>
+</sc-if>
+</main>
+
+<div style="position: sticky; bottom: 0; margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px 18px; background: #FFFFFF; border-top: 1px solid #EEEAF6; box-shadow: 0 -6px 20px rgba(40, 24, 120, 0.06)">
+<div style="display: flex; align-items: center; height: 48px; border: 1px solid #E4DFF2; border-radius: 12px">
+<button type="button" aria-label="Decrease quantity" onClick="{{dec}}" style="width: 40px; height: 100%; border: none; background: transparent; font: inherit; font-size: 18px; font-weight: 600; color: #1C1A2E">−</button>
+<span aria-label="Quantity {{qty}}" style="min-width: 22px; text-align: center; font-weight: 700">{{qty}}</span>
+<button type="button" aria-label="Increase quantity" onClick="{{inc}}" style="width: 40px; height: 100%; border: none; background: transparent; font: inherit; font-size: 18px; font-weight: 600; color: #1C1A2E">+</button>
+</div>
+<button type="button" onClick="{{addToCart}}" style="flex: 1; height: 48px; border-radius: 12px; border: none; background: #5B3FD9; color: #FFFFFF; font: inherit; font-weight: 700; font-size: 15px">Add to cart · Rs. {{total}}</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 0, colour: 0, stitch: 'unstitched', size: 'M', qty: 1, wish: false, added: 0 };
+  }
+  renderVals() {
+    const I = {
+      dress: 'M9 2h6l-1 5 5 15H5l5-15z',
+      shirt: 'M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z',
+      scarf: 'M7 3h10v5c0 5-2 9-5 13-3-4-5-8-5-13zM7 8h10',
+      trousers: 'M7 3h10l1 18h-4l-2-11-2 11H6z',
+      bag: 'M6 8h12l-1 13H7zM9 8V6a3 3 0 0 1 6 0v2'
+    };
+    const st = this.state;
+    const colourDefs = [
+      { name: 'Lilac', hex: '#C9B8F2', tint: '#EDE7FF', ink: '#5B3FD9' },
+      { name: 'Rose', hex: '#F2B8C9', tint: '#FFE8EF', ink: '#C81E5B' },
+      { name: 'Sky', hex: '#B8D4F2', tint: '#E6F0FF', ink: '#1F55B8' },
+      { name: 'Mint', hex: '#B8F2D6', tint: '#E3F7EC', ink: '#157544' }
+    ];
+    const col = colourDefs[st.colour];
+    const viewDefs = [
+      { label: 'Full suit', icon: I.dress }, { label: 'Shirt', icon: I.shirt },
+      { label: 'Dupatta', icon: I.scarf }, { label: 'Trouser', icon: I.trousers }
+    ];
+    const views = viewDefs.map((v, i) => {
+      const on = st.view === i;
+      return { ...v, selected: on ? 'true' : 'false', w: on ? '20px' : '6px', dot: on ? col.ink : '#FFFFFF', pick: () => this.setState({ view: i }) };
+    });
+    const colours = colourDefs.map((c, i) => ({ ...c, on: st.colour === i ? 'true' : 'false', ring: st.colour === i ? '#5B3FD9' : '#EEEAF6', pick: () => this.setState({ colour: i }) }));
+    const stitched = st.stitch === 'stitched';
+    const stitches = [
+      { id: 'unstitched', label: 'Unstitched', note: 'Fabric only' },
+      { id: 'stitched', label: 'Stitched', note: '+ Rs. 1,200' }
+    ].map((s) => {
+      const on = st.stitch === s.id;
+      return { ...s, on: on ? 'true' : 'false', ring: on ? '#5B3FD9' : '#E4DFF2', bg: on ? '#F4F1FD' : '#FFFFFF', pick: () => this.setState({ stitch: s.id }) };
+    });
+    const sizes = ['XS', 'S', 'M', 'L', 'XL'].map((label) => {
+      const on = st.size === label;
+      return { label, on: on ? 'true' : 'false', ring: on ? '#5B3FD9' : '#E4DFF2', bg: on ? '#5B3FD9' : '#FFFFFF', color: on ? '#FFFFFF' : '#1C1A2E', pick: () => this.setState({ size: label }) };
+    });
+    const base = 4250 + (stitched ? 1200 : 0);
+    const was = 5950 + (stitched ? 1200 : 0);
+    const fmt = (n) => n.toLocaleString('en-US');
+    return {
+      views,
+      viewIcon: viewDefs[st.view].icon,
+      viewLabel: viewDefs[st.view].label,
+      tint: col.tint,
+      ink: col.ink,
+      colourName: col.name,
+      colours,
+      stitches,
+      isStitched: stitched,
+      sizes,
+      qty: st.qty,
+      dec: () => this.setState({ qty: Math.max(1, this.state.qty - 1) }),
+      inc: () => this.setState({ qty: Math.min(10, this.state.qty + 1) }),
+      price: fmt(base),
+      was: fmt(was),
+      off: Math.round((1 - base / was) * 100),
+      total: fmt(base * st.qty),
+      addToCart: () => this.setState({ added: this.state.qty }),
+      added: st.added > 0,
+      addedText: st.added + ' × ' + col.name + ', ' + (stitched ? 'stitched, size ' + st.size : 'unstitched'),
+      wished: st.wish ? 'true' : 'false',
+      wishLabel: st.wish ? 'Remove from wishlist' : 'Add to wishlist',
+      heartFill: st.wish ? '#E8336D' : 'none',
+      heartStroke: st.wish ? '#E8336D' : '#1C1A2E',
+      toggleWish: () => this.setState({ wish: !this.state.wish }),
+      related: [
+        { name: "Women's Khaddar 2-Piece", price: '3,650', icon: I.dress, tint: '#FFF7EE' },
+        { name: "Women's Embroidered Kurti", price: '2,199', icon: I.dress, tint: '#FFF3F6' },
+        { name: 'Embroidered Chiffon Dupatta', price: '1,899', icon: I.scarf, tint: '#F4F1FD' },
+        { name: 'Vegan Leather Tote Bag', price: '3,299', icon: I.bag, tint: '#F2F6FF' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

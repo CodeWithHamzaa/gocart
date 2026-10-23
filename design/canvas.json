@@ -1,0 +1,133 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 3700,
+      "is_interactive": true,
+      "title": "Home — Desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "AllCategories.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "title": "All categories — Desktop",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Category.dc.html": {
+      "expand": "fill",
+      "h": 2700,
+      "is_interactive": true,
+      "title": "Category (Fashion) — Desktop",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "Product.dc.html": {
+      "expand": "fill",
+      "h": 2700,
+      "is_interactive": true,
+      "title": "Product detail — Desktop",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "Cart.dc.html": {
+      "expand": "fill",
+      "h": 1300,
+      "is_interactive": true,
+      "title": "Cart — Desktop",
+      "w": 1440,
+      "x": 6080,
+      "y": 0
+    },
+    "Checkout.dc.html": {
+      "expand": "fill",
+      "h": 1900,
+      "is_interactive": true,
+      "title": "Checkout — Desktop",
+      "w": 1440,
+      "x": 7600,
+      "y": 0
+    },
+    "Mobile.dc.html": {
+      "h": 3300,
+      "is_interactive": true,
+      "title": "Home — Mobile",
+      "w": 390,
+      "x": 0,
+      "y": 3820
+    },
+    "CategoriesMobile.dc.html": {
+      "h": 1300,
+      "is_interactive": true,
+      "title": "All categories — Mobile",
+      "w": 390,
+      "x": 470,
+      "y": 3820
+    },
+    "CategoryMobile.dc.html": {
+      "h": 2400,
+      "is_interactive": true,
+      "title": "Category (Fashion) — Mobile",
+      "w": 390,
+      "x": 940,
+      "y": 3820
+    },
+    "ProductMobile.dc.html": {
+      "h": 2500,
+      "is_interactive": true,
+      "title": "Product detail — Mobile",
+      "w": 390,
+      "x": 1410,
+      "y": 3820
+    },
+    "CartMobile.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Cart — Mobile",
+      "w": 390,
+      "x": 1880,
+      "y": 3820
+    },
+    "CheckoutMobile.dc.html": {
+      "h": 1900,
+      "is_interactive": true,
+      "title": "Checkout — Mobile",
+      "w": 390,
+      "x": 2350,
+      "y": 3820
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-21T06:06:45.586Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Main.dc.html",
+    "AllCategories.dc.html",
+    "Category.dc.html",
+    "Product.dc.html",
+    "Cart.dc.html",
+    "Checkout.dc.html",
+    "Mobile.dc.html",
+    "CategoriesMobile.dc.html",
+    "CategoryMobile.dc.html",
+    "ProductMobile.dc.html",
+    "CartMobile.dc.html",
+    "CheckoutMobile.dc.html"
+  ],
+  "pages": [],
+  "title": "Rangla — E-commerce Home"
+}

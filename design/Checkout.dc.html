@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rangla — Checkout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B3FD9}a:hover{color:#3F27A8}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; background: #FAF9FE; color: #1C1A2E; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #EEEAF6">
+<div style="max-width: 1120px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #1C1A2E">
+<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="12" width="4" height="10" rx="2" fill="#5B3FD9"></rect><rect x="9" y="6" width="4" height="22" rx="2" fill="#5B3FD9"></rect><rect x="16" y="2" width="4" height="18" rx="2" fill="#E8336D"></rect><rect x="23" y="10" width="4" height="12" rx="2" fill="#5B3FD9"></rect></svg>
+<span style="font-weight: 800; font-size: 26px; letter-spacing: -0.03em">rang<span style="color: #5B3FD9">la</span></span>
+</a>
+<ol aria-label="Checkout steps" style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; font-weight: 600">
+<li style="display: flex; align-items: center; gap: 8px; color: #157544"><span style="width: 24px; height: 24px; border-radius: 999px; background: #E3F7EC; display: flex; align-items: center; justify-content: center">✓</span>Cart</li>
+<li aria-hidden="true" style="width: 28px; height: 2px; background: #D9D1F5"></li>
+<li aria-current="{{stepDetails}}" style="display: flex; align-items: center; gap: 8px; color: {{s2color}}"><span style="width: 24px; height: 24px; border-radius: 999px; background: {{s2bg}}; color: {{s2num}}; display: flex; align-items: center; justify-content: center">{{s2mark}}</span>Details &amp; payment</li>
+<li aria-hidden="true" style="width: 28px; height: 2px; background: #D9D1F5"></li>
+<li aria-current="{{stepDone}}" style="display: flex; align-items: center; gap: 8px; color: {{s3color}}"><span style="width: 24px; height: 24px; border-radius: 999px; background: {{s3bg}}; color: {{s3num}}; display: flex; align-items: center; justify-content: center">3</span>Confirmation</li>
+</ol>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5F5B73">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Secure checkout</span>
+</div>
+</header>
+
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 80px; display: flex; flex-direction: column; gap: 24px">
+
+<sc-if value="{{editing}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 12px">
+<a href="Cart.dc.html" aria-label="Back to cart" style="width: 44px; height: 44px; border-radius: 12px; background: #FFFFFF; border: 1px solid #EEEAF6; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+</a>
+<h1 style="margin: 0; font-weight: 800; font-size: 32px; letter-spacing: -0.02em">Checkout</h1>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<form style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+
+<section aria-labelledby="addr-h" style="display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #EEEAF6">
+<h2 id="addr-h" style="margin: 0; font-weight: 800; font-size: 19px; display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 999px; background: #EFEBFF; color: #5B3FD9; font-size: 14px; display: flex; align-items: center; justify-content: center">1</span>Delivery address</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Full name<input autocomplete="name" placeholder="e.g. Ayesha Khan" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Mobile number<input type="tel" autocomplete="tel" placeholder="03XX XXXXXXX" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">City
+<select autocomplete="address-level2" style="height: 48px; padding: 0 12px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E; background: #FFFFFF">
+<option>Karachi</option><option>Lahore</option><option>Islamabad</option><option>Rawalpindi</option><option>Faisalabad</option><option>Multan</option><option>Peshawar</option><option>Quetta</option><option>Other</option>
+</select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Area / postal code<input autocomplete="postal-code" placeholder="e.g. DHA Phase 6" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+<label style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Street address<input autocomplete="street-address" placeholder="House no., street, landmark" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+</div>
+</section>
+
+<section aria-labelledby="del-h" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #EEEAF6">
+<h2 id="del-h" style="margin: 0; font-weight: 800; font-size: 19px; display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 999px; background: #EFEBFF; color: #5B3FD9; font-size: 14px; display: flex; align-items: center; justify-content: center">2</span>Delivery</h2>
+<div role="radiogroup" aria-label="Delivery option" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{deliveries}}" as="d" hint-placeholder-count="2">
+<button type="button" role="radio" aria-checked="{{d.on}}" onClick="{{d.pick}}" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; border-radius: 14px; border: 2px solid {{d.ring}}; background: {{d.bg}}; color: #1C1A2E; font: inherit; text-align: left; cursor: pointer">
+<span aria-hidden="true" style="flex: none; width: 20px; height: 20px; border-radius: 999px; border: 2px solid {{d.ring}}; display: flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius: 999px; background: {{d.dot}}"></span></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700; font-size: 14px">{{d.label}}</span><span style="font-size: 12px; color: #5F5B73">{{d.note}}</span></span>
+<span style="font-weight: 700; font-size: 14px">{{d.priceText}}</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="pay-h" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #EEEAF6">
+<h2 id="pay-h" style="margin: 0; font-weight: 800; font-size: 19px; display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 999px; background: #EFEBFF; color: #5B3FD9; font-size: 14px; display: flex; align-items: center; justify-content: center">3</span>Payment</h2>
+<div role="radiogroup" aria-label="Payment method" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{payments}}" as="p" hint-placeholder-count="4">
+<button type="button" role="radio" aria-checked="{{p.on}}" onClick="{{p.pick}}" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; border-radius: 14px; border: 2px solid {{p.ring}}; background: {{p.bg}}; color: #1C1A2E; font: inherit; text-align: left; cursor: pointer">
+<span style="flex: none; width: 40px; height: 40px; border-radius: 12px; background: {{p.tint}}; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{p.ink}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700; font-size: 14px">{{p.label}}</span><span style="font-size: 12px; color: #5F5B73">{{p.note}}</span></span>
+<span aria-hidden="true" style="flex: none; width: 20px; height: 20px; border-radius: 999px; border: 2px solid {{p.ring}}; display: flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius: 999px; background: {{p.dot}}"></span></span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{isCard}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; padding-top: 4px">
+<label style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Card number<input inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Expiry<input autocomplete="cc-exp" placeholder="MM / YY" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">CVV<input inputmode="numeric" autocomplete="cc-csc" placeholder="123" style="height: 48px; padding: 0 14px; border: 1px solid #E4DFF2; border-radius: 12px; font: inherit; font-weight: 400; font-size: 15px; color: #1C1A2E"></label>
+</div>
+</sc-if>
+<sc-if value="{{isCod}}" hint-placeholder-val="{{ true }}">
+<p style="margin: 0; padding: 12px 14px; border-radius: 12px; background: #E3F7EC; color: #157544; font-size: 14px; font-weight: 500">Pay in cash when your order arrives. Please keep the exact amount ready.</p>
+</sc-if>
+</section>
+</form>
+
+<aside aria-label="Order summary" style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #EEEAF6; box-shadow: 0 8px 24px rgba(40, 24, 120, 0.05); box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 style="margin: 0; font-weight: 800; font-size: 20px">Order summary</h2>
+<a href="Cart.dc.html" style="font-size: 13px; font-weight: 600; min-height: 36px; display: flex; align-items: center">Edit cart</a>
+</div>
+<sc-for list="{{items}}" as="it" hint-placeholder-count="3">
+<div style="display: flex; gap: 12px; align-items: center">
+<span style="position: relative; flex: none; width: 56px; height: 56px; border-radius: 12px; background: {{it.tint}}; display: flex; align-items: center; justify-content: center">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1C1A2E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.icon}}"></path></svg>
+<span style="position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 999px; background: #5B3FD9; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{it.qty}}</span>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 600; font-size: 14px">{{it.name}}</span><span style="font-size: 12px; color: #5F5B73">{{it.variant}}</span></span>
+<span style="font-weight: 700; font-size: 14px">Rs. {{it.priceText}}</span>
+</div>
+</sc-for>
+<dl style="margin: 0; padding-top: 14px; border-top: 1px solid #EEEAF6; display: grid; grid-template-columns: 1fr auto; gap: 10px; font-size: 14px">
+<dt style="color: #5F5B73">Subtotal</dt><dd style="margin: 0; font-weight: 600">Rs. {{subtotal}}</dd>
+<dt style="color: #5F5B73">Delivery</dt><dd style="margin: 0; font-weight: 600">{{deliveryText}}</dd>
+</dl>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; border-top: 1px solid #EEEAF6">
+<span style="font-weight: 600">Total</span>
+<span style="font-weight: 800; font-size: 28px; letter-spacing: -0.02em">Rs. {{total}}</span>
+</div>
+<button type="button" onClick="{{place}}" style="min-height: 54px; border-radius: 16px; border: none; background: #5B3FD9; color: #FFFFFF; font: inherit; font-weight: 700; font-size: 16px; cursor: pointer">Place order · Rs. {{total}}</button>
+<span style="font-size: 12px; color: #5F5B73; text-align: center">By placing your order you agree to our <a href="#">terms</a> and <a href="#">returns policy</a>.</span>
+</aside>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{done}}" hint-placeholder-val="{{ false }}">
+<section role="status" style="max-width: 640px; width: 100%; margin: 24px auto 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 48px 32px; border-radius: 28px; background: #FFFFFF; border: 1px solid #EEEAF6; box-shadow: 0 8px 24px rgba(40, 24, 120, 0.05); text-align: center">
+<span style="width: 112px; height: 112px; border-radius: 999px; background: #E3F7EC; display: flex; align-items: center; justify-content: center">
+<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#157544" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>
+</span>
+<h1 style="margin: 0; font-weight: 800; font-size: 32px; letter-spacing: -0.02em">Order placed!</h1>
+<p style="margin: 0; color: #5F5B73; max-width: 420px">Thank you for shopping with Rangla. We've sent your order details by SMS. Order no. <strong style="color: #1C1A2E">[ORDER ID]</strong></p>
+<dl style="margin: 8px 0 0; width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 18px; border-radius: 16px; background: #F4F1FD; font-size: 14px; text-align: left">
+<dt style="color: #5F5B73">Total</dt><dd style="margin: 0; font-weight: 800">Rs. {{total}}</dd>
+<dt style="color: #5F5B73">Payment</dt><dd style="margin: 0; font-weight: 600">{{paymentLabel}}</dd>
+<dt style="color: #5F5B73">Delivery</dt><dd style="margin: 0; font-weight: 600">{{deliveryLabel}}</dd>
+</dl>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 8px">
+<a href="#" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 12px; background: #5B3FD9; color: #FFFFFF; text-decoration: none; font-weight: 700">Track order</a>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 12px; border: 1px solid #D9D1F5; background: #FFFFFF; color: #1C1A2E; text-decoration: none; font-weight: 600">Continue shopping</a>
+</div>
+<button type="button" onClick="{{back}}" style="min-height: 40px; border: none; background: transparent; color: #5B3FD9; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Back to checkout (prototype)</button>
+</section>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { delivery: 'standard', pay: 'cod', done: false };
+  }
+  renderVals() {
+    const I = {
+      dress: 'M9 2h6l-1 5 5 15H5l5-15z',
+      headphones: 'M4 15v-3a8 8 0 0 1 16 0v3M4 15h3v5H5a1 1 0 0 1-1-1zM20 15h-3v5h2a1 1 0 0 0 1-1z',
+      shoe: 'M3 17V9l4 1 3-3 2 4c3 1 7 2 9 4v2zM3 17h18v3H3z',
+      cash: 'M3 6h18v12H3zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+      card: 'M3 6h18v12H3zM3 10h18M7 15h4',
+      wallet: 'M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2',
+      bank: 'M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18'
+    };
+    const st = this.state;
+    const fmt = (n) => n.toLocaleString('en-US');
+    const items = [
+      { name: "Women's Printed Lawn 3-Piece", variant: 'Lilac · Unstitched', price: 4250, qty: 1, icon: I.dress, tint: '#EDE7FF' },
+      { name: 'Noise Cancelling Headphones', variant: 'Black', price: 8999, qty: 1, icon: I.headphones, tint: '#F4F1FD' },
+      { name: 'Handcrafted Leather Khussa', variant: 'Gold · Size 7', price: 2499, qty: 1, icon: I.shoe, tint: '#FFF7EE' }
+    ].map((i) => ({ ...i, priceText: fmt(i.price * i.qty) }));
+    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+    const delDefs = [
+      { id: 'standard', label: 'Standard delivery', note: '[STANDARD ETA]', fee: 0 },
+      { id: 'express', label: 'Express delivery', note: '[EXPRESS ETA] · major cities', fee: 250 }
+    ];
+    const deliveries = delDefs.map((d) => {
+      const on = st.delivery === d.id;
+      return { ...d, on: on ? 'true' : 'false', ring: on ? '#5B3FD9' : '#E4DFF2', bg: on ? '#F4F1FD' : '#FFFFFF', dot: on ? '#5B3FD9' : 'transparent', priceText: d.fee === 0 ? 'Free' : 'Rs. ' + fmt(d.fee), pick: () => this.setState({ delivery: d.id }) };
+    });
+    const payDefs = [
+      { id: 'cod', label: 'Cash on delivery', note: 'Pay when it arrives', icon: I.cash, tint: '#E3F7EC', ink: '#1E9E5A' },
+      { id: 'card', label: 'Debit / credit card', note: 'Visa, Mastercard & more', icon: I.card, tint: '#EFEBFF', ink: '#5B3FD9' },
+      { id: 'wallet', label: 'Mobile wallet', note: 'Pay from your wallet app', icon: I.wallet, tint: '#FFE8EF', ink: '#D6336C' },
+      { id: 'bank', label: 'Bank transfer', note: 'Details shared after order', icon: I.bank, tint: '#FFF4D6', ink: '#B07800' }
+    ];
+    const payments = payDefs.map((p) => {
+      const on = st.pay === p.id;
+      return { ...p, on: on ? 'true' : 'false', ring: on ? '#5B3FD9' : '#E4DFF2', bg: on ? '#F4F1FD' : '#FFFFFF', dot: on ? '#5B3FD9' : 'transparent', pick: () => this.setState({ pay: p.id }) };
+    });
+    const del = delDefs.find((d) => d.id === st.delivery);
+    const done = st.done;
+    return {
+      items,
+      deliveries,
+      payments,
+      isCard: st.pay === 'card',
+      isCod: st.pay === 'cod',
+      subtotal: fmt(subtotal),
+      deliveryText: del.fee === 0 ? 'Free' : 'Rs. ' + fmt(del.fee),
+      total: fmt(subtotal + del.fee),
+      paymentLabel: payDefs.find((p) => p.id === st.pay).label,
+      deliveryLabel: del.label,
+      editing: !done,
+      done,
+      place: () => this.setState({ done: true }),
+      back: () => this.setState({ done: false }),
+      stepDetails: done ? 'false' : 'step',
+      stepDone: done ? 'step' : 'false',
+      s2color: done ? '#157544' : '#3F27A8',
+      s2bg: done ? '#E3F7EC' : '#5B3FD9',
+      s2num: done ? '#157544' : '#FFFFFF',
+      s2mark: done ? '✓' : '2',
+      s3color: done ? '#3F27A8' : '#5F5B73',
+      s3bg: done ? '#5B3FD9' : '#EEEAF6',
+      s3num: done ? '#FFFFFF' : '#5F5B73'
+    };
+  }
+}
+</script>
+</body>
+</html>
