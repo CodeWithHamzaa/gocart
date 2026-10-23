@@ -1,40 +1,30 @@
 import React from 'react'
-import Title from './Title'
-import { BanknoteIcon, PackageSearchIcon, SendIcon } from 'lucide-react'
+import { BanknoteIcon, PackageSearchIcon, ShoppingBagIcon, TruckIcon } from 'lucide-react'
 import { deliveryNote } from '@/lib/delivery'
+import TrustRow from './ui/TrustRow'
 
-// M44: these three cards used to promise "free delivery on every order, no conditions",
+// M44: these cards used to promise "free delivery on every order, no conditions",
 // "7 days easy return" and "24/7 customer support". None of that is true or exists: delivery
 // is a flat rate with a free threshold (ADR-018), there is no return policy, and there is no
 // support channel. They now describe what the store actually does; the delivery line comes
 // from the Settings global like every other delivery statement.
-// M45a: restyled as soft, tinted cards on the storefront's design tokens; same copy.
+// M62: the redesign's value-prop row (design: "Why shop with us"). Four statements, all true for
+// this store: delivery (Settings), cash on delivery (ADR-004), guest checkout (ADR-005) and the
+// guest order lookup (ADR-024). The design's returns and card/wallet lines are not shown: neither
+// exists here.
 const OurSpecs = ({ shipping = null }) => {
 
-    const specs = [
-        { title: "Delivery across Pakistan", description: deliveryNote(shipping), icon: SendIcon, tint: 'bg-brand-50 text-brand-700' },
-        { title: "Cash on Delivery", description: "Order as a guest and pay in cash when your order arrives. No online payment needed.", icon: BanknoteIcon, tint: 'bg-amber-50 text-amber-700' },
-        { title: "Track your order", description: "Check your order's status any time with your order number and the phone number you used.", icon: PackageSearchIcon, tint: 'bg-violet-50 text-violet-700' },
+    const items = [
+        { title: 'Delivery across Pakistan', text: deliveryNote(shipping), icon: <TruckIcon size={24} strokeWidth={1.8} />, tint: 'bg-primary-soft text-primary' },
+        { title: 'Cash on delivery', text: 'Pay in cash when your order arrives', icon: <BanknoteIcon size={24} strokeWidth={1.8} />, tint: 'bg-tint-mint text-tint-mint-ink' },
+        { title: 'Guest checkout', text: 'No account needed to order', icon: <ShoppingBagIcon size={24} strokeWidth={1.8} />, tint: 'bg-tint-pink text-tint-pink-ink' },
+        { title: 'Track your order', text: 'With your order number and phone', icon: <PackageSearchIcon size={24} strokeWidth={1.8} />, tint: 'bg-tint-yellow text-tint-yellow-icon' },
     ]
 
     return (
-        <section className='mx-4 sm:mx-6 my-16 sm:my-24'>
+        <section aria-label='Why shop with us' className='mx-4 sm:mx-6 mt-12 sm:mt-14'>
             <div className='max-w-7xl mx-auto'>
-                <Title centered visibleButton={false} title='How ordering works' description="Order as a guest, pay on delivery, and check your order any time." />
-
-                <div className='mt-8 grid grid-cols-1 gap-4 md:grid-cols-3 sm:gap-5'>
-                    {specs.map((spec) => (
-                        <div key={spec.title} className='flex flex-col items-start gap-4 rounded-3xl bg-white p-6 shadow-soft ring-1 ring-line/70 sm:p-7'>
-                            <span className={`flex size-12 items-center justify-center rounded-2xl ${spec.tint}`} aria-hidden='true'>
-                                <spec.icon size={22} />
-                            </span>
-                            <div>
-                                <h3 className='font-semibold text-ink'>{spec.title}</h3>
-                                <p className='mt-1.5 text-sm text-muted'>{spec.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <TrustRow items={items} />
             </div>
         </section>
     )

@@ -1,13 +1,15 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-import CategoryRow from "@/components/CategoryRow";
+import CategoryRow, { CategoryGrid } from "@/components/CategoryRow";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
 import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
 import { getSettings } from "@/lib/payload/settings";
-import { getTopLevelCategories } from "@/lib/payload/categories";
+import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
 import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
 
+// M62: the redesigned layout. The latest and featured grids hold up to five and ten products (a row
+// of five on a wide screen); the category tiles carry every parent and child link in the HTML.
 // M23: server component — the product sections are fetched through Payload's
 // Local API and rendered into the initial HTML, so their content is crawlable
 // (ADR-007) instead of appearing only after client hydration. The remaining
@@ -37,14 +39,12 @@ export async function generateMetadata() {
 export default async function Home() {
 
     const [latest, featured, cheapest, settings, topLevelCategories] = await Promise.all([
-        getProducts({ sort: '-createdAt', limit: 4 }),
-        getFeaturedProducts({ limit: 8 }),
+        getProducts({ sort: '-createdAt', limit: 5 }),
+        getFeaturedProducts({ limit: 10 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
-        getTopLevelCategories(),
+        getTopLevelCategoriesCached(),
     ]);
-    // Every category, parents then their children, as plain links for the home page category row.
-    const categories = topLevelCategories.flatMap((category) => [category, ...category.children]);
     const startingPrice = typeof cheapest.docs[0]?.price === 'number' ? cheapest.docs[0].price : null;
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
 
@@ -68,7 +68,8 @@ export default async function Home() {
     return (
         <div>
             <Hero shipping={shipping} startingPrice={startingPrice} showcase={showcase} />
-            <CategoryRow categories={categories} />
+            <CategoryRow categories={topLevelCategories} />
+            <CategoryGrid categories={topLevelCategories} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} />
             <OurSpecs shipping={shipping} />

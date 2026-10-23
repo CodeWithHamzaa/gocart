@@ -1177,6 +1177,19 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Rebuild shared storefront components on the redesign tokens (M61)`
 
+### M62 — Home page redesign
+- **Goal**: Lay out `/` like the design's `Main`/`Mobile` home using only real data and true copy. The section formerly titled "Best Selling" is titled **"Featured"** (the `isFeatured` flag is a curated list, not a sales ranking; [ADR-022](./DECISIONS.md) left the label as a copy decision).
+- **Files**: `app/(public)/page.jsx`, `components/{Hero,LatestProducts,BestSelling,OurSpec,CategoryRow,ui/CategoryTile,ui/TrustRow}`, `docs/ARCHITECTURE.md` (route table wording), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Hero: lavender panel, the existing honest headline, "Starts from {lowest price}", real in-stock product tiles, a `pink-dark` circle showing the lowest price (not drawn when there is none), and three chips (delivery note, cash on delivery, guest checkout). The design's "Mega Sale", "up to 60% off", free-shipping, secure-payment and returns copy is not used.
+  - Shop by category: a phone shows a row of round category chips and the first four pastel tiles; wider screens show every top-level tile. A tile's subtitle is its real child links, so every parent and child link stays in the initial HTML.
+  - "Latest products" and "Featured" use the redesigned card in an auto-fill grid (two columns on a phone). The page now reads up to 5 latest and 10 featured products (was 4 and 8) so a wide screen fills rows of five; Featured is hidden when nothing is flagged. A value-prop row (delivery, cash on delivery, guest checkout, order tracking) replaces "How ordering works".
+  - Not built: the limited-offer band (coupons, [ADR-017](./DECISIONS.md)), promo cards (`M71`), countdown, newsletter (`M48a`), category tabs (`M68`).
+- **Dependencies**: M61
+- **Testing**: the home HTML contains "Modern Table Lamp", `href="/category/electronics"` and `href="/category/speakers"`; the HTML has no "Best Sell", "Popular", "Mega", "Rangla" or "returns"; no horizontal scroll at 320px; the full Playwright suite passes (Turnstile-dependent tests in CI); 390/768/1440 screenshots against `desktop-01`/`mobile-01`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign the home page with real data and Featured section (M62)`
+
 ---
 
 ## Summary
