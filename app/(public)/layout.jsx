@@ -4,6 +4,8 @@ import StoreProvider from "@/app/StoreProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import CategoryNav from "@/components/ui/CategoryNav";
+import MobileTabBar from "@/components/ui/MobileTabBar";
 import "../globals.css";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSettings } from "@/lib/payload/settings";
@@ -39,7 +41,10 @@ export async function generateMetadata() {
     };
 }
 
-export default function PublicLayout({ children }) {
+export default async function PublicLayout({ children }) {
+    // M61: the header shows the store's own name (memoised, so this is the same query the metadata,
+    // announcement bar and footer already make).
+    const { storeName } = await getSettings();
     return (
         <html lang="en" className={jakarta.variable}>
             <body className="font-sans antialiased bg-page text-ink">
@@ -50,9 +55,12 @@ export default function PublicLayout({ children }) {
                         Skip to content
                     </a>
                     <AnnouncementBar />
-                    <Navbar />
+                    <Navbar storeName={storeName}>
+                        <CategoryNav />
+                    </Navbar>
                     <main id="main">{children}</main>
                     <Footer />
+                    <MobileTabBar />
                 </StoreProvider>
             </body>
         </html>

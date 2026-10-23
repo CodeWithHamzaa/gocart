@@ -1158,6 +1158,25 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit; CSS and font only, no data.
 - **Commit message**: `Add redesign tokens and Plus Jakarta Sans (M60)`
 
+### M61 — Shared storefront components
+- **Goal**: Rebuild the shared storefront components on the `M60` tokens, matching the design's header, product card, footer and mobile tab bar. Every existing prop, handler and accessible name stays the same; nothing changes in data, Redux, server actions or order logic.
+- **Files**:
+  - Edited in place: `components/{Navbar,Footer,ProductCard,Title,Counter,CategoryRow}.jsx|tsx`, `components/AnnouncementBar.tsx`, `app/(public)/layout.jsx` (mounts `CategoryNav` and `MobileTabBar`, passes the store name to the header).
+  - New under `components/ui/`: `Badge`, `CategoryTile` (tile and circle), `QuantityStepper`, `RadioCard`, `MobileTabBar`, `MobileActionBar`, `Breadcrumb`, `TrustRow`, `EmptyState`, `CategoryNav` (server), `QuickAddButton` (client).
+  - New: `lib/category-style.tsx` (the icon and tint mapping moved out of `CategoryRow`).
+  - Read-only memoisation, no query change: `lib/payload/categories.ts` adds `getTopLevelCategoriesCached`, and `lib/payload/settings.ts` exports `getSettings` through React `cache`, so the header, announcement bar, footer, metadata and page share one read of each per request.
+  - Docs: `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`.
+- **Spec**:
+  - Header: the store's own name (Settings `storeName`), a search form with a button named "Search", a visible Shop link, and a cart link named "Cart, N items" with a count badge. Left out on purpose: Sign in (admin-only auth), wishlist, notification bell and the menu button (no destination exists for them).
+  - Category row (desktop only): the real top-level categories plus "All categories". Announcement bar: the delivery sentence from Settings, "Cash on delivery across Pakistan" and "Track order" → `/orders`. Footer: shop, help and contact columns, contact from Settings (`M55a`); no "Sell on…", newsletter, careers or card/wallet lines.
+  - Product card: a pastel tile around the real image, category, name, violet price with the MRP struck through, "% OFF" chip, "Out of stock" pill. One link (to the product) wraps category, name and price and is stretched over the card; the quick-add button ("Add {name} to cart", the existing `addToCart`) is a sibling above it, disabled and named "{name} is out of stock" when the product is not in stock. It sits over the image tile at every width (the design puts it in the price row; that row has no room at 320px).
+  - Mobile tab bar (below `lg`): Home, Categories, Products, Orders, no Cart/Shop/Search (the header owns those). It steps aside on the product page and the cart, which get `MobileActionBar` in `M64`/`M65`.
+  - The header's Search button is `type="button"` and asks its form to submit: `/orders`' e2e expects its own form to hold the only `button[type=submit]`. Enter in the field submits as before.
+- **Dependencies**: M60
+- **Testing**: the e2e constraints hold (one `<a href="/product/…">` per card containing name and price; exactly one Shop link, Search button and `/^Cart/` link in the header at 320px; one `Add to Cart` button on a product page and none on a listing); quick-add increments the header count and is disabled out of stock; keyboard tab order and visible focus on header, cards and tab bar; every target ≥ 44px; 4.5:1 for every text pair; no horizontal scroll at 320px on the seven routes; `npm run lint`, `type-check` and `build` pass; the full Playwright suite passes (in CI for the Turnstile-dependent tests); 390/768/1440 screenshots of `/shop` against the design's header, card and footer.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Rebuild shared storefront components on the redesign tokens (M61)`
+
 ---
 
 ## Summary

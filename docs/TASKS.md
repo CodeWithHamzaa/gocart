@@ -409,6 +409,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
 | `M60` | Storefront redesign: design tokens and Plus Jakarta Sans (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending. Further redesign milestones are added only after the owner approves each draft |
+| `M61` | Storefront redesign: shared components — header, product card, footer, tab bar (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 
 ---
 
