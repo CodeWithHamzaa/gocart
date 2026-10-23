@@ -1,19 +1,19 @@
-import Link from 'next/link'
+import { SearchXIcon } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 // M27a: real HTTP 404 for an unknown category slug (or a page number
 // beyond the last real page) — never a silent empty grid.
+// M63: the redesigned panel.
 export default function CategoryNotFound() {
   return (
-    <div className="mx-6">
-      <div className="max-w-7xl mx-auto min-h-[70vh] flex flex-col items-center justify-center text-center gap-4">
-        <h1 className="text-2xl font-semibold text-slate-800">Category not found</h1>
-        <p className="text-slate-500 max-w-md">
-          We couldn&apos;t find the category you&apos;re looking for. It may have moved or no longer exists.
-        </p>
-        <div className="flex gap-4 text-sm">
-          <Link href="/categories" className="inline-flex items-center min-h-11 text-brand-700">Browse categories</Link>
-          <Link href="/shop" className="inline-flex items-center min-h-11 text-brand-700">View all products</Link>
-        </div>
+    <div className="mx-4 sm:mx-6">
+      <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+        <EmptyState
+          icon={<SearchXIcon size={28} />}
+          title="Category not found"
+          text="We couldn't find the category you're looking for. It may have moved or no longer exists."
+          action={{ href: '/categories', label: 'Browse categories' }}
+        />
       </div>
     </div>
   )

@@ -1,7 +1,10 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import { ShapesIcon } from 'lucide-react'
 import type { Metadata } from 'next'
-import { getTopLevelCategories } from '@/lib/payload/categories'
+import { getTopLevelCategoriesCached } from '@/lib/payload/categories'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import CategoryTile from '@/components/ui/CategoryTile'
+import EmptyState from '@/components/ui/EmptyState'
 import { getSettings } from '@/lib/payload/settings'
 import { pageMetadata } from '@/lib/seo'
 
@@ -20,6 +23,10 @@ import { pageMetadata } from '@/lib/seo'
 // query per request is the safe trade; revisit with on-demand revalidation (ADR-030).
 export const dynamic = 'force-dynamic'
 
+// M63: redesigned. Each top-level category is a white card holding a large pastel circle (its own
+// image when an admin uploaded one, else a tinted icon) with its child categories as pills beneath,
+// as docs/CATEGORY_REQUIREMENTS.md asks (the design's circles carry no children; the spec wins).
+//
 // M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
 // conventions as every other route.
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,68 +40,41 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CategoriesPage() {
-  const categories = await getTopLevelCategories()
+  const categories = await getTopLevelCategoriesCached()
 
   return (
     <div className="mx-4 sm:mx-6">
-      <div className="max-w-7xl mx-auto min-h-[70vh]">
-        <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-5">
-          <Link href="/">Home</Link> / Categories
+      <div className="mx-auto min-h-[70vh] max-w-7xl pb-16">
+        <div className="mt-2 sm:mt-4">
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Categories' }]} />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink mb-6 sm:mb-8">Categories</h1>
+        <h1 className="mb-6 mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
 
         {categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {categories.map((category) => {
-              const image = category.image
-              const imageUrl = typeof image === 'object' && image ? image.url : null
-
-              return (
-                <div key={category.id} className="bg-white rounded-3xl p-5 sm:p-6 flex flex-col gap-3 shadow-soft ring-1 ring-line/70">
-                  <Link href={`/category/${category.slug}`} className="flex flex-col gap-3 group">
-                    {imageUrl && (
-                      <div className="bg-well h-36 rounded-2xl flex items-center justify-center overflow-hidden">
-                        <Image
-                          src={imageUrl}
-                          alt={typeof image === 'object' && image?.alt ? image.alt : category.title}
-                          width={200}
-                          height={200}
-                          sizes="112px"
-                          className="max-h-28 w-auto group-hover:scale-105 transition duration-300"
-                        />
-                      </div>
-                    )}
-                    <h2 className="text-lg font-semibold text-slate-800 group-hover:text-brand-700 transition">
-                      {category.title}
-                    </h2>
-                    {category.description && (
-                      <p className="text-sm text-slate-500 line-clamp-2">{category.description}</p>
-                    )}
-                  </Link>
-
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-5">
+            {categories.map((category, index) => (
+              <div key={category.id} className="rounded-3xl bg-white px-3 pb-5 pt-6 shadow-card ring-1 ring-line">
+                <CategoryTile category={category} index={index} variant="circle">
                   {category.children.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <div className="flex flex-wrap justify-center gap-1.5">
                       {category.children.map((child) => (
                         <Link
                           key={child.id}
                           href={`/category/${child.slug}`}
-                          className="inline-flex items-center min-h-11 px-4 bg-canvas ring-1 ring-line rounded-full text-sm text-ink-soft hover:bg-ink hover:text-white hover:ring-ink transition-all"
+                          className="inline-flex min-h-11 items-center rounded-full bg-primary-soft px-3.5 text-[13px] font-semibold text-primary-dark transition hover:bg-lavender"
                         >
                           {child.title}
                         </Link>
                       ))}
                     </div>
                   )}
-                </div>
-              )
-            })}
+                </CategoryTile>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
-            <p>No categories yet.</p>
-            <Link href="/shop" className="inline-flex items-center min-h-11 text-brand-700 text-sm">View all products</Link>
-          </div>
+          <EmptyState icon={<ShapesIcon size={28} />} title="No categories yet" text="Check back soon, or browse every product." action={{ href: '/shop', label: 'View all products' }} />
         )}
       </div>
     </div>

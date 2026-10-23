@@ -1190,6 +1190,18 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Redesign the home page with real data and Featured section (M62)`
 
+### M63 — Categories index and category listing redesign
+- **Goal**: Lay out `/categories` like the design's `AllCategories`/`CategoriesMobile` and `/category/[slug]` like `Category`/`CategoryMobile`, without the filter sidebar or sort control.
+- **Files**: `app/(public)/categories/{page,loading}.tsx`, `app/(public)/category/[slug]/{page,not-found,error}.tsx` (**no `loading.tsx`**: do-not-touch, `M27a`), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - `/categories`: a white card per top-level category with a large pastel circle (its image if an admin uploaded one, else a tinted icon) and its child categories as pills beneath, as `docs/CATEGORY_REQUIREMENTS.md` requires (the design's circles carry no children; the spec wins). Empty state: "No categories yet".
+  - Category page: breadcrumb, a tinted heading panel (title, description, and on a parent page its subcategories as pills), the product count, a full-width auto-fill grid (two columns on a phone) and link-based pagination at every width. There is no "load more": it would need client fetching, and every page stays its own crawlable URL. `rel` prev/next, canonicals and metadata are unchanged; the empty, 404 and error states use the shared panel.
+  - Not built: filter sidebar, sort control (Future Phase in `docs/CATEGORY_REQUIREMENTS.md`), colour dots (no variants).
+- **Dependencies**: M61
+- **Testing**: an unknown slug returns **404**; `?page=999` returns **404**; an empty category returns **200** with the empty state; no horizontal scroll at 320px on `/categories` and `/category/electronics`; the full Playwright suite passes (Turnstile-dependent tests in CI), including the "created after the build renders on demand, and paginates" test; 390/768/1440 screenshots against `desktop-02/03`, `mobile-02/03`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign categories index and category listing (M63)`
+
 ---
 
 ## Summary
