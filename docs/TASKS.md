@@ -394,7 +394,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M37`–`M39` | Admin order fulfillment | **Done** (2026-10-09) — `/admin` order list/search/status workflow tuned and verified; `M39` was delivered inside `M36` |
 | `M40`–`M43` | SEO: server rendering, metadata, sitemap, structured data | **Done** (2026-10-10) — see CHANGELOG; Google Rich Results validation not run (no access) |
 | `M44`–`M45` | Mobile-first audit and performance | **Done** (2026-10-10) — see CHANGELOG and ADR-030; Lighthouse gains are modest (the baseline was already 97–99 locally) |
-| `M45a` | Premium storefront visual refresh (UI only) | **In review** (2026-10-14) — PR open; see CHANGELOG |
+| `M45a` | Premium storefront visual refresh (UI only) | **Done** — merged in PR #24 (`67a9102`), confirmed by the owner 2026-10-23; see CHANGELOG. Tokens superseded by `M60` |
 | `M46`–`M48` (incl. new `M48a`) | Reviews/Coupons: decide and land minimal v1 scope | **Done** (2026-10-09) — review modal and rating component, coupon input, Newsletter form, and the site-wide fake "20% OFF / NEW20" banner all removed |
 | `M49` | Production Dockerfile stage | **Done** (2026-10-10) — verified by building and running the image; see CHANGELOG and ADR-031 |
 | `M50` | Compose stacks (dev and prod) | **Done** (2026-10-10) — verified by running both stacks; see CHANGELOG. The prod stack cannot yet bootstrap an empty database (`M52a`) |
@@ -408,6 +408,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
 | `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57`–`M59` | Regression pass, docs, launch | Not Started |
+| `M60` | Storefront redesign: design tokens and Plus Jakarta Sans (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending. Further redesign milestones are added only after the owner approves each draft |
 
 ---
 

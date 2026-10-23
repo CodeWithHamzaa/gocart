@@ -1,4 +1,4 @@
-import { Outfit } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import Navbar from "@/components/Navbar";
@@ -10,8 +10,15 @@ import { getSettings } from "@/lib/payload/settings";
 import { DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 // M45: display "swap" shows text in the fallback font immediately instead of blocking on the font.
-// M45a: 700 is the display weight for headings and prices.
-const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
+// M60: the redesign's typeface, only the weights the design uses (800 is the heading weight).
+// Google serves these from one variable latin file (27 KB), so listing them costs one request.
+// Exposed as --font-jakarta, which app/globals.css maps to Tailwind's font-sans.
+const jakarta = Plus_Jakarta_Sans({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800"],
+    display: "swap",
+    variable: "--font-jakarta",
+});
 
 // M55a: the Footer reads the Settings global. Statically rendered pages would freeze
 // that at build time, so the public tree revalidates (at most 60s stale) and an admin
@@ -34,8 +41,8 @@ export async function generateMetadata() {
 
 export default function PublicLayout({ children }) {
     return (
-        <html lang="en">
-            <body className={`${outfit.className} antialiased bg-canvas text-ink`}>
+        <html lang="en" className={jakarta.variable}>
+            <body className="font-sans antialiased bg-page text-ink">
                 <StoreProvider>
                     <Toaster />
                     {/* M44: keyboard and screen-reader users can jump past the header. */}

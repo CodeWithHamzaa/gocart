@@ -784,6 +784,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: `npm run type-check`, `npm run lint` (0 errors), `npm run build`; no horizontal scroll at 320/390/1440px on every storefront route; the full Playwright suite (one "Add to Cart", the M40 category links and product in the home HTML, 44px header targets) passes in CI.
 - **Rollback**: Revert the PR; no data or schema involved.
 - **Commit message**: `Premium storefront visual refresh (M45a)`
+- **✅ Done** — merged to `main` in PR #24 (`67a9102`); status confirmed by the owner on 2026-10-23 (TASKS.md had still said "In review"). Its tokens are superseded by `M60`.
 
 ---
 
@@ -1137,6 +1138,25 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: Following the runbook on a clean environment successfully deploys a working production instance.
 - **Rollback**: N/A at this point — a failed production deploy is rolled back via the runbook's own rollback section, not by reverting this documentation commit.
 - **Commit message**: `Add production deployment runbook and cut v1.0.0`
+
+---
+
+## Group: Storefront redesign — `M60` onward
+
+The owner-supplied redesign (`design/DESIGN_HANDOFF.md`, `design/*.dc.html`, `design/screens/*`, on the
+`redesign` branch / PR #25): a violet palette, Plus Jakarta Sans and pastel image tiles. Split into
+small milestones, each added here only once the owner has approved its draft. UI-only milestones
+change no data, schema, server action, Redux slice or order logic. The design is a visual target
+only: its sample data, placeholder brand, and features the store does not have (wishlist, customer
+sign-in, card/wallet payments, coupons, express delivery, filters) are not built.
+
+### M60 — Storefront design tokens and Plus Jakarta Sans
+- **Goal**: Replace `M45a`'s "Graphite & Jade" theme values in `app/globals.css`'s `@theme` with the handoff token set (colours, category tints, product-tile pastels, radii, shadows), load Plus Jakarta Sans with `next/font/google` (latin, `display: swap`, only the weights the design uses: 400/500/600/700/800), and add one visible keyboard focus ring. `M45a`'s token names stay as aliases of the nearest new token, so pages not yet redesigned keep rendering until `M66` deletes the aliases.
+- **Files**: `app/globals.css`, `app/(public)/layout.jsx` (font only), `docs/TASKS.md`, `docs/CHANGELOG.md`, `docs/MIGRATION_PLAN.md` (this entry and the `M45a` ✅ fix)
+- **Dependencies**: M45a, M52c
+- **Testing**: the body's computed `font-family` is Plus Jakarta Sans and `/` requests exactly one font file; every text/background pair in the design meets 4.5:1 (white on `pink` is 4.1, so small white text uses `pink-dark`); `npm run lint`, `npm run type-check`, `npm run build` pass; the full Playwright suite passes (in CI for the Turnstile-dependent tests); no horizontal scroll at 320px on `/`, `/shop`, a product, `/category/electronics`, `/categories`, `/cart`, `/orders`; screenshots at 390/768/1440 differ from `main` only in palette and font.
+- **Rollback**: Revert the commit; CSS and font only, no data.
+- **Commit message**: `Add redesign tokens and Plus Jakarta Sans (M60)`
 
 ---
 
