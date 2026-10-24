@@ -1,20 +1,31 @@
 # Architecture — GoCart Pakistan
 
-This document describes the system **as it exists today** (inherited from the open-source GoCart project) and the **target architecture** for the Pakistan COD platform. No migration work has started; this is the plan.
+This document describes the system **as it exists today** (a single-store Cash-on-Delivery storefront on Payload CMS v3 and PostgreSQL, checked against the code on 2026-10-24) and the **target architecture** it follows. Milestone status is in [TASKS.md](./TASKS.md); launch is not cleared (see "Launch blockers" in [DEPLOYMENT.md](./DEPLOYMENT.md)).
 
 ## As-is (current repository state)
 
-- **Framework**: Next.js 15.3.5, App Router, React 19.2.1
+- **Framework**: Next.js 16.3.8 (`M52c`, ADR-037), App Router, React 19; TypeScript is established (`allowJs`, so some inherited `.jsx` remains)
 - **Styling**: Tailwind CSS 4
-- **State management**: Redux Toolkit (`lib/store.js`, `lib/features/{cart,address,product,rating}/*Slice.js`) — client-side cart/address/product/rating state
-- **Data layer**: `prisma/schema.prisma` targets PostgreSQL, but `@prisma/client`/`prisma` are **not present** in `package.json` — the schema exists as a design artifact, not a wired-up dependency yet
-- **Auth**: none wired in. No Clerk/NextAuth/other provider in dependencies; `app/admin` and `app/store` routes are not actually access-controlled today
-- **Domain model** (from `prisma/schema.prisma`): `User`, `Product`, `Order`/`OrderItem`, `Rating`, `Address`, `Coupon`, `Store` — this is a **multi-vendor marketplace** shape (each `Store` has a `userId` owner, its own products and orders, an approval `status`/`isActive` flow)
-- **Payment**: `PaymentMethod` enum already has `COD` and `STRIPE`; nothing processes Stripe today, it's just a schema value
-- **Currency**: hardcoded `$` via `NEXT_PUBLIC_CURRENCY_SYMBOL` in `.env.example`
-- **Routes**: `app/(public)/*` storefront, `app/admin/*` platform admin (approve vendors, manage stores/coupons), `app/store/*` vendor dashboard (add/manage products, view orders)
-- **Deployment**: no Dockerfile, no `docker-compose.yml`, `next.config.mjs` set `images.unoptimized = true` (Vercel-style default) as inherited; `M51` has since enabled Next's local image optimizer ([ADR-034](./DECISIONS.md))
-- **CMS**: none — content/products are plain Postgres rows via the (unwired) Prisma schema
+- **State management**: Redux Toolkit (`lib/store.js`, `lib/features/{cart,address}`) for the client-side guest cart and address; server state comes from Payload
+- **Data layer**: Payload CMS v3 embedded in the Next.js app, PostgreSQL through `@payloadcms/db-postgres`. Collections: `Users`, `Media`, `Categories`, `Products`, `Orders`, `PromoCards`; global `Settings`. Production schema comes from committed migrations (`/migrations`), run by the `migrate` step
+- **Auth**: Payload `/admin` login only; no customer login, no middleware
+- **Payment**: Cash on Delivery only
+- **Currency**: `Rs. ` via `NEXT_PUBLIC_CURRENCY_SYMBOL`
+- **Routes**: `app/(public)/*` storefront, `app/(payload)/*` Payload admin and API, `app/api/health`; the multi-vendor routes and the inherited dummy data are removed
+- **Deployment**: `Dockerfile` (stages `deps`, `dev`, `builder`, `migrate`, `production`), `docker-compose.yml` (development) and `docker-compose.prod.yml` (production, behind a Cloudflare Tunnel); `next.config.mjs` currently sets `images.unoptimized = true` (the `M51` optimizer was suspended by [ADR-036](./DECISIONS.md))
+- **CMS**: Payload, as above
+
+### Collections and access (verified against `collections/*.ts` on 2026-10-24)
+
+| Collection | Read | Create / update / delete |
+|---|---|---|
+| `Users` | admin only | admin only (an unauthenticated create is refused unless it comes from the server-side bootstrap or the dev-only first-register flag) |
+| `Media` | public | admin only |
+| `Categories` | public | admin only |
+| `Products` | public | admin only (`label` is an optional select: New, Limited edition, Sale; `isFeatured` is admin-curated) |
+| `PromoCards` | public sees only `active: true`; admin sees all | admin only |
+| `Settings` (global) | public | admin only |
+| `Orders` | admin only | admin only; guests order through the server action; identity and price-snapshot fields are update-locked ([ADR-026](./DECISIONS.md), [ADR-028](./DECISIONS.md)) |
 
 ## Target architecture
 
@@ -100,7 +111,7 @@ full behavior in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md).
 
 ### Docker / production readiness
 
-- `Dockerfile` (multi-stage: deps → build → runtime) for the Next.js/Payload app.
+- `Dockerfile` (multi-stage: `deps`, `dev`, `builder`, `migrate`, `production`) for the Next.js/Payload app.
 - `docker-compose.yml` for local dev: app + Postgres + a volume-mounted Payload media directory (local Docker volume, per [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) — not an object-storage stub for v1).
 - Production concerns to design for: env var management/secrets, health checks, non-root container user, image size, persistent Postgres volume, backups.
 - **Initial production infrastructure baseline is decided** ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)): Cloudflare Free (DNS/proxy) in front of a single ~$10–12/month VPS running the Dockerized app and a self-hosted PostgreSQL instance, plus Resend's free tier for transactional email. COD remains the only payment method. SMS is deferred to a future phase. Backups are managed manually for the initial launch — `M54` formalised it: `scripts/backup.sh` (database dump + media volume, optional encryption, retention) and `scripts/backup-verify.sh` (restore into a scratch database); procedure in [DEPLOYMENT.md](./DEPLOYMENT.md#backups-and-recovery). Both named volumes (`postgres-data`, `app-media`) survive `down`/`up`; neither is covered by anything but these manual backups. This baseline is chosen to stay replaceable/upgradable (e.g. VPS → managed Postgres) without an application rewrite.
