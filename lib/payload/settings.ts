@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -35,7 +36,7 @@ const money = (v: unknown): number | null =>
  * (callers render nothing for a null) rather than breaking every page that has a
  * footer. A missing value is hidden, never replaced with a made-up one.
  */
-export async function getSettings(): Promise<StoreSettings> {
+async function readSettings(): Promise<StoreSettings> {
   try {
     const payload = await getPayload({ config })
     const s = (await payload.findGlobal({ slug: 'settings', depth: 0 })) as unknown as Record<string, unknown>
@@ -52,3 +53,10 @@ export async function getSettings(): Promise<StoreSettings> {
     return EMPTY
   }
 }
+
+/**
+ * M61: memoised for one server request. The layout (store name in the header), the announcement
+ * bar, the footer, the metadata and the page all read the Settings global; they now share one
+ * query. Read-only; the query is unchanged.
+ */
+export const getSettings = cache(readSettings)

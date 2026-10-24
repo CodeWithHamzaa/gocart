@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -80,6 +81,13 @@ export async function getTopLevelCategories(): Promise<CategoryWithChildren[]> {
 
   return withChildren
 }
+
+/**
+ * M61: the same read, memoised for one server request. The header's category row, the footer and
+ * the page body all need the top-level categories, so they share a single fetch instead of three.
+ * Read-only; the query above is unchanged.
+ */
+export const getTopLevelCategoriesCached = cache(getTopLevelCategories)
 
 /**
  * A single category by slug, with its parent and children resolved, for the

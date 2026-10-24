@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rangla — Fashion (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B3FD9}a:hover{color:#3F27A8}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2400px; box-sizing: border-box; background: #FFFFFF; color: #1C1A2E; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column">
+
+<header style="padding: 10px 12px; display: flex; align-items: center; gap: 4px; border-bottom: 1px solid #EEEAF6">
+<a href="CategoriesMobile.dc.html" aria-label="Back to categories" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<h1 style="flex: 1; margin: 0; font-weight: 800; font-size: 20px; letter-spacing: -0.02em">Fashion</h1>
+<a href="#" aria-label="Search" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+</a>
+<a href="CartMobile.dc.html" aria-label="Cart, 2 items" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M2 3h3l2.5 12h11.5l2-8H6.2"></path></svg>
+<span style="position: absolute; top: 6px; right: 4px; width: 16px; height: 16px; border-radius: 999px; background: #E8336D; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span>
+</a>
+</header>
+
+<main style="display: flex; flex-direction: column; gap: 18px; padding: 16px 16px 28px">
+
+<section aria-label="Fashion" style="position: relative; overflow: hidden; border-radius: 20px; background: #E6F0FF; padding: 20px; min-height: 120px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 4px">
+<div aria-hidden="true" style="position: absolute; right: -30px; top: 50%; width: 150px; height: 150px; margin-top: -75px; border-radius: 999px; background: #CFE0FF"></div>
+<svg aria-hidden="true" style="position: absolute; right: 22px; top: 50%; margin-top: -36px" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#2F6BDB" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1 5 5 15H5l5-15z"></path></svg>
+<span style="position: relative; font-weight: 800; font-size: 20px; max-width: 210px; line-height: 1.2">Summer lawn is here</span>
+<span style="position: relative; font-size: 13px; color: #3B4A66; max-width: 210px">Up to 30% off new arrivals</span>
+</section>
+
+<div role="tablist" aria-label="Subcategories" style="display: flex; gap: 8px; overflow-x: auto; margin-right: -16px; padding-right: 16px">
+<sc-for list="{{subs}}" as="s" hint-placeholder-count="6">
+<button type="button" role="tab" aria-selected="{{s.selected}}" onClick="{{s.pick}}" style="flex: none; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid {{s.border}}; background: {{s.bg}}; color: {{s.color}}; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer">{{s.label}}</button>
+</sc-for>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span style="font-size: 13px; color: #5F5B73"><strong style="color: #1C1A2E">{{count}}</strong> products</span>
+<div style="display: flex; gap: 8px">
+<button type="button" style="min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #E4DFF2; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button>
+<label style="position: relative; display: flex; align-items: center">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Sort by</span>
+<select value="{{sort}}" onChange="{{onSort}}" style="min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid #E4DFF2; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600; font-size: 13px">
+<option value="rec">Recommended</option>
+<option value="low">Price: low to high</option>
+<option value="high">Price: high to low</option>
+<option value="disc">Biggest discount</option>
+</select>
+</label>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="8">
+<article style="display: flex; flex-direction: column; gap: 6px; background: #FFFFFF; border: 1px solid #EEEAF6; border-radius: 18px; padding: 10px; box-shadow: 0 6px 18px rgba(40, 24, 120, 0.05)">
+<div style="position: relative; aspect-ratio: 1 / 1; border-radius: 12px; background: {{p.tint}}">
+<a href="{{p.href}}" aria-label="View {{p.name}}" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center">
+<svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#1C1A2E" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+</a>
+<sc-if value="{{p.hasBadge}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 8px; left: 8px; background: {{p.badgeBg}}; color: #FFFFFF; font-weight: 700; font-size: 10px; padding: 2px 8px; border-radius: 999px">{{p.badge}}</span></sc-if>
+<button type="button" aria-label="{{p.wishLabel}}" aria-pressed="{{p.wished}}" onClick="{{p.toggleWish}}" style="position: absolute; top: 0; right: 0; width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center">
+<span style="width: 28px; height: 28px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(40, 24, 120, 0.1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{p.heartFill}}" stroke="{{p.heartStroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg></span>
+</button>
+</div>
+<div style="font-size: 10px; color: #5F5B73; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px">{{p.sub}}</div>
+<h3 style="margin: 0; font-weight: 600; font-size: 13px; line-height: 1.35; min-height: 35px"><a href="{{p.href}}" style="color: #1C1A2E; text-decoration: none">{{p.name}}</a></h3>
+<div style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 6px"><span style="font-weight: 800; font-size: 15px; color: #5B3FD9">Rs. {{p.priceText}}</span><s style="font-size: 11px; color: #6E6A82">Rs. {{p.wasText}}</s></div>
+<span style="align-self: flex-start; background: #FFE4EA; color: #C81E5B; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 6px">{{p.off}}% OFF</span>
+</article>
+</sc-for>
+</div>
+
+<button type="button" style="min-height: 48px; border-radius: 12px; border: 2px solid #5B3FD9; background: #FFFFFF; color: #5B3FD9; font: inherit; font-weight: 700">Load more products</button>
+</main>
+
+<nav aria-label="Main" style="position: sticky; bottom: 0; margin-top: auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 8px 14px; background: #FFFFFF; border-top: 1px solid #EEEAF6; box-shadow: 0 -6px 20px rgba(40, 24, 120, 0.06)">
+<a href="Mobile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: #5F5B73; text-decoration: none; font-size: 11px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="CategoriesMobile.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: #5B3FD9; text-decoration: none; font-size: 11px; font-weight: 700">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="#5B3FD9" stroke="#5B3FD9" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Categories</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: #5F5B73; text-decoration: none; font-size: 11px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg>Wishlist</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: #5F5B73; text-decoration: none; font-size: 11px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"></path><path d="M3 7l9 4 9-4M12 11v10"></path></svg>Orders</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: #5F5B73; text-decoration: none; font-size: 11px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>Account</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sub: 'all', sort: 'rec', wish: {} };
+  }
+  renderVals() {
+    const I = {
+      dress: 'M9 2h6l-1 5 5 15H5l5-15z',
+      shirt: 'M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z',
+      shoe: 'M3 17V9l4 1 3-3 2 4c3 1 7 2 9 4v2zM3 17h18v3H3z',
+      bag: 'M6 8h12l-1 13H7zM9 8V6a3 3 0 0 1 6 0v2',
+      trousers: 'M7 3h10l1 18h-4l-2-11-2 11H6z',
+      scarf: 'M7 3h10v5c0 5-2 9-5 13-3-4-5-8-5-13zM7 8h10'
+    };
+    const raw = [
+      { id: 1, sub: 'Women', key: 'women', name: "Women's Printed Lawn 3-Piece", price: 4250, was: 5950, icon: I.dress, tint: '#F4F1FD', badge: 'New', href: 'ProductMobile.dc.html' },
+      { id: 2, sub: 'Women', key: 'women', name: 'Embroidered Chiffon Dupatta', price: 1899, was: 2699, icon: I.scarf, tint: '#FFF3F6', badge: '' },
+      { id: 3, sub: 'Men', key: 'men', name: "Men's Cotton Kurta, Classic Fit", price: 2799, was: 3999, icon: I.shirt, tint: '#F2F6FF', badge: 'Best seller' },
+      { id: 4, sub: 'Men', key: 'men', name: "Men's Slim-Fit Denim Jacket", price: 4999, was: 6999, icon: I.shirt, tint: '#F2F6FF', badge: 'Sale' },
+      { id: 5, sub: 'Women', key: 'women', name: "Women's Khaddar 2-Piece", price: 3650, was: 4999, icon: I.dress, tint: '#FFF7EE', badge: '' },
+      { id: 6, sub: 'Kids', key: 'kids', name: "Kids' Printed Kurta Pajama", price: 1999, was: 2799, icon: I.shirt, tint: '#FFFAEB', badge: '' },
+      { id: 7, sub: 'Footwear', key: 'footwear', name: 'Handcrafted Leather Khussa', price: 2499, was: 3299, icon: I.shoe, tint: '#FFF7EE', badge: 'Best seller' },
+      { id: 9, sub: 'Bags', key: 'bags', name: 'Vegan Leather Tote Bag', price: 3299, was: 4499, icon: I.bag, tint: '#F4F1FD', badge: 'New' },
+      { id: 10, sub: 'Men', key: 'men', name: "Men's Stretch Chino Trousers", price: 2999, was: 3999, icon: I.trousers, tint: '#FFF7EE', badge: '' },
+      { id: 12, sub: 'Women', key: 'women', name: "Women's Embroidered Kurti", price: 2199, was: 2999, icon: I.dress, tint: '#FFF3F6', badge: 'Sale' }
+    ];
+    const badgeBg = { 'New': '#5B3FD9', 'Best seller': '#C81E5B', 'Sale': '#1F55B8' };
+    const fmt = (n) => n.toLocaleString('en-US');
+    const st = this.state;
+    const subs = [
+      { id: 'all', label: 'All' }, { id: 'women', label: 'Women' }, { id: 'men', label: 'Men' },
+      { id: 'kids', label: 'Kids' }, { id: 'footwear', label: 'Footwear' }, { id: 'bags', label: 'Bags' }
+    ].map((s) => {
+      const sel = st.sub === s.id;
+      return { ...s, selected: sel ? 'true' : 'false', bg: sel ? '#5B3FD9' : '#FFFFFF', color: sel ? '#FFFFFF' : '#1C1A2E', border: sel ? '#5B3FD9' : '#E4DFF2', pick: () => this.setState({ sub: s.id }) };
+    });
+    const offOf = (r) => 1 - r.price / r.was;
+    let list = st.sub === 'all' ? raw.slice() : raw.filter((r) => r.key === st.sub);
+    if (st.sort === 'low') list.sort((a, b) => a.price - b.price);
+    if (st.sort === 'high') list.sort((a, b) => b.price - a.price);
+    if (st.sort === 'disc') list.sort((a, b) => offOf(b) - offOf(a));
+    const products = list.map((p) => {
+      const on = !!st.wish[p.id];
+      return {
+        ...p,
+        href: p.href || '#',
+        priceText: fmt(p.price),
+        wasText: fmt(p.was),
+        off: Math.round(offOf(p) * 100),
+        hasBadge: !!p.badge,
+        badgeBg: badgeBg[p.badge] || '#5B3FD9',
+        wished: on ? 'true' : 'false',
+        wishLabel: on ? 'Remove ' + p.name + ' from wishlist' : 'Add ' + p.name + ' to wishlist',
+        heartFill: on ? '#E8336D' : 'none',
+        heartStroke: on ? '#E8336D' : '#1C1A2E',
+        toggleWish: () => this.setState({ wish: { ...this.state.wish, [p.id]: !on } })
+      };
+    });
+    return {
+      subs,
+      products,
+      count: products.length,
+      sort: st.sort,
+      onSort: (e) => this.setState({ sort: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

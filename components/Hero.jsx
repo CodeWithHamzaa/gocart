@@ -1,4 +1,4 @@
-import { ArrowRightIcon, BanknoteIcon, PackageSearchIcon, ShoppingBagIcon, SparklesIcon, TruckIcon } from 'lucide-react'
+import { ArrowRightIcon, BanknoteIcon, ShoppingBagIcon, TruckIcon } from 'lucide-react'
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -13,119 +13,98 @@ import { deliveryNote } from '@/lib/delivery'
 // purely decorative composition. The headline is the home page's one <h1> (it had none).
 // M55/M55a: "Starts from" and the delivery line are real values; each is hidden, not faked, when
 // its value is unavailable.
+// M62: the redesign's lavender hero. The design's "11.11 Mega Sale", "up to 60% off", "free
+// shipping over Rs. 3,000", "secure payment" and "easy returns" are sample copy and are not used;
+// the pink circle shows the store's real lowest price instead (and is not drawn without one), and
+// the three chips are the statements that are true here. The circle uses `pink-dark` rather than
+// `pink` so its small white text keeps 4.5:1.
 
-// Positions for up to three tiles: the first is the large centre piece (the LCP image) and sits on
-// top, so its caption is never covered. Captions show at every width: a product name that is in
-// the HTML but hidden would be the first match for anyone (or any test) looking for it.
+// Captions show at every width: a product name that is in the HTML but hidden would be the first
+// match for anyone (or any test) looking for it.
 const TILE_STYLES = [
-    'left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 w-40 sm:w-56 lg:w-64 -rotate-3',
-    'left-[6%] top-[12%] z-10 w-28 sm:w-40 lg:w-44 -rotate-12 opacity-95',
-    'right-[6%] bottom-[8%] z-20 w-28 sm:w-40 lg:w-44 rotate-6',
+    'left-1/2 top-1/2 z-20 w-40 -translate-x-1/2 -translate-y-1/2 -rotate-3 sm:-translate-x-[60%] sm:w-52 lg:w-60',
+    'right-[2%] bottom-[4%] z-30 hidden w-28 rotate-6 sm:block sm:w-36 lg:w-40',
 ]
 
 const Hero = ({ shipping = null, startingPrice = null, showcase = [] }) => {
 
-    const trust = [
+    const chips = [
         { icon: TruckIcon, title: 'Delivery across Pakistan', text: deliveryNote(shipping) },
-        { icon: BanknoteIcon, title: 'Cash on Delivery', text: 'Pay in cash when it arrives' },
+        { icon: BanknoteIcon, title: 'Cash on delivery', text: 'Pay in cash when it arrives' },
         { icon: ShoppingBagIcon, title: 'Guest checkout', text: 'No account needed to order' },
-        { icon: PackageSearchIcon, title: 'Track your order', text: 'With your order number and phone', href: '/orders' },
     ]
 
     return (
         <section className='mx-4 sm:mx-6'>
-            <div className='relative max-w-7xl mx-auto mt-4 sm:mt-8 overflow-hidden rounded-4xl bg-ink text-white'>
-                {/* Soft jade glows behind the composition. */}
-                <div aria-hidden='true' className='pointer-events-none absolute -right-24 -top-32 size-[28rem] rounded-full bg-brand-500/30 blur-3xl' />
-                <div aria-hidden='true' className='pointer-events-none absolute -bottom-40 -left-24 size-96 rounded-full bg-brand-700/30 blur-3xl' />
-
-                <div className='relative grid items-center gap-6 p-6 pb-2 sm:p-12 lg:grid-cols-2 lg:gap-10 lg:p-16'>
-                    <div>
-                        <p className='inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 ring-1 ring-white/15'>
-                            <SparklesIcon size={14} className='text-brand-400' aria-hidden='true' />
-                            Cash on Delivery · No account needed
+            <div className='relative mx-auto mt-4 flex max-w-7xl flex-wrap items-center gap-6 overflow-hidden rounded-[22px] bg-lavender p-5 sm:mt-6 sm:gap-8 sm:rounded-hero sm:p-10 lg:p-14'>
+                <div className='relative flex min-w-0 flex-[1_1_320px] flex-col gap-4 sm:gap-5 lg:flex-[1_1_460px]'>
+                    <p className='text-[13px] font-bold text-primary sm:text-sm'>Cash on delivery · No account needed</p>
+                    <h1 className='max-w-[560px] text-[26px] font-extrabold leading-[1.12] tracking-[-0.03em] text-ink sm:text-5xl sm:leading-[1.05] lg:text-[60px]'>
+                        Gadgets you&apos;ll love.
+                        <span className='block text-primary'>Prices you&apos;ll trust.</span>
+                    </h1>
+                    {startingPrice !== null && (
+                        <p className='max-w-[440px] text-base text-ink-3 sm:text-[17px]'>
+                            Starts from <span className='font-bold text-ink'>{formatPKR(startingPrice)}</span>
                         </p>
-                        <h1 className='mt-5 text-4xl font-bold uppercase leading-[1.02] tracking-tight sm:text-6xl xl:text-[4.25rem]'>
-                            Gadgets you&apos;ll love.
-                            <span className='block text-brand-200'>Prices you&apos;ll trust.</span>
-                        </h1>
-                        {startingPrice !== null && (
-                            <p className='mt-5 text-sm text-white/70 sm:text-base'>
-                                Starts from <span className='text-lg font-semibold text-white sm:text-xl'>{formatPKR(startingPrice)}</span>
-                            </p>
-                        )}
-                        <div className='mt-6 flex flex-wrap items-center gap-3 sm:mt-8'>
-                            {/* M44: a real link to the shop (was a <button> with no handler). */}
-                            <Link href='/shop' className='group inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ink shadow-lift transition hover:bg-brand-50 active:scale-95'>
-                                Shop Now
-                                <ArrowRightIcon size={16} className='transition group-hover:translate-x-0.5' aria-hidden='true' />
-                            </Link>
-                            <Link href='/categories' className='inline-flex min-h-12 items-center rounded-full px-5 text-sm font-medium text-white ring-1 ring-white/25 transition hover:bg-white/10'>
-                                Browse categories
-                            </Link>
-                        </div>
+                    )}
+                    <div className='flex flex-wrap gap-3'>
+                        {/* M44: a real link to the shop (was a <button> with no handler). */}
+                        <Link href='/shop' className='group inline-flex min-h-12 items-center gap-2.5 rounded-control bg-primary px-6 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-95 sm:px-7'>
+                            Shop now
+                            <ArrowRightIcon size={18} strokeWidth={2.2} className='transition group-hover:translate-x-0.5' aria-hidden='true' />
+                        </Link>
+                        <Link href='/categories' className='inline-flex min-h-12 items-center rounded-control border border-line-3 bg-white px-6 text-sm font-semibold text-ink transition hover:border-primary hover:text-primary'>
+                            Browse categories
+                        </Link>
                     </div>
+                    <ul className='mt-1 hidden flex-wrap gap-2.5 sm:flex'>
+                        {chips.map((chip) => (
+                            <li key={chip.title} className='flex items-center gap-2.5 rounded-control bg-white px-3.5 py-2.5'>
+                                <chip.icon size={22} strokeWidth={1.8} className='shrink-0 text-primary' aria-hidden='true' />
+                                <span className='flex flex-col leading-tight'>
+                                    <span className='text-[13px] font-bold text-ink'>{chip.title}</span>
+                                    <span className='text-xs text-muted'>{chip.text}</span>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
 
-                    <div className='relative h-60 sm:h-80 lg:h-[26rem]'>
-                        {showcase.length > 0 ? showcase.slice(0, 3).map((product, index) => (
-                            <Link
-                                key={product.id}
-                                href={`/product/${product.id}`}
-                                className={`absolute block rounded-3xl bg-white p-3 text-ink shadow-float transition duration-300 hover:z-40 hover:rotate-0 hover:scale-105 ${TILE_STYLES[index]}`}
-                            >
-                                <span className='flex aspect-square items-center justify-center rounded-2xl bg-well'>
-                                    <Image
-                                        src={product.imageUrl}
-                                        alt={product.name}
-                                        width={400}
-                                        height={400}
-                                        sizes={index === 0 ? '(min-width: 1024px) 256px, (min-width: 640px) 224px, 160px' : '(min-width: 640px) 176px, 112px'}
-                                        priority={index === 0}
-                                        fetchPriority={index === 0 ? 'high' : undefined}
-                                        className='h-4/5 w-4/5 object-contain'
-                                    />
-                                </span>
-                                <span className='mt-2 flex items-center justify-between gap-2 px-1 text-[11px] sm:text-xs'>
-                                    <span className='min-w-0 truncate font-medium'>{product.name}</span>
-                                    <span className='shrink-0 font-semibold text-brand-700'>{formatPKR(product.price)}</span>
-                                </span>
-                            </Link>
-                        )) : (
-                            <div aria-hidden='true'>
-                                <div className='absolute left-1/2 top-1/2 size-48 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-4xl bg-gradient-to-br from-white/25 to-white/5 ring-1 ring-white/20 sm:size-64' />
-                                <div className='absolute right-[10%] bottom-[10%] size-24 rotate-12 rounded-3xl bg-brand-400/40 sm:size-32' />
-                                <div className='absolute left-[10%] top-[10%] size-20 -rotate-12 rounded-3xl bg-white/10 sm:size-28' />
-                            </div>
-                        )}
-                    </div>
+                <div className='relative h-56 min-w-0 flex-[1_1_300px] sm:h-80 lg:h-[400px] lg:flex-[1_1_380px]'>
+                    <div aria-hidden='true' className='absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-lavender-2 sm:size-80 lg:size-[420px]' />
+                    {showcase.slice(0, 2).map((product, index) => (
+                        <Link
+                            key={product.id}
+                            href={`/product/${product.id}`}
+                            className={`absolute block rounded-panel bg-white p-2.5 text-ink shadow-float transition duration-300 hover:z-40 hover:rotate-0 hover:scale-105 sm:p-3 ${TILE_STYLES[index]}`}
+                        >
+                            <span className='flex aspect-square items-center justify-center rounded-tile bg-lavender-tile'>
+                                <Image
+                                    src={product.imageUrl}
+                                    alt=''
+                                    width={400}
+                                    height={400}
+                                    sizes={index === 0 ? '(min-width: 1024px) 240px, (min-width: 640px) 208px, 160px' : '(min-width: 640px) 160px, 112px'}
+                                    priority={index === 0}
+                                    fetchPriority={index === 0 ? 'high' : undefined}
+                                    className='h-4/5 w-4/5 object-contain mix-blend-multiply'
+                                />
+                            </span>
+                            <span className='mt-2 flex items-center justify-between gap-2 px-0.5 text-[11px] sm:text-xs'>
+                                <span className='min-w-0 truncate font-semibold'>{product.name}</span>
+                                <span className='shrink-0 font-bold text-primary'>{formatPKR(product.price)}</span>
+                            </span>
+                        </Link>
+                    ))}
+                    {startingPrice !== null && showcase.length > 0 && (
+                        <div aria-hidden='true' className='absolute bottom-[6%] left-[2%] z-30 flex size-24 flex-col items-center justify-center rounded-full bg-pink-dark p-2 text-center leading-tight text-white shadow-pink sm:size-28'>
+                            <span className='text-xs font-semibold'>Starts from</span>
+                            <span className='text-base font-extrabold sm:text-lg'>{formatPKR(startingPrice)}</span>
+                        </div>
+                    )}
                 </div>
             </div>
-
-            {/* Trust strip: only what the store really does. */}
-            <ul className='max-w-7xl mx-auto mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4'>
-                {trust.map((item) => {
-                    const body = (
-                        <>
-                            <span className='flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700'>
-                                <item.icon size={18} aria-hidden='true' />
-                            </span>
-                            <span className='min-w-0'>
-                                <span className='block text-sm font-semibold text-ink'>{item.title}</span>
-                                <span className='hidden text-xs text-muted sm:block'>{item.text}</span>
-                            </span>
-                        </>
-                    )
-                    return (
-                        <li key={item.title}>
-                            {item.href ? (
-                                <Link href={item.href} className='flex h-full min-h-16 items-center gap-3 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-line/60 transition hover:ring-brand-200'>{body}</Link>
-                            ) : (
-                                <div className='flex h-full min-h-16 items-center gap-3 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-line/60'>{body}</div>
-                            )}
-                        </li>
-                    )
-                })}
-            </ul>
         </section>
     )
 }

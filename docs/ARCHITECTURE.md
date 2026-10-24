@@ -51,7 +51,7 @@ All of the above run as Docker containers (docker-compose for dev, hardened imag
 
 | Route | Purpose | Rendering |
 |---|---|---|
-| `/` | Home — hero, latest/best-selling sections | SSR |
+| `/` | Home — hero, category tiles, latest and featured sections | SSR |
 | `/categories` | Category index: all top-level categories with their children (`M27b`) | SSR/ISR |
 | `/category/[slug]` | Category detail + paginated product listing (`M27a`) | SSR/ISR |
 | `/shop` | All products + name-based search (`?search=`) | SSR |

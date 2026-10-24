@@ -1,7 +1,11 @@
 import Link from 'next/link'
+import { PackageOpenIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import EmptyState from '@/components/ui/EmptyState'
+import { CategoryIcon, tintFor } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
 import { getSettings } from '@/lib/payload/settings'
@@ -83,90 +87,104 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const pageHref = (targetPage: number) =>
     targetPage > 1 ? `${basePath}?page=${targetPage}` : basePath
 
+  const tint = tintFor(Number(category.id) || 0)
+  const crumbs = [
+    { label: 'Home', href: '/' },
+    { label: 'Categories', href: '/categories' },
+    ...(parent ? [{ label: parent.title, href: `/category/${parent.slug}` }] : []),
+    { label: category.title },
+  ]
+  const pageLink = 'inline-flex items-center justify-center min-h-11 px-4 rounded-control bg-white ring-1 ring-line-2 text-ink-2 font-semibold hover:bg-primary-soft hover:text-primary-dark transition'
+  const pageOff = 'inline-flex items-center justify-center min-h-11 px-4 rounded-control bg-line text-muted'
+
+  // M63: the redesign. A tinted heading panel (title, description, and on a parent page its
+  // subcategories as pills), the product count, a full-width grid and link-based pagination (a
+  // "load more" button would need client fetching, and every page must stay its own crawlable URL).
+  // No filter sidebar or sort control: they are Future Phase in docs/CATEGORY_REQUIREMENTS.md.
   return (
     <div className="mx-4 sm:mx-6">
       {page > 1 && <link rel="prev" href={pageHref(page - 1)} />}
       {page < totalPages && <link rel="next" href={pageHref(page + 1)} />}
 
-      <div className="max-w-7xl mx-auto min-h-[70vh]">
-        {/* Breadcrumb */}
-        <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-5">
-          <Link href="/">Home</Link> / <Link href="/categories">Categories</Link>
-          {parent ? (
-            <>
-              {' '}/ <Link href={`/category/${parent.slug}`}>{parent.title}</Link> / {category.title}
-            </>
-          ) : (
-            <> / {category.title}</>
-          )}
+      <div className="max-w-7xl mx-auto min-h-[70vh] pb-12">
+        <div className="mt-2 sm:mt-4">
+          <Breadcrumb items={crumbs} />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">{category.title}</h1>
-        {category.description && (
-          <p className="text-slate-500 text-sm mt-2 max-w-2xl">{category.description}</p>
-        )}
+        <section aria-labelledby="category-title" className={`relative mt-3 overflow-hidden rounded-panel px-5 py-7 sm:px-10 sm:py-9 ${tint.tile}`}>
+          <CategoryIcon category={category} aria-hidden="true" size={140} strokeWidth={1} className={`pointer-events-none absolute -right-4 top-1/2 hidden -translate-y-1/2 opacity-60 sm:block ${tint.ink}`} />
+          <div className="relative flex max-w-2xl flex-col gap-3">
+            <h1 id="category-title" className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[44px]">{category.title}</h1>
+            {category.description && <p className="text-[15px] text-ink-3">{category.description}</p>}
 
-        {/* Child-category navigation — parent pages only */}
-        {isParent && category.children.length > 0 && (
-          <div className="flex flex-wrap gap-3 mt-6">
-            {category.children.map((child) => (
-              <Link
-                key={child.id}
-                href={`/category/${child.slug}`}
-                className="inline-flex items-center min-h-11 px-5 rounded-full bg-white ring-1 ring-line text-ink-soft text-sm font-medium hover:bg-ink hover:text-white hover:ring-ink transition-all"
-              >
-                {child.title}
-              </Link>
-            ))}
+            {/* Child-category navigation: parent pages only */}
+            {isParent && category.children.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-2">
+                {category.children.map((child) => (
+                  <Link
+                    key={child.id}
+                    href={`/category/${child.slug}`}
+                    className="inline-flex min-h-11 items-center rounded-full bg-white px-4 text-sm font-semibold text-ink-2 transition hover:text-primary"
+                  >
+                    {child.title}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </section>
 
-        {/* Product grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 my-8 sm:my-10">
-            {products.map((product, index) => (
-              <ProductCard key={product.id} product={product} priority={index < 4} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center gap-3 py-24 text-slate-500">
-            <p>No products in this category yet.</p>
-            <div className="flex gap-4 text-sm">
-              <Link href="/categories" className="inline-flex items-center min-h-11 text-brand-700">Browse categories</Link>
-              <Link href="/shop" className="inline-flex items-center min-h-11 text-brand-700">View all products</Link>
+          <>
+            <p className="mt-6 text-sm text-muted">
+              Showing <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
+            </p>
+            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4">
+              {products.map((product, index) => (
+                <ProductCard key={product.id} product={product} priority={index < 4} />
+              ))}
             </div>
+          </>
+        ) : (
+          <div className="mt-8">
+            <EmptyState
+              icon={<PackageOpenIcon size={28} />}
+              title="No products in this category yet"
+              text="Browse the other categories, or look through every product."
+              action={{ href: '/categories', label: 'Browse categories' }}
+            />
           </div>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 my-10 text-sm text-slate-600">
+          <div className="my-8 flex flex-wrap items-center justify-center gap-3 text-sm">
             {page > 1 ? (
-              <Link href={pageHref(page - 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-white ring-1 ring-line hover:bg-well">Previous</Link>
+              <Link href={pageHref(page - 1)} className={pageLink}>Previous</Link>
             ) : (
-              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-well text-slate-500">Previous</span>
+              <span aria-disabled="true" className={pageOff}>Previous</span>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
                 <Link
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded-full ${n === page ? 'bg-ink text-white' : 'bg-white ring-1 ring-line hover:bg-well'}`}
+                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-white text-ink-2 ring-1 ring-line-2 hover:bg-primary-soft'}`}
                 >
                   {n}
                 </Link>
               ))}
             </div>
             {page < totalPages ? (
-              <Link href={pageHref(page + 1)} className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-white ring-1 ring-line hover:bg-well">Next</Link>
+              <Link href={pageHref(page + 1)} className={pageLink}>Next</Link>
             ) : (
-              <span aria-disabled="true" className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-well text-slate-500">Next</span>
+              <span aria-disabled="true" className={pageOff}>Next</span>
             )}
           </div>
         )}
 
-        <p className="text-xs text-slate-500 text-center mb-10">
+        <p className="text-center text-xs text-muted">
           Page {page} of {Math.max(totalPages, 1)} — {totalDocs} product{totalDocs === 1 ? '' : 's'}
         </p>
       </div>

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rangla — Fashion</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B3FD9}a:hover{color:#3F27A8}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; background: #FAF9FE; color: #1C1A2E; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #EEEAF6">
+<div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #1C1A2E">
+<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="12" width="4" height="10" rx="2" fill="#5B3FD9"></rect><rect x="9" y="6" width="4" height="22" rx="2" fill="#5B3FD9"></rect><rect x="16" y="2" width="4" height="18" rx="2" fill="#E8336D"></rect><rect x="23" y="10" width="4" height="12" rx="2" fill="#5B3FD9"></rect></svg>
+<span style="font-weight: 800; font-size: 26px; letter-spacing: -0.03em">rang<span style="color: #5B3FD9">la</span></span>
+</a>
+<form style="flex: 1 1 380px; display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 6px 0 16px; border: 1px solid #E4DFF2; border-radius: 14px; background: #FFFFFF; box-sizing: border-box">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F5B73" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search products</label>
+<input id="q" type="search" placeholder="Search in Fashion…" style="flex: 1; min-width: 0; height: 100%; border: none; font: inherit; color: #1C1A2E; outline: none; background: transparent">
+<button type="button" style="height: 38px; padding: 0 18px; border-radius: 10px; border: none; background: #5B3FD9; color: #FFFFFF; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer">Search</button>
+</form>
+<nav aria-label="Account" style="display: flex; align-items: center; gap: 4px">
+<a href="#" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; color: #1C1A2E; text-decoration: none; font-weight: 600; font-size: 14px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>Sign in</a>
+<a href="#" aria-label="Wishlist, {{wishCount}} items" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg>
+<span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: #E8336D; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{wishCount}}</span>
+</a>
+<a href="Cart.dc.html" aria-label="Cart, {{cartCount}} items" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1C1A2E">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M2 3h3l2.5 12h11.5l2-8H6.2"></path></svg>
+<span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: #5B3FD9; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{cartCount}}</span>
+</a>
+</nav>
+</div>
+<nav aria-label="Categories" style="max-width: 1280px; margin: 0 auto; padding: 0 24px 10px; display: flex; gap: 4px; overflow-x: auto; font-weight: 600; font-size: 14px; white-space: nowrap">
+<a href="Main.dc.html" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Home</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Electronics</a>
+<a href="Category.dc.html" aria-current="page" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 10px; background: #EFEBFF; color: #3F27A8; text-decoration: none">Fashion</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Home &amp; Living</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Beauty</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Grocery</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Sports</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #3B384D; text-decoration: none">Toys &amp; Kids</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 14px; color: #C81E5B; text-decoration: none">Mega Sale</a>
+</nav>
+</header>
+
+<main style="max-width: 1280px; margin: 0 auto; padding: 20px 24px 72px; display: flex; flex-direction: column; gap: 28px">
+
+<nav aria-label="Breadcrumb" style="font-size: 13px; color: #5F5B73; display: flex; gap: 8px; align-items: center">
+<a href="Main.dc.html" style="text-decoration: none">Home</a><span aria-hidden="true">/</span><a href="AllCategories.dc.html" style="text-decoration: none">Categories</a><span aria-hidden="true">/</span><span aria-current="page" style="color: #1C1A2E; font-weight: 600">Fashion</span>
+</nav>
+
+<section aria-labelledby="cat-title" style="position: relative; overflow: hidden; border-radius: 26px; background: #E6F0FF; padding: 36px 40px; display: flex; flex-direction: column; gap: 18px">
+<div aria-hidden="true" style="position: absolute; right: 60px; top: 50%; width: 260px; height: 260px; margin-top: -130px; border-radius: 999px; background: #CFE0FF"></div>
+<div aria-hidden="true" style="position: absolute; right: 110px; top: 50%; width: 150px; height: 150px; margin-top: -75px; border-radius: 30px; background: #FFFFFF; box-shadow: 0 18px 36px rgba(31, 85, 184, 0.14); display: flex; align-items: center; justify-content: center">
+<svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#2F6BDB" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1 5 5 15H5l5-15z"></path></svg>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 6px; max-width: 620px">
+<h1 id="cat-title" style="margin: 0; font-weight: 800; font-size: 44px; letter-spacing: -0.03em; line-height: 1.05">Fashion</h1>
+<p style="margin: 0; font-size: 16px; color: #3B4A66">Lawn, kurta, denim and everyday essentials for women, men and kids.</p>
+</div>
+<div role="tablist" aria-label="Subcategories" style="position: relative; display: flex; flex-wrap: wrap; gap: 8px; max-width: 760px">
+<sc-for list="{{subs}}" as="s" hint-placeholder-count="6">
+<button type="button" role="tab" aria-selected="{{s.selected}}" onClick="{{s.pick}}" style="min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid {{s.border}}; background: {{s.bg}}; color: {{s.color}}; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer">{{s.label}}</button>
+</sc-for>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start">
+
+<aside aria-label="Filters" style="flex: 1 1 250px; max-width: 100%; display: flex; flex-direction: column; gap: 4px; background: #FFFFFF; border: 1px solid #EEEAF6; border-radius: 20px; padding: 20px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #EEEAF6">
+<h2 style="margin: 0; font-weight: 800; font-size: 18px">Filters</h2>
+<button type="button" onClick="{{clearAll}}" style="min-height: 36px; border: none; background: transparent; color: #5B3FD9; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer">Clear all</button>
+</div>
+
+<fieldset style="border: none; margin: 0; padding: 14px 0; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #EEEAF6">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 8px">Price (Rs.)</legend>
+<div style="display: flex; gap: 8px; align-items: center">
+<label style="flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #5F5B73">Min<input type="number" placeholder="0" style="height: 40px; padding: 0 10px; border: 1px solid #E4DFF2; border-radius: 10px; font: inherit; color: #1C1A2E; width: 100%; box-sizing: border-box"></label>
+<label style="flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #5F5B73">Max<input type="number" placeholder="10,000" style="height: 40px; padding: 0 10px; border: 1px solid #E4DFF2; border-radius: 10px; font: inherit; color: #1C1A2E; width: 100%; box-sizing: border-box"></label>
+</div>
+</fieldset>
+
+<fieldset style="border: none; margin: 0; padding: 14px 0; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #EEEAF6">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 8px">Size</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{sizes}}" as="z" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{z.on}}" onClick="{{z.toggle}}" style="min-width: 44px; height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid {{z.border}}; background: {{z.bg}}; color: {{z.color}}; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer">{{z.label}}</button>
+</sc-for>
+</div>
+</fieldset>
+
+<fieldset style="border: none; margin: 0; padding: 14px 0; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #EEEAF6">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 8px">Colour</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{colours}}" as="c" hint-placeholder-count="7">
+<button type="button" aria-label="{{c.name}}" aria-pressed="{{c.on}}" onClick="{{c.toggle}}" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid {{c.ring}}; background: #FFFFFF; padding: 3px; cursor: pointer">
+<span style="display: block; width: 100%; height: 100%; border-radius: 999px; background: {{c.hex}}; box-shadow: inset 0 0 0 1px rgba(28, 26, 46, 0.12)"></span>
+</button>
+</sc-for>
+</div>
+</fieldset>
+
+<fieldset style="border: none; margin: 0; padding: 14px 0; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #EEEAF6">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 8px">Discount</legend>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px"><input type="radio" name="disc" style="width: 18px; height: 18px; accent-color: #5B3FD9">10% and above</label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px"><input type="radio" name="disc" style="width: 18px; height: 18px; accent-color: #5B3FD9">25% and above</label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px"><input type="radio" name="disc" style="width: 18px; height: 18px; accent-color: #5B3FD9">40% and above</label>
+</fieldset>
+
+<fieldset style="border: none; margin: 0; padding: 14px 0 4px; display: flex; flex-direction: column; gap: 6px">
+<legend style="font-weight: 700; font-size: 14px; padding: 0; margin-bottom: 8px">Delivery</legend>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #5B3FD9">Cash on delivery</label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #5B3FD9">Free delivery</label>
+</fieldset>
+</aside>
+
+<section aria-label="Products" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<p style="margin: 0; font-size: 14px; color: #5F5B73">Showing <strong style="color: #1C1A2E">{{count}}</strong> products in <strong style="color: #1C1A2E">{{subLabel}}</strong></p>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #5F5B73">Sort by
+<select value="{{sort}}" onChange="{{onSort}}" style="height: 42px; padding: 0 12px; border: 1px solid #E4DFF2; border-radius: 10px; background: #FFFFFF; font: inherit; font-weight: 600; color: #1C1A2E">
+<option value="rec">Recommended</option>
+<option value="low">Price: low to high</option>
+<option value="high">Price: high to low</option>
+<option value="disc">Biggest discount</option>
+</select>
+</label>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="9">
+<article style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #EEEAF6; border-radius: 20px; padding: 12px 12px 16px; box-shadow: 0 8px 24px rgba(40, 24, 120, 0.05)">
+<div style="position: relative; aspect-ratio: 1 / 1; border-radius: 14px; background: {{p.tint}}; margin-bottom: 6px">
+<a href="{{p.href}}" aria-label="View {{p.name}}" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center">
+<svg width="92" height="92" viewBox="0 0 24 24" fill="none" stroke="#1C1A2E" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+</a>
+<sc-if value="{{p.hasBadge}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 10px; left: 10px; background: {{p.badgeBg}}; color: #FFFFFF; font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px">{{p.badge}}</span></sc-if>
+<button type="button" aria-label="{{p.wishLabel}}" aria-pressed="{{p.wished}}" onClick="{{p.toggleWish}}" style="position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border-radius: 999px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="width: 32px; height: 32px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(40, 24, 120, 0.1)"><svg width="17" height="17" viewBox="0 0 24 24" fill="{{p.heartFill}}" stroke="{{p.heartStroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg></span>
+</button>
+</div>
+<div style="font-size: 11px; color: #5F5B73; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em">{{p.sub}}</div>
+<h3 style="margin: 0; font-weight: 600; font-size: 15px; line-height: 1.35; min-height: 40px"><a href="{{p.href}}" style="color: #1C1A2E; text-decoration: none">{{p.name}}</a></h3>
+<div style="display: flex; gap: 6px" aria-label="Available colours">
+<sc-for list="{{p.dots}}" as="d" hint-placeholder-count="3"><span style="width: 12px; height: 12px; border-radius: 999px; background: {{d}}; box-shadow: inset 0 0 0 1px rgba(28, 26, 46, 0.15)"></span></sc-for>
+</div>
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px"><span style="font-weight: 800; font-size: 17px; color: #5B3FD9">Rs. {{p.priceText}}</span><s style="font-size: 12px; color: #6E6A82">Rs. {{p.wasText}}</s></div>
+<span style="align-self: flex-start; background: #FFE4EA; color: #C81E5B; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 6px">{{p.off}}% OFF</span>
+</div>
+<button type="button" aria-label="Add {{p.name}} to cart" onClick="{{p.add}}" style="flex: none; width: 44px; height: 44px; border-radius: 999px; border: none; background: #EFEBFF; color: #5B3FD9; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M2 3h3l2.5 12h11.5l2-8H6.2"></path></svg>
+</button>
+</div>
+</article>
+</sc-for>
+</div>
+
+<nav aria-label="Pagination" style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 12px">
+<button type="button" disabled style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #EEEAF6; background: #FFFFFF; color: #8A869C; font: inherit; font-weight: 600; font-size: 14px">← Prev</button>
+<button type="button" aria-current="page" style="width: 44px; height: 44px; border-radius: 10px; border: none; background: #5B3FD9; color: #FFFFFF; font: inherit; font-weight: 700">1</button>
+<button type="button" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #EEEAF6; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600">2</button>
+<button type="button" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #EEEAF6; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600">3</button>
+<span style="padding: 0 6px; color: #5F5B73">…</span>
+<button type="button" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #EEEAF6; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600">8</button>
+<button type="button" style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #EEEAF6; background: #FFFFFF; color: #1C1A2E; font: inherit; font-weight: 600; font-size: 14px">Next →</button>
+</nav>
+</section>
+</div>
+
+<section aria-label="Why shop with us" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #EEEAF6">
+<div style="display: flex; gap: 14px; align-items: center; padding: 8px">
+<span style="flex: none; width: 52px; height: 52px; border-radius: 999px; background: #EFEBFF; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B3FD9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v10H2z"></path><path d="M13 9h4l4 4v3h-8"></path><circle cx="6" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<div><div style="font-weight: 700">Free delivery</div><div style="font-size: 13px; color: #5F5B73">On orders over Rs. 3,000</div></div>
+</div>
+<div style="display: flex; gap: 14px; align-items: center; padding: 8px">
+<span style="flex: none; width: 52px; height: 52px; border-radius: 999px; background: #E3F7EC; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18v12H3z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+<div><div style="font-weight: 700">Cash on delivery</div><div style="font-size: 13px; color: #5F5B73">Pay when it arrives</div></div>
+</div>
+<div style="display: flex; gap: 14px; align-items: center; padding: 8px">
+<span style="flex: none; width: 52px; height: 52px; border-radius: 999px; background: #FFE8EF; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D6336C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12a4 4 0 0 1 0 8H8"></path><path d="M8 6l-4 4 4 4"></path></svg></span>
+<div><div style="font-weight: 700">Easy returns</div><div style="font-size: 13px; color: #5F5B73">[RETURN WINDOW]-day returns</div></div>
+</div>
+<div style="display: flex; gap: 14px; align-items: center; padding: 8px">
+<span style="flex: none; width: 52px; height: 52px; border-radius: 999px; background: #FFF4D6; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B07800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
+<div><div style="font-weight: 700">Secure payments</div><div style="font-size: 13px; color: #5F5B73">Cards, wallets &amp; bank transfer</div></div>
+</div>
+</section>
+
+</main>
+
+<footer style="background: #FFFFFF; border-top: 1px solid #EEEAF6; color: #5F5B73; font-size: 14px">
+<div style="max-width: 1280px; margin: 0 auto; padding: 28px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px">
+<span><span style="font-weight: 800; color: #1C1A2E">rang<span style="color: #5B3FD9">la</span></span> · © 2026 Rangla. All rights reserved.</span>
+<span>Cash on delivery · Debit &amp; credit cards · Bank transfer · Mobile wallets</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sub: 'all', sort: 'rec', wish: {}, cart: 2, sizes: {}, colours: {} };
+  }
+  renderVals() {
+    const I = {
+      dress: 'M9 2h6l-1 5 5 15H5l5-15z',
+      shirt: 'M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z',
+      shoe: 'M3 17V9l4 1 3-3 2 4c3 1 7 2 9 4v2zM3 17h18v3H3z',
+      bag: 'M6 8h12l-1 13H7zM9 8V6a3 3 0 0 1 6 0v2',
+      trousers: 'M7 3h10l1 18h-4l-2-11-2 11H6z',
+      scarf: 'M7 3h10v5c0 5-2 9-5 13-3-4-5-8-5-13zM7 8h10'
+    };
+    const raw = [
+      { id: 1, sub: 'Women', key: 'women', name: "Women's Printed Lawn 3-Piece", price: 4250, was: 5950, icon: I.dress, tint: '#F4F1FD', badge: 'New', dots: ['#C9B8F2', '#F2B8C9', '#B8D4F2', '#B8F2D6'], href: 'Product.dc.html' },
+      { id: 2, sub: 'Women', key: 'women', name: 'Embroidered Chiffon Dupatta', price: 1899, was: 2699, icon: I.scarf, tint: '#FFF3F6', badge: '', dots: ['#F2B8C9', '#F5F0E6'] },
+      { id: 3, sub: 'Men', key: 'men', name: "Men's Cotton Kurta, Classic Fit", price: 2799, was: 3999, icon: I.shirt, tint: '#F2F6FF', badge: 'Best seller', dots: ['#FFFFFF', '#1C2A4A', '#C9B79A'] },
+      { id: 4, sub: 'Men', key: 'men', name: "Men's Slim-Fit Denim Jacket", price: 4999, was: 6999, icon: I.shirt, tint: '#F2F6FF', badge: 'Sale', dots: ['#5A7BB5', '#1C2A4A'] },
+      { id: 5, sub: 'Women', key: 'women', name: "Women's Khaddar 2-Piece", price: 3650, was: 4999, icon: I.dress, tint: '#FFF7EE', badge: '', dots: ['#B5704A', '#4A6B5A', '#1C1A2E'] },
+      { id: 6, sub: 'Kids', key: 'kids', name: "Kids' Printed Kurta Pajama", price: 1999, was: 2799, icon: I.shirt, tint: '#FFFAEB', badge: '', dots: ['#FFD86B', '#B8D4F2'] },
+      { id: 7, sub: 'Footwear', key: 'footwear', name: 'Handcrafted Leather Khussa', price: 2499, was: 3299, icon: I.shoe, tint: '#FFF7EE', badge: 'Best seller', dots: ['#C9A24A', '#8A4A2A'] },
+      { id: 8, sub: 'Men', key: 'men', name: "Men's Pique Cotton Polo", price: 1799, was: 2499, icon: I.shirt, tint: '#F1FAF5', badge: '', dots: ['#1C2A4A', '#FFFFFF', '#4A6B5A', '#B53A3A'] },
+      { id: 9, sub: 'Bags', key: 'bags', name: 'Vegan Leather Tote Bag', price: 3299, was: 4499, icon: I.bag, tint: '#F4F1FD', badge: 'New', dots: ['#C9B79A', '#1C1A2E'] },
+      { id: 10, sub: 'Men', key: 'men', name: "Men's Stretch Chino Trousers", price: 2999, was: 3999, icon: I.trousers, tint: '#FFF7EE', badge: '', dots: ['#C9B79A', '#1C2A4A', '#4A4A4A'] },
+      { id: 11, sub: 'Kids', key: 'kids', name: "Kids' Denim Dungaree", price: 2399, was: 3199, icon: I.trousers, tint: '#F2F6FF', badge: '', dots: ['#5A7BB5'] },
+      { id: 12, sub: 'Women', key: 'women', name: "Women's Embroidered Kurti", price: 2199, was: 2999, icon: I.dress, tint: '#FFF3F6', badge: 'Sale', dots: ['#F2B8C9', '#FFFFFF', '#C9B8F2'] }
+    ];
+    const badgeBg = { 'New': '#5B3FD9', 'Best seller': '#C81E5B', 'Sale': '#1F55B8' };
+    const fmt = (n) => n.toLocaleString('en-US');
+    const st = this.state;
+    const subDefs = [
+      { id: 'all', label: 'All fashion' }, { id: 'women', label: 'Women' }, { id: 'men', label: 'Men' },
+      { id: 'kids', label: 'Kids' }, { id: 'footwear', label: 'Footwear' }, { id: 'bags', label: 'Bags' }
+    ];
+    const subs = subDefs.map((s) => {
+      const sel = st.sub === s.id;
+      return { ...s, selected: sel ? 'true' : 'false', bg: sel ? '#5B3FD9' : '#FFFFFF', color: sel ? '#FFFFFF' : '#1C1A2E', border: sel ? '#5B3FD9' : '#CFE0FF', pick: () => this.setState({ sub: s.id }) };
+    });
+    const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((label) => {
+      const on = !!st.sizes[label];
+      return { label, on: on ? 'true' : 'false', bg: on ? '#EFEBFF' : '#FFFFFF', color: on ? '#3F27A8' : '#1C1A2E', border: on ? '#5B3FD9' : '#E4DFF2', toggle: () => this.setState({ sizes: { ...this.state.sizes, [label]: !on } }) };
+    });
+    const colours = [
+      { name: 'Lilac', hex: '#C9B8F2' }, { name: 'Rose', hex: '#F2B8C9' }, { name: 'Sky', hex: '#B8D4F2' },
+      { name: 'Mint', hex: '#B8F2D6' }, { name: 'Beige', hex: '#C9B79A' }, { name: 'Navy', hex: '#1C2A4A' }, { name: 'White', hex: '#FFFFFF' }
+    ].map((c) => {
+      const on = !!st.colours[c.name];
+      return { ...c, on: on ? 'true' : 'false', ring: on ? '#5B3FD9' : '#EEEAF6', toggle: () => this.setState({ colours: { ...this.state.colours, [c.name]: !on } }) };
+    });
+    let list = st.sub === 'all' ? raw.slice() : raw.filter((r) => r.key === st.sub);
+    const offOf = (r) => 1 - r.price / r.was;
+    if (st.sort === 'low') list.sort((a, b) => a.price - b.price);
+    if (st.sort === 'high') list.sort((a, b) => b.price - a.price);
+    if (st.sort === 'disc') list.sort((a, b) => offOf(b) - offOf(a));
+    const products = list.map((p) => {
+      const on = !!st.wish[p.id];
+      return {
+        ...p,
+        href: p.href || '#',
+        priceText: fmt(p.price),
+        wasText: fmt(p.was),
+        off: Math.round(offOf(p) * 100),
+        hasBadge: !!p.badge,
+        badgeBg: badgeBg[p.badge] || '#5B3FD9',
+        wished: on ? 'true' : 'false',
+        wishLabel: on ? 'Remove ' + p.name + ' from wishlist' : 'Add ' + p.name + ' to wishlist',
+        heartFill: on ? '#E8336D' : 'none',
+        heartStroke: on ? '#E8336D' : '#1C1A2E',
+        toggleWish: () => this.setState({ wish: { ...this.state.wish, [p.id]: !on } }),
+        add: () => this.setState({ cart: this.state.cart + 1 })
+      };
+    });
+    return {
+      subs,
+      sizes,
+      colours,
+      products,
+      count: products.length,
+      subLabel: subDefs.find((s) => s.id === st.sub).label,
+      sort: st.sort,
+      onSort: (e) => this.setState({ sort: e.target.value }),
+      clearAll: () => this.setState({ sub: 'all', sort: 'rec', sizes: {}, colours: {} }),
+      cartCount: st.cart,
+      wishCount: Object.values(st.wish).filter(Boolean).length
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,37 +1,128 @@
 @import "tailwindcss";
 
-/* M45a: the storefront design tokens ("Graphite & Jade"). Every value is a Tailwind theme
-   variable, so components use native utilities (bg-ink, text-brand-700, bg-well, shadow-soft,
-   rounded-4xl) instead of one-off hex values. Contrast pairs used for text all meet WCAG AA:
-   ink on canvas, brand-700 on white/brand-50, white on ink/brand-700/sale-600. */
+/* M60: the redesign's design tokens (design/DESIGN_HANDOFF.md), replacing M45a's "Graphite &
+   Jade" values. Every colour, radius and shadow a storefront component needs is a Tailwind theme
+   variable, so components use native utilities (bg-primary, text-muted, rounded-card,
+   shadow-card) and never a one-off hex value.
+
+   Contrast (WCAG 2.1, measured 2026-10-23; AA needs 4.5:1 for normal text):
+   ink/page 16.2 · ink-2/white 11.3 · muted/white 6.5 · muted/page 6.2 · muted/lavender 5.4 ·
+   strike/white 5.2 · primary/white 6.7 (both ways) · primary/primary-soft 5.7 ·
+   primary-dark/primary-soft 8.7 · white/primary-deep 8.3 · on-deep/primary-deep 6.3 ·
+   pink-dark/pink-soft 4.6 · white/pink-dark 5.5 · white/sale-blue 6.9 · success/success-soft 5.1 ·
+   sky-ink/tint-blue 7.8 · every tint-*-link on its tint 5.0-7.1.
+   One exception: white on `pink` is 4.1, which passes only for large text (24px+, or 18.66px+
+   bold). Small white text on a pink fill uses `pink-dark` instead. */
 @theme {
-    --color-ink: #0e1116;
-    --color-ink-soft: #3a3f47;
-    --color-muted: #5b616b;
-    --color-canvas: #f7f7f5;
-    --color-well: #efefeb;
-    --color-line: #e6e6e1;
+    /* Brand and text. */
+    --color-primary: #5B3FD9;
+    --color-primary-dark: #3F27A8;
+    --color-primary-deep: #4B32C3;
+    --color-primary-soft: #EFEBFF;
+    --color-lavender: #EDE7FF;
+    --color-lavender-2: #DCD2FF;
+    --color-lavender-tile: #F4F1FD;
+    --color-ink: #1C1A2E;
+    --color-ink-2: #3B384D;
+    --color-ink-3: #4A4660;
+    --color-muted: #5F5B73;
+    --color-strike: #6E6A82;
+    --color-disabled: #8A869C;
+    --color-line: #EEEAF6;
+    --color-line-2: #E4DFF2;
+    --color-line-3: #D9D1F5;
+    --color-page: #FAF9FE;
+    --color-on-deep: #E3DCFF;
 
-    --color-brand-50: #ecf8f3;
-    --color-brand-100: #d3f0e4;
-    --color-brand-200: #a7e0cb;
-    --color-brand-400: #3cc497;
-    --color-brand-500: #16a37b;
-    --color-brand-600: #0e8a66;
-    --color-brand-700: #0b6e52;
-    --color-brand-800: #0a5843;
+    /* Accents and status. */
+    --color-pink: #E8336D;
+    --color-pink-dark: #C81E5B;
+    --color-pink-soft: #FFE4EA;
+    --color-sale-blue: #1F55B8;
+    --color-success: #157544;
+    --color-success-soft: #E3F7EC;
 
-    --color-sale-50: #fff1ea;
-    --color-sale-600: #c2410c;
+    /* Category tints: background, icon (-ink) and link text (-link). */
+    --color-tint-pink: #FFE8EF;
+    --color-tint-pink-ink: #D6336C;
+    --color-tint-pink-link: #B01E55;
+    --color-tint-blue: #E6F0FF;
+    --color-tint-blue-ink: #2F6BDB;
+    --color-tint-blue-link: #1F55B8;
+    --color-tint-mint: #E3F7EC;
+    --color-tint-mint-ink: #1E9E5A;
+    --color-tint-mint-link: #157544;
+    --color-tint-yellow: #FFF4D6;
+    --color-tint-yellow-ink: #C98A00;
+    --color-tint-yellow-icon: #B07800;
+    --color-tint-yellow-link: #8A5E00;
+    --color-tint-lavender: #F0EBFF;
+    --color-tint-lavender-ink: #6B4FE0;
+    --color-tint-lavender-link: #4B32C3;
+    --color-tint-peach: #FFEDE3;
+    --color-tint-peach-ink: #E8692E;
+    --color-tint-peach-link: #B04512;
+    /* The deeper ring behind the blue category hero, and its body text. */
+    --color-sky-ring: #CFE0FF;
+    --color-sky-ink: #3B4A66;
 
-    --shadow-soft: 0 1px 2px rgb(14 17 22 / 0.04), 0 8px 24px -12px rgb(14 17 22 / 0.12);
-    --shadow-lift: 0 2px 4px rgb(14 17 22 / 0.04), 0 18px 40px -16px rgb(14 17 22 / 0.22);
-    --shadow-float: 0 30px 60px -20px rgb(14 17 22 / 0.45);
+    /* Pale product-image tiles (the pastel well around a real product photo). */
+    --color-tile-lavender: #F4F1FD;
+    --color-tile-blue: #F2F6FF;
+    --color-tile-pink: #FFF3F6;
+    --color-tile-mint: #F1FAF5;
+    --color-tile-peach: #FFF7EE;
+    --color-tile-yellow: #FFFAEB;
+
+    /* Shape. */
+    --radius-control: 12px;
+    --radius-tile: 14px;
+    --radius-field: 14px;
+    --radius-card: 20px;
+    --radius-panel: 26px;
+    --radius-hero: 28px;
+
+    /* Elevation. */
+    --shadow-card: 0 8px 24px rgba(40, 24, 120, 0.05);
+    --shadow-card-sm: 0 6px 18px rgba(40, 24, 120, 0.05);
+    --shadow-chip: 0 2px 8px rgba(40, 24, 120, 0.1);
+    --shadow-float: 0 24px 48px rgba(63, 39, 168, 0.14);
+    --shadow-float-sm: 0 18px 36px rgba(63, 39, 168, 0.12);
+    --shadow-bar: 0 -6px 20px rgba(40, 24, 120, 0.06);
+    --shadow-pink: 0 12px 24px rgba(232, 51, 109, 0.3);
+
+    /* M60 legacy aliases: M45a names still used by pages not yet redesigned. Each points at the
+       nearest new token; all are deleted in M66 once nothing uses them. */
+    --color-ink-soft: var(--color-ink-2);
+    --color-canvas: var(--color-page);
+    --color-well: var(--color-lavender-tile);
+    --color-brand-50: var(--color-primary-soft);
+    --color-brand-200: var(--color-lavender-2);
+    --color-brand-400: var(--color-lavender-2);
+    --color-brand-500: var(--color-primary);
+    --color-brand-600: var(--color-primary);
+    --color-brand-700: var(--color-primary-dark);
+    --color-sale-600: var(--color-pink-dark);
+    --shadow-soft: var(--shadow-card);
+    --shadow-lift: var(--shadow-float-sm);
+}
+
+/* M60: Plus Jakarta Sans is loaded by next/font in app/(public)/layout.jsx as the CSS variable
+   --font-jakarta; `inline` makes font-sans (and Tailwind's default html font) resolve it. */
+@theme inline {
+    --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
     button {
         cursor: pointer;
+    }
+
+    /* M60: one visible keyboard focus ring for every interactive element (handoff accessibility
+       rule). Components may refine it; none may remove it without a replacement. */
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
     }
 }
 

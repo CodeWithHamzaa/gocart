@@ -784,6 +784,7 @@ Per [ADR-006](./DECISIONS.md) (Accepted) and the **Remove** rows for Vendor/Sell
 - **Testing**: `npm run type-check`, `npm run lint` (0 errors), `npm run build`; no horizontal scroll at 320/390/1440px on every storefront route; the full Playwright suite (one "Add to Cart", the M40 category links and product in the home HTML, 44px header targets) passes in CI.
 - **Rollback**: Revert the PR; no data or schema involved.
 - **Commit message**: `Premium storefront visual refresh (M45a)`
+- **✅ Done** — merged to `main` in PR #24 (`67a9102`); status confirmed by the owner on 2026-10-23 (TASKS.md had still said "In review"). Its tokens are superseded by `M60`.
 
 ---
 
@@ -1137,6 +1138,97 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: Following the runbook on a clean environment successfully deploys a working production instance.
 - **Rollback**: N/A at this point — a failed production deploy is rolled back via the runbook's own rollback section, not by reverting this documentation commit.
 - **Commit message**: `Add production deployment runbook and cut v1.0.0`
+
+---
+
+## Group: Storefront redesign — `M60` onward
+
+The owner-supplied redesign (`design/DESIGN_HANDOFF.md`, `design/*.dc.html`, `design/screens/*`, on the
+`redesign` branch / PR #25): a violet palette, Plus Jakarta Sans and pastel image tiles. Split into
+small milestones, each added here only once the owner has approved its draft. UI-only milestones
+change no data, schema, server action, Redux slice or order logic. The design is a visual target
+only: its sample data, placeholder brand, and features the store does not have (wishlist, customer
+sign-in, card/wallet payments, coupons, express delivery, filters) are not built.
+
+### M60 — Storefront design tokens and Plus Jakarta Sans
+- **Goal**: Replace `M45a`'s "Graphite & Jade" theme values in `app/globals.css`'s `@theme` with the handoff token set (colours, category tints, product-tile pastels, radii, shadows), load Plus Jakarta Sans with `next/font/google` (latin, `display: swap`, only the weights the design uses: 400/500/600/700/800), and add one visible keyboard focus ring. `M45a`'s token names stay as aliases of the nearest new token, so pages not yet redesigned keep rendering until `M66` deletes the aliases.
+- **Files**: `app/globals.css`, `app/(public)/layout.jsx` (font only), `docs/TASKS.md`, `docs/CHANGELOG.md`, `docs/MIGRATION_PLAN.md` (this entry and the `M45a` ✅ fix)
+- **Dependencies**: M45a, M52c
+- **Testing**: the body's computed `font-family` is Plus Jakarta Sans and `/` requests exactly one font file; every text/background pair in the design meets 4.5:1 (white on `pink` is 4.1, so small white text uses `pink-dark`); `npm run lint`, `npm run type-check`, `npm run build` pass; the full Playwright suite passes (in CI for the Turnstile-dependent tests); no horizontal scroll at 320px on `/`, `/shop`, a product, `/category/electronics`, `/categories`, `/cart`, `/orders`; screenshots at 390/768/1440 differ from `main` only in palette and font.
+- **Rollback**: Revert the commit; CSS and font only, no data.
+- **Commit message**: `Add redesign tokens and Plus Jakarta Sans (M60)`
+
+### M61 — Shared storefront components
+- **Goal**: Rebuild the shared storefront components on the `M60` tokens, matching the design's header, product card, footer and mobile tab bar. Every existing prop, handler and accessible name stays the same; nothing changes in data, Redux, server actions or order logic.
+- **Files**:
+  - Edited in place: `components/{Navbar,Footer,ProductCard,Title,Counter,CategoryRow}.jsx|tsx`, `components/AnnouncementBar.tsx`, `app/(public)/layout.jsx` (mounts `CategoryNav` and `MobileTabBar`, passes the store name to the header).
+  - New under `components/ui/`: `Badge`, `CategoryTile` (tile and circle), `QuantityStepper`, `RadioCard`, `MobileTabBar`, `MobileActionBar`, `Breadcrumb`, `TrustRow`, `EmptyState`, `CategoryNav` (server), `QuickAddButton` (client).
+  - New: `lib/category-style.tsx` (the icon and tint mapping moved out of `CategoryRow`).
+  - Read-only memoisation, no query change: `lib/payload/categories.ts` adds `getTopLevelCategoriesCached`, and `lib/payload/settings.ts` exports `getSettings` through React `cache`, so the header, announcement bar, footer, metadata and page share one read of each per request.
+  - Docs: `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`.
+- **Spec**:
+  - Header: the store's own name (Settings `storeName`), a search form with a button named "Search", a visible Shop link, and a cart link named "Cart, N items" with a count badge. Left out on purpose: Sign in (admin-only auth), wishlist, notification bell and the menu button (no destination exists for them).
+  - Category row (desktop only): the real top-level categories plus "All categories". Announcement bar: the delivery sentence from Settings, "Cash on delivery across Pakistan" and "Track order" → `/orders`. Footer: shop, help and contact columns, contact from Settings (`M55a`); no "Sell on…", newsletter, careers or card/wallet lines.
+  - Product card: a pastel tile around the real image, category, name, violet price with the MRP struck through, "% OFF" chip, "Out of stock" pill. One link (to the product) wraps category, name and price and is stretched over the card; the quick-add button ("Add {name} to cart", the existing `addToCart`) is a sibling above it, disabled and named "{name} is out of stock" when the product is not in stock. It sits over the image tile at every width (the design puts it in the price row; that row has no room at 320px).
+  - Mobile tab bar (below `lg`): Home, Categories, Products, Orders, no Cart/Shop/Search (the header owns those). It steps aside on the product page and the cart, which get `MobileActionBar` in `M64`/`M65`.
+  - The header's Search button is `type="button"` and asks its form to submit: `/orders`' e2e expects its own form to hold the only `button[type=submit]`. Enter in the field submits as before.
+- **Dependencies**: M60
+- **Testing**: the e2e constraints hold (one `<a href="/product/…">` per card containing name and price; exactly one Shop link, Search button and `/^Cart/` link in the header at 320px; one `Add to Cart` button on a product page and none on a listing); quick-add increments the header count and is disabled out of stock; keyboard tab order and visible focus on header, cards and tab bar; every target ≥ 44px; 4.5:1 for every text pair; no horizontal scroll at 320px on the seven routes; `npm run lint`, `type-check` and `build` pass; the full Playwright suite passes (in CI for the Turnstile-dependent tests); 390/768/1440 screenshots of `/shop` against the design's header, card and footer.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Rebuild shared storefront components on the redesign tokens (M61)`
+
+### M62 — Home page redesign
+- **Goal**: Lay out `/` like the design's `Main`/`Mobile` home using only real data and true copy. The section formerly titled "Best Selling" is titled **"Featured"** (the `isFeatured` flag is a curated list, not a sales ranking; [ADR-022](./DECISIONS.md) left the label as a copy decision).
+- **Files**: `app/(public)/page.jsx`, `components/{Hero,LatestProducts,BestSelling,OurSpec,CategoryRow,ui/CategoryTile,ui/TrustRow}`, `docs/ARCHITECTURE.md` (route table wording), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Hero: lavender panel, the existing honest headline, "Starts from {lowest price}", real in-stock product tiles, a `pink-dark` circle showing the lowest price (not drawn when there is none), and three chips (delivery note, cash on delivery, guest checkout). The design's "Mega Sale", "up to 60% off", free-shipping, secure-payment and returns copy is not used.
+  - Shop by category: a phone shows a row of round category chips and the first four pastel tiles; wider screens show every top-level tile. A tile's subtitle is its real child links, so every parent and child link stays in the initial HTML.
+  - "Latest products" and "Featured" use the redesigned card in an auto-fill grid (two columns on a phone). The page now reads up to 5 latest and 10 featured products (was 4 and 8) so a wide screen fills rows of five; Featured is hidden when nothing is flagged. A value-prop row (delivery, cash on delivery, guest checkout, order tracking) replaces "How ordering works".
+  - Not built: the limited-offer band (coupons, [ADR-017](./DECISIONS.md)), promo cards (`M71`), countdown, newsletter (`M48a`), category tabs (`M68`).
+- **Dependencies**: M61
+- **Testing**: the home HTML contains "Modern Table Lamp", `href="/category/electronics"` and `href="/category/speakers"`; the HTML has no "Best Sell", "Popular", "Mega", "Rangla" or "returns"; no horizontal scroll at 320px; the full Playwright suite passes (Turnstile-dependent tests in CI); 390/768/1440 screenshots against `desktop-01`/`mobile-01`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign the home page with real data and Featured section (M62)`
+
+### M63 — Categories index and category listing redesign
+- **Goal**: Lay out `/categories` like the design's `AllCategories`/`CategoriesMobile` and `/category/[slug]` like `Category`/`CategoryMobile`, without the filter sidebar or sort control.
+- **Files**: `app/(public)/categories/{page,loading}.tsx`, `app/(public)/category/[slug]/{page,not-found,error}.tsx` (**no `loading.tsx`**: do-not-touch, `M27a`), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - `/categories`: a white card per top-level category with a large pastel circle (its image if an admin uploaded one, else a tinted icon) and its child categories as pills beneath, as `docs/CATEGORY_REQUIREMENTS.md` requires (the design's circles carry no children; the spec wins). Empty state: "No categories yet".
+  - Category page: breadcrumb, a tinted heading panel (title, description, and on a parent page its subcategories as pills), the product count, a full-width auto-fill grid (two columns on a phone) and link-based pagination at every width. There is no "load more": it would need client fetching, and every page stays its own crawlable URL. `rel` prev/next, canonicals and metadata are unchanged; the empty, 404 and error states use the shared panel.
+  - Not built: filter sidebar, sort control (Future Phase in `docs/CATEGORY_REQUIREMENTS.md`), colour dots (no variants).
+- **Dependencies**: M61
+- **Testing**: an unknown slug returns **404**; `?page=999` returns **404**; an empty category returns **200** with the empty state; no horizontal scroll at 320px on `/categories` and `/category/electronics`; the full Playwright suite passes (Turnstile-dependent tests in CI), including the "created after the build renders on demand, and paginates" test; 390/768/1440 screenshots against `desktop-02/03`, `mobile-02/03`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign categories index and category listing (M63)`
+
+### M64 — Product detail redesign
+- **Goal**: Lay out the product page like the design's `Product`/`ProductMobile`, keeping the add-to-cart, buy-now and stock behaviour exactly as it is.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `components/{ProductDetails,ProductDescription,ui/MobileActionBar}`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Images: a pastel tile around the real image; a thumbnail rail beside it from `lg`, a strip below it on a phone; the tile is full-bleed on a phone, with view dots.
+  - Text: category label, name, a price card (price, MRP struck through, "% OFF" chip, the delivery sentence from Settings) and a stock pill. The design's "Inclusive of all taxes" is **not** shown: nothing in the store states tax treatment.
+  - Actions (unchanged logic): "Add to Cart" + "Buy Now"; after adding, the quantity control + "View Cart"; out of stock shows a disabled "Out of Stock" button. There is **one** action group in the DOM: fixed to the bottom below `lg`, inline in the column from `lg` (`MobileActionBar` gains an `inline` option).
+  - Info rows: delivery note and cash on delivery. Below: two native `<details>` sections (Description, open by default; Delivery & payment) at every width. The design's desktop tab card is simplified to the same accordions; there is no size guide, returns or reviews content to show.
+  - Not built: colour/size/stitching options, SKU, brand (no variants), the pre-add quantity stepper (it would change the add handler), share, wishlist, reviews ([ADR-016](./DECISIONS.md)), "You may also like" (`M67`).
+- **Dependencies**: M61
+- **Testing**: on an in-stock product there is exactly one "Add to Cart" button, "View Cart" appears after adding and "Add to Cart" is gone; on an out-of-stock product there is a disabled "Out of Stock" button and no "Add to Cart"; JSON-LD and metadata are unchanged (`e2e/seo.spec.ts`); an unknown id returns 404; no horizontal scroll at 320px; the full Playwright suite passes (Turnstile-dependent tests in CI); 390/768/1440 screenshots against `desktop-04`/`mobile-04`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign the product detail page (M64)`
+
+### M65 — Cart redesign (checkout stays on /cart)
+- **Goal**: Lay out `/cart` like the design's `Cart`/`CartMobile`, with a checkout-styled summary panel taken from `Checkout`/`CheckoutMobile`. No change to the place-order logic, state, address flow or Turnstile (owner decision: checkout stays on `/cart`, no `/checkout` route).
+- **Files**: `app/(public)/cart/page.jsx`, `components/{OrderSummary,AddressModal}.jsx` (markup and classes only), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Items: the table becomes cards (pastel tile, name linking to the product, category, price, quantity control, "Item total", and one 44px "Remove {name}" button at every width), then "Continue shopping". The page width is 1120px.
+  - Summary panel: 1 Delivery address (the existing select, "Add Address" and modal, restyled); 2 Delivery (one "Standard delivery" card showing Free or the flat fee and the Settings sentence); 3 Payment (one "Cash on Delivery (COD)" card). Then Subtotal, "You save" (the sum of (MRP − price) × quantity over lines with a real discount, hidden when 0), Delivery, Total, the Turnstile widget and "Place Order".
+  - Below `lg` the total and the Place Order button are pinned in a fixed bar; it is the same button element, moved by CSS, so there is still exactly one.
+  - Empty state: the shared panel with "Browse categories". "Restore items" from the design is dropped (there is no state to restore).
+  - Not built: promo code ([ADR-017](./DECISIONS.md)), express delivery ([ADR-018](./DECISIONS.md)), card/wallet/bank payments ([ADR-004](./DECISIONS.md)), the step-indicator header.
+- **Dependencies**: M61
+- **Testing**: the golden-path, idempotency, turnstile-fallback and mobile specs pass unchanged (Turnstile-dependent ones in CI); "Place Order" stays disabled until Turnstile is verified and shipping settings have loaded; "You save" is hidden when 0; one "Remove …" button per line; the saved address appears as one text node; no horizontal scroll at 320px; 390/1440 screenshots against `desktop-05/05b/06`, `mobile-05/05b/06`.
+- **Rollback**: Revert the commit; `OrderSummary`'s logic is untouched, so the diff is markup and classes only.
+- **Commit message**: `Redesign the cart with a checkout-styled summary (M65)`
 
 ---
 

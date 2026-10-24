@@ -1,14 +1,16 @@
 'use client'
 import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
-import PageTitle from "@/components/PageTitle";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import EmptyState from "@/components/ui/EmptyState";
 import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
-import { Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, ShoppingCartIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from '@/lib/currency'
+import { tileFor } from '@/lib/category-style'
 
 // M28: previously resolved cart line items against `state.product.list`,
 // a Redux slice populated only from the dummy dataset (`productSlice.js`,
@@ -69,75 +71,72 @@ export default function Cart() {
         }
     }, [cartItems, products]);
 
+    // M65: the redesigned layout (design: Cart / CartMobile). Items are cards, not a table; the
+    // summary panel carries the checkout steps (OrderSummary). Checkout stays on /cart (owner decision).
+    const itemCount = cartArray.reduce((sum, item) => sum + item.quantity, 0)
+
     return cartArray.length > 0 ? (
-        <div className="min-h-screen mx-6 text-slate-800">
+        <div className="mx-4 min-h-screen sm:mx-6">
 
-            <div className="max-w-7xl mx-auto ">
-                {/* Title */}
-                <PageTitle heading="My Cart" text="items in your cart" linkText="Add more" />
+            <div className="mx-auto max-w-[1120px] pb-10">
+                <div className="mt-2 sm:mt-4">
+                    <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
+                </div>
+                <h1 className="mb-5 mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">My Cart <span className="text-base font-semibold text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
 
-                <div className="flex items-start justify-between gap-5 max-lg:flex-col">
+                <div className="flex flex-wrap items-start gap-6">
 
-                    <table className="w-full max-w-4xl text-slate-600 table-auto">
-                        <thead>
-                            <tr className="max-sm:text-sm">
-                                <th className="text-left">Product</th>
-                                <th>Quantity</th>
-                                <th className="max-sm:hidden">Total Price</th>
-                                <th className="max-md:hidden">Remove</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                cartArray.map((item, index) => {
-                                    const firstImage = item.images?.[0]
-                                    const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
-                                    const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
+                    <section aria-label="Items in your cart" className="flex min-w-0 flex-[999_1_480px] flex-col gap-3.5">
+                        {
+                            cartArray.map((item) => {
+                                const firstImage = item.images?.[0]
+                                const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
+                                const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
 
-                                    return (
-                                    <tr key={index} className="space-x-2">
-                                        <td className="flex gap-3 my-4">
-                                            <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                {imageUrl && <Image src={imageUrl} className="h-14 w-auto" alt="" width={45} height={45} sizes="56px" />}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="max-sm:text-sm [overflow-wrap:anywhere]">{item.name}</p>
-                                                <p className="text-xs text-slate-500">{categoryTitle}</p>
-                                                <p>{formatPKR(item.price)}</p>
-                                                {/* M44: below md the "Remove" column is hidden, and this was the only way to
-                                                    remove a line on a phone (decrement to zero). */}
-                                                <button type="button" onClick={() => handleDeleteItemFromCart(item.id)} className="md:hidden mt-1 inline-flex items-center gap-1 min-h-11 text-sm text-red-700">
-                                                    <Trash2Icon size={16} aria-hidden="true" /> Remove
+                                return (
+                                    <article key={item.id} className="flex items-center gap-3 rounded-[22px] bg-white p-3 shadow-card ring-1 ring-line sm:gap-5 sm:p-4">
+                                        <div className={`flex size-24 shrink-0 items-center justify-center rounded-tile sm:size-32 ${tileFor(item.id)}`}>
+                                            {imageUrl && <Image src={imageUrl} className="h-3/4 w-3/4 object-contain mix-blend-multiply" alt="" width={96} height={96} sizes="96px" />}
+                                        </div>
+                                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <Link href={`/product/${item.id}`} className="text-[15px] font-bold leading-snug text-ink [overflow-wrap:anywhere] hover:text-primary sm:text-[17px]">{item.name}</Link>
+                                                    {categoryTitle && <p className="text-[13px] text-muted">{categoryTitle}</p>}
+                                                </div>
+                                                {/* M44 made removal reachable on a phone; M65 keeps one 44px button at every width. */}
+                                                <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-2 -mt-2 inline-flex size-11 shrink-0 items-center justify-center rounded-control text-strike transition hover:bg-pink-soft hover:text-pink-dark active:scale-95">
+                                                    <Trash2Icon size={18} aria-hidden="true" />
                                                 </button>
                                             </div>
-                                        </td>
-                                        <td className="text-center">
-                                            <Counter productId={item.id} />
-                                            {/* M44: below sm the separate "Total Price" column is dropped (three columns
-                                                do not fit a 320px phone once a name or price is long); the line total
-                                                sits under the quantity instead. */}
-                                            <p className="sm:hidden mt-1 text-sm font-medium whitespace-nowrap">{formatPKR(item.price * item.quantity)}</p>
-                                        </td>
-                                        <td className="max-sm:hidden text-center whitespace-nowrap">{formatPKR(item.price * item.quantity)}</td>
-                                        <td className="text-center max-md:hidden">
-                                            <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="inline-flex items-center justify-center size-11 text-red-600 hover:bg-red-50 rounded-full active:scale-95 transition-all">
-                                                <Trash2Icon size={18} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    )
-                                })
-                            }
-                        </tbody>
-                    </table>
+                                            <p className="text-lg font-extrabold text-primary">{formatPKR(item.price)}</p>
+                                            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                                                <Counter productId={item.id} />
+                                                <p className="text-sm text-muted">Item total <strong className="whitespace-nowrap text-ink">{formatPKR(item.price * item.quantity)}</strong></p>
+                                            </div>
+                                        </div>
+                                    </article>
+                                )
+                            })
+                        }
+                        <Link href="/shop" className="inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-primary hover:text-primary-dark">
+                            <ArrowLeftIcon size={18} aria-hidden="true" /> Continue shopping
+                        </Link>
+                    </section>
+
                     <OrderSummary totalPrice={totalPrice} items={cartArray} />
                 </div>
             </div>
         </div>
     ) : (
-        <div className="min-h-[80vh] mx-6 flex flex-col gap-4 items-center justify-center text-slate-600">
-            <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
-            <Link href="/shop" className="inline-flex items-center justify-center min-h-11 px-6 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft">Browse products</Link>
+        <div className="mx-4 flex min-h-[70vh] items-center justify-center sm:mx-6">
+            <h1 className="sr-only">My Cart</h1>
+            <EmptyState
+                icon={<ShoppingCartIcon size={36} strokeWidth={1.4} />}
+                title="Your cart is empty"
+                text="Browse categories and add something you love."
+                action={{ href: '/categories', label: 'Browse categories' }}
+            />
         </div>
     )
 }
