@@ -20,6 +20,7 @@ export type Product = {
   category: Category | null | number | string
   inStock: boolean
   isFeatured?: boolean | null
+  label?: 'new' | 'limited' | 'sale' | null
 }
 
 export type GetProductsOptions = {

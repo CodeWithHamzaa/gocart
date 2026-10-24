@@ -1,5 +1,6 @@
 import * as migration_20261011_014606_initial from './20261011_014606_initial';
 import * as migration_20261011_181740_order_idempotency_key from './20261011_181740_order_idempotency_key';
+import * as migration_20261024_061017_product_label from './20261024_061017_product_label';
 
 export const migrations = [
   {
@@ -10,6 +11,11 @@ export const migrations = [
   {
     up: migration_20261011_181740_order_idempotency_key.up,
     down: migration_20261011_181740_order_idempotency_key.down,
-    name: '20261011_181740_order_idempotency_key'
+    name: '20261011_181740_order_idempotency_key',
+  },
+  {
+    up: migration_20261024_061017_product_label.up,
+    down: migration_20261024_061017_product_label.down,
+    name: '20261024_061017_product_label'
   },
 ];
