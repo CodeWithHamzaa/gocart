@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { cache } from "react";
@@ -50,10 +50,17 @@ export default async function Product({ params }) {
         ? product.category
         : null
 
+    const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }
+    const crumbs = [
+        { label: 'Home', href: '/' },
+        { label: 'Products', href: '/shop' },
+        ...(category ? [{ label: category.title, href: `/category/${category.slug}` }] : []),
+        { label: product.name },
+    ]
+
     return (
-        // M45a: the bottom padding below `lg` keeps the pinned action bar (ProductDetails) from
-        // covering the end of the page.
-        <div className="mx-4 sm:mx-6 pb-24 lg:pb-0">
+        // M64: the bottom space for the fixed action bar below `lg` comes from MobileTabBar's spacer.
+        <div className="mx-4 sm:mx-6">
             {/* M43: schema.org Product + Offer from real data; serializeJsonLd escapes "<". */}
             <script
                 type="application/ld+json"
@@ -61,21 +68,16 @@ export default async function Product({ params }) {
             />
             <div className="max-w-7xl mx-auto">
 
-                {/* Breadcrums — M27a: the category segment is now a real link to
-                    /category/[slug], replacing the unlinked plain text. */}
-                <div className="text-muted text-sm mt-5 mb-4 sm:mt-8 sm:mb-6 [overflow-wrap:anywhere]">
-                    <Link href="/" className="hover:text-ink">Home</Link> / <Link href="/shop" className="hover:text-ink">Products</Link>
-                    {category && <> / <Link href={`/category/${category.slug}`} className="hover:text-ink">{category.title}</Link></>}
+                {/* Breadcrumb: M27a made the category segment a real link to /category/[slug]. */}
+                <div className="mt-2 mb-3 sm:mt-4 sm:mb-4">
+                    <Breadcrumb items={crumbs} />
                 </div>
 
                 {/* Product Details */}
-                <ProductDetails
-                    product={product}
-                    shipping={{ flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }}
-                />
+                <ProductDetails product={product} shipping={shipping} />
 
-                {/* Description & Reviews */}
-                <ProductDescription product={product} />
+                {/* Description and delivery */}
+                <ProductDescription product={product} shipping={shipping} />
             </div>
         </div>
     );

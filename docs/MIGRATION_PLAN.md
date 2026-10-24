@@ -1202,6 +1202,20 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Redesign categories index and category listing (M63)`
 
+### M64 — Product detail redesign
+- **Goal**: Lay out the product page like the design's `Product`/`ProductMobile`, keeping the add-to-cart, buy-now and stock behaviour exactly as it is.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `components/{ProductDetails,ProductDescription,ui/MobileActionBar}`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Images: a pastel tile around the real image; a thumbnail rail beside it from `lg`, a strip below it on a phone; the tile is full-bleed on a phone, with view dots.
+  - Text: category label, name, a price card (price, MRP struck through, "% OFF" chip, the delivery sentence from Settings) and a stock pill. The design's "Inclusive of all taxes" is **not** shown: nothing in the store states tax treatment.
+  - Actions (unchanged logic): "Add to Cart" + "Buy Now"; after adding, the quantity control + "View Cart"; out of stock shows a disabled "Out of Stock" button. There is **one** action group in the DOM: fixed to the bottom below `lg`, inline in the column from `lg` (`MobileActionBar` gains an `inline` option).
+  - Info rows: delivery note and cash on delivery. Below: two native `<details>` sections (Description, open by default; Delivery & payment) at every width. The design's desktop tab card is simplified to the same accordions; there is no size guide, returns or reviews content to show.
+  - Not built: colour/size/stitching options, SKU, brand (no variants), the pre-add quantity stepper (it would change the add handler), share, wishlist, reviews ([ADR-016](./DECISIONS.md)), "You may also like" (`M67`).
+- **Dependencies**: M61
+- **Testing**: on an in-stock product there is exactly one "Add to Cart" button, "View Cart" appears after adding and "Add to Cart" is gone; on an out-of-stock product there is a disabled "Out of Stock" button and no "Add to Cart"; JSON-LD and metadata are unchanged (`e2e/seo.spec.ts`); an unknown id returns 404; no horizontal scroll at 320px; the full Playwright suite passes (Turnstile-dependent tests in CI); 390/768/1440 screenshots against `desktop-04`/`mobile-04`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Redesign the product detail page (M64)`
+
 ---
 
 ## Summary

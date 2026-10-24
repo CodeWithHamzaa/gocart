@@ -412,6 +412,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M61` | Storefront redesign: shared components — header, product card, footer, tab bar (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 | `M62` | Storefront redesign: home page, "Featured" section (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 | `M63` | Storefront redesign: categories index and category listing (UI only) | **In review** (2026-10-23) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach; 404/404/200 statuses), CI pending |
+| `M64` | Storefront redesign: product detail page (UI only) | **In review** (2026-10-24) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 
 ---
 

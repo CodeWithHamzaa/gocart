@@ -1,14 +1,17 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { TruckIcon, BanknoteIcon, ShoppingBagIcon } from "lucide-react";
+import { TruckIcon, BanknoteIcon, ShoppingCartIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
+import Badge from "./ui/Badge";
+import MobileActionBar from "./ui/MobileActionBar";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from "@/lib/currency";
 import { deliveryNote } from "@/lib/delivery";
+import { tileFor } from "@/lib/category-style";
 
 // M25: adapted for real Payload data.
 // - `images` are Media relationships, resolved to `.url` the same way
@@ -19,11 +22,13 @@ import { deliveryNote } from "@/lib/delivery";
 //   products don't have, and would have thrown before rendering.
 // M55a: `shipping` is read from the Settings global by the product page (server) and passed in,
 // so the delivery line can never disagree with what checkout charges (see lib/delivery.ts).
-// M45a: premium product layout — the image in an arched well with an "n / total" counter, pill
-// badges, and one action bar that is pinned to the bottom of the screen on phones and tablets
-// (thumb reach) and sits inline from `lg`. It is a single set of buttons in the DOM, so there is
-// exactly one "Add to Cart". "Buy Now" adds the product and goes straight to the cart, where the
-// guest COD checkout is. No size/colour selectors: products have no variants (yet).
+// M45a/M64: one action group, in the DOM once: fixed to the bottom of the screen below `lg` (thumb
+// reach) and inline in the column from `lg`, so there is exactly one "Add to Cart". "Buy Now" adds the
+// product and goes straight to the cart, where the guest COD checkout is. No size/colour selectors,
+// SKU or brand: products have no variants (yet). The design's "Inclusive of all taxes" is not shown:
+// nothing in the store states tax treatment.
+// M64: the redesign's layout. A pastel tile holds the real image (a thumbnail rail beside it from
+// `lg`, a strip below it on a phone), then category, name, a price card, stock, actions and info rows.
 const ProductDetails = ({ product, shipping }) => {
 
     const productId = product.id;
@@ -57,85 +62,89 @@ const ProductDetails = ({ product, shipping }) => {
     }
 
     return (
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-14">
-            <div className="min-w-0">
-                <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-4xl bg-well sm:aspect-[5/4] lg:aspect-square">
-                    {/* The arch behind the product. */}
-                    <div aria-hidden="true" className="absolute inset-x-[14%] top-[9%] bottom-0 rounded-t-full bg-white/75" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
+            <div className="flex min-w-0 flex-col gap-3 lg:flex-row-reverse lg:gap-4">
+                {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. */}
+                <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-[4/5] ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
-                    {mainImage && <Image src={mainImage} alt={product.name} width={600} height={600} sizes="(min-width: 1024px) 560px, 90vw" priority fetchPriority="high" className="relative h-[68%] w-[68%] object-contain" />}
+                    {mainImage && <Image src={mainImage} alt={product.name} width={600} height={600} sizes="(min-width: 1024px) 560px, 100vw" priority fetchPriority="high" className="relative h-[78%] w-[78%] object-contain mix-blend-multiply" />}
+                    {outOfStock && <Badge tone="neutral" className="absolute left-3 top-3">Out of stock</Badge>}
                     {images.length > 1 && (
-                        <span aria-hidden="true" className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-ink/75 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                            {imageIndex + 1} / {images.length}
+                        <span aria-hidden="true" className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
+                            {images.map((image, index) => (
+                                <span key={index} className={`h-1.5 rounded-full ${index === imageIndex ? 'w-[18px] bg-primary' : 'w-1.5 bg-line-3'}`} />
+                            ))}
                         </span>
                     )}
                 </div>
                 {images.length > 1 && (
-                    <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto p-1">
+                    <div className="no-scrollbar flex gap-3 overflow-x-auto p-1 lg:flex-col lg:overflow-visible">
                         {images.map((image, index) => (
-                            <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className={`flex size-16 shrink-0 items-center justify-center rounded-2xl bg-well ring-2 transition sm:size-20 ${mainImage === image ? 'ring-ink' : 'ring-transparent hover:ring-line'}`}>
-                                <Image src={image} className="h-3/4 w-3/4 object-contain" alt="" width={64} height={64} sizes="64px" />
+                            <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className={`flex size-16 shrink-0 items-center justify-center rounded-tile ring-2 transition sm:size-[72px] ${tileFor(productId)} ${mainImage === image ? 'ring-primary' : 'ring-transparent hover:ring-line-3'}`}>
+                                <Image src={image} className="h-3/4 w-3/4 object-contain mix-blend-multiply" alt="" width={64} height={64} sizes="64px" />
                             </button>
                         ))}
                     </div>
                 )}
             </div>
 
-            <div className="min-w-0 lg:pt-4">
-                {category && <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{category.title}</p>}
+            <div className="min-w-0 lg:pt-2">
+                {category && <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted">{category.title}</p>}
                 {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
-                <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl lg:text-4xl [overflow-wrap:anywhere]">{product.name}</h1>
+                <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-3xl lg:text-[34px] [overflow-wrap:anywhere]">{product.name}</h1>
 
-                <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <p className="text-2xl font-bold text-ink sm:text-3xl">{formatPKR(product.price)}</p>
-                    {discount > 0 && (
-                        <>
-                            <p className="text-base text-muted line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
-                            <p className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">Save {discount}%</p>
-                        </>
-                    )}
+                <div className="mt-4 rounded-card bg-white p-4 ring-1 ring-line sm:p-5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <p className="text-[28px] font-extrabold leading-none text-primary sm:text-[32px]">{formatPKR(product.price)}</p>
+                        {discount > 0 && (
+                            <>
+                                <p className="text-base text-strike line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
+                                <Badge tone="off">{discount}% OFF</Badge>
+                            </>
+                        )}
+                    </div>
+                    <p className="mt-3 text-[13px] text-muted">{deliveryNote(shipping)}</p>
                 </div>
 
-                <p className={`mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${outOfStock ? 'bg-rose-50 text-rose-700' : 'bg-brand-50 text-brand-700'}`}>
-                    <span aria-hidden="true" className={`size-1.5 rounded-full ${outOfStock ? 'bg-rose-600' : 'bg-brand-600'}`} />
-                    {outOfStock ? 'Out of stock' : 'In stock'}
-                </p>
+                <div className="mt-3">
+                    <Badge tone={outOfStock ? 'neutral' : 'success'} className={outOfStock ? 'ring-1 ring-line-2' : ''}>{outOfStock ? 'Out of stock' : 'In stock'}</Badge>
+                </div>
 
-                {/* The action bar: fixed to the bottom below `lg`, inline from `lg`. */}
-                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgb(14_17_22/0.15)] backdrop-blur lg:static lg:z-auto lg:mt-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+                {/* The action group: fixed to the bottom below `lg`, inline in the column from `lg`. */}
+                <MobileActionBar label="Add to cart" inline>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
-                            <button disabled aria-disabled="true" className="min-h-12 flex-1 rounded-full bg-slate-200 px-6 text-sm font-semibold text-slate-500 cursor-not-allowed">
+                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-control bg-line px-6 text-sm font-bold text-disabled">
                                 Out of Stock
                             </button>
                         ) : inCart ? (
                             <>
                                 <Counter productId={productId} />
-                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-full bg-ink px-6 text-sm font-semibold text-white transition hover:bg-ink-soft active:scale-[0.98]">
+                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-control bg-primary px-6 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     View Cart
                                 </button>
                             </>
                         ) : (
                             <>
-                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border-2 border-ink bg-white px-4 text-sm font-semibold text-ink transition hover:bg-canvas active:scale-[0.98]">
-                                    <ShoppingBagIcon size={17} aria-hidden="true" />
+                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-4 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                    <ShoppingCartIcon size={18} aria-hidden="true" />
                                     Add to Cart
                                 </button>
-                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-ink px-4 text-sm font-semibold text-white transition hover:bg-ink-soft active:scale-[0.98]">
+                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-control border border-line-3 bg-white px-4 text-sm font-bold text-primary-dark transition hover:border-primary active:scale-[0.98]">
                                     Buy Now
                                 </button>
                             </>
                         )}
                     </div>
-                </div>
+                </MobileActionBar>
 
                 <div className="mt-6 grid gap-3 text-sm lg:mt-8">
-                    <p className="flex items-center gap-3 rounded-2xl bg-white p-3 text-ink-soft ring-1 ring-line/70">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"><TruckIcon size={17} aria-hidden="true" /></span>
+                    <p className="flex items-center gap-3 rounded-card bg-white p-3 text-ink-2 ring-1 ring-line">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><TruckIcon size={18} aria-hidden="true" /></span>
                         {deliveryNote(shipping)}
                     </p>
-                    <p className="flex items-center gap-3 rounded-2xl bg-white p-3 text-ink-soft ring-1 ring-line/70">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700"><BanknoteIcon size={17} aria-hidden="true" /></span>
+                    <p className="flex items-center gap-3 rounded-card bg-white p-3 text-ink-2 ring-1 ring-line">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tint-mint text-tint-mint-ink"><BanknoteIcon size={18} aria-hidden="true" /></span>
                         Cash on Delivery — pay when your order arrives
                     </p>
                 </div>

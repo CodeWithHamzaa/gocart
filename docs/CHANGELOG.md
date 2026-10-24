@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M64` product detail redesign** (In review, UI only; PR #25). A pastel image tile (full-bleed on a phone, thumbnail rail from `lg`), a price card with the MRP, "% OFF" chip and the delivery sentence, a stock pill, one action group (fixed to the bottom below `lg`, inline from `lg`) and two accordion sections (Description, Delivery & payment). Add-to-cart, buy-now and stock logic are unchanged; there is still exactly one "Add to Cart" button. No tax claim is shown (none is stated anywhere in the store).
+
 - **`M63` categories index and category listing redesign** (In review, UI only; PR #25). `/categories` is a grid of white cards, each with a large pastel circle (the category's image, or a tinted icon) and its child categories as pills. A category page has a breadcrumb, a tinted heading panel with the description and (on a parent) subcategory pills, a product count, a full-width grid and link-based pagination. Unknown slugs and out-of-range pages still return 404; the route still has no `loading.tsx` (`M27a`). Filters and sort are not built (Future Phase).
 
 - **`M62` home page redesign** (In review, UI only; PR #25). A lavender hero with real product tiles and the store's lowest price, round category chips on a phone, pastel "Shop by category" tiles whose subtitle is the real child links, the new product card in auto-fill grids, and a value-prop row of four true statements. The "Best Selling" section is now titled "Featured" (the `isFeatured` flag is curated, not a sales ranking). The page reads up to 5 latest and 10 featured products. Left out: limited-offer band, promo cards, countdown, newsletter.
