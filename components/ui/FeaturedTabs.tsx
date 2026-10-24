@@ -69,18 +69,20 @@ export default function FeaturedTabs({ tabs, items, gridClassName }: { tabs: Fea
           })}
         </div>
       )}
-      <ul
+      <div
         id={panelId}
         role={tabs.length >= 2 ? 'tabpanel' : undefined}
         aria-labelledby={tabs.length >= 2 ? `${uid}-tab-${active}` : undefined}
-        className={gridClassName}
+        tabIndex={tabs.length >= 2 ? 0 : undefined}
       >
-        {items.map((item) => (
-          <li key={item.key} hidden={active !== ALL && item.categoryId !== active} className="min-w-0">
-            {item.node}
-          </li>
-        ))}
-      </ul>
+        <ul className={gridClassName}>
+          {items.map((item) => (
+            <li key={item.key} hidden={active !== ALL && item.categoryId !== active} className="min-w-0">
+              {item.node}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

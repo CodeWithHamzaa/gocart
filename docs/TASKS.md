@@ -425,7 +425,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M73` | Promo card without an image: no empty circle (UI only) | **In review (2026-10-24) - branch stage2/close-out** - circle rendered only when an image is set; `sm:pr-48` and `break-words` on the title with an image, `max-w-[28rem]` without; visible focus ring. Screenshots at 1440/1024/768/390/320 checked: no circle without an image, no title overlap at 768, no horizontal scroll at 320, equal heights in a row; lint, type-check pass |
 | `M74` | Close `M52`/`M52b`/`M52c`/`M54` with CI evidence (verification-only, docs only) | **Approved** (2026-10-24) — not started; runs first in the close-out group |
 | `M75` | Reject whitespace and control characters in promo links | **Approved** (2026-10-24) — not started |
-| `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **Approved** (2026-10-24) — not started |
+| `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **In review (2026-10-24) - branch stage2/close-out** - Featured `<ul>` now sits inside `<div role="tabpanel" tabIndex={0}>` (only when a tablist exists). Verified ok, no change: `BestSelling.jsx` builds tabs only from top-level categories that have a featured product, so no empty panel; `text-muted` #5F5B73 on the white tab bar is 6.50:1 (>= 4.5), `MobileTabBar.tsx` unchanged; lint, type-check pass |
 | `M77` | Smaller self-hosted font file (optional) | **Deferred** (owner decision 2026-10-24; optional) |
 | `M78` | Declare `tsx` as a devDependency | **Approved** (2026-10-24) — not started (a package change; Decision Packet #8) |
 
