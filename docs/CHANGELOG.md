@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M78` `tsx` declared** (In review, package change). `tsx` 4.22.4, the version already in the lockfile, is now an exact-pinned `devDependency`, so `npm run seed` and the `scripts/*` no longer depend on a transitive install. No version change; `npm audit` unchanged.
 - **`M75` promo link validator** (In review, no schema change). `validatePromoLink` now also rejects whitespace and control characters, closing `"/\t/evil.com"`, which the URL parser resolves to an external host. No migration, no data change.
 - **`M76` Featured panel semantics** (In review, UI only). The Featured product list is no longer the tabpanel itself (that removed its list semantics); a focusable `role="tabpanel"` wrapper holds a plain `<ul>`. Checked and left unchanged: tabs are only built for categories that have featured products, and the tab bar label colour measures 6.50:1 on white.
 - **`M73` promo card without an image** (In review, UI only). The white circle is rendered only when the admin attached an image; a card without one gives its title `28rem`, and a card with one gets `sm:pr-48` and a wrapping title so the text no longer runs under the circle at 768px. The card link has a visible focus ring. No data, access or migration change.

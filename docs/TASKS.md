@@ -427,7 +427,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M75` | Reject whitespace and control characters in promo links | **In review (2026-10-24) - branch stage2/close-out** - validator also rejects `/[\s\u0000-\u001f\u007f]/`; ad-hoc script: the 8 old cases unchanged, `/\t/x`, `/\n/x`, `/ x`, `/a b` and a DEL character now rejected, `/category/electronics` accepted; no `promo_cards.link` in the scratch DB contains whitespace or control characters; `payload migrate:create --skip-empty` created nothing; lint, type-check pass. G6 (Security/Performance) pending |
 | `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **In review (2026-10-24) - branch stage2/close-out** - Featured `<ul>` now sits inside `<div role="tabpanel" tabIndex={0}>` (only when a tablist exists). Verified ok, no change: `BestSelling.jsx` builds tabs only from top-level categories that have a featured product, so no empty panel; `text-muted` #5F5B73 on the white tab bar is 6.50:1 (>= 4.5), `MobileTabBar.tsx` unchanged; lint, type-check pass |
 | `M77` | Smaller self-hosted font file (optional) | **Deferred** (owner decision 2026-10-24; optional) |
-| `M78` | Declare `tsx` as a devDependency | **Approved** (2026-10-24) — not started (a package change; Decision Packet #8) |
+| `M78` | Declare `tsx` as a devDependency | **In review (2026-10-24) - branch stage2/close-out** - `tsx` 4.22.4 pinned exactly in `devDependencies`; the lockfile diff is one line (the root devDependencies entry), no version change; `npm ls tsx` shows 4.22.4 everywhere (deduped); `npm audit` 18 vulnerabilities before and after. CI `migrations` and `prod-stack` pending |
 
 ---
 
