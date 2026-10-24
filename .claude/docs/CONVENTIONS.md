@@ -82,14 +82,16 @@ it has no `notFound()` path, so no conflict. Full account: `M27a` in
 Admin curation (`isFeatured`) must show without a redeploy, and the production build
 cannot assume a reachable database (`M23`).
 
-### `app/(public)/orders/page.jsx` uses dummy data — intentional
+### `/orders` is a guest lookup by order number + phone — intentional
 
-There is no account system to key a real order list off. It stays dummy until `M36`
-implements guest order lookup. Do not rip it out while "removing dummy data".
+`M36` replaced the old dummy page (ADR-024). There is no account system and no order list.
+Exactly one `button[type=submit]` must exist on the page (the e2e suite relies on it). Do not
+turn it into an order list or relax `Orders` read access.
 
-### `components/Loading.jsx` is unreferenced — intentional
+### `components/Loading.jsx` has no importer — verified 2026-10-24
 
-Left in place at `M15`/`M18` as a generic reusable component. Not dead code.
+Left in place at `M15`/`M18` as a generic reusable component and restyled in `M66`. Still not
+imported anywhere; keep it unless a milestone removes it.
 
 ### `"Best Selling"` is an `isFeatured` flag, not a ranking — intentional
 
@@ -107,10 +109,6 @@ style/correctness check, not a substitute for QA's live verification.
 
 | Gap | Owner |
 |---|---|
-| `ProductDetails.jsx` claims "Free shipping worldwide" | `M55a` |
-| `Footer.jsx` hardcodes a US phone and address | `M55a` |
-| `Newsletter.jsx` form silently discards input | `M48a` |
-| `OrderSummary.jsx` coupon input is non-functional | `M47` |
-| `images.unoptimized: true` is wrong for self-hosted | **no milestone owns this** |
-| `tsx` invoked by `npm run seed` but not in `devDependencies` | **unowned** |
+| `images.unoptimized: true` (the optimizer is switched off on purpose) | ADR-034, suspended by ADR-036 |
+| `tsx` is invoked by `npm run seed` and `deploy:migrate` but is not in `devDependencies` (it resolves from `node_modules/.bin` today) | **unowned** |
 | Order notifications (WhatsApp/email) | **no milestone exists** (`D8`) |

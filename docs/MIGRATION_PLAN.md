@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-69 milestones (`M1`–`M59`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+84 milestones (`M1`–`M59`, the redesign group `M60`–`M72`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -15,7 +15,7 @@ Each milestone is scoped to be one reviewable commit (or a small, tightly relate
 
 ## Milestone IDs are the only execution reference
 
-**`M1`–`M59` is the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
+**`M1`–`M59` and `M60`–`M72` are the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
 
 **Execution order is defined by each milestone's `Dependencies` line, not by ascending ID.** Two deliberate exceptions to ID order exist and matter:
 
@@ -1334,4 +1334,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**82 milestones total** (updated 2026-10-24) — `M1`–`M59`, the storefront redesign group `M60`–`M69`, `M70`, `M71` and `M72`, plus the decimal insertions below. The decimal-insertion count and list that follow were written when the total was 69: ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**84 milestone entries** (counted 2026-10-24 as `### M…` headings) — `M1`–`M59`, the storefront redesign group `M60`–`M72`, and twelve decimal insertions (`M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`). The decimal-insertion text that follows is historical (written when the total was 69): ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).

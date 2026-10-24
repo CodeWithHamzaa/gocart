@@ -8,7 +8,7 @@ GoCart is being transformed from an open-source multi-vendor Next.js storefront 
 
 ## Where things stand
 
-The storefront, guest COD checkout, order confirmation, guest order lookup, the Payload admin and the security batch (`M52b` Turnstile, idempotent orders, first admin from a secret, restricted DB role; `M52c` Next 16.3.8) are implemented, and `M54` backups are implemented and partly verified. **Launch is NOT cleared:** real-key Turnstile checks, a Cloudflare WAF rule, first-deploy checks and `M53` health checks remain ([docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md), "Launch blockers"). Source of truth for status: [docs/TASKS.md](./docs/TASKS.md); history: [docs/CHANGELOG.md](./docs/CHANGELOG.md); the long status narrative that used to be here is in [docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md) (nothing was deleted). QA rule: [.claude/docs/GATES.md](./.claude/docs/GATES.md).
+The storefront, guest COD checkout, order confirmation, guest order lookup, the Payload admin and the security batch (`M52b` Turnstile, idempotent orders, first admin from a secret, restricted DB role; `M52c` Next 16.3.8) are implemented, the storefront redesign (`M60`–`M72`, including the optional product label and admin promo cards, [ADR-039](./docs/DECISIONS.md)) is merged, and `M54` backups are implemented and partly verified. **Launch is NOT cleared:** real-key Turnstile checks, a Cloudflare WAF rule, first-deploy checks and `M53` health checks remain ([docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md), "Launch blockers"). Source of truth for status: [docs/TASKS.md](./docs/TASKS.md); history: [docs/CHANGELOG.md](./docs/CHANGELOG.md); the long status narrative that used to be here is in [docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md) (nothing was deleted). QA rule: [.claude/docs/GATES.md](./.claude/docs/GATES.md).
 
 Code facts that save a search:
 - Server-side data: `lib/payload/products.ts`, `lib/payload/categories.ts` (Local API, **server components only**; client components use Payload's public-read REST API). Their types are hand-written; switching to `payload-types.ts` is open.
@@ -17,12 +17,12 @@ Code facts that save a search:
 - Payload `/admin` is the only authenticated surface; no middleware, no customer or vendor login.
 - Gotcha: a `loading.tsx` on `/category/[slug]` makes `notFound()` return HTTP 200 (Next App Router limitation), so that route deliberately has none ([MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md), `M27a`).
 - TypeScript is established (`tsconfig.json`, `moduleResolution: "bundler"`, `allowJs`). New files are `.ts`/`.tsx`; never convert existing `.jsx` opportunistically. Lint is `npm run lint` (ESLint CLI; `next lint` no longer exists).
-- Currency symbol is `Rs. ` via `NEXT_PUBLIC_CURRENCY_SYMBOL`; full PKR formatting belongs to `M55` (not started).
+- Currency symbol is `Rs. ` via `NEXT_PUBLIC_CURRENCY_SYMBOL`; PKR formatting (`Rs. 1,500`, no decimals) is done by `M55` ([ADR-029](./docs/DECISIONS.md)).
 - All legacy multi-vendor surface (`app/store/*`, vendor approval, `Store` model, Prisma, the dummy `assets/` dataset) is **removed**. If you see any of it, something has gone wrong. Treat any doc implying single-vs-multi-vendor is still open as stale.
 
 ## Milestone numbering: the one authoritative sequence
 
-**`M1`–`M59` in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) is the only implementation sequence.** Always reference work by milestone ID. Phase and group names are labels for status reporting only and carry no execution order ("start `M6`" is an instruction; "start Phase 2" is not). Execution order follows each milestone's stated dependencies, not ascending ID (notably `M14`/`M16`/`M17`/`M19` run before `M3`, [ADR-014](./docs/DECISIONS.md)).
+**`M1`–`M59` and the storefront-redesign group `M60`–`M72` in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) are the only implementation sequence.** Always reference work by milestone ID. Phase and group names are labels for status reporting only and carry no execution order ("start `M6`" is an instruction; "start Phase 2" is not). Execution order follows each milestone's stated dependencies, not ascending ID (notably `M14`/`M16`/`M17`/`M19` run before `M3`, [ADR-014](./docs/DECISIONS.md)).
 
 ## Who does the work: the AI engineering team
 
