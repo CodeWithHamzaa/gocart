@@ -430,6 +430,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M77` | Smaller self-hosted font file (optional) | **Deferred** (owner decision 2026-10-24; optional) |
 | `M78` | Declare `tsx` as a devDependency | **In review (2026-10-24) - branch stage2/close-out** - `tsx` 4.22.4 pinned exactly in `devDependencies`; the lockfile diff is one line (the root devDependencies entry), no version change; `npm ls tsx` shows 4.22.4 everywhere (deduped); `npm audit` 18 vulnerabilities before and after. CI `migrations` and `prod-stack` pending |
 | `M79` | Close the Next.js advisories published after `M52c` (`next` 16.4.2, `undici` 7.30.1) | **In review (2026-10-24)** - branch `m79/next-16-4`. Evidence: `npm audit` 18 (1 low, 11 moderate, 4 high, 2 critical) -> 11 (1 low, 6 moderate, 3 high, 1 critical), no `next` or `undici` entry; lint 0 errors, type-check, build (Next.js 16.4.2 Turbopack), `test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard` pass; 4 migrations apply and `migrate:create --skip-empty` creates nothing; production server routes and `/_next/image` 404 checked; Playwright 13 passed, 2 failed (the two Turnstile tests that need Cloudflare; they run in CI). Needs ADR-040 (Proposed) accepted by the owner before merge |
+| `M80` | Make the deploy step prove that migrations were applied (verify right after `payload migrate`) | **Proposed — awaiting owner approval** (found by the PR #32 `migrations` job failure; root cause unverified) |
 
 ---
 

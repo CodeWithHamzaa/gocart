@@ -1386,6 +1386,19 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Rollback**: `git revert` the commit and `npm ci` (restores 16.3.8). No schema or data change.
 - **Commit message**: `Upgrade Next.js to 16.4.2 and close the post-M52c advisories (M79)`
 
+#### M80 — Make the deploy step prove that migrations were applied (Proposed — awaiting owner approval)
+- **Goal**: PR #32's CI run 40084395694 (attempt 1) showed `payload migrate` exiting 0 after about 1.4 s with **no output at all** (not even Payload's `No email adapter provided` line), creating no schema; the next step, `db-roles`, then failed with `relation "payload_migrations" does not exist`. The deploy step still failed closed (non-zero exit), but with a misleading message from `db-roles`, and the CI assertion `select count(*) from users` failed for the wrong reason. The same job passed on attempt 2, and 40 local repeat runs on a one-core-pinned machine could not reproduce it, so the root cause is **unverified** (best-supported mechanism: `node_modules/payload/bin.js` runs `void start()` and, on Node 22.15+, disables `module.registerHooks` and falls back to tsx's async worker hooks; a never-settling promise with an empty event loop makes Node exit 0 silently). Whatever the cause, a silent no-op migrate must never be mistaken for success.
+- **Files**: `package.json` (`deploy:migrate` order only), `scripts/verify-migrations.ts`, `.github/workflows/ci.yml` (the "fails closed" step's assertion), `docs/DEPLOYMENT.md`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Run the verifier **immediately after** `payload migrate` and before `db-roles` (`tsx scripts/check-env.ts && payload migrate && tsx scripts/verify-migrations.ts && tsx scripts/db-roles.ts && tsx scripts/bootstrap-admin.ts`).
+  - `verify-migrations.ts` additionally fails with one clear line when `payload_migrations` does not exist, when any migration file has no row (it already checks the second), or when the `users` table does not exist, naming the missing item and saying "`payload migrate` exited 0 but the schema is incomplete".
+  - The CI step "The deploy step fails closed on an empty database with no bootstrap credentials" asserts the non-zero exit and, when the schema exists, `users` has 0 rows; it must not treat a missing schema as a pass of the second assertion.
+  - No change to `payload migrate`, to the role model (ADR-036) or to what `deploy:migrate` creates.
+- **Dependencies**: M52a, M52b
+- **Testing**: on a fresh database the full chain still succeeds; with bootstrap credentials empty it fails at `bootstrap-admin` with `users` at 0 rows; a simulated no-op migrate (run the verifier against an empty database) exits non-zero with the new message; a second run is still a no-op; CI `migrations` and `prod-stack` green; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Verify migrations right after payload migrate in the deploy step (M80)`
+
 #### M77 — Smaller self-hosted font file (Deferred by owner decision 2026-10-24; optional)
 - **Goal**: `M72` ships the unmodified upstream variable TTF (about 176 KB) where Google used to serve a 27 KB Latin WOFF2. Convert to a Latin WOFF2 subset with the same 400–800 range to cut the first-load font cost. Optional performance work, not a launch requirement.
 - **Files**: `app/fonts/` (the font file and `OFL.txt`), `app/(public)/layout.jsx` (the font path only), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
