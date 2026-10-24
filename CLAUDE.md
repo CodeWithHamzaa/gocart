@@ -22,7 +22,7 @@ Code facts that save a search:
 
 ## Milestone numbering: the one authoritative sequence
 
-**`M1`–`M59` and the storefront-redesign group `M60`–`M72` in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) are the only implementation sequence.** Always reference work by milestone ID. Phase and group names are labels for status reporting only and carry no execution order ("start `M6`" is an instruction; "start Phase 2" is not). Execution order follows each milestone's stated dependencies, not ascending ID (notably `M14`/`M16`/`M17`/`M19` run before `M3`, [ADR-014](./docs/DECISIONS.md)).
+**Every milestone ID in [docs/MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md) (`M1`–`M59`, the storefront-redesign group `M60`–`M72`, and the pre-launch close-out group from `M73`) is part of the only implementation sequence; a Proposed entry is not work until the owner approves it.** Always reference work by milestone ID. Phase and group names are labels for status reporting only and carry no execution order ("start `M6`" is an instruction; "start Phase 2" is not). Execution order follows each milestone's stated dependencies, not ascending ID (notably `M14`/`M16`/`M17`/`M19` run before `M3`, [ADR-014](./docs/DECISIONS.md)).
 
 ## Who does the work: the AI engineering team
 

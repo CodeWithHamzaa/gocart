@@ -23,7 +23,7 @@ Every milestone passes through these. A gate that was not run is reported as
 
 ## G2 — Architecture  ·  Software Architect
 
-- No Accepted ADR (ADR-001 … ADR-038; check `docs/DECISIONS.md` for the current range) is contradicted.
+- No Accepted ADR (ADR-001 … ADR-039; check `docs/DECISIONS.md` for the current range) is contradicted.
 - No hard constraint from `CLAUDE.md` is weakened.
 - Server/client data-access boundary respected (`lib/payload/*` is server-only).
 - Any new non-obvious decision is written as an ADR.
