@@ -418,6 +418,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M67` | Related in-stock products on the product page (no schema change) | **In review** (2026-10-24) — branch `redesign-2`; lint and type-check pass; batch build and e2e at the end of the batch, CI pending |
 | `M68` | Category tabs on the home page's Featured section (no schema change) | **In review** (2026-10-24) — branch `redesign-2`; lint and type-check pass; batch build and e2e at the end of the batch, CI pending |
 | `M69` | Automatic product labels from real fields (no schema change) | **In review** (2026-10-24) — branch `redesign-2`; lint, type-check and the 6-case badge check pass; batch build and e2e at the end of the batch, CI pending |
+| `M72` | Self-host Plus Jakarta Sans with `next/font/local` (no build-time fetch from Google) | **In review** (2026-10-24) — branch `redesign-2`; lint and type-check pass; batch build and e2e at the end of the batch, CI pending |
 
 ---
 

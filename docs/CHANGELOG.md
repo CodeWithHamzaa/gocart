@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M72` self-hosted font** (In review). Plus Jakarta Sans is loaded with `next/font/local` from `app/fonts/` (the unmodified upstream variable font and its SIL OFL licence) instead of being fetched from `fonts.googleapis.com` when `next build` runs, so a Google outage can no longer fail a build or the Docker image job. Same weights (400–800), CSS variable and `display: swap`.
+
 - **`M69` automatic product labels** (In review, no schema change). `lib/product-badges.ts` is the one rule for the badges on a card and on the product page: one status pill (Out of stock, then an admin label once `M70` adds one, then Featured) and one "% OFF" chip, all from real fields. Featured products now show a "Featured" pill.
 
 - **`M68` category tabs on Featured** (In review, no schema change). The home page's Featured section has an "All" tab and one tab per top-level category with a featured product (none when fewer than two). All cards stay in the initial HTML; a tab only hides the others, so there is no extra query. The home page reads up to 12 featured products.
