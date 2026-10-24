@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M74` close-out of implemented milestones** (In review, docs only). `M52c` and `M54` are marked Done on cited CI runs (`M52c`: run 38169357779 on `303f806`, run 38172920361 on the merge; `M54`: run 38175670202 on `bec4670`, whose `prod-stack` log shows the backup, restore-verify and stop/start persistence checks passing). `M52` and `M52b` stay Implemented: real-tunnel and real-key checks are owner-only. Stale text corrected (the first-admin guard and the Next 15 upgrade blocker were closed by `M52b` and `M52c`). No code change.
 - **`M78` `tsx` declared** (In review, package change). `tsx` 4.22.4, the version already in the lockfile, is now an exact-pinned `devDependency`, so `npm run seed` and the `scripts/*` no longer depend on a transitive install. No version change; `npm audit` unchanged.
 - **`M75` promo link validator** (In review, no schema change). `validatePromoLink` now also rejects whitespace and control characters, closing `"/\t/evil.com"`, which the URL parser resolves to an external host. No migration, no data change.
 - **`M76` Featured panel semantics** (In review, UI only). The Featured product list is no longer the tabpanel itself (that removed its list semantics); a focusable `role="tabpanel"` wrapper holds a plain `<ul>`. Checked and left unchanged: tabs are only built for categories that have featured products, and the tab bar label colour measures 6.50:1 on white.
