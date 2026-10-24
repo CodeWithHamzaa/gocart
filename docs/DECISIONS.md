@@ -1272,3 +1272,54 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - `docs/ARCHITECTURE.md` collection list and access table gained `promoCards` (public-read where active, admin-write) with `M71`.
 - `Media` stays public-read and WebP-optimised local media only ([ADR-034](#adr-034-image-optimisation-under-docker--nexts-built-in-optimizer-webp-only-local-media-only-m51)); promo images use it unchanged.
 - A promo card's `tone` is limited to tokens that already exist in `app/globals.css`; adding a colour is a design change, not an admin action.
+
+## ADR-040: Next.js 16.4.2 — closing the advisories published after `M52c` (`M79`)
+
+**Status**: **Proposed (2026-10-24)** — awaiting the owner's acceptance; only the owner changes an ADR's status. Amends the version pin of [ADR-037](#adr-037-nextjs-1638--closing-the-framework-advisories-m52c) only (decision 1 there, `next`/`eslint-config-next` at `16.3.8`, and the `undici` override value in its decision 4). It does not change [ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)'s decisions, reverses no Accepted ADR and adds no dependency (one existing `overrides` value changes).
+
+**Context**:
+
+- ADR-037 pinned `next@16.3.8` on 2026-10-11 ("critical 2 → 0"). `npm audit` on 2026-10-24 reports `next` critical again: `GHSA-2464-fhr4-w9xw` (unauthenticated RCE in the Image Optimization API when SVG files are used), `GHSA-673q-mjm6-r5xr` (unauthenticated RCE in `use cache` functions returning typed arrays) and `GHSA-p3m5-59mp-jv5r` (DoS in App Router Server Actions, high). All three have range `>=16.0.0 <=16.4.0` in the `npm audit` JSON (advisory ids 1242816, 1242859, 1242818).
+- Release notes, `https://github.com/vercel/next.js/releases/tag/v16.4.1` (fetched 2026-10-24): "contains security fixes for the following advisories", exactly those three, nothing else.
+- `v16.4.2`: eight `[lts-active]` backports (turbo-tasks snapshot consistency fixes, Turbopack GC leaving half-torn-down dependency edges, realpath errors ignored in module resolution, lazy dynamic-import chunk-list collisions, docs fixes); no security items.
+- `v16.4.3`: Google font URL fix, do not load the app-page runtime in `proxy.ts`, a revert of a Turbopack loader-invalidation change, OpenTelemetry trace grouping, "avoid loading standalone React in server bootstrap", and internal CI items; no security items.
+- Publish times (`npm view next time`): 16.4.0 2026-10-06, 16.4.1 2026-10-14, 16.4.2 2026-10-15, 16.4.3 2026-10-23T13:40Z (under a day old when this was drafted).
+- `npm audit` also flags `undici` (the ADR-037 override, `7.29.1`): `GHSA-xjj6-f33q-929c` (high, `>=7.18.0 <7.30.1`), `GHSA-4qv8-2p9j-2685` and `GHSA-f72v-6w45-q472` (moderate). Fixed in `7.30.1` (`npm view undici@7.30.1` resolves).
+
+**Exposure in this app** (code facts, checked 2026-10-24):
+
+- *Image Optimization API*: closed. `next.config.mjs` sets `images.unoptimized: true` (line 39) and a `beforeFiles` rewrite sends every `/_next/image` request to a 404 (lines 44-52), per ADR-036. Not reachable here; the pin still matters because the closure is a mitigation, not a fix.
+- *`use cache`*: no `use cache`, `cacheComponents` or `unstable_cache` in application code (a grep of `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.mjs` found none). Use inside Payload's own packages is **unverified**.
+- *Server Actions DoS*: reachable. The checkout and order-lookup server actions (`app/(public)/cart/actions.ts`, `app/(public)/orders/actions.ts`) are public and unauthenticated by design (guest checkout; ADR-024, ADR-026). There is no application-level mitigation, which is why ADR-037 rejected staying on an affected line.
+
+**Decision**:
+
+1. **`next` and `eslint-config-next` are pinned exactly to `16.4.2`.** It is the newest release that is at least a week old (ADR-037 declined a five-day-old minor), it contains the three security fixes (introduced in 16.4.1), and it adds Turbopack build-correctness backports relevant to this project's Turbopack production build and Docker image. `16.4.3` adds no security fix and is under a day old, so it is left for a later routine bump. `16.4.2` is inside Payload's peer range: `npm view @payloadcms/next@3.90.2 peerDependencies.next` = `>=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0`.
+2. **`overrides.undici` is raised from `7.29.1` to `7.30.1`.** Same reasoning as ADR-037 decision 4: Payload pins `undici@7.29.0` exactly and uses it only for the admin "upload from URL" fetch; a patch-level override within the same minor is the smallest change that removes the advisories.
+3. ADR-036's mitigations (`images.unoptimized: true`, `/_next/image` closed) stay in place. Re-enabling the optimizer remains a separate owner decision.
+4. The choice of version is the owner's and is a one-line pin: see the alternatives.
+
+**Alternatives considered**:
+
+- **(a) `16.4.1`** — the minimum that fixes the three advisories; a security-only delta over 16.4.0. Valid; rejected only because 16.4.2 is a day later, also a week old, and carries Turbopack fixes for the build this project ships.
+- **(b) `16.4.3`** — the latest. No security gain over 16.4.2 and under a day old; ADR-037's caution about very new releases applies.
+- **(c) Stay on `16.3.8` and accept the Server Actions DoS** — rejected: the DoS is reachable unauthenticated on checkout and order lookup, and the other two advisories are critical RCEs whose only protection here is a mitigation.
+
+**Not done, explicitly rejected**:
+
+- The `npm audit fix` suggestion for `@payloadcms/richtext-lexical` (a downgrade to `3.78.0`, a major step back from the pinned Payload 3.90.2 set, ADR-011).
+- The `dompurify`, `happy-dom` and `@lexical/*` findings are admin-side or dormant and wait for a Payload release. Their exposure is **unverified**.
+
+**Consequences**:
+
+- If accepted, `package.json` and `package-lock.json` change for `next`, `eslint-config-next` and `overrides.undici`; nothing else in application code is expected to change (the stale `next@15.4.11` comment in `next.config.mjs` is a comment-only edit in `M79`).
+- Future Payload upgrades must still re-check the `next` peer range (ADR-011) and whether the `undici` override is still needed (ADR-037).
+- Rollback: revert the commit and `npm ci` (restores 16.3.8); no schema or data change.
+
+**Verification — to be verified by `M79`** (none of this has been run for this ADR):
+
+- `npm audit`: no `next` advisory and no critical `next`; `undici` no longer listed; before and after recorded.
+- `npm run lint`, `tsc --noEmit`, `npm run build` (Turbopack, standalone).
+- `test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard`.
+- `/_next/image` still returns 404; checkout and order-lookup server actions work (CI `e2e` golden path).
+- All six CI jobs green, including the Docker `image` and `prod-stack` jobs.
