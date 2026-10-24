@@ -429,6 +429,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **In review (2026-10-24) - branch stage2/close-out** - Featured `<ul>` now sits inside `<div role="tabpanel" tabIndex={0}>` (only when a tablist exists). Verified ok, no change: `BestSelling.jsx` builds tabs only from top-level categories that have a featured product, so no empty panel; `text-muted` #5F5B73 on the white tab bar is 6.50:1 (>= 4.5), `MobileTabBar.tsx` unchanged; lint, type-check pass |
 | `M77` | Smaller self-hosted font file (optional) | **Deferred** (owner decision 2026-10-24; optional) |
 | `M78` | Declare `tsx` as a devDependency | **In review (2026-10-24) - branch stage2/close-out** - `tsx` 4.22.4 pinned exactly in `devDependencies`; the lockfile diff is one line (the root devDependencies entry), no version change; `npm ls tsx` shows 4.22.4 everywhere (deduped); `npm audit` 18 vulnerabilities before and after. CI `migrations` and `prod-stack` pending |
+| `M79` | Close the Next.js advisories published after `M52c` (`next` 16.4.3, `undici` 7.30.1) | **Proposed — awaiting owner approval** (pre-launch; found by `npm audit` on 2026-10-24, G6 review) |
 
 ---
 
