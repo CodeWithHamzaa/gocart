@@ -1254,6 +1254,17 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit (removes one read).
 - **Commit message**: `Show related in-stock products on the product page (M67)`
 
+### M68 — Featured products with category tabs on the home page
+- **Goal**: The home page's "Featured" section gets an "All" tab plus one tab per real top-level category that has at least one featured product. The admin controls it only through `isFeatured`.
+- **Files**: `app/(public)/page.jsx`, `components/BestSelling.jsx` (still a server component; it builds the tabs), `components/ui/FeaturedTabs.tsx` (new client island), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Data: client-side filtering of the one featured fetch, with **no extra query**. Home already loads `getFeaturedProducts` and the top-level categories; a server-rendered tab per request would cost a query each, or a `?tab=` parameter on a `force-dynamic` page. Every card stays in the initial HTML (crawlers keep all links, [ADR-007](./DECISIONS.md)); the island only toggles `hidden`. A product's top-level category is its category's parent when it has one, else the category itself. The featured fetch limit goes from 10 to 12 so smaller categories still get a tab.
+  - Accessibility: WAI-ARIA tabs (`tablist`/`tab`/`tabpanel`, `aria-selected`, roving `tabindex`, arrow keys plus Home/End, selection follows focus). With fewer than two category tabs no tablist is rendered. A tab cannot be empty by construction; with no featured products the section is hidden (unchanged).
+- **Dependencies**: M62
+- **Testing**: two featured products in different top-level categories give "All" plus two tabs, each filtering correctly; every featured card is in the raw HTML; keyboard operation works; with one category there is no tablist; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Add category tabs to the Featured section (M68)`
+
 ---
 
 ## Summary

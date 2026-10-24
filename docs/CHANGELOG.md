@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M68` category tabs on Featured** (In review, no schema change). The home page's Featured section has an "All" tab and one tab per top-level category with a featured product (none when fewer than two). All cards stay in the initial HTML; a tab only hides the others, so there is no extra query. The home page reads up to 12 featured products.
+
 - **`M67` related products** (In review, no schema change). The product page shows "You may also like": up to four in-stock products from the same category, never the product itself, from the existing `getProductsByCategory`; hidden when there are none, and a failed read never breaks the page.
 
 - **`M66` confirmation, lookup and shop restyle; legacy tokens removed** (In review, UI only). The order confirmation, the guest order lookup and its result card, `/shop`, `PageTitle` and `Loading` use the redesign's tokens; the `M60` alias tokens (`brand-*`, `canvas`, `well`, `ink-soft`, `sale-600`, `shadow-soft`, `shadow-lift`) are deleted. Copy is unchanged apart from the confirmation's "Track order" button.
