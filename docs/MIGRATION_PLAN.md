@@ -1216,6 +1216,20 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Redesign the product detail page (M64)`
 
+### M65 — Cart redesign (checkout stays on /cart)
+- **Goal**: Lay out `/cart` like the design's `Cart`/`CartMobile`, with a checkout-styled summary panel taken from `Checkout`/`CheckoutMobile`. No change to the place-order logic, state, address flow or Turnstile (owner decision: checkout stays on `/cart`, no `/checkout` route).
+- **Files**: `app/(public)/cart/page.jsx`, `components/{OrderSummary,AddressModal}.jsx` (markup and classes only), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Items: the table becomes cards (pastel tile, name linking to the product, category, price, quantity control, "Item total", and one 44px "Remove {name}" button at every width), then "Continue shopping". The page width is 1120px.
+  - Summary panel: 1 Delivery address (the existing select, "Add Address" and modal, restyled); 2 Delivery (one "Standard delivery" card showing Free or the flat fee and the Settings sentence); 3 Payment (one "Cash on Delivery (COD)" card). Then Subtotal, "You save" (the sum of (MRP − price) × quantity over lines with a real discount, hidden when 0), Delivery, Total, the Turnstile widget and "Place Order".
+  - Below `lg` the total and the Place Order button are pinned in a fixed bar; it is the same button element, moved by CSS, so there is still exactly one.
+  - Empty state: the shared panel with "Browse categories". "Restore items" from the design is dropped (there is no state to restore).
+  - Not built: promo code ([ADR-017](./DECISIONS.md)), express delivery ([ADR-018](./DECISIONS.md)), card/wallet/bank payments ([ADR-004](./DECISIONS.md)), the step-indicator header.
+- **Dependencies**: M61
+- **Testing**: the golden-path, idempotency, turnstile-fallback and mobile specs pass unchanged (Turnstile-dependent ones in CI); "Place Order" stays disabled until Turnstile is verified and shipping settings have loaded; "You save" is hidden when 0; one "Remove …" button per line; the saved address appears as one text node; no horizontal scroll at 320px; 390/1440 screenshots against `desktop-05/05b/06`, `mobile-05/05b/06`.
+- **Rollback**: Revert the commit; `OrderSummary`'s logic is untouched, so the diff is markup and classes only.
+- **Commit message**: `Redesign the cart with a checkout-styled summary (M65)`
+
 ---
 
 ## Summary
