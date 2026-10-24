@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M69` automatic product labels** (In review, no schema change). `lib/product-badges.ts` is the one rule for the badges on a card and on the product page: one status pill (Out of stock, then an admin label once `M70` adds one, then Featured) and one "% OFF" chip, all from real fields. Featured products now show a "Featured" pill.
+
 - **`M68` category tabs on Featured** (In review, no schema change). The home page's Featured section has an "All" tab and one tab per top-level category with a featured product (none when fewer than two). All cards stay in the initial HTML; a tab only hides the others, so there is no extra query. The home page reads up to 12 featured products.
 
 - **`M67` related products** (In review, no schema change). The product page shows "You may also like": up to four in-stock products from the same category, never the product itself, from the existing `getProductsByCategory`; hidden when there are none, and a failed read never breaks the page.

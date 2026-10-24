@@ -1265,6 +1265,19 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Add category tabs to the Featured section (M68)`
 
+### M69 — Automatic product labels
+- **Goal**: One rule, used everywhere a product is shown, that derives its badges from real fields.
+- **Files**: `lib/product-badges.ts` (new; pure and client-safe, no Payload import), `components/ProductCard.jsx`, `components/ProductDetails.jsx`, `components/ui/Badge.tsx`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Status pill (top-left of the image, **at most one**), by precedence: **Out of stock** (`inStock !== true`, fail closed) > an admin label (`label`: New / Limited edition / Sale; a field `M70` may add, ignored while no product carries it) > **Featured** (`isFeatured`, [ADR-022](./DECISIONS.md)).
+  - Discount chip (in the price row, **at most one**): "{n}% OFF" where `n = Math.round((mrp − price) / mrp × 100)`, shown only when `mrp > price` and `n ≥ 1` (the same formula as before). An out-of-stock product keeps its chip (the price is real); only quick-add is disabled.
+  - Maximum two badges per card. Colours: Out of stock neutral, Featured and New `primary`, Limited edition `pink-dark`, Sale `sale-blue`; every pair is at least 4.5:1.
+  - Never labelled "Best seller" or "Popular".
+- **Dependencies**: M61 (M64 for the detail page)
+- **Testing**: the six-case precedence/discount table passes (run with `tsx`); "Featured" appears only on `isFeatured` products; no UI string says "Best seller" or "Popular"; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Derive product badges from real product fields (M69)`
+
 ---
 
 ## Summary
