@@ -1262,7 +1262,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - *A global with an array field for the cards* — one document, so no per-card `active` filtering at the query level, no per-card admin list, ordering or drafts; array rows cannot carry their own access, and changing a copy line rewrites the whole document. A collection is the house pattern and costs the same one migration.
 - *A free-text `label` on Products* — invites "Best seller"/"Popular" claims `M69` forbids, breaks the fixed colour/contrast mapping (every pair is checked at 4.5:1), and cannot be compared in code. A closed enum keeps the badge a pure function of real fields.
 - *Hard-coded promo cards in JSX* — this is the invented-copy problem `M62` removed; every change would need a deploy.
-- *Public `read: true` filtered only by the app query* — safe for the storefront but leaves inactive drafts readable through `/api/promo-cards`; the access-level filter closes that.
+- *Public `read: true` filtered only by the app query* — safe for the storefront but leaves inactive drafts readable through `/api/promoCards`; the access-level filter closes that.
 - *Allowing external `link` URLs* — open-redirect and phishing surface in an admin-editable field, and an off-site link from a COD store's home page has no use case.
 
 **Consequences**:

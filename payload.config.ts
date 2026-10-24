@@ -8,6 +8,7 @@ import { Media } from './collections/Media'
 import { Categories } from './collections/Categories'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
+import { PromoCards } from './collections/PromoCards'
 import { Settings } from './globals/Settings'
 
 const filename = fileURLToPath(import.meta.url)
@@ -28,7 +29,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Products, Orders],
+  collections: [Users, Media, Categories, Products, Orders, PromoCards],
   globals: [Settings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
