@@ -9,9 +9,14 @@ import { migrations } from '../migrations'
 // marker (batch = -1) without a TTY, so on its own it can fail open. This exits non-zero
 // unless the schema is really there. It uses Payload's Local API, never a second DB client,
 // and prints no connection strings or secrets.
+// M80: it now runs right after `payload migrate` (before db-roles) and says so plainly when a
+// silent no-op migrate left no `payload_migrations` or `users` table (PR #32 run 40084395694).
+// It connects with the same DATABASE_URI as the migrate step (the superuser), not `gocart_app`.
 
 // Never let this script push a schema: that would mask exactly what it is checking.
 process.env.PAYLOAD_MIGRATING = 'true'
+
+const INCOMPLETE = 'payload migrate exited 0 but the schema is incomplete:'
 
 const migrationsDir = path.resolve(process.cwd(), 'migrations')
 
@@ -47,6 +52,16 @@ async function verify(): Promise<string[]> {
 
   const payload = await getPayload({ config })
 
+  // M80: name a missing table before any query that would fail with a misleading message.
+  const { rows } = await (payload.db as unknown as {
+    pool: { query: (sql: string) => Promise<{ rows: Array<{ migrations: string | null; users: string | null }> }> }
+  }).pool.query(
+    `select to_regclass('public.payload_migrations') as migrations, to_regclass('public.users') as users`,
+  )
+  if (!rows[0]?.migrations) problems.push(`${INCOMPLETE} table payload_migrations does not exist`)
+  if (!rows[0]?.users) problems.push(`${INCOMPLETE} table users does not exist`)
+  if (problems.length > 0) return problems
+
   const { docs } = await payload.find({
     collection: 'payload-migrations',
     limit: 0,
@@ -56,7 +71,7 @@ async function verify(): Promise<string[]> {
   const applied = new Set(docs.map((d) => String(d.name)))
 
   for (const name of registered) {
-    if (!applied.has(name)) problems.push(`migration ${name} has no payload_migrations row (not applied)`)
+    if (!applied.has(name)) problems.push(`${INCOMPLETE} migration ${name} has no payload_migrations row (not applied)`)
   }
   const devPushRows = docs.filter((d) => d.batch === -1).length
   if (devPushRows > 0) {

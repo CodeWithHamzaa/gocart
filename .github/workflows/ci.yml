@@ -261,7 +261,19 @@ jobs:
         run: |
           createdb -h localhost -U gocart gocart_nocreds
           if npm run deploy:migrate; then echo "deploy:migrate succeeded with nobody able to administer the stack"; exit 1; fi
+          # The schema must exist: a migrate that applied nothing must not pass the next assertion.
+          if [ -z "$(psql -h localhost -U gocart -d gocart_nocreds -tA -c "select to_regclass('public.users')")" ]; then echo "payload migrate applied nothing"; exit 1; fi
           test "$(psql -h localhost -U gocart -d gocart_nocreds -tA -c 'select count(*) from users')" = "0"
+      - name: A migrate that applied nothing is caught (verify-migrations on an empty database)
+        env:
+          PGPASSWORD: ci-throwaway-pw-0123456789
+          NODE_ENV: production
+          DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_empty
+        run: |
+          createdb -h localhost -U gocart gocart_empty
+          if npx tsx scripts/verify-migrations.ts > verify-empty.log 2>&1; then echo "verify-migrations passed on an empty database"; cat verify-empty.log; exit 1; fi
+          cat verify-empty.log
+          grep -q "schema is incomplete" verify-empty.log
 
   # ADR-036: the REAL production compose stack (docker-compose.prod.yml: postgres -> migrate -> app)
   # with throwaway but conforming values, checked from the outside by scripts/prod-stack-check.sh:
