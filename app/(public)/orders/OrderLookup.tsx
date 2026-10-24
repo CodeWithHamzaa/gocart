@@ -13,7 +13,8 @@ import OrderItem from '@/components/OrderItem'
 import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
 import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidget'
 
-const inputClass = 'w-full min-h-11 rounded border border-slate-300 p-2 px-4 outline-none focus:border-slate-500'
+// M66: the redesign's field style (tokens, visible focus).
+const inputClass = 'w-full min-h-12 rounded-field border border-line-2 bg-white p-2 px-4 text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary'
 
 export function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -60,13 +61,14 @@ export function OrderLookup() {
   }
 
   return (
-    <div className="mx-6 my-12 min-h-[60vh] text-slate-600">
+    <div className="mx-4 my-8 min-h-[60vh] text-ink-2 sm:mx-6 sm:my-12">
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-semibold text-slate-800 sm:text-3xl">Check your order</h1>
-        <p className="mt-2">Enter your order number and the phone number you used when ordering.</p>
+        <div className="rounded-panel bg-white p-5 shadow-card ring-1 ring-line sm:p-8">
+        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">Check your order</h1>
+        <p className="mt-2 text-muted">Enter your order number and the phone number you used when ordering.</p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
             Order number
             <input
               name="orderNumber"
@@ -81,7 +83,7 @@ export function OrderLookup() {
               required
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
             Phone number
             <input
               name="phone"
@@ -99,15 +101,16 @@ export function OrderLookup() {
           <button
             type="submit"
             disabled={pending || turnstile.status !== 'verified'}
-            className="min-h-11 rounded bg-ink px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-soft active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+            className="min-h-12 rounded-control bg-primary px-6 py-3 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}
           </button>
         </form>
+        </div>
 
         <div aria-live="polite" className="mt-6">
           {result && !result.ok && (
-            <p className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="rounded-card bg-lavender-tile p-4 text-sm text-ink ring-1 ring-line-3">
               {result.message}
             </p>
           )}

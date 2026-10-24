@@ -1230,6 +1230,18 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit; `OrderSummary`'s logic is untouched, so the diff is markup and classes only.
 - **Commit message**: `Redesign the cart with a checkout-styled summary (M65)`
 
+### M66 — Remaining storefront pages and legacy token removal
+- **Goal**: Apply the redesign's tokens and components to the order confirmation (designed like "Order placed"), the guest order lookup (`/orders`) and `/shop`, then delete the `M60` legacy token aliases. (No global `not-found`/`error` page exists in the storefront; the category route's own ones were restyled in `M63`.)
+- **Files**: `app/(public)/order-confirmation/OrderConfirmation.tsx`, `app/(public)/orders/OrderLookup.tsx`, `components/{OrderItem,PageTitle,Loading}.jsx`, `app/(public)/shop/page.jsx`, `app/globals.css` (delete the aliases), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Confirmation: a green check, "Order placed!", the real order number with Copy, a summary row (total to pay, payment = Cash on Delivery, delivery = Free or the fee), then items, delivery details and the buttons "Track order" (`/orders`) and "Continue shopping". The copy stays what the store really does (no SMS claim: SMS is deferred, [ADR-015](./DECISIONS.md)); the design's "Back to checkout (prototype)" link is not built. The order number and status text are never upper-cased by CSS (e2e reads them back).
+  - `/orders`: the lookup form in a white card with the new field style; the result card (`OrderItem`) uses tinted status pills. `/shop`: the heading and the auto-fill grid.
+  - Legacy cleanup: before deleting, a search for `brand-*`, `canvas`, `well`, `ink-soft`, `sale-600`, `shadow-soft` and `shadow-lift` found uses only in the files above.
+- **Dependencies**: M62, M63, M64, M65
+- **Testing**: no remaining use of any deleted alias in `app`, `components` or `lib`; the golden-path test still reads the order number, "Placed" and totals (Turnstile-dependent: CI); no horizontal scroll at 320px on `/shop` and `/orders`; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Restyle confirmation, lookup and shop pages; drop legacy tokens (M66)`
+
 ---
 
 ## Summary

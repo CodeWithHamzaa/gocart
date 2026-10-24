@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M66` confirmation, lookup and shop restyle; legacy tokens removed** (In review, UI only). The order confirmation, the guest order lookup and its result card, `/shop`, `PageTitle` and `Loading` use the redesign's tokens; the `M60` alias tokens (`brand-*`, `canvas`, `well`, `ink-soft`, `sale-600`, `shadow-soft`, `shadow-lift`) are deleted. Copy is unchanged apart from the confirmation's "Track order" button.
+
 - **`M65` cart redesign** (In review, UI only; PR #25). Cart lines are cards with a pastel tile, a quantity control, "Item total" and a 44px "Remove {name}" button; the summary panel shows the three checkout steps (delivery address, standard delivery, cash on delivery), Subtotal, "You save" (when a line has a real discount), Delivery and Total, then the Turnstile widget and "Place Order". Below `lg` the total and Place Order are pinned to the bottom. The address dialog is restyled. Place-order logic, state, the address flow and Turnstile are unchanged; checkout stays on `/cart`. No promo code, express delivery or card/wallet payments.
 
 - **`M64` product detail redesign** (In review, UI only; PR #25). A pastel image tile (full-bleed on a phone, thumbnail rail from `lg`), a price card with the MRP, "% OFF" chip and the delivery sentence, a stock pill, one action group (fixed to the bottom below `lg`, inline from `lg`) and two accordion sections (Description, Delivery & payment). Add-to-cart, buy-now and stock logic are unchanged; there is still exactly one "Add to Cart" button. No tax claim is shown (none is stated anywhere in the store).
