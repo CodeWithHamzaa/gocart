@@ -5,8 +5,13 @@ import type { CollectionConfig } from 'payload'
 
 // Internal paths only: one leading "/", no "//", no "/\", no scheme, no ":". An external or
 // scheme-relative link here would let an admin-controlled field send shoppers off-site.
+// M75: whitespace and control characters are rejected too: the URL parser drops tab and newline, so
+// "/\t/evil.com" would otherwise resolve to https://evil.com/.
 export const validatePromoLink = (value: unknown): true | string => {
   if (typeof value !== 'string' || value.length === 0) return 'A link is required.'
+  if (/[\s\u0000-\u001f\u007f]/.test(value)) {
+    return 'The link must not contain spaces, tabs, line breaks or control characters.'
+  }
   if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\') || value.includes(':')) {
     return 'Use a path on this store that starts with a single "/", for example /category/electronics.'
   }
