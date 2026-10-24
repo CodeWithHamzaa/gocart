@@ -1278,6 +1278,15 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Derive product badges from real product fields (M69)`
 
+### M72 — Self-host Plus Jakarta Sans
+- **Goal**: Stop fetching the font from `fonts.googleapis.com` at build time. `next/font/google` downloads the font when `next build` runs; when that request fails (it did once in the Docker `image` job on PR #25) the whole build fails. The font file is committed with its licence and loaded with `next/font/local` instead, with the same weights, CSS variable and `display` setting.
+- **Files**: `app/(public)/layout.jsx` (font loading only: lines 1 and 12–23 today), `app/fonts/PlusJakartaSans-Variable.ttf` (new, unmodified upstream `PlusJakartaSans[wght].ttf`), `app/fonts/OFL.txt` (new, the upstream licence), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: the font and its licence come from `github.com/google/fonts` (`ofl/plusjakartasans/`); the file is renamed (brackets in a file name are awkward in paths) but its bytes are unchanged. `localFont` declares the `400 800` weight range of the one variable file (the design uses 400/500/600/700/800), `display: "swap"`, `variable: "--font-jakarta"`; `app/globals.css` is untouched (`--font-sans` still reads `--font-jakarta`). Trade-off: the upstream TTF (about 176 KB) is larger than the 27 KB Latin-only WOFF2 Google served; it is one cached, preloaded file, and a subset or WOFF2 conversion can follow as its own change.
+- **Dependencies**: M60
+- **Testing**: no `fonts.googleapis.com` or `next/font/google` reference in source or in the build output (`.next`); the body's computed font family is Plus Jakarta Sans and `/` requests exactly one font file; lint, type-check and `npm run build` pass; the Docker `image` job passes in CI.
+- **Rollback**: Revert the commit (the Google-fetched font returns).
+- **Commit message**: `Self-host Plus Jakarta Sans with next/font/local (M72)`
+
 ---
 
 ## Summary
