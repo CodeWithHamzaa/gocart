@@ -285,7 +285,7 @@ Eleven of Audit 1's twelve are closed. **None of the remainder blocks `M1`.**
 | C7 | `M13` access rules forbid what `M36` requires | ✅ **Resolved** (2026-08-18) — [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only) | — |
 | C8 | Category browsing assumed by 4 milestones, built by none | ✅ **Resolved** (2026-08-16) | — |
 | C9 | `M39` cites wrong dependency | ✅ **Resolved** | — |
-| C10 | `M15`/`M18` Footer reference | ◐ **Partial** — pointer fixed to `M48`; the dead-link window until `M48` remains a scheduling gap | Nothing |
+| C10 | `M15`/`M18` Footer reference | ✅ **Closed** (2026-10-24, `M81`) — `M48`/`M48a` are Done (`TASKS.md` row `M46`–`M48`, line 398); `components/Footer.jsx:25-34` links only to `/`, `/shop`, `/categories`, `/orders` and `/category/<slug>`, all present under `app/(public)/`, and contains no `create-store` or `pricing` link. Was: partial (dead-link window) | Nothing |
 | C11 | FEATURE_MATRIX Sanity row misuses "Replace" | ⚠️ **Open** (cosmetic) | Nothing |
 | C12 | `M55` currency file list stale | ⚠️ **Open** (low) | `M55` |
 
@@ -304,7 +304,7 @@ Seven of Audit 1's twelve are closed. **None blocks `M1`.**
 | D4 | Shipping/delivery model | ✅ **Resolved** (2026-08-16) — [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order) | — |
 | D5 | Order status set (`CANCELLED`/`RETURNED` for COD) | ✅ **Resolved** (2026-08-16) — [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned) | — |
 | D6 | Media storage backend (local volume vs. S3) | ✅ **Resolved** (2026-08-16) — [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) | — |
-| D7 | PKR formatting convention | ⚠️ Open | `M55` |
+| D7 | PKR formatting convention | ✅ **Closed** (2026-10-24, `M81`) — decided in ADR-029; `M55` is Done (`TASKS.md` line 408); `lib/currency.ts:2-16` formats `Rs. 1,500` (symbol, one space, comma grouping, no decimals). Was: open | `M55` |
 | D8 | Order notifications (SMS/WhatsApp/email) | ◐ **Partial** (2026-08-16) — SMS deferred to a future phase, email infra (Resend) decided; [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline). WhatsApp and which emails are sent remain open, still **no milestone exists** | Unscheduled |
 | D9 | Guest order-lookup key + abuse controls | ✅ **Resolved** (2026-08-18; abuse controls strengthened by ADR-035 and ADR-036, 2026-10-11) — [ADR-024](./DECISIONS.md#adr-024-guest-order-lookup-via-a-dedicated-ordernumber-phone-endpoint--orders-collection-access-stays-admin-only): `(orderNumber, phone)`, IP rate-limited; rate limits revised by [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b) (Turnstile, flood ceiling, per-phone, 2026-10-11) | — |
 | D10 | Cart state: Redux vs. simpler store | ✅ **Resolved** (2026-08-18) — [ADR-023](./DECISIONS.md#adr-023-cart-state-stays-redux-with-localstorage-persistence-added) | — |
@@ -328,17 +328,57 @@ Six of Audit 1's thirteen are closed — including all three critical ones.
 | R4 | `Orders` schema omits order reference, total, shipping, price snapshot | ✅ **Resolved** (2026-08-17) — `M11` implemented `orderNumber` (auto-generated), `orderTotal`, `shippingCost`, and a per-line-item `unitPrice` snapshot on `collections/Orders.ts`; verified via REST |
 | R5 | Out-of-stock enforcement called launch-critical, never implemented | ✅ **Resolved** (2026-10-09) — `M33a` enforces `Products.inStock` server-side at order creation (fail-closed, whole-order rejection). "Add to Cart" is also disabled for out-of-stock products (owner-requested patch, 2026-10-09). |
 | R6 | No store Settings global despite being launch scope | ✅ **Resolved** (2026-08-17) — implemented as `M13a`, `globals/Settings.ts`; public read, admin-only write, verified via REST |
-| R7 | No test or CI milestone in the plan | ◐ **Scheduled** (2026-08-18) — new milestone `M56a` inserted, one Playwright golden-path E2E test + a CI job. Not yet implemented (depends on `M33a`, `M56`, both Not Started) |
+| R7 | No test or CI milestone in the plan | ✅ **Closed** (2026-10-24, `M81`) — `M56a` is Done (`TASKS.md` line 409); `e2e/` holds `golden-path`, `idempotency`, `mobile`, `seo` and `turnstile-fallback` specs and `scripts/` holds `check-env`, `turnstile`, `idempotency` and `users-guard` tests; `.github/workflows/ci.yml:22-27` and `:147-158` run them; the six CI jobs are green on `main` run 40093971126. Coverage stays deliberately minimal (`.claude/docs/GATES.md`) |
 | R8 | Decision milestones (`M46`/`M47`) sit downstream of the code they invalidate | ✅ **Resolved** (2026-08-16) — both decisions made ahead of collection design via [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1)/[ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1); `M46`/`M47` now execute a decided removal rather than deciding |
-| R9 | No production `payload migrate` step | ◐ **Scheduled** (2026-08-18) — new milestone `M52a` inserted, explicit migration step before the app serves traffic. **Implemented and verified on real stacks 2026-10-11 — [ADR-032](./DECISIONS.md)** (committed migrations + one-shot `migrate` service the app waits for; fail-closed). Only the new CI job on a real GitHub runner remains unverified |
-| R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ◐ **Half closed** — the database name is settled as `DATABASE_URI` by [ADR-010](./DECISIONS.md) at `M1`; the missing public base URL is still open against `M42`/`M52` |
+| R9 | No production `payload migrate` step | ✅ **Closed** (2026-10-24, `M81`) — was ◐ **Scheduled** (2026-08-18) — new milestone `M52a` inserted, explicit migration step before the app serves traffic. **Implemented and verified on real stacks 2026-10-11 — [ADR-032](./DECISIONS.md)** (committed migrations + one-shot `migrate` service the app waits for; fail-closed). The last open point is closed (2026-10-24, `M81`): `docker-compose.prod.yml:14-20` defines the one-shot `migrate` step; the CI `migrations` job is `success` on `main` run 40093971126 (`6c0a22f`), and `M80` (PR #35) added the post-`payload migrate` verifier |
+| R10 | Env var drift (`DATABASE_URL` vs `DATABASE_URI`; missing public base URL) | ✅ **Closed** (2026-10-24, `M81`) — the database name is `DATABASE_URI` ([ADR-010](./DECISIONS.md); no `DATABASE_URL` in `.ts`, `.tsx`, `.mjs`, `.yml` or `.env.example`); the public base URL is `NEXT_PUBLIC_SITE_URL` (`.env.example:21`), required to be a public `https://` origin by `scripts/check-env.ts:125-138` and read by `lib/site-url.ts` and `lib/seo.ts`. Was: half closed |
 | R11 | `Newsletter.jsx` neither wired nor dropped | ✅ **Resolved** (2026-10-09) — `M48a` deleted the non-functional form and its home-page usage. |
-| R12 | No owner for storefront copy ("Free shipping worldwide") | ◐ **Scheduled** (2026-08-18) — new milestone `M55a` inserted, wires `Footer.jsx`/`ProductDetails.jsx` to real `Settings`-global copy. Not yet implemented (depends on `M13a`, done; `M55`, Not Started) |
+| R12 | No owner for storefront copy ("Free shipping worldwide") | ✅ **Closed** (2026-10-24, `M81`) — `M55a` is Done (`TASKS.md` line 408); `components/Footer.jsx:3,6` reads the `Settings` global and `components/ProductDetails.jsx:24` takes `shipping` from it; `grep -i worldwide` over `app`, `components` and `lib` finds nothing |
 | R13 | `next dev --turbopack` unverified against Payload v3 | ✅ **Resolved** — `M3` mounted Payload and confirmed both `npm run build` and `npm run start` serve `/admin` correctly with no server errors |
-| R14 | `Orders` allows anonymous `create` with client-controlled prices, totals, `status`, and `isPaid`; response also returns the full product document (found in `M33`'s dry run, 2026-10-09, verified against a live server) | ◐ **Accepted** (2026-10-09) — [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins) approved; implemented by `M33`. **Launch-blocking.** |
+| R14 | `Orders` allows anonymous `create` with client-controlled prices, totals, `status`, and `isPaid`; response also returns the full product document (found in `M33`'s dry run, 2026-10-09, verified against a live server) | ✅ **Closed** (2026-10-24, `M81`) — [ADR-026](./DECISIONS.md#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins) is implemented by `M33` (Done, `TASKS.md` line 393): `collections/Orders.ts:40-41` allows `create` only for an authenticated user (admin), and guests order through `createOrder()` (`lib/payload/orders.ts`, `app/(public)/cart/actions.ts`); the CI `e2e` job is green on `main` run 40093971126. Was: accepted, launch-blocking. Not re-verified live in this snapshot (no database) |
 
 **R10 deserves attention during `M1` itself**, since `M1` is the milestone that adds the variable.
 It is not a blocker — a wrong name fails loudly at `M3` — but it is free to get right now.
+
+## Verification snapshot (2026-10-24, `M81`)
+
+Observed against `origin/main` at `6c0a22f` (PRs #32, #34 and #35 merged), on branch `docs/m81-doc-sync`. Nothing below is recorded as passed unless it was seen to pass.
+
+**Environment.** `node_modules` is absent, and installing packages is not allowed in `M81`. `pg_isready` gets no response on the socket or on `localhost:5432`; `DATABASE_URI` is unset; the Docker CLI exists but the daemon is unreachable (`/var/run/docker.sock` missing), so no database was started.
+
+| Gate | Result | Reason |
+|---|---|---|
+| `npm run type-check` | not run | no `node_modules` |
+| `npm run lint` (warning count) | not run (warning count unverified) | no `node_modules`; the CI log lines were not retrievable |
+| `npm run build` | not run | no `node_modules` |
+| `npm run test:env` | not run | `tsx` not installed |
+| `npm run test:turnstile` | not run | `tsx` not installed |
+| `npm run test:idempotency` | not run | no database |
+| `npm run test:users-guard` | not run | no database |
+| `npm run test:e2e` | not run | no database, no Turnstile test config, no `node_modules` |
+
+**CI as reported by the GitHub REST API** (run-level and job-level conclusions only; step output and lint warnings were not read). `ci.yml:22-27` shows `checks` runs type-check, lint, `test:env` and `test:turnstile`; `:147-158` shows `e2e` runs the idempotency and users-guard tests, the build and Playwright.
+
+| Ref | Run | `checks` | `turnstile-contract` | `migrations` | `prod-stack` | `image` | `e2e` |
+|---|---|---|---|---|---|---|---|
+| `main` push `6c0a22f` | 40093971126 | success | success | success | success | success | success |
+| `main` push `a7918a7` | 40093704986 | success | success | success | success | success | success |
+| `main` push `762e69a` | 40093157079 | success | success | success | success | success | success |
+| PR #32 head `01c4598` | 40084395694 | success | success | success | success | success | success |
+| PR #34 head `f9d6c58` | 40093490166 | success | success | success | success | success | success |
+| PR #35 head `cee6756` | 40093734346 | success | success | success | success | success | success |
+
+`M80` records that attempt 1 of run 40084395694 failed (a no-op `payload migrate`); the success shown there is of a later attempt, and which one was not checked.
+
+**Rows closed by `M81`:** `C10`, `D7`, `R7`, `R9`, `R10`, `R12`, `R14`, each with its evidence in the row.
+
+**Rows re-checked and left open:**
+
+- `C5` — `grep -i blog` over `docs/PROJECT_SPEC.md`, `docs/FEATURE_MATRIX.md`, `docs/DECISIONS.md` and `CLAUDE.md` finds nothing, so "no blog" is still unstated.
+- `C11` — `docs/FEATURE_MATRIX.md:19` still marks Sanity `Replace ✓`.
+- `C12` — the `M55` entry in `docs/MIGRATION_PLAN.md` still says "duplicated across 9 files" (the work itself is Done, so the text is now only a stale description).
+- `D8` — `docs/DEPLOYMENT.md` "Launch decisions" (Email row) states no application code uses Resend; no order email exists and no milestone owns it.
+- `D12` — hosting is decided (ADR-015) and the migration mechanics are done (`M52a`, `M80`), but the `M59` runbook has not been run on a clean VPS (`docs/DEPLOYMENT.md`, "Not covered yet").
 
 ## M1 gate status
 

@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-91 milestones (`M1`–`M59`, the redesign group `M60`–`M72`, the pre-launch close-out group `M73`–`M76`, `M78`, `M79` and `M80` (`M77` is deferred and not counted), plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+92 milestones (`M1`–`M59`, the redesign group `M60`–`M72`, the pre-launch close-out group `M73`–`M76`, `M78`, `M79`, `M80` and `M81` (`M77` is deferred and not counted), plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -9,7 +9,7 @@ Each milestone is scoped to be one reviewable commit (or a small, tightly relate
 - **Goal** — what changes and why, in one or two sentences.
 - **Files** — the concrete files/directories touched, taken from the classifications in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) and [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) wherever those apply.
 - **Dependencies** — which prior milestone(s) must land first.
-- **Testing** — the minimum manual/automated check before moving on. (No test framework exists in the repository, and **no milestone in this plan establishes one** — that gap is tracked as an open risk in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md) and is not yet scheduled. Until it is, "testing" means manual verification plus `npm run build`.)
+- **Testing** — the minimum manual/automated check before moving on. (Automated checks now exist: `scripts/*.test.ts`, run by `npm run test:env`, `test:turnstile`, `test:idempotency` and `test:users-guard`, and the Playwright specs in `e2e/`, run by `npm run test:e2e` (`M56a`, Done; CI runs both). They are deliberately minimal, so a Testing line may still ask for manual verification plus `npm run build`; entries written before `M56a` describe the state when they were written. The coverage gap is tracked in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md), finding `R7`.)
 - **Rollback** — how to undo this specific milestone if it turns out to be wrong, without unwinding unrelated work.
 - **Commit message** — a ready-to-use commit subject line.
 
@@ -882,6 +882,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Rollback**: Revert the files above (`git revert` the milestone commit); the stack returns to the `M52a` compose file with its loopback-published app port.
 - **Commit message**: `Document production environment and secrets configuration`
 - **🚧 Launch-blocking requirement (security review of `M36`, owner-recorded 2026-10-09)**: the app derives the client IP for rate limiting from `cf-connecting-ip` / the first `x-forwarded-for` entry (`lib/client-ip.ts`). Those headers are client-controlled unless the origin accepts traffic **only** from Cloudflare. Before launch, the production setup (`M50`/`M52`) must restrict the origin (originally worded as a VPS firewall or reverse-proxy allowlist of Cloudflare ranges; **resolved by design as a Cloudflare Tunnel, [ADR-033](./DECISIONS.md)**, which removes the published port altogether; the real-tunnel path is verified only by the owner), and should verify that Next server actions work behind the proxy (`experimental.serverActions.allowedOrigins` may be needed). Without this, the per-IP limits on order placement and order lookup can be bypassed. Not verifiable in the dev sandbox.
+- **Status (2026-10-24, `M81`)**: Implemented, verification partial (`docs/TASKS.md` row `M52`; ADR-033). On `main`; CI `prod-stack` and `migrations` green (run 40093971126, `6c0a22f`). Not done, owner-only: the real Cloudflare Tunnel and header behaviour.
 
 ### M52a — Run Payload migrations as an explicit production deploy step
 - **New milestone, inserted 2026-08-18** — closes readiness risk [R9](./PHASE_1_READINESS_REPORT.md#r9--no-production-database-migration-step):
@@ -1000,6 +1001,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
   first-admin flow and the single database role, so do not revert on a deployed stack without reading
   ADR-036.
 - **Commit message**: `Add Turnstile verification, order idempotency and the pre-launch security batch`
+- **Status (2026-10-24, `M81`)**: Implemented, verification partial (`docs/TASKS.md` row `M52b`; ADR-035/036). On `main`; CI `turnstile-contract` and `prod-stack` green (run 40093971126, `6c0a22f`). Not done, owner-only: real Turnstile keys on the real hostname and the Cloudflare WAF rule (`docs/DEPLOYMENT.md`, "Launch blockers" items 2 and 4).
 
 ### M52c — Next.js 16 upgrade (closes the framework-advisory launch blocker)
 - **New milestone, inserted 2026-10-11 (owner-approved: "Next 16 upgrade shuru karo, alag branch, alag PR").**
@@ -1122,6 +1124,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: The core flow completes successfully, on both desktop and mobile viewports, against a freshly seeded database.
 - **Rollback**: Revert whichever specific fix commit is found to be wrong.
 - **Commit message**: `Fix regressions found in end-to-end launch readiness pass`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #30 (`33a9a6c`); awaiting owner sign-off. The pass was a local narrative walk; CI `e2e` covers guest checkout and lookup. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M58 — Update documentation to reflect the live architecture
 - **Goal**: Bring `README.md` in line with the live system (single-store COD storefront, Payload 3 + PostgreSQL, Next.js 16, the two compose stacks, the migrate step, Turnstile, the Cloudflare Tunnel). Confirm `CLAUDE.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.md` still match the code and edit only what has drifted.
@@ -1131,6 +1134,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: a new contributor following `README.md` alone gets the dev stack running, and its production section points to `docs/DEPLOYMENT.md` instead of describing a pre-`M52a` flow. `grep -n "M1.*M28\|Until then a brand-new database\|eight roles" README.md` returns nothing.
 - **Rollback**: Revert the doc changes.
 - **Commit message**: `Update documentation to reflect the live Payload CMS + PostgreSQL architecture`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. A clean-clone dev start in Docker was not run. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M59 — Production deploy runbook and release tag
 - **Goal**: Complete `docs/DEPLOYMENT.md` into the single production runbook (ordered first-deploy checklist, release, rollback, backup schedule, launch checklist) and prepare the first release. The release tag (`v1.0.0`) is cut by the owner after the launch checks pass, not by the agent.
@@ -1141,6 +1145,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Testing**: following the runbook on a clean VPS deploys a working instance; every "Launch blockers" item in `docs/DEPLOYMENT.md` is Done or owner-accepted; `TURNSTILE_ALLOW_TEST_KEYS` and `PAYLOAD_ALLOW_FIRST_REGISTER` are unset in the production env file.
 - **Rollback**: Revert the doc commit if wrong. A failed production deploy is rolled back via the runbook's own rollback section, which this milestone must add.
 - **Commit message**: `Add production deployment runbook and cut v1.0.0` (the `v1.0.0` tag itself is owner-run, after the launch checks)
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. The runbook has NOT been run on a clean VPS and the release tag is not cut (both owner-only, `docs/DEPLOYMENT.md`, "Not covered yet"). CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ---
 
@@ -1317,7 +1322,7 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 
 ## Group: Pre-launch close-out — `M73` onward
 
-**Status: approved by the owner on 2026-10-24 (Stage 1 Decision Packet, "approve all"), except `M77`, which the owner deferred (optional; it keeps a `####` heading and is not counted).** Drafted 2026-10-24 by the Engineering Manager role with the Software Architect (`M74`, `M75`, `M78`, `M58`/`M59` amendments) and UI/UX Designer (`M73`, `M76`) roles. Nothing here is started.
+**Status: approved by the owner on 2026-10-24 (Stage 1 Decision Packet, "approve all"), except `M77`, which the owner deferred (optional; it keeps a `####` heading and is not counted).** Drafted 2026-10-24 by the Engineering Manager role with the Software Architect (`M74`, `M75`, `M78`, `M58`/`M59` amendments) and UI/UX Designer (`M73`, `M76`) roles. Per-entry Status lines (added by `M81`) record what is merged; no entry is Done without the owner's sign-off.
 
 Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M76` and `M78` in any order (they are independent of each other); then `M58`; then `M59` last. `M57`'s regression pass predates `M73`–`M78`; each of them is checked by the CI `e2e` job instead of a new manual pass.
 
@@ -1334,6 +1339,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: no circle without an image at 320, 768, 1024 and 1440px; with an image the circle stays and the title does not overlap it at 768px; a mixed row has equal heights; no horizontal scroll at 320px; keyboard focus shows a visible ring; lint, type-check, build and the Playwright suite pass.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Hide promo card circle when no image is set (M73)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M74 — Close the implemented-but-not-Done milestones with CI evidence
 - **Goal**: Verification-only and docs-only. `M52`, `M52b`, `M52c` and `M54` are implemented but not marked Done. Where the missing evidence already exists in CI, record it and correct stale status text; where only the owner can supply it (real Cloudflare account, real hostname, real VPS), say so and leave the status honest. **No code work is invented.** Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
@@ -1346,6 +1352,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: every status change cites a CI run id and job; `/team-status` shows no reconciliation difference between `TASKS`, `MIGRATION_PLAN` and `CHANGELOG`.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Record CI evidence and close verification-only gaps for M52c and M54 (M74)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. `M52` and `M52b` stay "Implemented, verification partial". CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M75 — Reject whitespace and control characters in promo links
 - **Goal**: Close a gap in the `M71` link validator. `validatePromoLink` accepts `"/\t/evil.com"`: it starts with `/`, and contains no `//`, `/\` or `:`. The WHATWG URL parser strips tab and newline, so the value resolves to an external host: `new URL('/\t/evil.com','https://shop.example.com').href` returned `https://evil.com/` (node, 2026-10-24); same for a newline. Exposure is limited because only admins can write a card, but the `M71` spec says the link must be an internal path. Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
@@ -1355,6 +1362,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: the existing 8 validator cases still pass; `"/\t/x"`, `"/\n/x"`, `"/ x"` and `"/a b"` are rejected; `/category/electronics` is accepted; an anonymous write is still 403; lint, type-check and build pass. Gate G6 by the Security/Performance role (public-output surface).
 - **Rollback**: Revert the commit.
 - **Commit message**: `Reject whitespace and control characters in promo card links (M75)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off; the G6 (Security/Performance) review is recorded as pending in `docs/TASKS.md`. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M76 — Storefront accessibility polish
 - **Goal**: Fix the small accessibility defects found in a read-only G3 review of `M60`–`M72`. UI only. Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
@@ -1367,6 +1375,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: screen-reader semantics of the Featured panel checked with the accessibility tree; keyboard reaches the panel; measured contrast recorded; no layout change at 320, 390 and 1440px; lint, type-check, build and the Playwright suite pass.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Fix Featured tab panel semantics and verify tab bar contrast (M76)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M78 — Declare `tsx` as a devDependency
 - **Goal**: `scripts/*` and `npm run seed`/`deploy:migrate` call `tsx`, which today only resolves transitively from `node_modules/.bin`; declare it so a dependency update cannot silently remove it. Approved by the owner on 2026-10-24 (Decision Packet #8, a package change).
@@ -1376,6 +1385,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: `npm ci`, `npm run type-check`, `npm run lint`, `npm run test:env`, `npm run build`; `git diff package-lock.json` shows only the `tsx` root entry change; CI all six jobs, especially `migrations` and `prod-stack` (they run the `tsx` scripts); `npm audit` count unchanged.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Declare tsx as a devDependency (M78)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #32 (`762e69a`); awaiting owner sign-off. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M79 — Close the Next.js advisories published after M52c
 - **Goal**: `npm audit` on 2026-10-24 reports `next@16.3.8` as critical (vulnerable range `16.0.0 – 16.4.0`; fixed from `16.4.1`; all three share the range `>=16.0.0 <=16.4.0`): GHSA-2464-fhr4-w9xw (unauthenticated RCE in the Image Optimization API), GHSA-p3m5-59mp-jv5r (denial of service in App Router Server Actions) and GHSA-673q-mjm6-r5xr (RCE in `use cache` functions). `docs/DEPLOYMENT.md` "Launch blockers" item 1 and ADR-037 recorded "critical 2 → 0" on 2026-10-11, before these were published. Read-only G6 review (2026-10-24): the image-optimizer RCE is closed by configuration (`images.unoptimized: true`, `/_next/image` rewritten to 404, uploads limited to JPEG/PNG/WebP/GIF), the `use cache` RCE has no matching code in the app, but the **Server Actions DoS is reachable without authentication** (checkout and order lookup) and has no mitigation. Also raise the `undici` override to `7.30.1` (its current pin `7.29.1` is flagged high; `npm view undici@7.30.1` resolves). Approved by the owner on 2026-10-24 (Stage 3 message approving M79). **Version chosen with evidence (2026-10-24):** the release notes of `v16.4.1` list exactly these three advisories; `v16.4.2` adds Turbopack build-correctness backports and no security item; `v16.4.3` (published 2026-10-23, under a day old) adds no security item. `16.4.2` is therefore the newest release that is at least a week old; the minimum is `16.4.1` and the latest is `16.4.3`, and moving either way is a one-line pin the owner may ask for. The amending decision is ADR-040 (Accepted 2026-10-24; the owner confirmed 16.4.2).
@@ -1385,6 +1395,7 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: `npm audit` shows no `next` advisory and no critical `next`; lint, type-check, `npm run build`, `test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard`; `/_next/image` still returns 404; the checkout and order-lookup server actions work (CI `e2e` golden path); all six CI jobs green; `npm audit` before and after recorded.
 - **Rollback**: `git revert` the commit and `npm ci` (restores 16.3.8). No schema or data change.
 - **Commit message**: `Upgrade Next.js to 16.4.2 and close the post-M52c advisories (M79)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #33 (into `stage2/close-out`, `5bf7615`) and PR #34 (`a7918a7`); awaiting owner sign-off. ADR-040 is Accepted. `npm audit` on the release commit and the deploy are owner steps. CI: all six jobs green on the `main` push run 40093971126 (`6c0a22f`).
 
 ### M80 — Make the deploy step prove that migrations were applied
 - **Goal**: PR #32's CI run 40084395694 (attempt 1) showed `payload migrate` exiting 0 after about 1.4 s with **no output at all** (not even Payload's `No email adapter provided` line), creating no schema; the next step, `db-roles`, then failed with `relation "payload_migrations" does not exist`. The deploy step still failed closed (non-zero exit), but with a misleading message from `db-roles`, and the CI assertion `select count(*) from users` failed for the wrong reason. The same job passed on attempt 2, and 40 local repeat runs on a one-core-pinned machine could not reproduce it, so the root cause is **unverified** (best-supported mechanism: `node_modules/payload/bin.js` runs `void start()` and, on Node 22.15+, disables `module.registerHooks` and falls back to tsx's async worker hooks; a never-settling promise with an empty event loop makes Node exit 0 silently). Whatever the cause, a silent no-op migrate must never be mistaken for success. Approved by the owner on 2026-10-24 ("Accept ADR-040 with 16.4.2, approve M80").
@@ -1398,6 +1409,16 @@ Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M
 - **Testing**: on a fresh database the full chain still succeeds; with bootstrap credentials empty it fails at `bootstrap-admin` with `users` at 0 rows; a simulated no-op migrate (run the verifier against an empty database) exits non-zero with the new message; a second run is still a no-op; CI `migrations` and `prod-stack` green; lint and type-check pass.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Verify migrations right after payload migrate in the deploy step (M80)`
+- **Status (2026-10-24, `M81`)**: In review. Merged to `main` via PR #35 (`6c0a22f`); awaiting owner sign-off. CI green on the PR head `cee6756` (run 40093734346) and on `main` (run 40093971126). The root cause of the PR #32 no-op migrate (run 40084395694, attempt 1) is still unverified.
+
+### M81 — Documentation sync after PRs #32, #34 and #35
+- **Goal**: Make the status documents say what is already merged to `main` (PRs #30, #32, #33, #34, #35), with no behaviour change: replace the stale "branch `stage2/close-out` / `m79/next-16-4`" wording, give `M52`, `M52b`, `M57`–`M59` and `M73`–`M80` a per-entry Status line, fix the stale "no test framework" sentence, and close the Readiness Report rows that code and Done milestones already resolve, each with cited evidence.
+- **Files**: `docs/TASKS.md`, `docs/CHANGELOG.md`, `docs/MIGRATION_PLAN.md`, `docs/PHASE_1_READINESS_REPORT.md`
+- **Dependencies**: M80 (merged via PR #35, `6c0a22f`)
+- **Testing**: `git diff --stat` lists only the four files; the header and Summary milestone count equals `grep -c '^### M[0-9]' docs/MIGRATION_PLAN.md`; every status change names the PR or commit that supports it; every Readiness row closed names the milestone, file and line read; no row is moved to Done that needs the owner's verification or sign-off; the Readiness Report's verification snapshot records each gate as observed (passed / failed / not run, with the reason).
+- **Rollback**: `git revert` of the single `M81` commit.
+- **Commit message**: `docs(m81): sync TASKS, CHANGELOG, plan and readiness report with merged PRs #32/#34/#35`
+- **Status (2026-10-24, `M81`)**: In review; draft PR on branch `docs/m81-doc-sync`. Requested by the owner in the session prompt, including a one-time exception that lets the Engineering Manager edit `docs/MIGRATION_PLAN.md` and `docs/PHASE_1_READINESS_REPORT.md`, which no role file lists as writable. Docs only; no ADR changed.
 
 #### M77 — Smaller self-hosted font file (Deferred by owner decision 2026-10-24; optional)
 - **Goal**: `M72` ships the unmodified upstream variable TTF (about 176 KB) where Google used to serve a 27 KB Latin WOFF2. Convert to a Latin WOFF2 subset with the same 400–800 range to cut the first-load font cost. Optional performance work, not a launch requirement.
@@ -1432,4 +1453,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**91 milestone entries** (counted 2026-10-24 as `### M…` headings) — `M1`–`M59` (59), the storefront redesign group `M60`–`M72` (13), the pre-launch close-out group `M73`–`M76`, `M78`, `M79` and `M80` (7; `M77` is deferred, kept as a `####` entry, and not counted), and twelve decimal insertions (`M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`). The decimal-insertion text that follows is historical (written when the total was 69): ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**92 milestone entries** (counted 2026-10-24 as `### M…` headings) — `M1`–`M59` (59), the storefront redesign group `M60`–`M72` (13), the pre-launch close-out group `M73`–`M76`, `M78`, `M79`, `M80` and `M81` (8; `M77` is deferred, kept as a `####` entry, and not counted), and twelve decimal insertions (`M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`). The decimal-insertion text that follows is historical (written when the total was 69): ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
