@@ -81,5 +81,20 @@ export const Products: CollectionConfig = {
           'Show this product in the home page "Best Selling" section. Curated by the admin — there is no sales-based ranking in v1.',
       },
     },
+    {
+      // M70 (ADR-039): an optional admin label for the status pill on cards and the product page.
+      // Precedence is decided in lib/product-badges.ts: Out of stock > label > Featured.
+      name: 'label',
+      type: 'select',
+      options: [
+        { label: 'New', value: 'new' },
+        { label: 'Limited edition', value: 'limited' },
+        { label: 'Sale', value: 'sale' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Optional badge shown on the product card and page. Leave empty for none.',
+      },
+    },
   ],
 }

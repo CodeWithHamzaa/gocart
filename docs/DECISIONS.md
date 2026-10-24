@@ -1241,3 +1241,34 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 **Not done (deliberately out of `M53`'s Goal)**: container memory limits, `read_only` for `cloudflared`/`postgres`, an external uptime monitor (the owner should point one at `/api/health`), and a "no admin yet" readiness signal for the first-admin window (ADR-036 closed that window differently).
 
 **Verified**: local PostgreSQL 16 with the real migrated schema and `next dev`: 200 with the database up, 503 and a `[health]` log line within ~50 ms with it stopped, 200 again after restart. **Verified in CI (PR #23)**: the compose healthcheck and the `app` container reporting `healthy`, asserted by the `M53` section of `scripts/prod-stack-check.sh` in the `prod-stack` job, which also exercises the production build serving the route.
+
+## ADR-039: Admin product label and admin-managed home promo cards — two schema additions (`M70`, `M71`)
+
+**Status**: **Proposed (2026-10-24)** — both choices approved by the project owner in session on 2026-10-24; this ADR records them and awaits acceptance by the owner. Reverses no Accepted ADR: it extends [ADR-022](#adr-022-best-selling-is-an-admin-curated-flag-not-a-computed-ranking)'s principle (curated, honest merchandising fields) and the public-read/admin-write rule of `M13`.
+
+**Context**: `M69` derives product badges in `lib/product-badges.ts`, which already accepts an optional admin `label` (`new` | `limited` | `sale`) that no collection yet stores. The `M62` home page deliberately omits the design's promo cards because their copy was invented, not real (`M62`, "Not built"). Both gaps need schema, so both need migrations ([ADR-032](#adr-032-database-migrations-are-an-automatic-fail-closed-production-step--a-one-shot-migrate-service-that-the-app-waits-for-m52a)).
+
+**Decisions**:
+
+1. **`Products.label`** (`M70`): an optional `select` with values `new` ("New"), `limited` ("Limited edition"), `sale` ("Sale"); no default, not required. One nullable enum column, one migration. `lib/payload/products.ts`'s hand-written `Product` type gains `label?: 'new' | 'limited' | 'sale' | null`. Precedence against Out of stock and Featured stays as `M69` set it.
+2. **`promoCards` collection** (`M71`), admin-managed home-page cards. Fields: `title` (text, required), `eyebrow` (text, optional, short), `ctaText` (text, required), `link` (text, required; a `validate` accepts only an internal path starting with a single `/` — `//host`, `/\`, schemes and any `:` are rejected; no external URLs), `tone` (select over the existing pastel tokens: `pink`, `blue`, `lavender`, `mint`), `image` (optional upload relation to `media`), `order` (number, ascending), `active` (checkbox, default `true`).
+3. **Access**: `create`/`update`/`delete` admin-only (`Boolean(user)`). `read` is public but filtered: `({ req: { user } }) => (user ? true : { active: { equals: true } })`, so an anonymous REST or Local API read can never see an inactive card and admins see all. This is the same public-read/admin-write posture as Products, Categories and Media; no PII is stored.
+4. **Rendering**: a server-only `lib/payload/promo-cards.ts` (Local API, `active` filter, sorted by `order`, depth 1 for the image) feeds the home page; the section is **hidden when no card is active**. A client component never imports it. A failed read renders nothing and does not fail the page.
+5. **No seeded copy**: no card exists until an admin creates one. Migrations and `scripts/seed.ts` create none (an empty section is the honest default; the design's marketing copy is not invented).
+6. **Migrations**: one per milestone, produced by `payload migrate:create`, committed with its `.json` snapshot, applied by the fail-closed `migrate` service (ADR-032). Both are additive (a nullable enum column; new tables), so the forward-only rule and the CI drift check are unaffected.
+
+**Alternatives considered and rejected**:
+
+- *A global with an array field for the cards* — one document, so no per-card `active` filtering at the query level, no per-card admin list, ordering or drafts; array rows cannot carry their own access, and changing a copy line rewrites the whole document. A collection is the house pattern and costs the same one migration.
+- *A free-text `label` on Products* — invites "Best seller"/"Popular" claims `M69` forbids, breaks the fixed colour/contrast mapping (every pair is checked at 4.5:1), and cannot be compared in code. A closed enum keeps the badge a pure function of real fields.
+- *Hard-coded promo cards in JSX* — this is the invented-copy problem `M62` removed; every change would need a deploy.
+- *Public `read: true` filtered only by the app query* — safe for the storefront but leaves inactive drafts readable through `/api/promoCards`; the access-level filter closes that.
+- *Allowing external `link` URLs* — open-redirect and phishing surface in an admin-editable field, and an off-site link from a COD store's home page has no use case.
+
+**Consequences**:
+
+- Two migrations (`M70` then `M71`); the production runbook's backup-before-schema-change step applies to both.
+- `payload-types` mirrors: only `lib/payload/products.ts` (`label`) and the new `lib/payload/promo-cards.ts` need hand-written types.
+- `docs/ARCHITECTURE.md` collection list and access table gain `promoCards` (public-read where active, admin-write) when `M71` lands.
+- `Media` stays public-read and WebP-optimised local media only ([ADR-034](#adr-034-image-optimisation-under-docker--nexts-built-in-optimizer-webp-only-local-media-only-m51)); promo images use it unchanged.
+- A promo card's `tone` is limited to tokens that already exist in `app/globals.css`; adding a colour is a design change, not an admin action.

@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ### Added
 
+- **`M71` home promo cards** (In review). New admin-managed `promoCards` collection (title, eyebrow, CTA, internal link, tone, optional image, order, active) and a home section that renders active cards and is hidden when there are none. No seed data. Anonymous readers only ever receive active cards; writes are admin-only; the link must be an internal path. One migration (new table). Decision: ADR-039 (Proposed).
+- **`M70` optional product label** (In review). Products gain an optional `label` select (New, Limited edition, Sale) in the admin sidebar, with one additive migration (a nullable enum column). The `M69` badge rule already reads it: Out of stock still wins, then the label, then Featured. Decision: ADR-039 (Proposed).
 - **`M72` self-hosted font** (In review). Plus Jakarta Sans is loaded with `next/font/local` from `app/fonts/` (the unmodified upstream variable font and its SIL OFL licence) instead of being fetched from `fonts.googleapis.com` when `next build` runs, so a Google outage can no longer fail a build or the Docker image job. Same weights (400–800), CSS variable and `display: swap`.
 
 - **`M69` automatic product labels** (In review, no schema change). `lib/product-badges.ts` is the one rule for the badges on a card and on the product page: one status pill (Out of stock, then an admin label once `M70` adds one, then Featured) and one "% OFF" chip, all from real fields. Featured products now show a "Featured" pill.

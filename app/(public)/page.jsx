@@ -3,6 +3,8 @@ import Hero from "@/components/Hero";
 import CategoryRow, { CategoryGrid } from "@/components/CategoryRow";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
+import PromoCards from "@/components/PromoCards";
+import { getPromoCards } from "@/lib/payload/promo-cards";
 import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
 import { getSettings } from "@/lib/payload/settings";
 import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
@@ -39,12 +41,13 @@ export async function generateMetadata() {
 
 export default async function Home() {
 
-    const [latest, featured, cheapest, settings, topLevelCategories] = await Promise.all([
+    const [latest, featured, cheapest, settings, topLevelCategories, promoCards] = await Promise.all([
         getProducts({ sort: '-createdAt', limit: 5 }),
         getFeaturedProducts({ limit: 12 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
         getTopLevelCategoriesCached(),
+        getPromoCards(),
     ]);
     const startingPrice = typeof cheapest.docs[0]?.price === 'number' ? cheapest.docs[0].price : null;
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
@@ -73,6 +76,7 @@ export default async function Home() {
             <CategoryGrid categories={topLevelCategories} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} categories={topLevelCategories} />
+            <PromoCards cards={promoCards} />
             <OurSpecs shipping={shipping} />
         </div>
     );
