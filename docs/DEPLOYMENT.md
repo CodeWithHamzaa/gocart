@@ -5,12 +5,77 @@ environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the datab
 workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
 limits (`M52b`, [ADR-035](./DECISIONS.md), amended by [ADR-036](./DECISIONS.md): a verified token is
 required, orders are idempotent, the first admin comes from a secret, the app uses a restricted database
-role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); `M59` is the full runbook.**
+role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); `M59` adds the launch checklist, rollback, release and launch decisions.**
 
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
-> [Launch blockers](#launch-blockers) at the end of this file: the real-Cloudflare checks with real keys, the
-> Cloudflare WAF rule, the first-deploy checks, backups and health checks. (The Next.js advisories were closed by
-> `M52c`, Next 16.3.8.)
+> [Launch blockers](#launch-blockers) at the end of this file. The first one is open: on 2026-10-24
+> `npm audit` reports `next@16.3.8` as critical (a Server Actions denial of service that is reachable
+> without logging in and is **not** mitigated), fixed in `next@16.4.3` by the **proposed** milestone `M79`.
+> **Launch is blocked on `M79` or on the owner explicitly accepting that risk.** The other items are the
+> real-Cloudflare checks with real keys, the Cloudflare WAF rule, the first-deploy checks, and the first real
+> backup, restore drill and uptime monitor.
+
+## Launch checklist
+
+Do these in order. "Owner" means a person with the Cloudflare account, the VPS and the password manager does
+it by hand; "Stack" means the compose stack or a script does it once you run the gated deploy. A box is ticked
+only when the step has been seen to work on the real VPS. **Nothing below has been run on a clean VPS yet**
+(`M59` wrote the runbook; see [Not covered yet](#not-covered-yet)).
+
+- [ ] 1. **Owner.** Resolve the Next.js blocker: `M79` merged and deployed, or an explicit written owner
+  acceptance ([Launch blockers](#launch-blockers), item 1). Decide the open items in
+  [Launch decisions](#launch-decisions).
+- [ ] 2. **Owner.** Take a backup first (ADR-032): [Taking a backup](#taking-a-backup). On a brand-new empty
+  VPS there is nothing to back up; for any later deploy this step is mandatory.
+- [ ] 3. **Owner.** Check the production database for a leftover development-push marker. This must return
+  **no rows**; if it returns any, **stop the deploy** and do not run `migrate` (see
+  [Never migrate a database populated by development](#never-migrate-a-database-populated-by-development)):
+
+  ```sh
+  $PROD exec -T postgres psql -U gocart -d gocart -c "SELECT * FROM payload_migrations WHERE batch = -1;"
+  ```
+
+  (use your `POSTGRES_USER` / `POSTGRES_DB` if they are not the defaults; on a database that has never been
+  migrated the table does not exist yet and the query errors, which is also fine). `scripts/verify-migrations.ts`
+  already fails the deploy on `batch = -1`, so this is a second, earlier check.
+- [ ] 4. **Owner.** Create the env file **outside the checkout**, mode 600, with `TURNSTILE_ALLOW_TEST_KEYS`
+  and `PAYLOAD_ALLOW_FIRST_REGISTER` **unset**: [Secrets and the env file](#secrets-and-the-env-file).
+  Replace the sample `shop.example.com` with the real hostname.
+- [ ] 5. **Owner.** Create the Cloudflare tunnel and copy its token into the env file. **Do NOT attach the
+  public hostname yet**: [Cloudflare: one-time steps](#cloudflare-one-time-steps).
+- [ ] 6. **Owner.** Create the Turnstile widget (Managed) with **real keys for the real hostname** and put both
+  keys in the env file: [Cloudflare Turnstile: one-time setup](#cloudflare-turnstile-one-time-setup).
+- [ ] 7. **Owner.** Set `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
+  [The first admin comes from a secret](#the-first-admin-comes-from-a-secret).
+- [ ] 8. **Stack, started by the owner.** The gated deploy: `$PROD build`, `$PROD run --rm migrate` (stop on a
+  non-zero exit), `$PROD up -d`: [Default: gated on the migration](#default-gated-on-the-migration). The stack
+  validates the environment, applies migrations, creates the restricted `gocart_app` role, verifies the
+  migrations and creates the first admin; `app` never starts if `migrate` fails
+  ([How the stack bootstraps the database](#how-the-stack-bootstraps-the-database)). If it fails, see
+  [Rollback](#rollback).
+- [ ] 9. **Owner.** Attach the public hostname to the tunnel (service `HTTP`, URL `app:3000`, no Host header
+  override). Sign in at `https://<your-domain>/admin`.
+- [ ] 10. **Owner.** Remove the two bootstrap admin lines from the env file, then re-run the gated deploy
+  per [The first admin comes from a secret](#the-first-admin-comes-from-a-secret) (step 3 there): the gate
+  is a no-op for the schema and the `migrate` container no longer receives the credentials.
+- [ ] 11. **Owner.** Real-key check: from a real phone on mobile data, place one order and do one order
+  lookup through the real hostname. `$PROD logs app | grep -E '\[turnstile\]|\[order-guard\]'` must show **no**
+  lines ([setup step 5](#cloudflare-turnstile-one-time-setup)).
+- [ ] 12. **Owner.** Add the Cloudflare WAF rate-limiting rule on `POST` to `/cart` and `/orders`
+  ([Launch blockers](#launch-blockers), item 4; values in [Launch decisions](#launch-decisions)).
+- [ ] 13. **Owner.** Point an external uptime monitor at `https://<host>/api/health` (expects 200). **Stack:**
+  `$PROD ps` shows `app` as `healthy`.
+- [ ] 14. **Owner.** Backups ([Backups and recovery](#backups-and-recovery)): schedule `scripts/backup.sh` daily
+  while orders flow and before every schema-changing deploy (there is no scheduler in the stack); set
+  `BACKUP_PASSPHRASE_FILE` (the passphrase itself lives in the password manager, not on the VPS); keep the
+  `.gpg` copies **off the VPS**; run `scripts/backup-verify.sh` once
+  ([Proving a backup restores](#proving-a-backup-restores-do-this-a-backup-never-restored-is-a-hope)); rehearse
+  the manual restore once on a scratch machine ([Restoring for real](#restoring-for-real-after-a-disaster-or-a-bad-release)).
+- [ ] 15. **Owner.** Re-run `npm audit` on the release commit and compare it with
+  [Launch blockers](#launch-blockers), item 1.
+- [ ] 16. **Owner (human, G8).** Live check of the real hostname at 320, 390 and 1440 px: no horizontal scroll,
+  storefront, cart, order, lookup and `/admin` all usable.
+- [ ] 17. **Owner.** Cut the release tag: [Release](#release).
 
 Order of work for a first deploy: [Secrets and the env file](#secrets-and-the-env-file) ->
 [Cloudflare: one-time steps](#cloudflare-one-time-steps) (create the tunnel, do NOT attach the public
@@ -569,13 +634,101 @@ are restricted to JPEG, PNG, WebP and GIF (no AVIF, SVG or HEIC).
 future change writes anywhere else you will see `EROFS` errors in `$PROD logs app`; fix the code or add a
 tmpfs, do not remove `read_only`. `postgres` and `cloudflared` are not read-only (see ADR-036).
 
+## Rollback
+
+Not run on a real stack: this section is written from the compose file, the Dockerfile and ADR-032, and
+the failure cases marked "Verified" in [Deploying a release](#deploying-a-release). Rehearse it once on a
+scratch machine before relying on it. **Never** use `down -v`, `migrate:down`, `migrate:reset` or
+`migrate:fresh` on production (see the warning at the top of this file): they destroy `orders`.
+
+1. **The gated deploy failed at `run --rm migrate` (non-zero exit).** Nothing was replaced. `app` is not
+   recreated and `cloudflared` is untouched, so the previous release keeps serving
+   ([Default: gated on the migration](#default-gated-on-the-migration), verified with a deliberately broken
+   migration). Read the failing step in the `migrate` output (`check-env` names the variable and the rule;
+   the verifier names the check). Fix the cause and run the gate again. A failed migration file is rolled
+   back as a whole (one transaction per file); files that already applied in the same run stay applied.
+   On a first deploy the stack simply never starts.
+2. **`migrate` passed but the new release misbehaves** (bad build, wrong `NEXT_PUBLIC_*` value, a runtime
+   error). Redeploy the previous release with the same gate:
+   - Compose builds the images locally and does not push them to a registry, so there is no remote image tag
+     to pull. The previous release is its commit: in the checkout, `git checkout <previous-release-commit-or-tag>`
+     (a detached HEAD is fine; this rewrites nothing), then `$PROD build`, `$PROD run --rm migrate`,
+     `$PROD up -d`.
+   - Optional speed-up, so a rollback needs no rebuild: before each deploy, keep the running image under a
+     second name, for example `docker tag gocart-prod-app:latest gocart-prod-app:previous` (the image name
+     follows the compose project name `gocart-prod`; confirm it with `docker image ls` first). Not run.
+   - A site-wide misconfiguration of a **build-time** value (`NEXT_PUBLIC_SITE_URL`,
+     `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) is fixed in the env file and a rebuild, not by rolling back code.
+3. **The release applied a schema migration and the old code cannot work with it.** Migrations are
+   **forward-only** ([ADR-032](./DECISIONS.md)); nothing here runs a `down`. Redeploying old code against a
+   newer schema is safe only if the migration was purely additive (a new nullable column or table); whether
+   the older `migrate` step tolerates migration rows it has no file for is **unverified**. Otherwise the
+   rollback is to **restore the pre-deploy backup** taken in checklist step 2, following the exact steps in
+   [Restoring for real](#restoring-for-real-after-a-disaster-or-a-bad-release) (not repeated here), and then
+   ship a corrective forward migration. Orders placed after that backup are lost from the restored database:
+   decide with the owner how they are re-entered from the logs and the customers' confirmations before
+   restoring.
+4. **After any rollback**, repeat checklist step 11 (one real order and one lookup, no `[turnstile]` or
+   `[order-guard]` lines) and confirm `/api/health` returns 200.
+
+## Release
+
+The version tag is cut **by the owner**, after every box in the [Launch checklist](#launch-checklist) is ticked
+(this milestone, `M59`, does not create a tag). On the release commit, as an owner command (shown, not run):
+
+```sh
+git tag -a v1.0.0 -m "GoCart Pakistan v1.0.0: first production release"
+git push origin v1.0.0
+```
+
+At that time add one entry at the top of `docs/CHANGELOG.md` under a `## [1.0.0] - <date>` heading: the date,
+the commit the tag points at, which launch checklist steps were verified on the real VPS and which were
+accepted by the owner instead (the Next.js blocker in particular), and the `npm audit` totals on that
+commit. Keep that commit and tag as the "previous release" that [Rollback](#rollback) redeploys.
+
+## Launch decisions
+
+Owner decisions `M59` needs. The recommended default is what the runbook assumes; nothing is decided until
+the owner says so. DEPLOYMENT.md line numbers are as of commit `1afc575`, before this section was added; use
+the section names to find them in the current file.
+
+| Decision | Recommended default | Source |
+|---|---|---|
+| Hostname (`NEXT_PUBLIC_SITE_URL`) | The real `https://` origin, decided before the first build. It is **build-time**, so a change needs a rebuild. Replace the sample `shop.example.com`, which `check-env` does not reject; the Turnstile widget must be for exactly this host (`www.` versus bare). | `docs/DEPLOYMENT.md` 265, 286-290, 379-383 |
+| Turnstile keys | Managed widget for the production hostname; the site key is build-time, the secret key goes in the env file; never test keys. | `docs/DEPLOYMENT.md` 267-269, 379-388; ADR-035/036 |
+| Cloudflare WAF rule | `POST` to `/cart` and `/orders`. Paid plan: about 30 requests/min/IP, Block or Managed Challenge. Free plan (reported, unverified): about 10 POSTs per 10 s per IP, action Block. | `docs/DEPLOYMENT.md` 586 |
+| Tunnel token and hostname order | Create the tunnel and put `TUNNEL_TOKEN` in the env file; attach the public hostname only after the gated deploy succeeds. | `docs/DEPLOYMENT.md` 15-20, 328-333 |
+| Env file location | Outside the checkout, mode 600, passed with `--env-file`; an off-host copy in a password manager. | `docs/DEPLOYMENT.md` 247-254 |
+| Bootstrap admin removal | Remove both lines after the first successful deploy and re-run the gate. | `docs/DEPLOYMENT.md` 476-477 |
+| Backup schedule, encryption, off-host | Daily while orders flow and before every schema-changing deploy; `BACKUP_PASSPHRASE_FILE` set; `.gpg` copies kept off the VPS; a `cron` job is not written or verified. | `docs/DEPLOYMENT.md` 172-187 |
+| Restore drill | Run `backup-verify.sh` once and rehearse the manual restore once on a scratch machine before launch. | `docs/DEPLOYMENT.md` 189-199, 232-233 |
+| Uptime monitor | External monitor on `https://<host>/api/health` (200 expected). | `docs/DEPLOYMENT.md` 587; `docs/DECISIONS.md` 1241 |
+| Email (order notifications) | **Confirm the owner accepts launching without any order email.** ADR-015 names Resend, but no application code uses it (grep of `app`, `lib`, `collections`, `package.json` finds nothing), and which emails to send is unspecified. | `docs/DECISIONS.md` 319, 328; `docs/PROJECT_SPEC.md` 71 |
+| Image optimizer | Stays off (`images.unoptimized: true`, `/_next/image` returns 404). Re-enabling is a later owner decision. | `docs/DEPLOYMENT.md` 552-557; `next.config.mjs` 30-39 |
+| Memory limits; `read_only` for `cloudflared` and `postgres` | Open: the owner accepts the risk for launch or defers it to a hardening milestone. | `docs/DECISIONS.md` 1241; `docs/CHANGELOG.md` 42, 81; `docs/DEPLOYMENT.md` 570 |
+| GitHub Actions pinned by SHA | Open: actions are pinned by tag, not SHA (CHANGELOG `M52` review). Owner accepts or defers. | `docs/CHANGELOG.md` 81 |
+| `npm audit` | Re-run on the release commit; launch only after `M79` or an explicit owner acceptance of the open advisories. | `docs/DEPLOYMENT.md` 576-578 (item 1, rewritten by `M59`); `docs/MIGRATION_PLAN.md` 1380-1387 |
+
 ## Launch blockers
 
 The stack is **not cleared for launch** until every item is done or explicitly accepted by the owner:
 
-1. ~~Upgrade Next.js to a patched version~~ **Done by `M52c` (ADR-037): `next@16.3.8`.** `npm audit` shows no critical and no
-   `next` advisory; 9 high remain through `braces` in build/development tooling (no patched release exists). Re-run
-   `npm audit` before launch and after every dependency change.
+1. **OPEN: Next.js advisories published after `M52c`.** `M52c` (ADR-037) upgraded to `next@16.3.8`, which was
+   clean when it was done. On 2026-10-24 `npm audit` reports `next@16.3.8` as **critical** (vulnerable range
+   `16.0.0 - 16.4.0`; fix `next@16.4.3`):
+   - GHSA-2464-fhr4-w9xw, remote code execution in the Image Optimization API: **mitigated by configuration**
+     (`images.unoptimized: true` and every `/_next/image` request answered 404; see
+     [Image optimisation](#image-optimisation)).
+   - GHSA-p3m5-59mp-jv5r, denial of service through App Router Server Actions: **reachable without logging
+     in** (checkout and order lookup are Server Actions) and **NOT mitigated**.
+   - GHSA-673q-mjm6-r5xr, remote code execution through `use cache`: no matching code in this repository.
+
+   Also reported: `undici` 7.29.1 (a `package.json` override) **high**; `dompurify`, `happy-dom` and
+   `@payloadcms/richtext-lexical` and the `payload` packages that depend on them are admin-side or dormant.
+   Totals from `npm audit` on 2026-10-24: **18 vulnerabilities (1 low, 11 moderate, 4 high, 2 critical)**. The
+   fix is tracked by the **proposed, not yet approved** milestone `M79` ([MIGRATION_PLAN.md](./MIGRATION_PLAN.md),
+   "M79"). **Launch is blocked on `M79` or on an explicit owner acceptance of the Server Actions denial of
+   service.** Re-run `npm audit` before launch and after every dependency change.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
    hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
    passes the `turnstile-contract` job and a golden path through the real widget and siteverify, but with
@@ -588,6 +741,13 @@ The stack is **not cleared for launch** until every item is done or explicitly a
 
 ## Not covered yet
 
-Memory limits and an external uptime monitor;
-an automated backup schedule and a restore drill on a real stack (`M54` has the scripts and the manual procedure); `read_only` for `cloudflared` and `postgres` hardening (not testable
-here); the full deploy runbook (`M59`).
+- **This runbook has not been run on a clean VPS.** It was written and checked against the repository
+  (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a VPS
+  or Cloudflare is unverified until the owner follows it.
+- The release tag `v1.0.0` is not cut (owner, after the [Launch checklist](#launch-checklist)).
+- The Next.js blocker ([Launch blockers](#launch-blockers), item 1) is open until `M79` or owner acceptance.
+- An automated backup schedule (no `cron` job exists), an off-host copy, a restore drill on a real stack and
+  an external uptime monitor (`M54` has the scripts and the manual procedure).
+- Memory limits, and `read_only` for `cloudflared` and `postgres` (not testable here).
+- Order notification email (ADR-015 names Resend; no code uses it).
+- GitHub Actions are pinned by tag, not by SHA.

@@ -13,7 +13,7 @@ that writes `docs/DECISIONS.md`.
 ## Sources of truth
 
 - `docs/ARCHITECTURE.md` — target design, route map, settled vs. open decisions
-- `docs/DECISIONS.md` — **ADR-001 through ADR-038 Accepted; ADR-039 Proposed** (check each ADR's Status line before relying on it)
+- `docs/DECISIONS.md` — **ADR-001 through ADR-039 Accepted** (check each ADR's Status line before relying on it)
 - `CLAUDE.md` — the hard constraints
 - `docs/PHASE_1_READINESS_REPORT.md` — open `C`/`D`/`R` findings
 

@@ -1,6 +1,6 @@
 # Migration Plan — GoCart Pakistan
 
-84 milestones (`M1`–`M59`, the redesign group `M60`–`M72`, plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
+89 milestones (`M1`–`M59`, the redesign group `M60`–`M72`, the pre-launch close-out group `M73`–`M76` and `M78` (`M77` is deferred and not counted), plus `M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`) taking the codebase from its current state (documented in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md): a UI prototype with no real backend, no real auth, and a multi-vendor feature surface) to the target described in [PROJECT_SPEC.md](./PROJECT_SPEC.md): a single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only, SEO-first, mobile-first, Dockerized platform.
 
 Each milestone is scoped to be one reviewable commit (or a small, tightly related handful). This document is a plan only — **no code was written to produce it**.
 
@@ -15,7 +15,7 @@ Each milestone is scoped to be one reviewable commit (or a small, tightly relate
 
 ## Milestone IDs are the only execution reference
 
-**`M1`–`M59` and `M60`–`M72` are the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
+**`M1`–`M59`, `M60`–`M72` and the pre-launch close-out group from `M73` (`M73`–`M76`, `M78`; `M77` is deferred and becomes part of the sequence only if the owner approves it) are the authoritative implementation sequence.** Group headings below ("Foundation & tooling", "Payload data model", …) are **labels for navigation and status reporting only** — they carry no execution order, and nothing should ever be scheduled, referenced, or reported by group number. Cite work as `M12`, never as "Phase 2".
 
 **Execution order is defined by each milestone's `Dependencies` line, not by ascending ID.** Two deliberate exceptions to ID order exist and matter:
 
@@ -1031,7 +1031,7 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Goal**: Ensure Postgres data and uploaded media survive container restarts/redeploys, with a documented backup approach.
 - **Media is a local Docker volume, not object storage** ([ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor)), so it carries the same manual-backup burden as Postgres under [ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline) — this milestone's persistent-volumes scope must cover both, not just the database.
 - **Files**: `docker-compose.prod.yml` (named volumes, already present; comments only), `scripts/backup.sh`, `scripts/backup-verify.sh` (new), `scripts/prod-stack-check.sh` (M54 section), `docs/DEPLOYMENT.md`, `docs/ARCHITECTURE.md`
-- **Status (2026-10-11)**: implemented, partly verified. Scripts tested on a local PostgreSQL 16 (plain and encrypted, restore into a scratch database, wrong passphrase and truncated dump refused, retention). The Docker paths and the stop/start persistence check run in CI (`prod-stack`); the manual restore procedure and a real-VPS backup are unverified.
+- **Status (2026-10-24, `M74`)**: Done for the stated scope. Scripts tested on a local PostgreSQL 16 (plain and encrypted, restore into a scratch database, wrong passphrase and truncated dump refused, retention). The Docker paths and the stop/start persistence check passed in CI `prod-stack` on PR #22 head `bec4670` (run 38175670202, job 114577417717: `backup-verify.sh restored the dump into a scratch database`; `full stop/start (volumes kept): database rows and uploaded media survive`). Unverified and owner-only: the manual restore drill and a real-VPS backup (`docs/DEPLOYMENT.md`, "Launch blockers").
 - **Dependencies**: M50, M8
 - **Testing**: Stop and restart the full stack; confirm previously seeded/created data and uploaded media are still present.
 - **Rollback**: Revert compose volume changes.
@@ -1124,20 +1124,23 @@ Per [FEATURE_MATRIX.md](./FEATURE_MATRIX.md), both are **Future Phase**–leanin
 - **Commit message**: `Fix regressions found in end-to-end launch readiness pass`
 
 ### M58 — Update documentation to reflect the live architecture
-- **Goal**: Update `README.md`, `CLAUDE.md`, and `docs/ARCHITECTURE.md` to describe the system as it now actually is, not as it was planned to become.
-- **Files**: `README.md`, `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/TASKS.md` (mark phases complete)
+- **Goal**: Bring `README.md` in line with the live system (single-store COD storefront, Payload 3 + PostgreSQL, Next.js 16, the two compose stacks, the migrate step, Turnstile, the Cloudflare Tunnel). Confirm `CLAUDE.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.md` still match the code and edit only what has drifted.
+- **Amended 2026-10-24 (owner-approved) because** (checked 2026-10-24): `README.md:11` says "Milestones M1–M28 are Done … M29 next"; `README.md:72-74` says migrations are not run until `M52a`; `README.md:82` says "eight roles" (there are seven specialists plus the Engineering Manager). `CLAUDE.md` was corrected in PR #30.
+- **Files**: `README.md` (status banner, Getting started, Production image, role count), `docs/ARCHITECTURE.md` (collection and access tables), `docs/TASKS.md` (stale rows), `CLAUDE.md` (only if drifted; owner approval needed for any edit)
 - **Dependencies**: M57
-- **Testing**: A new contributor following `README.md`'s setup instructions can get the real stack running locally.
+- **Testing**: a new contributor following `README.md` alone gets the dev stack running, and its production section points to `docs/DEPLOYMENT.md` instead of describing a pre-`M52a` flow. `grep -n "M1.*M28\|Until then a brand-new database\|eight roles" README.md` returns nothing.
 - **Rollback**: Revert the doc changes.
 - **Commit message**: `Update documentation to reflect the live Payload CMS + PostgreSQL architecture`
 
 ### M59 — Production deploy runbook and release tag
-- **Goal**: Document the actual production deployment steps and cut the first release.
-- **Files**: `docs/DEPLOYMENT.md` (new), `docs/CHANGELOG.md` (release entry)
-- **Dependencies**: M58
-- **Testing**: Following the runbook on a clean environment successfully deploys a working production instance.
-- **Rollback**: N/A at this point — a failed production deploy is rolled back via the runbook's own rollback section, not by reverting this documentation commit.
-- **Commit message**: `Add production deployment runbook and cut v1.0.0`
+- **Goal**: Complete `docs/DEPLOYMENT.md` into the single production runbook (ordered first-deploy checklist, release, rollback, backup schedule, launch checklist) and prepare the first release. The release tag (`v1.0.0`) is cut by the owner after the launch checks pass, not by the agent.
+- **Amended 2026-10-24 (owner-approved) because** (checked 2026-10-24): the earlier Files line said `docs/DEPLOYMENT.md (new)` but the file exists (about 594 lines) and ends with "the full deploy runbook (`M59`)" under "Not covered yet"; the earlier Rollback said N/A while the runbook it points to has no rollback section yet.
+- **Files**: `docs/DEPLOYMENT.md` (extend), `docs/CHANGELOG.md` (release entry)
+- **Launch decisions this milestone needs from the owner** (recommended defaults and sources are in the PR body and the Decision Packet): hostname; Turnstile keys; Cloudflare WAF rule; tunnel token; env file location; bootstrap admin removal; backup schedule, encryption and off-host copies; restore drill; uptime monitor; email (Resend is decided in ADR-015 but no code uses it); image optimizer; memory limits and read-only `cloudflared`/`postgres`; `npm audit` re-run.
+- **Dependencies**: M58; `M74` done, or `M52`/`M52b`/`M54` verification explicitly accepted by the owner
+- **Testing**: following the runbook on a clean VPS deploys a working instance; every "Launch blockers" item in `docs/DEPLOYMENT.md` is Done or owner-accepted; `TURNSTILE_ALLOW_TEST_KEYS` and `PAYLOAD_ALLOW_FIRST_REGISTER` are unset in the production env file.
+- **Rollback**: Revert the doc commit if wrong. A failed production deploy is rolled back via the runbook's own rollback section, which this milestone must add.
+- **Commit message**: `Add production deployment runbook and cut v1.0.0` (the `v1.0.0` tag itself is owner-run, after the launch checks)
 
 ---
 
@@ -1288,7 +1291,7 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Commit message**: `Self-host Plus Jakarta Sans with next/font/local (M72)`
 
 ### M70 — Optional product `label` field
-- **Goal**: Let an admin tag a product as New, Limited edition or Sale so the `M69` badge rule has a real source. Approved by the owner on 2026-10-24; decision recorded in [ADR-039](./DECISIONS.md) (Proposed).
+- **Goal**: Let an admin tag a product as New, Limited edition or Sale so the `M69` badge rule has a real source. Approved by the owner on 2026-10-24; decision recorded in [ADR-039](./DECISIONS.md) (Accepted 2026-10-24).
 - **Files**: `collections/Products.ts`, `lib/payload/products.ts` (mirrored type only), `migrations/<timestamp>_product_label.{ts,json}` and `migrations/index.ts` (generated by `payload migrate:create`), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**: add an optional `select` field `label` to `Products` with options `new` ("New"), `limited` ("Limited edition") and `sale` ("Sale"); no default, not required, so existing rows stay null. Place it in the admin sidebar near `isFeatured`. `Product` in `lib/payload/products.ts` gains `label?: 'new' | 'limited' | 'sale' | null`. `lib/product-badges.ts` already consumes the field and is not changed. One migration, additive (a nullable enum column).
 - **Dependencies**: M69
@@ -1297,13 +1300,13 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Commit message**: `Add optional product label field (M70)`
 
 ### M71 — Admin-managed home promo cards
-- **Goal**: Show the design's promo cards on the home page from admin-created records, with no invented copy: no card exists until an admin creates one, and the section is hidden when none is active. Approved by the owner on 2026-10-24; decision recorded in [ADR-039](./DECISIONS.md) (Proposed).
+- **Goal**: Show the design's promo cards on the home page from admin-created records, with no invented copy: no card exists until an admin creates one, and the section is hidden when none is active. Approved by the owner on 2026-10-24; decision recorded in [ADR-039](./DECISIONS.md) (Accepted 2026-10-24).
 - **Files**: `collections/PromoCards.ts` (new), `payload.config.ts` (register the collection), `lib/payload/promo-cards.ts` (new, server-only), `components/PromoCards.tsx` (new, server component), `app/(public)/page.jsx`, `migrations/<timestamp>_promo_cards.{ts,json}` and `migrations/index.ts` (generated), `docs/ARCHITECTURE.md` (collection list and access table), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**:
   - Collection `promoCards`: `title` (text, required), `eyebrow` (text, optional, short), `ctaText` (text, required), `link` (text, required; `validate` accepts only an internal path that starts with a single `/`, rejecting `//`, `/\`, any scheme and any `:`), `tone` (select: `pink`, `blue`, `lavender`, `mint`, over existing pastel tokens), `image` (optional upload relation to `media`), `order` (number), `active` (checkbox, default `true`).
   - Access: create/update/delete admin-only; `read` returns `true` for an admin and `{ active: { equals: true } }` otherwise, so inactive cards are never public.
   - `lib/payload/promo-cards.ts` (Local API, `active` filter, ascending `order`, depth 1) is imported by server components only; a failed read renders nothing. `PromoCards` is hidden when the list is empty.
-  - Layout from the old design: per card an eyebrow, a 30px title, a CTA with an arrow and a large circle (the image when set, else a tinted decorative circle); two columns from `md`, stacked on a phone; the whole card is one link; targets at least 44px; contrast at least 4.5:1 on every tone. The design source is deleted, so copy, count and ordering come only from admin data.
+  - Layout from the old design: per card an eyebrow, a 30px title, a CTA with an arrow and the image circle when an image is set, else none; two columns from `md`, stacked on a phone; the whole card is one link; targets at least 44px; contrast at least 4.5:1 on every tone. The design source is deleted, so copy, count and ordering come only from admin data.
   - No seed data and no default records in the migration.
 - **Dependencies**: M62, M70 (the second migration is generated on top of the first)
 - **Testing**: with no cards, or only inactive ones, the home HTML has no promo section; an active card appears with its link, ordered by `order`; anonymous `GET /api/promoCards` (the collection slug is `promoCards`) returns only active cards and anonymous writes return 403; a `link` of `https://x`, `//x`, `javascript:` or `foo` is rejected, `/category/electronics` is accepted; the drift check is clean; the migration applies on an empty database; no horizontal scroll at 320px; lint, type-check, build and the full Playwright suite pass (Turnstile-dependent tests in CI).
@@ -1312,14 +1315,14 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 
 ---
 
-## Group: Pre-launch close-out — `M73` onward (Proposed, awaiting owner approval)
+## Group: Pre-launch close-out — `M73` onward
 
-**Status of everything in this group: Proposed — awaiting owner approval. Nothing here is approved or started.** Drafted 2026-10-24 by the Engineering Manager role with the Software Architect (`M74`, `M75`, `M58`/`M59` amendments) and UI/UX Designer (`M73`, `M76`) roles. These entries use `####` headings on purpose: they are not yet milestones, so the `### M…` heading count (84, see the Summary) is unchanged. On approval an entry is promoted to a `###` heading and the count line is updated in the same commit.
+**Status: approved by the owner on 2026-10-24 (Stage 1 Decision Packet, "approve all"), except `M77`, which the owner deferred (optional; it keeps a `####` heading and is not counted).** Drafted 2026-10-24 by the Engineering Manager role with the Software Architect (`M74`, `M75`, `M78`, `M58`/`M59` amendments) and UI/UX Designer (`M73`, `M76`) roles. Nothing here is started.
 
-Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`, `M76`, `M77` are independent of each other; the `M58` and `M59` amendments follow, and `M59` last. `M57`'s regression pass predates `M73`–`M77`; each of them is checked by the CI `e2e` job instead of a new manual pass.
+Order (by dependency, not by ID): `M74` (docs only) first; then `M73`, `M75`, `M76` and `M78` in any order (they are independent of each other); then `M58`; then `M59` last. `M57`'s regression pass predates `M73`–`M78`; each of them is checked by the CI `e2e` job instead of a new manual pass.
 
-#### M73 — Promo card without an image: no empty circle (Proposed — awaiting owner approval)
-- **Goal**: A promo card with no image no longer shows an empty white circle from 640px up. The circle appears only when the admin attached an image, and a card without one lets its text use the full width. Cards that do have an image stop their text running under the circle at `md`. Found in the `M57` pass; changes the `M71` spec line "else a tinted decorative circle" (the code uses `bg-white`, not a tint; `components/PromoCards.tsx:29`).
+### M73 — Promo card without an image: no empty circle
+- **Goal**: A promo card with no image no longer shows an empty white circle from 640px up. The circle appears only when the admin attached an image, and a card without one lets its text use the full width. Cards that do have an image stop their text running under the circle at `md`. Found in the `M57` pass; changes the `M71` spec line "else a tinted decorative circle" (the code uses `bg-white`, not a tint; `components/PromoCards.tsx:29`). Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
 - **Files**: `components/PromoCards.tsx`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**:
   - Render the circle `<div>` only when `image?.url` is set; it stays `aria-hidden`, `hidden sm:flex`, with `<Image alt="">`. No new copy, glyph or colour; Tailwind tokens only, no hex.
@@ -1332,8 +1335,8 @@ Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`
 - **Rollback**: Revert the commit.
 - **Commit message**: `Hide promo card circle when no image is set (M73)`
 
-#### M74 — Close the implemented-but-not-Done milestones with CI evidence (Proposed — awaiting owner approval)
-- **Goal**: Verification-only and docs-only. `M52`, `M52b`, `M52c` and `M54` are implemented but not marked Done. Where the missing evidence already exists in CI, record it and correct stale status text; where only the owner can supply it (real Cloudflare account, real hostname, real VPS), say so and leave the status honest. **No code work is invented.**
+### M74 — Close the implemented-but-not-Done milestones with CI evidence
+- **Goal**: Verification-only and docs-only. `M52`, `M52b`, `M52c` and `M54` are implemented but not marked Done. Where the missing evidence already exists in CI, record it and correct stale status text; where only the owner can supply it (real Cloudflare account, real hostname, real VPS), say so and leave the status honest. **No code work is invented.** Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
 - **Files**: `docs/TASKS.md` (rows `M52`, `M52b`, `M52c`, `M54`), `docs/CHANGELOG.md`, `docs/MIGRATION_PLAN.md` (status lines of those four entries only)
 - **Spec** (each line is a proposal for the owner to confirm):
   - `M52c` → Done: the `TASKS` row says "CI pending on the PR", but PR #21 ran CI on head `303f806` (run 38169357779, conclusion success) and the merge to `main` also passed (run 38172920361, success). Executing this milestone must read the per-job results from those run pages and cite them; the per-job list is unverified until then.
@@ -1344,17 +1347,17 @@ Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`
 - **Rollback**: Revert the commit.
 - **Commit message**: `Record CI evidence and close verification-only gaps for M52c and M54 (M74)`
 
-#### M75 — Reject whitespace and control characters in promo links (Proposed — awaiting owner approval)
-- **Goal**: Close a gap in the `M71` link validator. `validatePromoLink` accepts `"/\t/evil.com"`: it starts with `/`, and contains no `//`, `/\` or `:`. The WHATWG URL parser strips tab and newline, so the value resolves to an external host: `new URL('/\t/evil.com','https://shop.example.com').href` returned `https://evil.com/` (node, 2026-10-24); same for a newline. Exposure is limited because only admins can write a card, but the `M71` spec says the link must be an internal path.
-- **Files**: `collections/PromoCards.ts` (`validatePromoLink` only), `docs/DECISIONS.md` (one clause in ADR-039 decision 2, only if the owner approves editing ADR-039 while it is still Proposed), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+### M75 — Reject whitespace and control characters in promo links
+- **Goal**: Close a gap in the `M71` link validator. `validatePromoLink` accepts `"/\t/evil.com"`: it starts with `/`, and contains no `//`, `/\` or `:`. The WHATWG URL parser strips tab and newline, so the value resolves to an external host: `new URL('/\t/evil.com','https://shop.example.com').href` returned `https://evil.com/` (node, 2026-10-24); same for a newline. Exposure is limited because only admins can write a card, but the `M71` spec says the link must be an internal path. Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
+- **Files**: `collections/PromoCards.ts` (`validatePromoLink` only), `docs/DECISIONS.md` (the ADR-039 decision 2 clause is already recorded in the 2026-10-24 amendment; no further ADR edit), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**: also reject any value that contains whitespace or a control character (`/[\s\u0000-\u001f\u007f]/`). No schema change, no migration, no data change; before shipping, list existing `promo_cards.link` values to confirm none become invalid.
 - **Dependencies**: M71
 - **Testing**: the existing 8 validator cases still pass; `"/\t/x"`, `"/\n/x"`, `"/ x"` and `"/a b"` are rejected; `/category/electronics` is accepted; an anonymous write is still 403; lint, type-check and build pass. Gate G6 by the Security/Performance role (public-output surface).
 - **Rollback**: Revert the commit.
 - **Commit message**: `Reject whitespace and control characters in promo card links (M75)`
 
-#### M76 — Storefront accessibility polish (Proposed — awaiting owner approval)
-- **Goal**: Fix the small accessibility defects found in a read-only G3 review of `M60`–`M72`. UI only.
+### M76 — Storefront accessibility polish
+- **Goal**: Fix the small accessibility defects found in a read-only G3 review of `M60`–`M72`. UI only. Approved by the owner on 2026-10-24 (Stage 1 Decision Packet, 'approve all').
 - **Files**: `components/ui/FeaturedTabs.tsx`, `components/ui/MobileTabBar.tsx` (only if the contrast check fails), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**:
   - `FeaturedTabs.tsx:74`: the `<ul>` carries `role="tabpanel"`, which removes the list semantics from its `<li>` children and the panel is not focusable. Wrap the list in `<div role="tabpanel" tabIndex={0}>` and leave the `<ul>` plain.
@@ -1365,7 +1368,25 @@ Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`
 - **Rollback**: Revert the commit.
 - **Commit message**: `Fix Featured tab panel semantics and verify tab bar contrast (M76)`
 
-#### M77 — Smaller self-hosted font file (Proposed — awaiting owner approval; optional)
+### M78 — Declare `tsx` as a devDependency
+- **Goal**: `scripts/*` and `npm run seed`/`deploy:migrate` call `tsx`, which today only resolves transitively from `node_modules/.bin`; declare it so a dependency update cannot silently remove it. Approved by the owner on 2026-10-24 (Decision Packet #8, a package change).
+- **Files**: `package.json`, `package-lock.json`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: pin the exact version already resolved in the lockfile (`4.22.4` at `package-lock.json:11201-11202` on 2026-10-24; re-check before editing), as an exact pin like the other dependencies, in `devDependencies` only; no other change.
+- **Dependencies**: M2a
+- **Testing**: `npm ci`, `npm run type-check`, `npm run lint`, `npm run test:env`, `npm run build`; `git diff package-lock.json` shows only the `tsx` root entry change; CI all six jobs, especially `migrations` and `prod-stack` (they run the `tsx` scripts); `npm audit` count unchanged.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Declare tsx as a devDependency (M78)`
+
+#### M79 — Close the Next.js advisories published after M52c (Proposed — awaiting owner approval; pre-launch)
+- **Goal**: `npm audit` on 2026-10-24 reports `next@16.3.8` as critical (vulnerable range `16.0.0 – 16.4.0`; fixed in `16.4.3`): GHSA-2464-fhr4-w9xw (unauthenticated RCE in the Image Optimization API), GHSA-p3m5-59mp-jv5r (denial of service in App Router Server Actions) and GHSA-673q-mjm6-r5xr (RCE in `use cache` functions). `docs/DEPLOYMENT.md` "Launch blockers" item 1 and ADR-037 recorded "critical 2 → 0" on 2026-10-11, before these were published. Read-only G6 review (2026-10-24): the image-optimizer RCE is closed by configuration (`images.unoptimized: true`, `/_next/image` rewritten to 404, uploads limited to JPEG/PNG/WebP/GIF), the `use cache` RCE has no matching code in the app, but the **Server Actions DoS is reachable without authentication** (checkout and order lookup) and has no mitigation. Also raise the `undici` override to `7.30.1` (its current pin `7.29.1` is flagged high; `npm view undici@7.30.1` resolves).
+- **Files**: `package.json`, `package-lock.json` (`next` and `eslint-config-next` exact `16.4.3`; `overrides.undici` `7.30.1`), `next.config.mjs` (the stale `next@15.4.11` comment only), `docs/DECISIONS.md` (a new ADR by the Software Architect that amends ADR-037's pin; ADR-037 itself is not edited), `docs/DEPLOYMENT.md` ("Launch blockers" item 1), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: no behaviour change. `16.4.3` is inside `@payloadcms/next@3.90.2`'s peer range (`>=16.3.3 <17`); `npm view next@16.4.3` shows it was last modified 2026-10-23, so it is days old: ADR-037 declined a five-day-old minor, and the owner should weigh that. Do **not** apply the `npm audit` "fix" for `@payloadcms/richtext-lexical` (it proposes a downgrade to 3.78.0); the `dompurify`, `happy-dom` and `@lexical/headless` findings are admin-side or dormant and wait for a Payload release.
+- **Dependencies**: M52c, M78
+- **Testing**: `npm audit` shows no `next` advisory and no critical `next`; lint, type-check, `npm run build`, `test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard`; `/_next/image` still returns 404; the checkout and order-lookup server actions work (CI `e2e` golden path); all six CI jobs green; `npm audit` before and after recorded.
+- **Rollback**: `git revert` the commit and `npm ci` (restores 16.3.8). No schema or data change.
+- **Commit message**: `Upgrade Next.js to 16.4.3 and close the post-M52c advisories (M79)`
+
+#### M77 — Smaller self-hosted font file (Deferred by owner decision 2026-10-24; optional)
 - **Goal**: `M72` ships the unmodified upstream variable TTF (about 176 KB) where Google used to serve a 27 KB Latin WOFF2. Convert to a Latin WOFF2 subset with the same 400–800 range to cut the first-load font cost. Optional performance work, not a launch requirement.
 - **Files**: `app/fonts/` (the font file and `OFL.txt`), `app/(public)/layout.jsx` (the font path only), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
 - **Spec**: check the font's `OFL.txt` for a Reserved Font Name before modifying the file (unverified: if one is reserved, a subset must be renamed); keep the licence file; same `weight`, `variable` and `display`.
@@ -1373,25 +1394,6 @@ Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`
 - **Testing**: the home page requests exactly one font file; its size is recorded before and after; the body's computed font is still the same family; Latin product names and the `Rs. 1,500` format render; no `fonts.googleapis.com` in source or build output; lint, type-check, build and the Docker `image` job pass.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Serve Plus Jakarta Sans as a Latin WOFF2 subset (M77)`
-
-#### M58 — Proposed amendment (replaces the current `M58` entry on approval; awaiting owner approval)
-- **Goal**: Bring `README.md` in line with the live system (single-store COD storefront, Payload 3 + PostgreSQL, Next.js 16, the two compose stacks, the migrate step, Turnstile, the Cloudflare Tunnel). Confirm `CLAUDE.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.md` still match the code and edit only what has drifted.
-- **Why amended** (checked 2026-10-24): `README.md:11` says "Milestones M1–M28 are Done … M29 next"; `README.md:72-74` says migrations are not run until `M52a`; `README.md:82` says "eight roles" (there are seven specialists plus the Engineering Manager). `CLAUDE.md` was corrected in PR #30.
-- **Files**: `README.md` (status banner, Getting started, Production image, role count), `docs/ARCHITECTURE.md` (collection and access tables), `docs/TASKS.md` (stale rows), `CLAUDE.md` (only if drifted; owner approval needed for any edit)
-- **Dependencies**: M57
-- **Testing**: a new contributor following `README.md` alone gets the dev stack running, and its production section points to `docs/DEPLOYMENT.md` instead of describing a pre-`M52a` flow. `grep -n "M1.*M28\|Until then a brand-new database\|eight roles" README.md` returns nothing.
-- **Rollback**: Revert the doc changes.
-- **Commit message**: `Update documentation to reflect the live Payload CMS + PostgreSQL architecture`
-
-#### M59 — Proposed amendment (replaces the current `M59` entry on approval; awaiting owner approval)
-- **Goal**: Complete `docs/DEPLOYMENT.md` into the single production runbook (ordered first-deploy checklist, release, rollback, backup schedule, launch checklist) and cut the first release.
-- **Why amended** (checked 2026-10-24): the current Files line says `docs/DEPLOYMENT.md (new)` but the file exists (about 594 lines) and ends with "the full deploy runbook (`M59`)" under "Not covered yet"; the current Rollback says N/A while the runbook it points to has no rollback section yet.
-- **Files**: `docs/DEPLOYMENT.md` (extend), `docs/CHANGELOG.md` (release entry)
-- **Launch decisions this milestone needs from the owner** (recommended defaults and sources are in the PR body and the Decision Packet): hostname; Turnstile keys; Cloudflare WAF rule; tunnel token; env file location; bootstrap admin removal; backup schedule, encryption and off-host copies; restore drill; uptime monitor; email (Resend is decided in ADR-015 but no code uses it); image optimizer; memory limits and read-only `cloudflared`/`postgres`; `npm audit` re-run.
-- **Dependencies**: M58; `M74` done, or `M52`/`M52b`/`M54` verification explicitly accepted by the owner
-- **Testing**: following the runbook on a clean VPS deploys a working instance; every "Launch blockers" item in `docs/DEPLOYMENT.md` is Done or owner-accepted; `TURNSTILE_ALLOW_TEST_KEYS` and `PAYLOAD_ALLOW_FIRST_REGISTER` are unset in the production env file.
-- **Rollback**: Revert the doc commit if wrong. A failed production deploy is rolled back via the runbook's own rollback section, which this milestone must add.
-- **Commit message**: `Add production deployment runbook and cut v1.0.0`
 
 ---
 
@@ -1417,4 +1419,4 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 | `M55`–`M56` | PKR currency and Pakistani address/phone validation | After `M28` |
 | `M57`–`M59` | Regression pass, docs, launch | Last |
 
-**84 milestone entries** (counted 2026-10-24 as `### M…` headings) — `M1`–`M59`, the storefront redesign group `M60`–`M72`, and twelve decimal insertions (`M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`). The decimal-insertion text that follows is historical (written when the total was 69): ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
+**89 milestone entries** (counted 2026-10-24 as `### M…` headings) — `M1`–`M59` (59), the storefront redesign group `M60`–`M72` (13), the pre-launch close-out group `M73`–`M76` and `M78` (5; `M77` is deferred, kept as a `####` entry, and not counted), and twelve decimal insertions (`M2a`, `M13a`, `M27a`, `M27b`, `M33a`, `M45a`, `M48a`, `M52a`, `M52b`, `M52c`, `M55a`, `M56a`). The decimal-insertion text that follows is historical (written when the total was 69): ten decimal insertions (the four named here, plus `M33a`, `M48a`, `M52a`, `M55a`, `M56a` added 2026-08-18, and `M52b` added 2026-10-11 per [ADR-035](./DECISIONS.md#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)) that avoid renumbering the rest: `M2a` (TypeScript toolchain), `M27a`/`M27b` (category browsing routes, closing readiness finding **C8** per [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)), and `M13a` (Settings global, closing readiness risk **R6** per [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)).
