@@ -408,7 +408,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M55`, `M55a`, `M56` | PKR currency, storefront copy, Pakistani address/phone validation | **Done** (2026-10-10) — see CHANGELOG and ADR-029 |
 | `M56a` | Golden-path E2E test and CI | **Done** (2026-10-10) — closes `R7`; see CHANGELOG |
 | `M57` | End-to-end regression pass | **In review** (2026-10-24) — Regression pass: narrative only locally; CI e2e covers guest checkout and lookup. Branch `chore/docs-drift-2`; no regression observed in the local walk and no code change made. The local walk ran on a freshly migrated and seeded PostgreSQL 16 (production build): browse, product, cart at 1440 and 390 px with no horizontal scroll; admin creates an order and moves it PLACED → CONFIRMED → PROCESSING → SHIPPED → DELIVERED; anonymous `GET /api/orders` 403. The guest order-placement and lookup legs need Cloudflare and are covered only by the CI `e2e` job (Turnstile test keys); real-key checks remain a launch blocker |
-| `M58`–`M59` | Documentation update, deploy runbook and release | Not Started — M58 is partly done by the 2026-10-24 drift fixes; the rest needs the owner's go-ahead |
+| `M58`–`M59` | Documentation update, deploy runbook and release | **Approved (amended entries)** (2026-10-24) — not started. M58 is partly done by the 2026-10-24 drift fixes. Order: `M74`, then `M73`/`M75`/`M76`/`M78`, then `M58`, then `M59`; the `v1.0.0` tag is cut by the owner after the launch checks |
 | `M60` | Storefront redesign: design tokens and Plus Jakarta Sans (UI only) | **Done** (2026-10-23) — merged to `main` via PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach). Further redesign milestones are added only after the owner approves each draft |
 | `M61` | Storefront redesign: shared components — header, product card, footer, tab bar (UI only) | **Done** (2026-10-23) — merged to `main` via PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach) |
 | `M62` | Storefront redesign: home page, "Featured" section (UI only) | **Done** (2026-10-23) — merged to `main` via PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach) |
@@ -422,11 +422,12 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M72` | Self-host Plus Jakarta Sans with `next/font/local` (no build-time fetch from Google) | **Done** (2026-10-24) — merged to `main` via PR #26; lint and type-check pass; batch build and e2e run before the PR |
 | `M70` | Optional product `label` field (New / Limited edition / Sale) | **Done** (2026-10-24) — merged to `main` via PR #28; migration `20261024_061017_product_label` applies on an empty database; drift check clean; lint and type-check pass. Owner must take a backup before deploying (ADR-032) |
 | `M71` | Admin-managed home promo cards (`promoCards` collection) | **Done** (2026-10-24) — merged to `main` via PR #28; migration `20261024_061141_promo_cards`; verified locally: hidden when empty, inactive never public, anonymous write 403, link validator 8/8; lint, type-check, build pass. Owner must take a backup before deploying (ADR-032) |
-| `M73` | Promo card without an image: no empty circle (UI only) | **Proposed — awaiting owner approval** (entry in `MIGRATION_PLAN.md`, group "Pre-launch close-out") |
-| `M74` | Close `M52`/`M52b`/`M52c`/`M54` with CI evidence (verification-only, docs only) | **Proposed — awaiting owner approval** |
-| `M75` | Reject whitespace and control characters in promo links | **Proposed — awaiting owner approval** |
-| `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **Proposed — awaiting owner approval** |
-| `M77` | Smaller self-hosted font file (optional) | **Proposed — awaiting owner approval** |
+| `M73` | Promo card without an image: no empty circle (UI only) | **Approved** (2026-10-24) — not started (entry in `MIGRATION_PLAN.md`, group "Pre-launch close-out") |
+| `M74` | Close `M52`/`M52b`/`M52c`/`M54` with CI evidence (verification-only, docs only) | **Approved** (2026-10-24) — not started; runs first in the close-out group |
+| `M75` | Reject whitespace and control characters in promo links | **Approved** (2026-10-24) — not started |
+| `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **Approved** (2026-10-24) — not started |
+| `M77` | Smaller self-hosted font file (optional) | **Deferred** (owner decision 2026-10-24; optional) |
+| `M78` | Declare `tsx` as a devDependency | **Approved** (2026-10-24) — not started (a package change; Decision Packet #8) |
 
 ---
 
