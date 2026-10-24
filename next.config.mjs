@@ -25,7 +25,7 @@ const nextConfig = {
     // ADR-036 (B1 mitigation, kept): the image optimizer is switched OFF and its endpoint is closed.
     // It was introduced because `next@15.4.11` was affected by critical Image Optimization API
     // advisories (GHSA-2xp9-vwfh-vxw4, unauthenticated RCE "when AVIF files are used"). `next` is now
-    // 16.4.2 (M79, ADR-040 (Proposed)), which fixes the later advisories GHSA-2464-fhr4-w9xw (RCE
+    // 16.4.2 (M79, ADR-040 (Accepted 2026-10-24)), which fixes the later advisories GHSA-2464-fhr4-w9xw (RCE
     // when SVG files are used), GHSA-p3m5-59mp-jv5r and GHSA-673q-mjm6-r5xr; the mitigation stays
     // as defence in depth and to keep the behaviour unchanged:
     //   - `unoptimized: true`: <Image> emits the original /api/media/file/... URL; nothing resizes

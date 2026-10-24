@@ -1275,7 +1275,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 
 ## ADR-040: Next.js 16.4.2 — closing the advisories published after `M52c` (`M79`)
 
-**Status**: **Proposed (2026-10-24)** — awaiting the owner's acceptance; only the owner changes an ADR's status. Amends the version pin of [ADR-037](#adr-037-nextjs-1638--closing-the-framework-advisories-m52c) only (decision 1 there, `next`/`eslint-config-next` at `16.3.8`, and the `undici` override value in its decision 4). It does not change [ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)'s decisions, reverses no Accepted ADR and adds no dependency (one existing `overrides` value changes).
+**Status**: **Accepted (2026-10-24)** — accepted by the project owner in session ("Accept ADR-040 with 16.4.2, approve M80"), with the version choice 16.4.2 confirmed by the owner. Amends the version pin of [ADR-037](#adr-037-nextjs-1638--closing-the-framework-advisories-m52c) only (decision 1 there, `next`/`eslint-config-next` at `16.3.8`, and the `undici` override value in its decision 4). It does not change [ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)'s decisions, reverses no Accepted ADR and adds no dependency (one existing `overrides` value changes).
 
 **Context**:
 
@@ -1297,7 +1297,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 1. **`next` and `eslint-config-next` are pinned exactly to `16.4.2`.** It is the newest release that is at least a week old (ADR-037 declined a five-day-old minor), it contains the three security fixes (introduced in 16.4.1), and it adds Turbopack build-correctness backports relevant to this project's Turbopack production build and Docker image. `16.4.3` adds no security fix and is under a day old, so it is left for a later routine bump. `16.4.2` is inside Payload's peer range: `npm view @payloadcms/next@3.90.2 peerDependencies.next` = `>=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0`.
 2. **`overrides.undici` is raised from `7.29.1` to `7.30.1`.** Same reasoning as ADR-037 decision 4: Payload pins `undici@7.29.0` exactly and uses it only for the admin "upload from URL" fetch; a patch-level override within the same minor is the smallest change that removes the advisories.
 3. ADR-036's mitigations (`images.unoptimized: true`, `/_next/image` closed) stay in place. Re-enabling the optimizer remains a separate owner decision.
-4. The choice of version is the owner's and is a one-line pin: see the alternatives.
+4. The choice of version is the owner's and is a one-line pin: see the alternatives. The owner confirmed 16.4.2 on 2026-10-24.
 
 **Alternatives considered**:
 

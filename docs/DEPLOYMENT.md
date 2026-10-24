@@ -10,8 +10,8 @@ role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Bac
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
 > [Launch blockers](#launch-blockers) at the end of this file. The first one is fixed on branch
 > `m79/next-16-4` but **not merged**: `M79` upgrades `next` to 16.4.2, which closes the three advisories
-> `npm audit` reported on 2026-10-24 (`npm audit` no longer lists `next`). It awaits merge and the owner's
-> acceptance of ADR-040 (Proposed). The other items are the real-Cloudflare checks with real keys, the
+> `npm audit` reported on 2026-10-24 (`npm audit` no longer lists `next`). It awaits merge
+> (ADR-040 is Accepted, 2026-10-24). The other items are the real-Cloudflare checks with real keys, the
 > Cloudflare WAF rule, the first-deploy checks, and the first real backup, restore drill and uptime monitor.
 
 ## Launch checklist
@@ -21,7 +21,7 @@ it by hand; "Stack" means the compose stack or a script does it once you run the
 only when the step has been seen to work on the real VPS. **Nothing below has been run on a clean VPS yet**
 (`M59` wrote the runbook; see [Not covered yet](#not-covered-yet)).
 
-- [ ] 1. **Owner.** Resolve the Next.js blocker: `M79` (`next` 16.4.2) merged, ADR-040 accepted by the owner, and deployed
+- [ ] 1. **Owner.** Resolve the Next.js blocker: `M79` (`next` 16.4.2) merged to `main` (ADR-040 is Accepted, 2026-10-24) and deployed
   (or an explicit written owner acceptance ([Launch blockers](#launch-blockers), item 1)). Decide the open items in
   [Launch decisions](#launch-decisions).
 - [ ] 2. **Owner.** Take a backup first (ADR-032): [Taking a backup](#taking-a-backup). On a brand-new empty
@@ -706,7 +706,7 @@ the section names to find them in the current file.
 | Image optimizer | Stays off (`images.unoptimized: true`, `/_next/image` returns 404). Re-enabling is a later owner decision. | `docs/DEPLOYMENT.md` 552-557; `next.config.mjs` 30-39 |
 | Memory limits; `read_only` for `cloudflared` and `postgres` | Open: the owner accepts the risk for launch or defers it to a hardening milestone. | `docs/DECISIONS.md` 1241; `docs/CHANGELOG.md` 42, 81; `docs/DEPLOYMENT.md` 570 |
 | GitHub Actions pinned by SHA | Open: actions are pinned by tag, not SHA (CHANGELOG `M52` review). Owner accepts or defers. | `docs/CHANGELOG.md` 81 |
-| `npm audit` | Re-run on the release commit; launch only after `M79` is merged and ADR-040 accepted (or the owner explicitly accepts the open advisories). | `docs/DEPLOYMENT.md` 576-578 (item 1, rewritten by `M59`); `docs/MIGRATION_PLAN.md` 1380-1387 |
+| `npm audit` | Re-run on the release commit; launch only after `M79` is merged (ADR-040 is Accepted, 2026-10-24) (or the owner explicitly accepts the open advisories). | `docs/DEPLOYMENT.md` 576-578 (item 1, rewritten by `M59`); `docs/MIGRATION_PLAN.md` 1380-1387 |
 
 ## Launch blockers
 
@@ -722,8 +722,8 @@ The stack is **not cleared for launch** until every item is done or explicitly a
    went from **18 vulnerabilities (1 low, 11 moderate, 4 high, 2 critical)** to **11 (1 low, 6 moderate,
    3 high, 1 critical)** and lists neither `next` nor `undici`. The one remaining critical is `dompurify`
    (admin-side, waits for a Payload release; do not apply the `npm audit fix` downgrade of
-   `@payloadcms/richtext-lexical`). Still open: the change must be merged, the owner must accept ADR-040
-   (Proposed), CI must be green, and it must be deployed. Re-run `npm audit` before launch and after every
+   `@payloadcms/richtext-lexical`). Still open: the change must be merged (ADR-040 is Accepted,
+   2026-10-24), CI must be green, and it must be deployed. Re-run `npm audit` before launch and after every
    dependency change.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
    hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
@@ -741,7 +741,7 @@ The stack is **not cleared for launch** until every item is done or explicitly a
   (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a VPS
   or Cloudflare is unverified until the owner follows it.
 - The release tag `v1.0.0` is not cut (owner, after the [Launch checklist](#launch-checklist)).
-- The Next.js blocker ([Launch blockers](#launch-blockers), item 1) is fixed on branch `m79/next-16-4` and open until it is merged and the owner accepts ADR-040.
+- The Next.js blocker ([Launch blockers](#launch-blockers), item 1) is fixed on branch `m79/next-16-4` and open until it is merged to `main` (ADR-040 is Accepted, 2026-10-24).
 - An automated backup schedule (no `cron` job exists), an off-host copy, a restore drill on a real stack and
   an external uptime monitor (`M54` has the scripts and the manual procedure).
 - Memory limits, and `read_only` for `cloudflared` and `postgres` (not testable here).
