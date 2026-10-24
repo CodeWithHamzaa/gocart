@@ -104,8 +104,10 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
 - `migrate` is built from the `migrate` target of the `Dockerfile` (full dependencies plus source;
   the minimal `production` image cannot run the Payload CLI). It runs `npm run deploy:migrate`, which
   is `scripts/check-env.ts` (environment validation, `M52`), then `payload migrate`, then
-  `scripts/db-roles.ts` (creates and grants the restricted `gocart_app` role the running app uses,
-  ADR-036), then `scripts/verify-migrations.ts`, then `scripts/bootstrap-admin.ts` (creates the first
+  `scripts/verify-migrations.ts` (right after, so a silent no-op migrate fails with a clear
+  "schema is incomplete" message instead of a misleading one from a later step; found in PR #32 run
+  40084395694 attempt 1, `M80`), then `scripts/db-roles.ts` (creates and grants the restricted
+  `gocart_app` role the running app uses, ADR-036), then `scripts/bootstrap-admin.ts` (creates the first
   admin from a secret, or does nothing if a user exists). An invalid environment fails `migrate` before
   the database is touched. `migrate` is the only container that holds the Postgres superuser password.
 - The verifier is a **smoke check, not a schema comparison**. It exits non-zero unless: at least one
