@@ -415,6 +415,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M64` | Storefront redesign: product detail page (UI only) | **In review** (2026-10-24) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 | `M65` | Storefront redesign: cart with checkout-styled summary (UI only; checkout stays on `/cart`) | **In review** (2026-10-24) — PR #25; verified locally (lint, type-check, build, 13/15 e2e — the 2 Turnstile-dependent tests need Cloudflare, which this sandbox cannot reach), CI pending |
 | `M66` | Storefront redesign: confirmation, order lookup, shop page, legacy token removal (UI only) | **In review** (2026-10-24) — branch `redesign-2`; lint and type-check pass; batch build and e2e at the end of the batch, CI pending |
+| `M67` | Related in-stock products on the product page (no schema change) | **In review** (2026-10-24) — branch `redesign-2`; lint and type-check pass; batch build and e2e at the end of the batch, CI pending |
 
 ---
 

@@ -1242,6 +1242,18 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit.
 - **Commit message**: `Restyle confirmation, lookup and shop pages; drop legacy tokens (M66)`
 
+### M67 — "You may also like" on the product page
+- **Goal**: Show up to four in-stock products from the viewed product's category below its description, never the viewed product. The section is hidden when there are none.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `components/RelatedProducts.tsx` (new, async server component), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Data: the existing `getProductsByCategory(category.slug, { limit: 8 })` (2–3 queries: the category, its children when it is a parent, then the products at depth 1), filtered on the server to `id !== current` and `inStock === true`, first four kept. The shared helper is **not** modified (the category routes and the sitemap use it). If fewer than four qualify the section shows fewer; it is hidden at zero. The order is the helper's default (Payload's default for the collection).
+  - States: loading is a four-card skeleton inside `<Suspense>` (safe: `notFound()` has already run above the boundary, so the status code is unchanged); empty, no category, or a failed read render nothing (the failure logs the category slug only).
+  - Layout: a grid of cards from `sm`, a sideways-scrolling row of 148px cards on a phone; "View all in {category}" links to `/category/{slug}`.
+- **Dependencies**: M64
+- **Testing**: a product with siblings shows up to four, not itself and no out-of-stock ones; a product alone in its category shows no heading in the HTML; a forced read error still returns 200; the product page keeps exactly one "Add to Cart" button (quick-add labels read "Add {name} to cart"); no horizontal scroll at 320px; lint and type-check pass.
+- **Rollback**: Revert the commit (removes one read).
+- **Commit message**: `Show related in-stock products on the product page (M67)`
+
 ---
 
 ## Summary
