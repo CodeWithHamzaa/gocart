@@ -1230,6 +1230,63 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 - **Rollback**: Revert the commit; `OrderSummary`'s logic is untouched, so the diff is markup and classes only.
 - **Commit message**: `Redesign the cart with a checkout-styled summary (M65)`
 
+### M66 — Remaining storefront pages and legacy token removal
+- **Goal**: Apply the redesign's tokens and components to the order confirmation (designed like "Order placed"), the guest order lookup (`/orders`) and `/shop`, then delete the `M60` legacy token aliases. (No global `not-found`/`error` page exists in the storefront; the category route's own ones were restyled in `M63`.)
+- **Files**: `app/(public)/order-confirmation/OrderConfirmation.tsx`, `app/(public)/orders/OrderLookup.tsx`, `components/{OrderItem,PageTitle,Loading}.jsx`, `app/(public)/shop/page.jsx`, `app/globals.css` (delete the aliases), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Confirmation: a green check, "Order placed!", the real order number with Copy, a summary row (total to pay, payment = Cash on Delivery, delivery = Free or the fee), then items, delivery details and the buttons "Track order" (`/orders`) and "Continue shopping". The copy stays what the store really does (no SMS claim: SMS is deferred, [ADR-015](./DECISIONS.md)); the design's "Back to checkout (prototype)" link is not built. The order number and status text are never upper-cased by CSS (e2e reads them back).
+  - `/orders`: the lookup form in a white card with the new field style; the result card (`OrderItem`) uses tinted status pills. `/shop`: the heading and the auto-fill grid.
+  - Legacy cleanup: before deleting, a search for `brand-*`, `canvas`, `well`, `ink-soft`, `sale-600`, `shadow-soft` and `shadow-lift` found uses only in the files above.
+- **Dependencies**: M62, M63, M64, M65
+- **Testing**: no remaining use of any deleted alias in `app`, `components` or `lib`; the golden-path test still reads the order number, "Placed" and totals (Turnstile-dependent: CI); no horizontal scroll at 320px on `/shop` and `/orders`; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Restyle confirmation, lookup and shop pages; drop legacy tokens (M66)`
+
+### M67 — "You may also like" on the product page
+- **Goal**: Show up to four in-stock products from the viewed product's category below its description, never the viewed product. The section is hidden when there are none.
+- **Files**: `app/(public)/product/[productId]/page.jsx`, `components/RelatedProducts.tsx` (new, async server component), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Data: the existing `getProductsByCategory(category.slug, { limit: 8 })` (2–3 queries: the category, its children when it is a parent, then the products at depth 1), filtered on the server to `id !== current` and `inStock === true`, first four kept. The shared helper is **not** modified (the category routes and the sitemap use it). If fewer than four qualify the section shows fewer; it is hidden at zero. The order is the helper's default (Payload's default for the collection).
+  - States: loading is a four-card skeleton inside `<Suspense>` (safe: `notFound()` has already run above the boundary, so the status code is unchanged); empty, no category, or a failed read render nothing (the failure logs the category slug only).
+  - Layout: a grid of cards from `sm`, a sideways-scrolling row of 148px cards on a phone; "View all in {category}" links to `/category/{slug}`.
+- **Dependencies**: M64
+- **Testing**: a product with siblings shows up to four, not itself and no out-of-stock ones; a product alone in its category shows no heading in the HTML; a forced read error still returns 200; the product page keeps exactly one "Add to Cart" button (quick-add labels read "Add {name} to cart"); no horizontal scroll at 320px; lint and type-check pass.
+- **Rollback**: Revert the commit (removes one read).
+- **Commit message**: `Show related in-stock products on the product page (M67)`
+
+### M68 — Featured products with category tabs on the home page
+- **Goal**: The home page's "Featured" section gets an "All" tab plus one tab per real top-level category that has at least one featured product. The admin controls it only through `isFeatured`.
+- **Files**: `app/(public)/page.jsx`, `components/BestSelling.jsx` (still a server component; it builds the tabs), `components/ui/FeaturedTabs.tsx` (new client island), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Data: client-side filtering of the one featured fetch, with **no extra query**. Home already loads `getFeaturedProducts` and the top-level categories; a server-rendered tab per request would cost a query each, or a `?tab=` parameter on a `force-dynamic` page. Every card stays in the initial HTML (crawlers keep all links, [ADR-007](./DECISIONS.md)); the island only toggles `hidden`. A product's top-level category is its category's parent when it has one, else the category itself. The featured fetch limit goes from 10 to 12 so smaller categories still get a tab.
+  - Accessibility: WAI-ARIA tabs (`tablist`/`tab`/`tabpanel`, `aria-selected`, roving `tabindex`, arrow keys plus Home/End, selection follows focus). With fewer than two category tabs no tablist is rendered. A tab cannot be empty by construction; with no featured products the section is hidden (unchanged).
+- **Dependencies**: M62
+- **Testing**: two featured products in different top-level categories give "All" plus two tabs, each filtering correctly; every featured card is in the raw HTML; keyboard operation works; with one category there is no tablist; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Add category tabs to the Featured section (M68)`
+
+### M69 — Automatic product labels
+- **Goal**: One rule, used everywhere a product is shown, that derives its badges from real fields.
+- **Files**: `lib/product-badges.ts` (new; pure and client-safe, no Payload import), `components/ProductCard.jsx`, `components/ProductDetails.jsx`, `components/ui/Badge.tsx`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Status pill (top-left of the image, **at most one**), by precedence: **Out of stock** (`inStock !== true`, fail closed) > an admin label (`label`: New / Limited edition / Sale; a field `M70` may add, ignored while no product carries it) > **Featured** (`isFeatured`, [ADR-022](./DECISIONS.md)).
+  - Discount chip (in the price row, **at most one**): "{n}% OFF" where `n = Math.round((mrp − price) / mrp × 100)`, shown only when `mrp > price` and `n ≥ 1` (the same formula as before). An out-of-stock product keeps its chip (the price is real); only quick-add is disabled.
+  - Maximum two badges per card. Colours: Out of stock neutral, Featured and New `primary`, Limited edition `pink-dark`, Sale `sale-blue`; every pair is at least 4.5:1.
+  - Never labelled "Best seller" or "Popular".
+- **Dependencies**: M61 (M64 for the detail page)
+- **Testing**: the six-case precedence/discount table passes (run with `tsx`); "Featured" appears only on `isFeatured` products; no UI string says "Best seller" or "Popular"; lint and type-check pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Derive product badges from real product fields (M69)`
+
+### M72 — Self-host Plus Jakarta Sans
+- **Goal**: Stop fetching the font from `fonts.googleapis.com` at build time. `next/font/google` downloads the font when `next build` runs; when that request fails (it did once in the Docker `image` job on PR #25) the whole build fails. The font file is committed with its licence and loaded with `next/font/local` instead, with the same weights, CSS variable and `display` setting.
+- **Files**: `app/(public)/layout.jsx` (font loading only: lines 1 and 12–23 today), `app/fonts/PlusJakartaSans-Variable.ttf` (new, unmodified upstream `PlusJakartaSans[wght].ttf`), `app/fonts/OFL.txt` (new, the upstream licence), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: the font and its licence come from `github.com/google/fonts` (`ofl/plusjakartasans/`); the file is renamed (brackets in a file name are awkward in paths) but its bytes are unchanged. `localFont` declares the `400 800` weight range of the one variable file (the design uses 400/500/600/700/800), `display: "swap"`, `variable: "--font-jakarta"`; `app/globals.css` is untouched (`--font-sans` still reads `--font-jakarta`). Trade-off: the upstream TTF (about 176 KB) is larger than the 27 KB Latin-only WOFF2 Google served; it is one cached, preloaded file, and a subset or WOFF2 conversion can follow as its own change.
+- **Dependencies**: M60
+- **Testing**: no `fonts.googleapis.com` or `next/font/google` reference in source or in the build output (`.next`); the body's computed font family is Plus Jakarta Sans and `/` requests exactly one font file; lint, type-check and `npm run build` pass; the Docker `image` job passes in CI.
+- **Rollback**: Revert the commit (the Google-fetched font returns).
+- **Commit message**: `Self-host Plus Jakarta Sans with next/font/local (M72)`
+
 ---
 
 ## Summary

@@ -8,6 +8,7 @@ import { getSettings } from "@/lib/payload/settings";
 import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
 import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
 
+// M68: up to twelve featured products, so smaller categories still get a tab.
 // M62: the redesigned layout. The latest and featured grids hold up to five and ten products (a row
 // of five on a wide screen); the category tiles carry every parent and child link in the HTML.
 // M23: server component — the product sections are fetched through Payload's
@@ -40,7 +41,7 @@ export default async function Home() {
 
     const [latest, featured, cheapest, settings, topLevelCategories] = await Promise.all([
         getProducts({ sort: '-createdAt', limit: 5 }),
-        getFeaturedProducts({ limit: 10 }),
+        getFeaturedProducts({ limit: 12 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
         getTopLevelCategoriesCached(),
@@ -71,7 +72,7 @@ export default async function Home() {
             <CategoryRow categories={topLevelCategories} />
             <CategoryGrid categories={topLevelCategories} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
-            <BestSelling products={featured.docs} total={featured.totalDocs} />
+            <BestSelling products={featured.docs} total={featured.totalDocs} categories={topLevelCategories} />
             <OurSpecs shipping={shipping} />
         </div>
     );

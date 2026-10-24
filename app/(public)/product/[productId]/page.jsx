@@ -1,6 +1,7 @@
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
+import RelatedProducts from "@/components/RelatedProducts";
 import { cache } from "react";
 import { getProductById } from "@/lib/payload/products";
 import { getSettings } from "@/lib/payload/settings";
@@ -78,6 +79,9 @@ export default async function Product({ params }) {
 
                 {/* Description and delivery */}
                 <ProductDescription product={product} shipping={shipping} />
+
+                {/* M67: up to four in-stock products from the same category. */}
+                <RelatedProducts category={category} currentId={product.id} />
             </div>
         </div>
     );

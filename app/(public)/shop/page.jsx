@@ -33,7 +33,7 @@ export default async function Shop({ searchParams }) {
     return (
         <div className="min-h-[70vh] mx-4 sm:mx-6">
             <div className=" max-w-7xl mx-auto">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-muted my-6 sm:my-8 flex items-center gap-2">
+                <h1 className="text-[28px] sm:text-4xl font-extrabold tracking-[-0.02em] text-muted mt-2 mb-5 sm:mt-4 sm:mb-6 flex items-center gap-2">
                     {search ? (
                         <Link href="/shop" className="flex items-center gap-2 min-h-11">
                             <MoveLeftIcon size={20} /> All <span className="text-ink">Products</span>
@@ -42,8 +42,8 @@ export default async function Shop({ searchParams }) {
                         <>All <span className="text-ink">Products</span></>
                     )}
                 </h1>
-                {/* M45a: a real grid (2 / 3 / 4 columns) instead of a wrapping row of fixed-width cards. */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 mb-24">
+                {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4 mb-12">
                     {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                 </div>
             </div>

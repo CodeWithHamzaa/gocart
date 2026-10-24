@@ -4,6 +4,7 @@ import React from 'react'
 import { formatPKR } from '@/lib/currency'
 import { tileFor } from '@/lib/category-style'
 import Badge from './ui/Badge'
+import { discountPercent, statusBadge } from '@/lib/product-badges'
 import QuickAddButton from './ui/QuickAddButton'
 
 // M23: adapted for real Payload data.
@@ -27,7 +28,9 @@ const ProductCard = ({ product, priority = false }) => {
 
     const firstImage = product.images?.[0]
     const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
-    const discount = product.mrp > product.price ? Math.round((product.mrp - product.price) / product.mrp * 100) : 0
+    // M69: both badges come from lib/product-badges.ts (one rule for the card and the product page).
+    const discount = discountPercent(product.mrp, product.price)
+    const status = statusBadge(product)
     const outOfStock = product.inStock !== true
     const categoryTitle = typeof product.category === 'object' && product.category ? product.category.title : null
 
@@ -37,7 +40,7 @@ const ProductCard = ({ product, priority = false }) => {
                 {imageUrl && (
                     <Image width={500} height={500} className='h-3/4 w-3/4 object-contain mix-blend-multiply transition duration-500 group-hover:scale-105' sizes='(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
                 )}
-                {outOfStock && <Badge tone='neutral' className='absolute left-2 top-2'>Out of stock</Badge>}
+                {status && <Badge tone={status.tone} className='absolute left-2 top-2'>{status.text}</Badge>}
                 <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} className='absolute bottom-1.5 right-1.5 z-10' />
             </div>
             {/* M44: a long unbroken name wraps instead of pushing the card wider than its column, so a

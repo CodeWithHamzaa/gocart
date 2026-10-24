@@ -1,4 +1,4 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import Navbar from "@/components/Navbar";
@@ -12,12 +12,13 @@ import { getSettings } from "@/lib/payload/settings";
 import { DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 // M45: display "swap" shows text in the fallback font immediately instead of blocking on the font.
-// M60: the redesign's typeface, only the weights the design uses (800 is the heading weight).
-// Google serves these from one variable latin file (27 KB), so listing them costs one request.
-// Exposed as --font-jakarta, which app/globals.css maps to Tailwind's font-sans.
-const jakarta = Plus_Jakarta_Sans({
-    subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800"],
+// M60: the redesign's typeface, only the weights the design uses (400-800; 800 is the heading weight).
+// M72: self-hosted. next/font/google fetched the font from Google's font servers while `next build`
+// ran, so a failed request failed the build. The file in app/fonts is the upstream variable font
+// (google/fonts, ofl/plusjakartasans, SIL OFL 1.1, licence beside it), unmodified. One file covers
+// every weight in the range. Exposed as --font-jakarta, which app/globals.css maps to font-sans.
+const jakarta = localFont({
+    src: [{ path: "../fonts/PlusJakartaSans-Variable.ttf", style: "normal", weight: "400 800" }],
     display: "swap",
     variable: "--font-jakarta",
 });

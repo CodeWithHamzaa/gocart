@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from "@/lib/currency";
 import { deliveryNote } from "@/lib/delivery";
 import { tileFor } from "@/lib/category-style";
+import { discountPercent, statusBadge } from "@/lib/product-badges";
 
 // M25: adapted for real Payload data.
 // - `images` are Media relationships, resolved to `.url` the same way
@@ -43,7 +44,9 @@ const ProductDetails = ({ product, shipping }) => {
     const imageIndex = Math.max(images.indexOf(mainImage), 0);
 
     const category = typeof product.category === 'object' && product.category ? product.category : null;
-    const discount = product.mrp > product.price ? Math.round((product.mrp - product.price) / product.mrp * 100) : 0;
+    // M69: the same badge rule as the product card (lib/product-badges.ts).
+    const discount = discountPercent(product.mrp, product.price);
+    const status = statusBadge(product);
 
     // Fail closed, matching the server's stock check in createOrder: only an
     // explicit inStock === true is purchasable (false or null -> Out of Stock).
@@ -68,7 +71,7 @@ const ProductDetails = ({ product, shipping }) => {
                 <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-[4/5] ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
                     {mainImage && <Image src={mainImage} alt={product.name} width={600} height={600} sizes="(min-width: 1024px) 560px, 100vw" priority fetchPriority="high" className="relative h-[78%] w-[78%] object-contain mix-blend-multiply" />}
-                    {outOfStock && <Badge tone="neutral" className="absolute left-3 top-3">Out of stock</Badge>}
+                    {status && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
                     {images.length > 1 && (
                         <span aria-hidden="true" className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
                             {images.map((image, index) => (

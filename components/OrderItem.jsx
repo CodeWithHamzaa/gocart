@@ -1,39 +1,40 @@
 import { formatPKR } from '@/lib/currency'
+// M66: restyled on the redesign tokens (status pills keep 4.5:1; no CSS upper-casing, e2e reads the text).
 // M36: renders the guest order-lookup result (lookupOrder's `order` shape, ADR-024) as
 // a single responsive card. Replaces the dummy-data table row. Product images are not
 // part of the lookup result, so lines are text-only. React escaping only.
 const STATUS_STYLES = {
-    PLACED: { label: 'Placed', className: 'bg-slate-100 text-slate-700' },
-    CONFIRMED: { label: 'Confirmed', className: 'bg-yellow-100 text-yellow-700' },
-    PROCESSING: { label: 'Processing', className: 'bg-blue-100 text-blue-700' },
-    SHIPPED: { label: 'Shipped', className: 'bg-indigo-100 text-indigo-700' },
-    DELIVERED: { label: 'Delivered', className: 'bg-brand-50 text-brand-700' },
-    CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-700' },
-    RETURNED: { label: 'Returned', className: 'bg-orange-100 text-orange-700' },
+    PLACED: { label: 'Placed', className: 'bg-primary-soft text-primary-dark' },
+    CONFIRMED: { label: 'Confirmed', className: 'bg-tint-yellow text-tint-yellow-link' },
+    PROCESSING: { label: 'Processing', className: 'bg-tint-blue text-tint-blue-link' },
+    SHIPPED: { label: 'Shipped', className: 'bg-tint-lavender text-tint-lavender-link' },
+    DELIVERED: { label: 'Delivered', className: 'bg-success-soft text-success' },
+    CANCELLED: { label: 'Cancelled', className: 'bg-pink-soft text-pink-dark' },
+    RETURNED: { label: 'Returned', className: 'bg-tint-peach text-tint-peach-link' },
 }
 
 const OrderItem = ({ order }) => {
 
-    const status = STATUS_STYLES[order.status] || { label: String(order.status), className: 'bg-slate-100 text-slate-700' };
+    const status = STATUS_STYLES[order.status] || { label: String(order.status), className: 'bg-primary-soft text-primary-dark' };
     const placedOn = new Date(order.createdAt);
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-slate-50/30 p-5 text-sm">
+        <div className="rounded-card bg-white p-5 text-sm text-ink-2 shadow-card ring-1 ring-line">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p className="text-xs text-slate-500">Order number</p>
-                    <p className="break-all font-mono text-base font-semibold text-slate-800">{order.orderNumber}</p>
-                    {!Number.isNaN(placedOn.getTime()) && <p className="mt-1 text-slate-500">{placedOn.toDateString()}</p>}
+                    <p className="text-xs text-muted">Order number</p>
+                    <p className="break-all font-mono text-base font-semibold text-ink">{order.orderNumber}</p>
+                    {!Number.isNaN(placedOn.getTime()) && <p className="mt-1 text-muted">{placedOn.toDateString()}</p>}
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+                <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${status.className}`}>{status.label}</span>
             </div>
 
-            <ul className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
+            <ul className="mt-4 divide-y divide-line border-y border-line">
                 {order.items.map((item, index) => (
                     <li key={index} className="flex justify-between gap-4 py-3">
                         <div className="min-w-0">
-                            <p className="break-words text-slate-700">{item.name} <span className="text-slate-500">x {item.quantity}</span></p>
-                            <p className="text-xs text-slate-500">{formatPKR(item.unitPrice)} each</p>
+                            <p className="break-words text-ink">{item.name} <span className="text-muted">x {item.quantity}</span></p>
+                            <p className="text-xs text-muted">{formatPKR(item.unitPrice)} each</p>
                         </div>
                         <p className="shrink-0 font-medium">{formatPKR(item.unitPrice * item.quantity)}</p>
                     </li>
@@ -42,14 +43,14 @@ const OrderItem = ({ order }) => {
 
             <dl className="mt-4 space-y-1">
                 <div className="flex justify-between">
-                    <dt className="text-slate-500">Subtotal</dt>
+                    <dt className="text-muted">Subtotal</dt>
                     <dd className="font-medium">{formatPKR(order.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                    <dt className="text-slate-500">Shipping</dt>
+                    <dt className="text-muted">Shipping</dt>
                     <dd className="font-medium">{order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}</dd>
                 </div>
-                <div className="flex justify-between border-t border-slate-200 pt-2 text-base text-slate-800">
+                <div className="flex justify-between border-t border-line pt-2 text-base text-ink">
                     <dt>Total</dt>
                     <dd className="font-semibold">{formatPKR(order.orderTotal)}</dd>
                 </div>
@@ -57,16 +58,16 @@ const OrderItem = ({ order }) => {
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
                 <div>
-                    <p className="text-xs text-slate-500">Delivery details</p>
-                    <p className="text-slate-700">{order.delivery.name}</p>
+                    <p className="text-xs text-muted">Delivery details</p>
+                    <p className="text-ink">{order.delivery.name}</p>
                     <p>{order.delivery.phone}</p>
                     <p>{order.delivery.address}</p>
                     {order.delivery.area && <p>{order.delivery.area}</p>}
                     <p>{order.delivery.city}</p>
                 </div>
                 <div>
-                    <p className="text-xs text-slate-500">Payment</p>
-                    <p className="text-slate-700">Cash on Delivery (COD)</p>
+                    <p className="text-xs text-muted">Payment</p>
+                    <p className="text-ink">Cash on Delivery (COD)</p>
                     <p>{order.isPaid ? 'Paid' : 'Unpaid'}</p>
                 </div>
             </div>

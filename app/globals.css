@@ -90,21 +90,6 @@
     --shadow-float-sm: 0 18px 36px rgba(63, 39, 168, 0.12);
     --shadow-bar: 0 -6px 20px rgba(40, 24, 120, 0.06);
     --shadow-pink: 0 12px 24px rgba(232, 51, 109, 0.3);
-
-    /* M60 legacy aliases: M45a names still used by pages not yet redesigned. Each points at the
-       nearest new token; all are deleted in M66 once nothing uses them. */
-    --color-ink-soft: var(--color-ink-2);
-    --color-canvas: var(--color-page);
-    --color-well: var(--color-lavender-tile);
-    --color-brand-50: var(--color-primary-soft);
-    --color-brand-200: var(--color-lavender-2);
-    --color-brand-400: var(--color-lavender-2);
-    --color-brand-500: var(--color-primary);
-    --color-brand-600: var(--color-primary);
-    --color-brand-700: var(--color-primary-dark);
-    --color-sale-600: var(--color-pink-dark);
-    --shadow-soft: var(--shadow-card);
-    --shadow-lift: var(--shadow-float-sm);
 }
 
 /* M60: Plus Jakarta Sans is loaded by next/font in app/(public)/layout.jsx as the CSS variable
