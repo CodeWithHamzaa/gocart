@@ -10,7 +10,7 @@ Topic: **$ARGUMENTS**
 1. **Read the last three ADRs** in `docs/DECISIONS.md` first and match their format,
    depth, and tone exactly.
 2. **Determine the next number** — highest existing ADR + 1. Never reuse or renumber.
-   The current record runs ADR-001 … ADR-039 Accepted; read the tail of `docs/DECISIONS.md` for the next free number.
+   The current record runs ADR-001 … ADR-040 Accepted; read the tail of `docs/DECISIONS.md` for the next free number.
 3. **Confirm the decision is genuinely non-obvious.** Routine choices belong in a
    commit message, not the decision record.
 4. **Check it does not contradict an existing Accepted ADR.** If it does, that is a
