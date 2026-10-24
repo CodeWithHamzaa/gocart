@@ -1312,6 +1312,89 @@ sign-in, card/wallet payments, coupons, express delivery, filters) are not built
 
 ---
 
+## Group: Pre-launch close-out — `M73` onward (Proposed, awaiting owner approval)
+
+**Status of everything in this group: Proposed — awaiting owner approval. Nothing here is approved or started.** Drafted 2026-10-24 by the Engineering Manager role with the Software Architect (`M74`, `M75`, `M58`/`M59` amendments) and UI/UX Designer (`M73`, `M76`) roles. These entries use `####` headings on purpose: they are not yet milestones, so the `### M…` heading count (84, see the Summary) is unchanged. On approval an entry is promoted to a `###` heading and the count line is updated in the same commit.
+
+Proposed order (by dependency, not by ID): `M74` (docs only) first; `M73`, `M75`, `M76`, `M77` are independent of each other; the `M58` and `M59` amendments follow, and `M59` last. `M57`'s regression pass predates `M73`–`M77`; each of them is checked by the CI `e2e` job instead of a new manual pass.
+
+#### M73 — Promo card without an image: no empty circle (Proposed — awaiting owner approval)
+- **Goal**: A promo card with no image no longer shows an empty white circle from 640px up. The circle appears only when the admin attached an image, and a card without one lets its text use the full width. Cards that do have an image stop their text running under the circle at `md`. Found in the `M57` pass; changes the `M71` spec line "else a tinted decorative circle" (the code uses `bg-white`, not a tint; `components/PromoCards.tsx:29`).
+- **Files**: `components/PromoCards.tsx`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - Render the circle `<div>` only when `image?.url` is set; it stays `aria-hidden`, `hidden sm:flex`, with `<Image alt="">`. No new copy, glyph or colour; Tailwind tokens only, no hex.
+  - With an image: `sm:pr-48` on the card so the title cannot overlap the circle at 768–1023px (the title is `max-w-[280px]` and the circle starts about 168px from the left of a 352px card; derived from the classes, not screenshotted). Without one: replace `max-w-[280px]` with `max-w-[28rem]`.
+  - Add `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary` to the card link (today only the browser default outline; `ProductCard.jsx:49` sets an explicit one).
+  - The whole card stays one link, the CTA row stays `min-h-11`, contrast is unchanged. Update the `M71` Spec layout bullet to "the image circle when an image is set, else none".
+  - No change to the collection, access, data or migrations.
+- **Dependencies**: M71
+- **Testing**: no circle without an image at 320, 768, 1024 and 1440px; with an image the circle stays and the title does not overlap it at 768px; a mixed row has equal heights; no horizontal scroll at 320px; keyboard focus shows a visible ring; lint, type-check, build and the Playwright suite pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Hide promo card circle when no image is set (M73)`
+
+#### M74 — Close the implemented-but-not-Done milestones with CI evidence (Proposed — awaiting owner approval)
+- **Goal**: Verification-only and docs-only. `M52`, `M52b`, `M52c` and `M54` are implemented but not marked Done. Where the missing evidence already exists in CI, record it and correct stale status text; where only the owner can supply it (real Cloudflare account, real hostname, real VPS), say so and leave the status honest. **No code work is invented.**
+- **Files**: `docs/TASKS.md` (rows `M52`, `M52b`, `M52c`, `M54`), `docs/CHANGELOG.md`, `docs/MIGRATION_PLAN.md` (status lines of those four entries only)
+- **Spec** (each line is a proposal for the owner to confirm):
+  - `M52c` → Done: the `TASKS` row says "CI pending on the PR", but PR #21 ran CI on head `303f806` (run 38169357779, conclusion success) and the merge to `main` also passed (run 38172920361, success). Executing this milestone must read the per-job results from those run pages and cite them; the per-job list is unverified until then.
+  - `M54` → Done for its stated scope (stop/start persistence; scripts) if the `prod-stack` M54 section is confirmed green in run 38175670202 (PR #22 head `bec4670`) and 38177262468 (merge). The real-VPS items (first real backup, `backup-verify.sh`, restore drill, off-host copy, schedule) stay in `docs/DEPLOYMENT.md` "Launch blockers" and are owner actions.
+  - `M52` and `M52b` stay "Implemented" unless the owner accepts the remaining real-key and real-tunnel checks as launch blockers rather than milestone gaps. Stale text to correct either way: `M52`'s "first-admin guard is an open owner decision" (closed by ADR-036) and `M52b`'s "Next.js upgrade remains a launch blocker" (closed by `M52c`, ADR-037).
+- **Dependencies**: M52, M52b, M52c, M54 (all merged)
+- **Testing**: every status change cites a CI run id and job; `/team-status` shows no reconciliation difference between `TASKS`, `MIGRATION_PLAN` and `CHANGELOG`.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Record CI evidence and close verification-only gaps for M52c and M54 (M74)`
+
+#### M75 — Reject whitespace and control characters in promo links (Proposed — awaiting owner approval)
+- **Goal**: Close a gap in the `M71` link validator. `validatePromoLink` accepts `"/\t/evil.com"`: it starts with `/`, and contains no `//`, `/\` or `:`. The WHATWG URL parser strips tab and newline, so the value resolves to an external host: `new URL('/\t/evil.com','https://shop.example.com').href` returned `https://evil.com/` (node, 2026-10-24); same for a newline. Exposure is limited because only admins can write a card, but the `M71` spec says the link must be an internal path.
+- **Files**: `collections/PromoCards.ts` (`validatePromoLink` only), `docs/DECISIONS.md` (one clause in ADR-039 decision 2, only if the owner approves editing ADR-039 while it is still Proposed), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: also reject any value that contains whitespace or a control character (`/[\s\u0000-\u001f\u007f]/`). No schema change, no migration, no data change; before shipping, list existing `promo_cards.link` values to confirm none become invalid.
+- **Dependencies**: M71
+- **Testing**: the existing 8 validator cases still pass; `"/\t/x"`, `"/\n/x"`, `"/ x"` and `"/a b"` are rejected; `/category/electronics` is accepted; an anonymous write is still 403; lint, type-check and build pass. Gate G6 by the Security/Performance role (public-output surface).
+- **Rollback**: Revert the commit.
+- **Commit message**: `Reject whitespace and control characters in promo card links (M75)`
+
+#### M76 — Storefront accessibility polish (Proposed — awaiting owner approval)
+- **Goal**: Fix the small accessibility defects found in a read-only G3 review of `M60`–`M72`. UI only.
+- **Files**: `components/ui/FeaturedTabs.tsx`, `components/ui/MobileTabBar.tsx` (only if the contrast check fails), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**:
+  - `FeaturedTabs.tsx:74`: the `<ul>` carries `role="tabpanel"`, which removes the list semantics from its `<li>` children and the panel is not focusable. Wrap the list in `<div role="tabpanel" tabIndex={0}>` and leave the `<ul>` plain.
+  - `FeaturedTabs.tsx:79` (unverified): confirm the parent builds tabs only from categories that have items, so no tab opens an empty panel. Change code only if this fails.
+  - `MobileTabBar.tsx:33` (unverified): the 11px labels use `text-muted`; measure its contrast on the bar background and raise the size or darken the token only if it is below 4.5:1.
+- **Dependencies**: M68, M61
+- **Testing**: screen-reader semantics of the Featured panel checked with the accessibility tree; keyboard reaches the panel; measured contrast recorded; no layout change at 320, 390 and 1440px; lint, type-check, build and the Playwright suite pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Fix Featured tab panel semantics and verify tab bar contrast (M76)`
+
+#### M77 — Smaller self-hosted font file (Proposed — awaiting owner approval; optional)
+- **Goal**: `M72` ships the unmodified upstream variable TTF (about 176 KB) where Google used to serve a 27 KB Latin WOFF2. Convert to a Latin WOFF2 subset with the same 400–800 range to cut the first-load font cost. Optional performance work, not a launch requirement.
+- **Files**: `app/fonts/` (the font file and `OFL.txt`), `app/(public)/layout.jsx` (the font path only), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: check the font's `OFL.txt` for a Reserved Font Name before modifying the file (unverified: if one is reserved, a subset must be renamed); keep the licence file; same `weight`, `variable` and `display`.
+- **Dependencies**: M72
+- **Testing**: the home page requests exactly one font file; its size is recorded before and after; the body's computed font is still the same family; Latin product names and the `Rs. 1,500` format render; no `fonts.googleapis.com` in source or build output; lint, type-check, build and the Docker `image` job pass.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Serve Plus Jakarta Sans as a Latin WOFF2 subset (M77)`
+
+#### M58 — Proposed amendment (replaces the current `M58` entry on approval; awaiting owner approval)
+- **Goal**: Bring `README.md` in line with the live system (single-store COD storefront, Payload 3 + PostgreSQL, Next.js 16, the two compose stacks, the migrate step, Turnstile, the Cloudflare Tunnel). Confirm `CLAUDE.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.md` still match the code and edit only what has drifted.
+- **Why amended** (checked 2026-10-24): `README.md:11` says "Milestones M1–M28 are Done … M29 next"; `README.md:72-74` says migrations are not run until `M52a`; `README.md:82` says "eight roles" (there are seven specialists plus the Engineering Manager). `CLAUDE.md` was corrected in PR #30.
+- **Files**: `README.md` (status banner, Getting started, Production image, role count), `docs/ARCHITECTURE.md` (collection and access tables), `docs/TASKS.md` (stale rows), `CLAUDE.md` (only if drifted; owner approval needed for any edit)
+- **Dependencies**: M57
+- **Testing**: a new contributor following `README.md` alone gets the dev stack running, and its production section points to `docs/DEPLOYMENT.md` instead of describing a pre-`M52a` flow. `grep -n "M1.*M28\|Until then a brand-new database\|eight roles" README.md` returns nothing.
+- **Rollback**: Revert the doc changes.
+- **Commit message**: `Update documentation to reflect the live Payload CMS + PostgreSQL architecture`
+
+#### M59 — Proposed amendment (replaces the current `M59` entry on approval; awaiting owner approval)
+- **Goal**: Complete `docs/DEPLOYMENT.md` into the single production runbook (ordered first-deploy checklist, release, rollback, backup schedule, launch checklist) and cut the first release.
+- **Why amended** (checked 2026-10-24): the current Files line says `docs/DEPLOYMENT.md (new)` but the file exists (about 594 lines) and ends with "the full deploy runbook (`M59`)" under "Not covered yet"; the current Rollback says N/A while the runbook it points to has no rollback section yet.
+- **Files**: `docs/DEPLOYMENT.md` (extend), `docs/CHANGELOG.md` (release entry)
+- **Launch decisions this milestone needs from the owner** (recommended defaults and sources are in the PR body and the Decision Packet): hostname; Turnstile keys; Cloudflare WAF rule; tunnel token; env file location; bootstrap admin removal; backup schedule, encryption and off-host copies; restore drill; uptime monitor; email (Resend is decided in ADR-015 but no code uses it); image optimizer; memory limits and read-only `cloudflared`/`postgres`; `npm audit` re-run.
+- **Dependencies**: M58; `M74` done, or `M52`/`M52b`/`M54` verification explicitly accepted by the owner
+- **Testing**: following the runbook on a clean VPS deploys a working instance; every "Launch blockers" item in `docs/DEPLOYMENT.md` is Done or owner-accepted; `TURNSTILE_ALLOW_TEST_KEYS` and `PAYLOAD_ALLOW_FIRST_REGISTER` are unset in the production env file.
+- **Rollback**: Revert the doc commit if wrong. A failed production deploy is rolled back via the runbook's own rollback section, which this milestone must add.
+- **Commit message**: `Add production deployment runbook and cut v1.0.0`
+
+---
+
 ## Summary
 
 Groups are labels, not a sequence. Read the **Order** column for execution.

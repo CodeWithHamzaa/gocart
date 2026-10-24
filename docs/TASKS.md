@@ -421,6 +421,11 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M72` | Self-host Plus Jakarta Sans with `next/font/local` (no build-time fetch from Google) | **Done** (2026-10-24) — merged to `main` via PR #26; lint and type-check pass; batch build and e2e run before the PR |
 | `M70` | Optional product `label` field (New / Limited edition / Sale) | **Done** (2026-10-24) — merged to `main` via PR #28; migration `20261024_061017_product_label` applies on an empty database; drift check clean; lint and type-check pass. Owner must take a backup before deploying (ADR-032) |
 | `M71` | Admin-managed home promo cards (`promoCards` collection) | **Done** (2026-10-24) — merged to `main` via PR #28; migration `20261024_061141_promo_cards`; verified locally: hidden when empty, inactive never public, anonymous write 403, link validator 8/8; lint, type-check, build pass. Owner must take a backup before deploying (ADR-032) |
+| `M73` | Promo card without an image: no empty circle (UI only) | **Proposed — awaiting owner approval** (entry in `MIGRATION_PLAN.md`, group "Pre-launch close-out") |
+| `M74` | Close `M52`/`M52b`/`M52c`/`M54` with CI evidence (verification-only, docs only) | **Proposed — awaiting owner approval** |
+| `M75` | Reject whitespace and control characters in promo links | **Proposed — awaiting owner approval** |
+| `M76` | Storefront accessibility polish (Featured panel, tab bar contrast) | **Proposed — awaiting owner approval** |
+| `M77` | Smaller self-hosted font file (optional) | **Proposed — awaiting owner approval** |
 
 ---
 
