@@ -52,3 +52,7 @@ yarn-error.log*
 # Playwright (M56a)
 /test-results/
 /playwright-report/
+
+# M90: demo seed photos are local only; the README documenting the folder stays tracked
+demo-assets/*
+!demo-assets/README.md
