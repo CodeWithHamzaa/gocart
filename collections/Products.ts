@@ -96,5 +96,18 @@ export const Products: CollectionConfig = {
         description: 'Optional badge shown on the product card and page. Leave empty for none.',
       },
     },
+    {
+      // M91 (ADR-041): an optional end time for a time-limited deal. The home page's "Deals of the day"
+      // lists in-stock products whose deal has not ended and that really are discounted (mrp > price),
+      // and counts down to the earliest end. Empty means no deal; the product is unaffected otherwise.
+      name: 'dealEndsAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Optional. When set to a future time, the product appears in "Deals of the day" until then (it must also have an MRP above its price). Leave empty for no deal.',
+        date: { pickerAppearance: 'dayAndTime' },
+      },
+    },
   ],
 }

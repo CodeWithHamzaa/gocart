@@ -6,7 +6,9 @@ import { tileFor } from '@/lib/category-style'
 import Badge from './ui/Badge'
 import { discountPercent, statusBadge } from '@/lib/product-badges'
 import QuickAddButton from './ui/QuickAddButton'
+import WishlistButton from './ui/WishlistButton'
 
+// M91: a wishlist heart (browser-only, ADR-041) sits top-right of the image tile, a sibling of the link.
 // M23: adapted for real Payload data.
 // - The star-rating block is gone: Products carry no rating, and Reviews are
 //   out of scope for v1 (ADR-016). It previously read `product.rating`, which
@@ -40,6 +42,7 @@ const ProductCard = ({ product, priority = false }) => {
                 {imageUrl && (
                     <Image width={500} height={500} className='h-3/4 w-3/4 object-contain mix-blend-multiply transition duration-500 group-hover:scale-105' sizes='(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
                 )}
+                <WishlistButton productId={product.id} name={product.name} className='absolute right-1 top-1 z-10' />
                 {status && <Badge tone={status.tone} className='absolute left-2 top-2'>{status.text}</Badge>}
                 <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} className='absolute bottom-1.5 right-1.5 z-10' />
             </div>

@@ -3,9 +3,10 @@ import Hero from "@/components/Hero";
 import CategoryRow, { CategoryGrid } from "@/components/CategoryRow";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
+import DealsOfTheDay from "@/components/DealsOfTheDay";
 import PromoCards from "@/components/PromoCards";
 import { getPromoCards } from "@/lib/payload/promo-cards";
-import { getProducts, getFeaturedProducts } from "@/lib/payload/products";
+import { getProducts, getFeaturedProducts, getDealProducts } from "@/lib/payload/products";
 import { getSettings } from "@/lib/payload/settings";
 import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
 import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
@@ -41,13 +42,15 @@ export async function generateMetadata() {
 
 export default async function Home() {
 
-    const [latest, featured, cheapest, settings, topLevelCategories, promoCards] = await Promise.all([
+    const [latest, featured, cheapest, settings, topLevelCategories, promoCards, deals] = await Promise.all([
         getProducts({ sort: '-createdAt', limit: 5 }),
         getFeaturedProducts({ limit: 12 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
         getTopLevelCategoriesCached(),
         getPromoCards(),
+        // M91: a failed read hides the section rather than failing the page.
+        getDealProducts({ limit: 5 }).catch(() => []),
     ]);
     const startingPrice = typeof cheapest.docs[0]?.price === 'number' ? cheapest.docs[0].price : null;
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
@@ -74,6 +77,7 @@ export default async function Home() {
             <Hero shipping={shipping} startingPrice={startingPrice} showcase={showcase} />
             <CategoryRow categories={topLevelCategories} />
             <CategoryGrid categories={topLevelCategories} />
+            <DealsOfTheDay products={deals} />
             <LatestProducts products={latest.docs} total={latest.totalDocs} />
             <BestSelling products={featured.docs} total={featured.totalDocs} categories={topLevelCategories} />
             <PromoCards cards={promoCards} />

@@ -1323,3 +1323,14 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - `test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard`.
 - `/_next/image` still returns 404; checkout and order-lookup server actions work (CI `e2e` golden path).
 - All six CI jobs green, including the Docker `image` and `prod-stack` jobs.
+
+## ADR-041: Home "Deals of the day" and a browser-only wishlist (`M91`)
+
+**Status**: **Accepted (2026-10-27)**, decided by the project owner in session (chose "Deals of the day", "Deal countdown too" and "Wishlist (browser-only)" from the redesign canvas; "Newsletter signup" and "Sign in" were declined). Extends [ADR-039](#adr-039-admin-product-label-and-admin-managed-home-promo-cards--two-schema-additions-m70-m71)'s principle (honest, admin-curated merchandising fields). Reverses no Accepted ADR: there are still no customer accounts, and nothing is stored server-side per visitor.
+
+**Decisions**:
+
+1. **`Products.dealEndsAt`**: an optional `date` field (admin sidebar). One nullable `timestamptz` column, one additive migration. The MRP already exists, so no price field is added.
+2. **Deals of the day** (home): in-stock products whose `dealEndsAt` is in the future **and** whose `mrp > price`, soonest-ending first, at most five (`getDealProducts`, Local API, `overrideAccess: false`). The countdown runs to the earliest end; at zero the page refreshes so ended deals drop out. The section is hidden when there are none and a failed read hides it rather than failing the page. No seeded deals.
+3. **Wishlist**: browser-only, in `localStorage` (`gocart:wishlist`, product-id strings), exactly like the cart ([ADR-023](#adr-023)). No account, no server state, no PII. It does not sync across devices; the `/wishlist` page says so. The page is `noindex`, reads products through Payload's public REST API (no `lib/payload` import in client code).
+4. **Not built**: newsletter signup (would store subscriber emails, needs its own ADR), a Sign in link (admin-only auth), and the design's limited-offer band (the admin promo cards of ADR-039 cover it).
