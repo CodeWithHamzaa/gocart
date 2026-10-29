@@ -6,7 +6,7 @@ The seed works with this folder empty. It then generates simple vector artwork (
 
 ## Running the seed
 
-Local development only. It refuses to run when `NODE_ENV=production` or when `TUNNEL_TOKEN` or `APP_DB_PASSWORD` is set. Run it inside the app container so the uploads land in the `app-media` volume:
+Local development only. It refuses to run when `NODE_ENV=production` or when `TUNNEL_TOKEN` or `APP_DB_PASSWORD` is set. Run it on the host or inside the app container; either way the uploads land in `./media` (the dev compose file maps the container's `/app/media` to it):
 
 ```
 docker compose exec app npm run seed:demo

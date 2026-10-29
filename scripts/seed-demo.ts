@@ -13,7 +13,8 @@ import type { CategorySeed, ProductSeed } from './demo-data/catalogue'
 // with --with-orders, 8 sample orders. It is NOT scripts/seed.ts (the minimal M13 dev seed) and
 // changes no schema, access rule or production behaviour.
 //
-// Run it inside the app container so uploads land in the app-media volume:
+// Uploads land in ./media on the host, whether you run it on the host or inside the app container
+// (the dev compose file maps /app/media to ./media):
 //   docker compose exec app npm run seed:demo
 //   docker compose exec app npm run seed:demo -- --with-orders
 // Optional real photos: put <product-slug>-<1|2>.<jpg|jpeg|png|webp> directly in demo-assets/

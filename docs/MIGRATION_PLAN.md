@@ -1482,3 +1482,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: Revert the commit; no migration.
 - **Commit message**: `Add logo mark and scrolling announcement bar (M93)`
 
+### M94 — Dev compose: share ./media with the host (no separate media volume)
+- **Goal**: Stop broken product images when the dev app is run both ways. The dev `app` service mounted a named volume `app-media` over `/app/media`, hiding the host's `./media`, so pictures seeded on the host were invisible in Docker and the reverse. Owner-approved 2026-10-29. Dev stack only.
+- **Files**: `docker-compose.yml`, `scripts/seed-demo.ts` (comment), `demo-assets/README.md`, `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: remove the `app-media` mount and volume from the dev compose file; `.:/app` already maps `/app/media` to `./media`. `docker-compose.prod.yml`, its `app-media` volume and `scripts/backup.sh` (default project `gocart-prod`) are unchanged.
+- **Dependencies**: M50
+- **Testing**: after `docker compose up`, a file in `./media` is served at `/api/media/file/<name>` by the container, and an upload made in the container appears in `./media`; the compose file parses; CI is unaffected (it uses only the prod compose file). Not run in the authoring sandbox, which has no Docker daemon (unverified until the owner tries it).
+- **Rollback**: Revert the commit. Pictures already in `./media` stay on the host.
+- **Commit message**: `Share ./media between host and dev container (M94)`
+
