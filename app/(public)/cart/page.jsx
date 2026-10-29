@@ -3,7 +3,7 @@ import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
-import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
+import { deleteItemFromCart, restoreItem } from "@/lib/features/cart/cartSlice";
 import { ArrowLeftIcon, ShoppingCartIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,9 +48,27 @@ export default function Cart() {
         setCartArray(cartArray);
     }
 
+    // M92: the removed line is remembered so "Undo" can put it back (design: Cart, "Restore items").
+    const [removed, setRemoved] = useState(null);
+
     const handleDeleteItemFromCart = (productId) => {
+        const item = cartArray.find((line) => line.id === productId)
+        if (item) setRemoved({ productId, name: item.name, quantity: item.quantity })
         dispatch(deleteItemFromCart({ productId }))
     }
+
+    const handleUndo = () => {
+        if (!removed) return
+        dispatch(restoreItem({ productId: removed.productId, quantity: removed.quantity }))
+        setRemoved(null)
+    }
+
+    const undoNotice = removed && (
+        <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-tile bg-lavender-tile px-4 py-2 text-sm text-ink">
+            <span className="min-w-0 [overflow-wrap:anywhere]">Removed {removed.name}.</span>
+            <button type="button" onClick={handleUndo} className="inline-flex min-h-11 items-center px-2 font-bold text-primary hover:text-primary-dark">Undo</button>
+        </p>
+    )
 
     useEffect(() => {
         const controller = new AbortController();
@@ -83,6 +101,8 @@ export default function Cart() {
                     <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
                 </div>
                 <h1 className="mb-5 mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">My Cart <span className="text-base font-semibold text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
+
+                {undoNotice && <div className="mb-4">{undoNotice}</div>}
 
                 <div className="flex flex-wrap items-start gap-6">
 
@@ -129,8 +149,9 @@ export default function Cart() {
             </div>
         </div>
     ) : (
-        <div className="mx-4 flex min-h-[70vh] items-center justify-center sm:mx-6">
+        <div className="mx-4 flex min-h-[70vh] flex-col items-center justify-center gap-4 sm:mx-6">
             <h1 className="sr-only">My Cart</h1>
+            {undoNotice && <div className="w-full max-w-md">{undoNotice}</div>}
             <EmptyState
                 icon={<ShoppingCartIcon size={36} strokeWidth={1.4} />}
                 title="Your cart is empty"
