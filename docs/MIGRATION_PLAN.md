@@ -1541,7 +1541,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Fix ten storefront and admin design problems from a review pass (M98)`
 
 ### M99 — Launch hardening: close the DEPLOYMENT.md launch blockers
-- **Status (2026-10-29)**: **In progress** (blocker 1 audit recorded; blockers 2-5 owner-run). Drafted from `docs/DEPLOYMENT.md`, "Launch blockers", and approved by the owner on 2026-10-29 with scope items (a) and (d) included and (b) and (c) left out.
+- **Status (2026-10-29)**: **In progress** (blocker 1 audit recorded; (a) `scripts/backup-cron.sh` written and tested, first VPS run pending; (d) decided: launch without order email; blockers 2-5 owner-run). Drafted from `docs/DEPLOYMENT.md`, "Launch blockers", and approved by the owner on 2026-10-29 with scope items (a) and (d) included and (b) and (c) left out.
 - **Goal**: Clear or explicitly accept each of the five launch blockers, with recorded evidence, so the stack can be declared cleared for launch and `M59`'s release tag cut. Most of this is owner-run on the real VPS and Cloudflare account; the repository side is recording evidence and correcting the docs.
 - **Files**: `docs/{DEPLOYMENT,TASKS,CHANGELOG,MIGRATION_PLAN}.md`; for (a), the backup schedule (a `cron` entry or wrapper beside `scripts/backup.sh`, documented in `docs/DEPLOYMENT.md`). No application code.
 - **Spec** (one line per blocker; "owner" = needs the real VPS, domain or Cloudflare account; the AI team cannot do it):
@@ -1553,7 +1553,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
   6. **Docs**: each blocker in `docs/DEPLOYMENT.md` marked closed with date and evidence, or "accepted by the owner" with the reason; remove the stale "Not covered yet" line that says the Next.js fix is on branch `m79/next-16-4` (merged in PR #34); `M52`, `M52b` and `M59` moved to Done in `docs/TASKS.md` only on that evidence.
 - **Scope decided by the owner (2026-10-29)**:
   - **(a) Included: a scheduled backup job**, written and verified. It runs `scripts/backup.sh` on the VPS on the schedule the owner chooses (default daily, per "Launch decisions"), with `BACKUP_PASSPHRASE_FILE` set and its output logged; verified by one scheduled run producing a backup that `scripts/backup-verify.sh` accepts. The repository side (the schedule entry and its docs) can be written and checked locally; the run on the VPS is owner-only.
-  - **(d) Included: the order-email decision.** The owner records in `docs/DEPLOYMENT.md` ("Launch decisions") whether the store launches without any order email. Building order email (Resend, ADR-015) is not part of `M99`: it would add a dependency and needs its own milestone and ADR.
+  - **(d) Included: the order-email decision. Decided 2026-10-29: launch without any order email for now** (recorded in `docs/DEPLOYMENT.md`, "Launch decisions"). The owner records in `docs/DEPLOYMENT.md` ("Launch decisions") whether the store launches without any order email. Building order email (Resend, ADR-015) is not part of `M99`: it would add a dependency and needs its own milestone and ADR.
   - **(b) Left out:** memory limits and `read_only` for `cloudflared` and `postgres` stay "Open" in "Launch decisions" (deferred).
   - **(c) Left out:** GitHub Actions stay pinned by tag (deferred).
 - **Dependencies**: M52, M52b, M53, M54, M59, M79, M80, M97 (all merged; `M52`/`M52b` partial, `M59` In review)
