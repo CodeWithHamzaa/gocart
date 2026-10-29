@@ -728,6 +728,13 @@ The stack is **not cleared for launch** until every item is done or explicitly a
    `npm audit fix --force` downgrade of `@payloadcms/richtext-lexical` or `db-postgres`). Still open: it
    must be deployed. Re-run `npm audit` before launch and after every
    dependency change.
+   **`M99` audit (2026-10-29):** `npm audit --omit=dev` on `main` at `1394bd0` (lockfile unchanged since; same
+   on `9f8a267`) reports **15: 4 low, 5 moderate, 6 high, 0 critical**, the same set ADR-045 accepted:
+   `happy-dom` (via `@lexical/headless`) and `graphql-scalars` (pinned at 1.22.2 by `@payloadcms/graphql`;
+   the patched 2.0.x is a major bump, so it stays accepted), `esbuild` (via `drizzle-kit`) and `deepmerge`
+   (via `payload`), each also reported on the Payload packages that carry it. npm's suggested fixes are the
+   pre-v3 `@payloadcms/richtext-lexical@0.1.9` / `@payloadcms/db-postgres@0.1.9` downgrades: do not apply.
+   Still owner-only: pick the release commit, re-run this audit on it if any dependency changed, and deploy it.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
    hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
    passes the `turnstile-contract` job and a golden path through the real widget and siteverify, but with
@@ -744,7 +751,6 @@ The stack is **not cleared for launch** until every item is done or explicitly a
   (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a VPS
   or Cloudflare is unverified until the owner follows it.
 - The release tag `v1.0.0` is not cut (owner, after the [Launch checklist](#launch-checklist)).
-- The Next.js blocker ([Launch blockers](#launch-blockers), item 1) is fixed on branch `m79/next-16-4` and open until it is merged to `main` (ADR-040 is Accepted, 2026-10-24).
 - An automated backup schedule (no `cron` job exists), an off-host copy, a restore drill on a real stack and
   an external uptime monitor (`M54` has the scripts and the manual procedure).
 - Memory limits, and `read_only` for `cloudflared` and `postgres` (not testable here).
