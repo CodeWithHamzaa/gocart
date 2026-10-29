@@ -1,6 +1,7 @@
 import { cache } from 'react'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 import config from '@payload-config'
+import { applyInMemory, needsInMemory, type CategoryFilters } from '@/lib/category-filters'
 
 // M22: server-side data-fetching utility for Categories. Uses Payload's Local API
 // (in-process, no HTTP hop) — for Server Components, Route Handlers, and Server
@@ -129,7 +130,11 @@ export async function getCategoryBySlug(slug: string): Promise<CategoryWithChild
  */
 export async function getProductsByCategory(
   slug: string,
-  { page = 1, limit = 24 }: { limit?: number; page?: number } = {},
+  {
+    filters = { sort: 'rec' },
+    limit = 24,
+    page = 1,
+  }: { filters?: CategoryFilters; limit?: number; page?: number } = {},
 ): Promise<null | ProductsByCategoryResult> {
   const payload = await getClient()
 
@@ -157,9 +162,41 @@ export async function getProductsByCategory(
     categoryIds = [category.id, ...children.map((child) => child.id)]
   }
 
+  // M92: price range and price sort are database queries. The discount filter and sort compare
+  // price with MRP, which Payload cannot express, so those fetch the matching rows and are
+  // filtered, sorted and paged here. The plain listing (no filters) is the same query as before.
+  const where: Where = {
+    and: [
+      { category: { in: categoryIds } },
+      ...(filters.minPrice !== undefined ? [{ price: { greater_than_equal: filters.minPrice } }] : []),
+      ...(filters.maxPrice !== undefined ? [{ price: { less_than_equal: filters.maxPrice } }] : []),
+    ],
+  }
+  const dbSort = filters.sort === 'low' ? 'price' : filters.sort === 'high' ? '-price' : undefined
+
+  if (needsInMemory(filters)) {
+    const all = await payload.find({
+      collection: 'products',
+      where,
+      sort: dbSort,
+      limit: 0,
+      depth: 1,
+      overrideAccess: false,
+    })
+    const rows = applyInMemory(all.docs, filters)
+    const totalPages = Math.max(Math.ceil(rows.length / limit), 1)
+    return {
+      docs: rows.slice((page - 1) * limit, page * limit),
+      page,
+      totalDocs: rows.length,
+      totalPages,
+    }
+  }
+
   const result = await payload.find({
     collection: 'products',
-    where: { category: { in: categoryIds } },
+    where,
+    sort: dbSort,
     page,
     limit,
     depth: 1,

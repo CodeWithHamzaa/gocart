@@ -1334,3 +1334,15 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 2. **Deals of the day** (home): in-stock products whose `dealEndsAt` is in the future **and** whose `mrp > price`, soonest-ending first, at most five (`getDealProducts`, Local API, `overrideAccess: false`). The countdown runs to the earliest end; at zero the page refreshes so ended deals drop out. The section is hidden when there are none and a failed read hides it rather than failing the page. No seeded deals.
 3. **Wishlist**: browser-only, in `localStorage` (`gocart:wishlist`, product-id strings), exactly like the cart ([ADR-023](#adr-023)). No account, no server state, no PII. It does not sync across devices; the `/wishlist` page says so. The page is `noindex`, reads products through Payload's public REST API (no `lib/payload` import in client code).
 4. **Not built**: newsletter signup (would store subscriber emails, needs its own ADR), a Sign in link (admin-only auth), and the design's limited-offer band (the admin promo cards of ADR-039 cover it).
+
+## ADR-042: Category sort and filter, and cart "Undo" (`M92`)
+
+**Status**: **Accepted (2026-10-29)**, decided by the project owner in session (chose category sort, price/discount filters and cart restore from the redesign canvas audit; kept checkout on `/cart`). Narrows the "Future Phase" filter list in `docs/CATEGORY_REQUIREMENTS.md` to the filters the catalogue has real data for. Reverses no Accepted ADR and needs no schema change.
+
+**Decisions**:
+
+1. **Sort**: Recommended (unchanged order), price low to high, price high to low, biggest discount. **Filters**: price range and minimum discount (10/25/40%, price against MRP). Query params `sort`, `min`, `max`, `off`; anything invalid is ignored.
+2. **Where it runs**: price range and price sort are Payload queries. The discount filter and sort compare `price` with `mrp`, which Payload cannot query, so they fetch the matching rows and filter, sort and page in memory (`lib/category-filters.ts`). Revisit with a stored `discountPercent` column if a category grows past a few hundred products.
+3. **SEO**: a sorted or filtered URL is `noindex, follow` with the plain category as its canonical, and has no `rel=prev/next`; the plain paginated listing is unchanged ([M41](./MIGRATION_PLAN.md)). The control is a plain GET form in a `<details>` panel, so it works without JavaScript.
+4. **Not built**: size, colour and free-delivery filters (no per-product data; delivery is a store-wide rule, [ADR-018](#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)); a "Load more" button (pagination links keep every page crawlable).
+5. **Cart Undo**: removing a line shows "Removed {name}. Undo" and restores the line with its quantity (`restoreItem`), kept in component state only. The mobile sticky total bar of the design already exists (the cart's `MobileActionBar`, M65).

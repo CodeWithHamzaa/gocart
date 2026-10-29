@@ -4,7 +4,9 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
 import Breadcrumb from '@/components/ui/Breadcrumb'
+import CategoryControls from '@/components/ui/CategoryControls'
 import EmptyState from '@/components/ui/EmptyState'
+import { filtersToQuery, isRefined, parseCategoryFilters } from '@/lib/category-filters'
 import { CategoryIcon, tintFor } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
@@ -30,7 +32,7 @@ const PAGE_SIZE = 24
 
 type PageProps = {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ max?: string; min?: string; off?: string; page?: string; sort?: string }>
 }
 
 function parsePage(raw: string | undefined): number {
@@ -40,7 +42,9 @@ function parsePage(raw: string | undefined): number {
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const { page: pageParam } = await searchParams
+  const sp = await searchParams
+  const pageParam = sp.page
+  const filters = parseCategoryFilters(sp)
 
   const category = await getCategoryBySlug(slug)
   if (!category) notFound()
@@ -56,20 +60,25 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const title = page > 1 ? `${baseTitle} - Page ${page}` : baseTitle
   const description =
     category.seo?.metaDescription || category.description || `Shop ${category.title} at ${storeName}.`
-  const canonicalPath = page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`
+  // M92: a sorted or filtered view is a variant of the plain listing, not a page of its own: it is
+  // not indexed and its canonical is the plain listing, so search engines never see the combinations.
+  const refined = isRefined(filters)
+  const canonicalPath = !refined && page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`
 
-  return pageMetadata({ storeName, title, description, path: canonicalPath })
+  return pageMetadata({ storeName, title, description, path: canonicalPath, noindex: refined })
 }
 
 export default async function CategoryPage({ params, searchParams }: PageProps) {
   const { slug } = await params
-  const { page: pageParam } = await searchParams
-  const page = parsePage(pageParam)
+  const sp = await searchParams
+  const page = parsePage(sp.page)
+  const filters = parseCategoryFilters(sp)
+  const refined = isRefined(filters)
 
   const category = await getCategoryBySlug(slug)
   if (!category) notFound()
 
-  const result = await getProductsByCategory(slug, { page, limit: PAGE_SIZE })
+  const result = await getProductsByCategory(slug, { filters, page, limit: PAGE_SIZE })
   if (!result) notFound()
 
   const { totalDocs, totalPages } = result
@@ -84,8 +93,10 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     typeof category.parent === 'object' && category.parent ? category.parent : null
 
   const basePath = `/category/${slug}`
-  const pageHref = (targetPage: number) =>
-    targetPage > 1 ? `${basePath}?page=${targetPage}` : basePath
+  const pageHref = (targetPage: number) => {
+    const query = filtersToQuery(filters, targetPage)
+    return query ? `${basePath}?${query}` : basePath
+  }
 
   const tint = tintFor(Number(category.id) || 0)
   const crumbs = [
@@ -100,11 +111,12 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   // M63: the redesign. A tinted heading panel (title, description, and on a parent page its
   // subcategories as pills), the product count, a full-width grid and link-based pagination (a
   // "load more" button would need client fetching, and every page must stay its own crawlable URL).
-  // No filter sidebar or sort control: they are Future Phase in docs/CATEGORY_REQUIREMENTS.md.
+  // M92 adds a sort and a price / discount filter (CategoryControls). The design's size, colour and
+  // delivery filters have no data behind them, so they stay Future Phase (CATEGORY_REQUIREMENTS.md).
   return (
     <div className="mx-4 sm:mx-6">
-      {page > 1 && <link rel="prev" href={pageHref(page - 1)} />}
-      {page < totalPages && <link rel="next" href={pageHref(page + 1)} />}
+      {!refined && page > 1 && <link rel="prev" href={pageHref(page - 1)} />}
+      {!refined && page < totalPages && <link rel="next" href={pageHref(page + 1)} />}
 
       <div className="max-w-7xl mx-auto min-h-[70vh] pb-12">
         <div className="mt-2 sm:mt-4">
@@ -134,6 +146,12 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           </div>
         </section>
 
+        {(products.length > 0 || refined) && (
+          <div className="mt-6">
+            <CategoryControls basePath={basePath} filters={filters} />
+          </div>
+        )}
+
         {products.length > 0 ? (
           <>
             <p className="mt-6 text-sm text-muted">
@@ -145,6 +163,15 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
               ))}
             </div>
           </>
+        ) : refined ? (
+          <div className="mt-8">
+            <EmptyState
+              icon={<PackageOpenIcon size={28} />}
+              title="No products match these filters"
+              text="Try a wider price range or a lower discount."
+              action={{ href: basePath, label: 'Clear all filters' }}
+            />
+          </div>
         ) : (
           <div className="mt-8">
             <EmptyState

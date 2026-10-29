@@ -25,6 +25,8 @@ jobs:
       - run: npm run test:env
       # M52b (ADR-035): Turnstile verifier + order guard unit tests (injected fetch, no network).
       - run: npm run test:turnstile
+      # M92: category sort/filter query parsing and the in-memory discount filter. No database.
+      - run: npm run test:category-filters
 
   # M52b (ADR-035): contract test of OUR Turnstile classifier against the REAL Cloudflare siteverify.
   # The response shapes ADR-035 relies on are UNVERIFIED from the authoring sandbox (no network to

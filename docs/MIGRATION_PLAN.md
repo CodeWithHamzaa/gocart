@@ -1463,3 +1463,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: no deal set means no section; a product with a future `dealEndsAt` and `mrp > price` appears with a running countdown, and one with a past date or no discount does not; the heart toggles, survives a reload and updates the header count; `/wishlist` lists the saved products and shows an empty state otherwise; the migration applies on an empty database; no horizontal scroll at 390px; lint, type-check and build pass; the Playwright suite passes in CI.
 - **Rollback**: Revert the commit; after a deploy, ship a forward migration dropping `deal_ends_at`.
 - **Commit message**: `Add deals of the day and browser-only wishlist (M91)`
+
+### M92 — Category sort and filter, and cart Undo
+- **Goal**: Build the Category and Cart gaps the owner approved from the redesign audit on 2026-10-29, on real data only ([ADR-042](./DECISIONS.md)). Product and Checkout gaps were rejected by ADR-004/016/017/018 or need data that does not exist; checkout stays on `/cart` (M65).
+- **Files**: `lib/category-filters.ts`, `lib/payload/categories.ts`, `components/ui/CategoryControls.tsx`, `app/(public)/category/[slug]/page.tsx`, `app/(public)/cart/page.jsx`, `lib/features/cart/cartSlice.js`, `scripts/category-filters.test.ts`, `package.json`, `.github/workflows/ci.yml`, `docs/{DECISIONS,TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: see ADR-042.
+- **Dependencies**: M63, M65
+- **Testing**: sort by price orders cards low to high and high to low; price range and discount filters narrow the count; a no-match filter shows "No products match" with Clear all; invalid params show the plain category; a refined URL is `noindex` with the plain canonical, the plain listing is unchanged; removing a cart line shows Undo, which restores the line and quantity (also after removing the last line) and survives a reload; no horizontal scroll at 390px; `npm run test:category-filters`, lint, type-check and build pass; Playwright passes in CI.
+- **Rollback**: Revert the commit; no migration.
+- **Commit message**: `Add category sort and filter and cart undo (M92)`
+
