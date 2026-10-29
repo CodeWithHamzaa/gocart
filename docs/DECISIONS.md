@@ -1372,3 +1372,15 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 3. **No new rules.** The status set and free transitions are unchanged (ADR-019); `isPaid` is still set by hand when cash is collected, never automatically.
 
 - **Rollback**: Revert the commit.
+
+## ADR-045: Dependency audit follow-up (`M97`)
+
+**Status**: **Accepted (2026-10-29)**, decided by the project owner in session (chose the non-breaking audit fix plus M79 sign-off). No application code change.
+
+**Decisions**:
+
+1. **`dompurify` override.** `monaco-editor` (inside the Payload admin UI) pins `dompurify@3.4.15`, which `npm audit fix` cannot move; an `overrides` entry sets 3.4.17, a patch release. This closes the one critical advisory. Re-check the override when Payload moves `monaco-editor`, and remove it once the pin is gone.
+2. **`fast-uri`** moves to 3.1.9 through a plain lockfile update.
+3. **Accepted, not fixed**: the advisories in `payload`, `@payloadcms/*`, `@lexical/headless` (`happy-dom`), `drizzle-kit` (`esbuild`) and `graphql-scalars`. npm's only offered fix is a downgrade to `0.1.x` releases (breaking), so none is applied. `graphql-scalars` (PhoneNumber ReDoS) is pinned exactly by `@payloadcms/graphql`, which imports only the `DateTime` and `EmailAddress` scalars, so the vulnerable code is not used. `esbuild` and `happy-dom` are build/dev-time or admin-side. Revisit on each Payload release.
+
+- **Rollback**: Revert the commit.

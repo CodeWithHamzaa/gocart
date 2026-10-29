@@ -8,10 +8,10 @@ required, orders are idempotent, the first admin comes from a secret, the app us
 role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); `M59` adds the launch checklist, rollback, release and launch decisions.**
 
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
-> [Launch blockers](#launch-blockers) at the end of this file. The first one is fixed on branch
-> `m79/next-16-4` but **not merged**: `M79` upgrades `next` to 16.4.2, which closes the three advisories
-> `npm audit` reported on 2026-10-24 (`npm audit` no longer lists `next`). It awaits merge
-> (ADR-040 is Accepted, 2026-10-24). The other items are the real-Cloudflare checks with real keys, the
+> [Launch blockers](#launch-blockers) at the end of this file. The first one is closed in code: `M79` (merged,
+> Done 2026-10-29) upgraded `next` to 16.4.2, so `npm audit` no longer lists `next`; `M97` (ADR-045) pinned
+> `dompurify` and cleared the critical. What is left of it is a re-run of `npm audit` on the release commit
+> and the deploy. The other items are the real-Cloudflare checks with real keys, the
 > Cloudflare WAF rule, the first-deploy checks, and the first real backup, restore drill and uptime monitor.
 
 ## Launch checklist
@@ -714,18 +714,19 @@ the section names to find them in the current file.
 
 The stack is **not cleared for launch** until every item is done or explicitly accepted by the owner:
 
-1. **FIXED ON BRANCH, NOT MERGED: Next.js advisories published after `M52c`.** `M52c` (ADR-037) upgraded to
+1. **CLOSED IN CODE, DEPLOY AND RE-AUDIT PENDING: Next.js advisories published after `M52c`.** `M52c` (ADR-037) upgraded to
    `next@16.3.8`, which was clean when it was done. On 2026-10-24 `npm audit` reported it as **critical**
    (vulnerable range `16.0.0 - 16.4.0`): GHSA-2464-fhr4-w9xw (RCE in the Image Optimization API; also
    mitigated by configuration, see [Image optimisation](#image-optimisation)), GHSA-p3m5-59mp-jv5r (denial of
    service through App Router Server Actions, reachable without logging in) and GHSA-673q-mjm6-r5xr (RCE in
-   `use cache`; no matching code in this repository). `M79` (branch `m79/next-16-4`) sets `next` and
-   `eslint-config-next` to 16.4.2 and the `undici` override to 7.30.1. Verified on that branch: `npm audit`
+   `use cache`; no matching code in this repository). `M79` (merged) sets `next` and
+   `eslint-config-next` to 16.4.2 and the `undici` override to 7.30.1. Verified: `npm audit`
    went from **18 vulnerabilities (1 low, 11 moderate, 4 high, 2 critical)** to **11 (1 low, 6 moderate,
-   3 high, 1 critical)** and lists neither `next` nor `undici`. The one remaining critical is `dompurify`
-   (admin-side, waits for a Payload release; do not apply the `npm audit fix` downgrade of
-   `@payloadcms/richtext-lexical`). Still open: the change must be merged (ADR-040 is Accepted,
-   2026-10-24), CI must be green, and it must be deployed. Re-run `npm audit` before launch and after every
+   3 high, 1 critical)** and lists neither `next` nor `undici`. The one remaining critical was `dompurify`;
+   `M97` (ADR-045) pins it to 3.4.17 and `npm audit --omit=dev` now reports 15 (4 low, 5 moderate, 6 high,
+   0 critical), all in Payload's own packages, waiting for a Payload release (do not apply the
+   `npm audit fix --force` downgrade of `@payloadcms/richtext-lexical` or `db-postgres`). Still open: it
+   must be deployed. Re-run `npm audit` before launch and after every
    dependency change.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
    hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
