@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 import { getSettings } from "@/lib/payload/settings";
 import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
@@ -50,7 +51,7 @@ const Footer = async () => {
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.3fr_repeat(3,1fr)]">
                     <div className="flex flex-col gap-3">
                         <Link href="/" className="text-2xl font-extrabold tracking-[-0.03em] text-ink">
-                            {settings.storeName}<span className="text-primary" aria-hidden="true">.</span>
+                            <BrandLogo name={settings.storeName} mark={false} />
                         </Link>
                         <p className="max-w-[260px]">Order online and pay cash on delivery across Pakistan.</p>
                     </div>

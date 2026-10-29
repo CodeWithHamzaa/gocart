@@ -118,3 +118,31 @@
 .no-scrollbar {
     scrollbar-width: none;
 }
+
+/* M93: the announcement bar's message scrolls from left to right. The track holds two identical
+   halves, so moving it by half its width loops without a jump. */
+@keyframes marquee-right {
+    from {
+        transform: translateX(-50%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.marquee-track {
+    animation: marquee-right 40s linear infinite;
+}
+
+.marquee:hover .marquee-track,
+.marquee:focus-visible .marquee-track {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+        animation: none;
+        transform: none;
+    }
+}
+

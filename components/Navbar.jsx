@@ -1,6 +1,7 @@
 'use client'
 import { HeartIcon, SearchIcon, ShoppingCartIcon } from "lucide-react";
 import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -33,7 +34,7 @@ const Navbar = ({ storeName = 'GoCart', children }) => {
             <nav aria-label="Primary" className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:gap-x-8 lg:py-4">
 
                 <Link href="/" className="flex min-h-11 min-w-0 flex-1 items-center text-2xl font-extrabold tracking-[-0.03em] text-ink sm:text-[26px] lg:flex-none">
-                    <span className="truncate">{storeName}</span><span className="text-primary" aria-hidden="true">.</span>
+                    <BrandLogo name={storeName} />
                 </Link>
 
                 <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-[50px] w-full items-center gap-2.5 rounded-field border border-line-2 bg-white pl-3.5 pr-1 text-sm transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary lg:order-none lg:w-auto lg:flex-1">
