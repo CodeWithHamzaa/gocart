@@ -183,7 +183,7 @@ export async function getProductsByCategory(
       depth: 1,
       overrideAccess: false,
     })
-    const rows = applyInMemory(all.docs, filters)
+    const rows = applyInMemory(all.docs as Array<(typeof all.docs)[number] & { mrp?: null | number; price: number }>, filters)
     const totalPages = Math.max(Math.ceil(rows.length / limit), 1)
     return {
       docs: rows.slice((page - 1) * limit, page * limit),
