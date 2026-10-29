@@ -35,6 +35,8 @@ export const Products: CollectionConfig = {
       min: 0,
       admin: {
         description: 'Original list price, shown struck through when higher than price.',
+        // M98: "Rs. 2,499" in the list, not the raw number.
+        components: { Cell: '/components/admin/OrderAmountCell#default' },
       },
     },
     {
@@ -44,6 +46,7 @@ export const Products: CollectionConfig = {
       min: 0,
       admin: {
         description: 'Actual selling price.',
+        components: { Cell: '/components/admin/OrderAmountCell#default' },
       },
     },
     {
@@ -67,6 +70,9 @@ export const Products: CollectionConfig = {
       name: 'inStock',
       type: 'checkbox',
       defaultValue: true,
+      admin: {
+        components: { Cell: '/components/admin/ProductCells#StockCell' },
+      },
     },
     {
       // Added at M23 (ADR-022). The home page's "Best Selling" section has no

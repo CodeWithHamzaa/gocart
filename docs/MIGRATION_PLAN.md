@@ -1518,3 +1518,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: `npm ci`; `npm audit --omit=dev` shows no critical; `npm ls dompurify` shows 3.4.17; type-check, lint, `test:category-filters` and the production build pass; CI green.
 - **Rollback**: Revert the commit.
 - **Commit message**: `Pin dompurify and update fast-uri to clear audit findings (M97)`
+
+### M98 — Design review pass
+- **Goal**: Fix the ten highest-impact design problems found by reviewing the running storefront (390px and 1440px) and `/admin`, as the owner asked on 2026-10-29. UI only; no schema, no migration, no dependency.
+- **Files**: `app/(public)/{not-found.tsx,[...missing]/page.tsx,shop/page.jsx,cart/page.jsx,category/[slug]/page.tsx}`, `components/{Navbar,Footer,ProductCard,ProductDetails}.jsx`, `components/{AnnouncementBar.tsx,ui/CategoryNav.tsx,ui/CategoryTile.tsx,admin/ProductCells.tsx}`, `collections/Products.ts` (list cells only), `payload.config.ts` (`admin.avatar`), `app/(payload)/admin/importMap.js` (generated), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: (1) an unknown URL shows the store's own 404 inside the header and footer, still HTTP 404; (2) the announcement bar, header, category row and footer share the pages' content width, so the logo lines up with the content; (3) product card prices line up across a row whether or not there is a discount; (4) an out-of-stock card's image is dimmed; (5) the product page says the delivery note once and its gallery is square on desktop; (6) `/shop` gets a breadcrumb, a plain heading and a product count, and a search with no match shows an empty state with a way back; (7) the category banner icon is no longer clipped; (8) the home category tiles' links clear the corner icon; (9) the footer's Shop and Help lists sit side by side on phones; (10) the admin Products list shows `Rs.` prices and In stock / Sold out pills, and the admin avatar is Payload's local icon instead of Gravatar.
+- **Dependencies**: M61, M95
+- **Testing**: before/after screenshots of every storefront page at 390px and 1440px and of `/admin`; unknown URLs return 404 while `/admin`, `/api`, `/robots.txt`, `/sitemap.xml` are unchanged; no sideways scroll at 320px; lint, type-check, `test:category-filters` and the production build pass; Playwright passes in CI.
+- **Rollback**: Revert the commit; no migration.
+- **Commit message**: `Fix ten storefront and admin design problems from a review pass (M98)`

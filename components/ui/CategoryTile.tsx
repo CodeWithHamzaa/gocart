@@ -35,7 +35,8 @@ export default function CategoryTile({ category, index, variant, className = '',
         <CategoryIcon category={category} size={22} strokeWidth={1.8} />
       </span>
       <Link href={href} className="text-base font-bold text-ink outline-none after:absolute after:inset-0">{category.title}</Link>
-      {children && <div className="relative z-10 text-[13px] text-muted">{children}</div>}
+      {/* M98: the child links keep clear of the large corner icon from `sm`, where it shows. */}
+      {children && <div className="relative z-10 text-[13px] text-muted sm:pr-[5.5rem]">{children}</div>}
       <span aria-hidden="true" className={`mt-1.5 text-[13px] font-bold ${tint.link}`}>Shop now &rarr;</span>
       <CategoryIcon category={category} aria-hidden="true" size={96} strokeWidth={1} className={`pointer-events-none absolute -bottom-1.5 -right-1.5 hidden opacity-90 sm:block ${tint.ink}`} />
     </div>
