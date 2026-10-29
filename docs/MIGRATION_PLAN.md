@@ -1509,3 +1509,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: in `/admin/collections/orders`: totals show as `Rs. 4,699`; changing a row's status and toggling Paid persist after a reload; a failed save reverts the control and shows "Not saved"; search, sort, filters and the edit page still work; type-check (with and without `payload-types.ts`), lint, build pass.
 - **Rollback**: Revert the commit; no migration.
 - **Commit message**: `Add inline status and paid to the Orders list (M96)`
+
+### M97 — Dependency audit follow-up
+- **Goal**: Clear the one critical `npm audit` finding and the safe fixes after `M79`, and record what is accepted ([ADR-045](./DECISIONS.md)). Package change only.
+- **Files**: `package.json`, `package-lock.json`, `docs/{DECISIONS,TASKS,CHANGELOG,MIGRATION_PLAN,DEPLOYMENT}.md`
+- **Spec**: see ADR-045.
+- **Dependencies**: M79
+- **Testing**: `npm ci`; `npm audit --omit=dev` shows no critical; `npm ls dompurify` shows 3.4.17; type-check, lint, `test:category-filters` and the production build pass; CI green.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Pin dompurify and update fast-uri to clear audit findings (M97)`
