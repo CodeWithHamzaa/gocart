@@ -1473,3 +1473,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: Revert the commit; no migration.
 - **Commit message**: `Add category sort and filter and cart undo (M92)`
 
+### M93 — Logo mark and scrolling announcement bar
+- **Goal**: Show the redesign's logo (four-bar mark, two-tone store name) in the header and make the announcement bar's message scroll left to right, as the owner asked on 2026-10-29. UI only; no schema, no dependency.
+- **Files**: `components/ui/BrandLogo.tsx`, `components/{Navbar,Footer}.jsx`, `components/AnnouncementBar.tsx`, `app/globals.css`, `scripts/seed-demo.ts` (placeholder store name), `docs/{TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: the name comes from Settings `storeName` (renamed in /admin, not hard-coded); its last two letters use the brand colour. The scrolling text stays the real delivery note (Settings) plus "Cash on delivery across Pakistan"; it pauses on hover and focus, stands still under `prefers-reduced-motion`, and is announced once to screen readers.
+- **Dependencies**: M61
+- **Testing**: header shows the mark and the two-tone name; the bar moves left to right, pauses on hover and does not move with reduced motion; no horizontal scroll at 390px; lint, type-check and build pass; Playwright passes in CI.
+- **Rollback**: Revert the commit; no migration.
+- **Commit message**: `Add logo mark and scrolling announcement bar (M93)`
+

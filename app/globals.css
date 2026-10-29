@@ -118,3 +118,35 @@
 .no-scrollbar {
     scrollbar-width: none;
 }
+
+/* M93: the announcement bar's message crosses the bar from left to right, one copy at a time:
+   it starts just off the left edge (its own width, -100%) and ends just off the right edge (the
+   bar's width, 100cqw), then repeats. */
+.marquee {
+    container-type: inline-size;
+}
+
+@keyframes marquee-right {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(100cqw);
+    }
+}
+
+.marquee-track {
+    animation: marquee-right 18s linear infinite;
+}
+
+.marquee:hover .marquee-track,
+.marquee:focus-visible .marquee-track {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+        animation: none;
+        transform: none;
+    }
+}

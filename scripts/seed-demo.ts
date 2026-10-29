@@ -252,7 +252,7 @@ async function ensureProducts(payload: Payload, categoryIds: Map<string, number>
 // looks untouched (default name, default shipping rule, no contact details) so a person's edits
 // are never overwritten. Values are clearly fake placeholders.
 const DEMO_SETTINGS = {
-  storeName: 'GoCart Demo Store',
+  storeName: 'mirza',
   contactPhone: '0300-0000000',
   contactEmail: 'demo@example.com',
   contactAddress: 'Demo Store, Sample Street, Placeholder City (fake address)',
