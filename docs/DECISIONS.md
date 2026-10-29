@@ -1360,3 +1360,15 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 5. **COD only.** No payment-verification cards: no such state exists ([ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)). Courier and tracking number, draft/live visibility and product size/colour/fabric fields from the sample were not added.
 6. **Registry.** `app/(payload)/admin/importMap.js` is regenerated with `payload generate:importmap` whenever a component path in `payload.config.ts` changes.
 
+
+## ADR-044: Orders list with inline status and paid (`M96`)
+
+**Status**: **Accepted (2026-10-29)**, decided by the project owner in session (chose "Styled list only" with an inline status dropdown and a Paid toggle). Consistent with [ADR-009](#adr-009) (Payload keeps `/admin`), [ADR-019](#adr-019) (any status from any other) and [ADR-028](#adr-028) (price snapshot fields stay closed). No schema change, no migration.
+
+**Decisions**:
+
+1. **Cells, not a new view.** The Orders list stays Payload's own list (search, filters, sort, pagination, bulk select); three columns get custom `admin.components.Cell` components in `collections/Orders.ts`: the total as `Rs. 4,699` (server), the status as a pill-styled dropdown and `isPaid` as a Paid/Unpaid button (client, `components/admin/OrderCells.tsx`). A fully custom Orders page and a custom order detail view were not built.
+2. **Saves through Payload's update endpoint.** Each change is `PATCH /api/orders/:id` with the signed-in admin's cookie, so `Orders.update` access and every hook still run; nothing new is exposed to the public. On failure the control reverts and shows "Not saved".
+3. **No new rules.** The status set and free transitions are unchanged (ADR-019); `isPaid` is still set by hand when cash is collected, never automatically.
+
+- **Rollback**: Revert the commit.
