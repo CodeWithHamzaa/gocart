@@ -25,6 +25,21 @@ if (process.env.NODE_ENV === 'production' && !isBuildPhase && !process.env.PAYLO
 export default buildConfig({
   admin: {
     user: Users.slug,
+    // M95 (ADR-043): light only, with the storefront's colours and logo (app/(payload)/custom.css,
+    // components/admin/*), and an Overview home built from real order and product data.
+    theme: 'light',
+    meta: { titleSuffix: '- Admin' },
+    components: {
+      graphics: {
+        Logo: '/components/admin/Logo#default',
+        Icon: '/components/admin/Logo#default',
+      },
+      beforeNavLinks: ['/components/admin/NavLinks#NavBrand', '/components/admin/NavLinks#OverviewLink'],
+      afterNavLinks: ['/components/admin/NavLinks#ViewStoreLink'],
+      views: {
+        dashboard: { Component: '/components/admin/Dashboard#default' },
+      },
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },

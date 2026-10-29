@@ -1,0 +1,401 @@
+/* M95: the admin's look, matching the storefront (docs/DECISIONS.md, ADR-043). Payload ships its
+   styles inside `@layer payload-default`, so these unlayered rules win without !important. Light
+   theme only (payload.config.ts sets admin.theme). The tokens are the storefront's (app/globals.css),
+   restated here because the admin has its own root layout and does not load that file. */
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fonts/PlusJakartaSans-Variable.ttf') format('truetype');
+    font-weight: 200 800;
+    font-display: swap;
+}
+
+:root {
+    --font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --mirza-primary: #5B3FD9;
+    --mirza-primary-dark: #3F27A8;
+    --mirza-primary-soft: #EFEBFF;
+    --mirza-side: #2A1F6B;
+    --mirza-side-2: #3A2D86;
+    --mirza-on-side: #E3DCFF;
+    --mirza-ink: #1C1A2E;
+    --mirza-muted: #5F5B73;
+    --mirza-line: #EEEAF6;
+    --mirza-line-2: #E4DFF2;
+    --mirza-page: #FAF9FE;
+    --mirza-tile: #F4F1FD;
+    --mirza-pink: #E8336D;
+    --mirza-pink-dark: #C81E5B;
+    --mirza-pink-soft: #FFE4EA;
+    --mirza-success: #157544;
+    --mirza-success-soft: #E3F7EC;
+
+    /* Payload's grey ramp, tinted towards the brand violet. Payload derives its surfaces, borders
+       and text from these. */
+    --color-base-0: #ffffff;
+    --color-base-50: #FAF9FE;
+    --color-base-100: #F4F1FD;
+    --color-base-150: #EEEAF6;
+    --color-base-200: #E4DFF2;
+    --color-base-250: #D9D1F5;
+    --color-base-300: #C8BFEA;
+    --color-base-350: #B3A8DC;
+    --color-base-400: #9A8FC4;
+    --color-base-450: #8379B0;
+    --color-base-500: #6E6599;
+    --color-base-550: #5F5B73;
+    --color-base-600: #504C66;
+    --color-base-650: #44405A;
+    --color-base-700: #3B384D;
+    --color-base-750: #322F44;
+    --color-base-800: #2A2840;
+    --color-base-850: #232137;
+    --color-base-900: #1C1A2E;
+    --color-base-950: #151325;
+    --color-base-1000: #0F0D1C;
+}
+
+html[data-theme='light'] {
+    --theme-bg: var(--mirza-page);
+    --theme-input-bg: #ffffff;
+    --theme-border-color: var(--mirza-line-2);
+}
+
+body {
+    font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: var(--font-body);
+    letter-spacing: -0.02em;
+}
+
+/* ---- Sidebar ---- */
+.nav {
+    background: var(--mirza-side);
+    border-right: none;
+    color: var(--mirza-on-side);
+}
+
+.nav a,
+.nav a:visited,
+.nav button,
+.nav .nav__link {
+    color: var(--mirza-on-side);
+}
+
+.nav .nav__label,
+.nav .nav-group__toggle,
+.nav .nav-group__toggle * {
+    color: #B7A9FF;
+}
+
+.nav .nav__link {
+    border-radius: 10px;
+    min-height: 40px;
+    padding: 6px 12px;
+    margin-block: 1px;
+    font-weight: 500;
+}
+
+.nav a.nav__link:hover,
+.nav a.nav__link:focus-visible {
+    text-decoration: none;
+    background: var(--mirza-side-2);
+}
+
+.nav .nav__link.active,
+.nav a.nav__link[aria-current='page'] {
+    background: var(--mirza-primary-soft);
+    color: var(--mirza-primary-dark);
+    font-weight: 700;
+}
+
+.nav .nav__link.active *,
+.nav a.nav__link[aria-current='page'] * {
+    color: var(--mirza-primary-dark);
+}
+
+.nav .nav__controls svg,
+.nav .nav__log-out svg {
+    color: var(--mirza-on-side);
+}
+
+.nav .nav__log-out .stroke,
+.nav .nav__log-out path {
+    stroke: var(--mirza-on-side);
+}
+
+/* ---- Logo ---- */
+.mirza-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.03em;
+    color: var(--mirza-on-side);
+}
+
+.mirza-logo__accent {
+    color: #A99BFF;
+}
+
+.mirza-logo__tag {
+    align-self: flex-end;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #B7A9FF;
+}
+
+/* The login page shows the logo on the page background, so it uses ink instead of the sidebar's light text. */
+.template-minimal .mirza-logo,
+.template-minimal .mirza-logo__name {
+    color: var(--mirza-ink);
+}
+
+.template-minimal .mirza-logo__accent {
+    color: var(--mirza-primary);
+}
+
+.template-minimal .mirza-logo__tag {
+    color: var(--mirza-muted);
+}
+
+.mirza-nav-brand {
+    display: block;
+    margin: 4px 0 18px;
+    padding: 0 12px;
+    text-decoration: none;
+}
+
+.nav a.mirza-nav-brand:hover {
+    background: none;
+}
+
+.mirza-nav-extra {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+/* ---- Buttons and fields ---- */
+.btn--style-primary {
+    background: var(--mirza-primary);
+    border-color: var(--mirza-primary);
+    color: #ffffff;
+    border-radius: 12px;
+}
+
+.btn--style-primary:hover:not(.btn--disabled) {
+    background: var(--mirza-primary-dark);
+    border-color: var(--mirza-primary-dark);
+}
+
+.btn--style-secondary {
+    border-radius: 12px;
+    --box-shadow-color: var(--mirza-primary);
+}
+
+.btn--style-pill {
+    border-radius: 999px;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+.react-select .rs__control {
+    border-radius: 12px;
+}
+
+input:focus,
+textarea:focus,
+.react-select .rs__control--is-focused {
+    border-color: var(--mirza-primary);
+}
+
+/* ---- Cards, tables ---- */
+.card,
+.collection-list .table-wrap,
+.doc-controls,
+.collapsible {
+    border-radius: 18px;
+}
+
+.table th {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mirza-muted);
+    background: var(--mirza-tile);
+}
+
+/* ---- Overview ---- */
+.mirza-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-block: 28px 56px;
+    color: var(--mirza-ink);
+}
+
+.mirza-overview__title {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 800;
+}
+
+.mirza-overview__heading {
+    margin: 12px 0 0;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.mirza-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+}
+
+.mirza-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px;
+    background: #ffffff;
+    border: 1px solid var(--mirza-line-2);
+    border-radius: 18px;
+}
+
+.mirza-card--hot {
+    background: var(--mirza-pink-soft);
+    border-color: #F6B8C9;
+}
+
+.mirza-card__value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.mirza-card__label {
+    font-size: 13px;
+    color: var(--mirza-muted);
+}
+
+.mirza-empty {
+    margin: 0;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px dashed var(--mirza-line-2);
+    border-radius: 18px;
+    color: var(--mirza-muted);
+}
+
+.mirza-table-wrap {
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid var(--mirza-line-2);
+    border-radius: 18px;
+}
+
+.mirza-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.mirza-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mirza-muted);
+    background: var(--mirza-tile);
+}
+
+.mirza-table td {
+    padding: 14px 16px;
+    vertical-align: top;
+    border-top: 1px solid var(--mirza-line);
+}
+
+.mirza-table__order {
+    font-weight: 700;
+    color: var(--mirza-ink);
+    text-decoration: underline;
+}
+
+.mirza-table__sub {
+    font-size: 12px;
+    color: var(--mirza-muted);
+}
+
+.mirza-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--mirza-primary-soft);
+    color: var(--mirza-primary-dark);
+}
+
+.mirza-pill--placed {
+    background: var(--mirza-pink-soft);
+    color: var(--mirza-pink-dark);
+}
+
+.mirza-pill--delivered {
+    background: var(--mirza-success-soft);
+    color: var(--mirza-success);
+}
+
+.mirza-pill--cancelled,
+.mirza-pill--returned {
+    background: #EEEAF6;
+    color: var(--mirza-muted);
+}
+
+.mirza-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mirza-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: 2px solid var(--mirza-primary);
+    background: var(--mirza-primary);
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.mirza-btn:hover {
+    background: var(--mirza-primary-dark);
+    border-color: var(--mirza-primary-dark);
+}
+
+.mirza-btn--ghost {
+    background: #ffffff;
+    color: var(--mirza-primary);
+}
+
+.mirza-btn--ghost:hover {
+    background: var(--mirza-primary-soft);
+    border-color: var(--mirza-primary);
+}

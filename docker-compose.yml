@@ -79,9 +79,9 @@ services:
       # .next cache from being shadowed by (or leaking into) the host directory.
       - /app/node_modules
       - /app/.next
-      # Uploaded media (collections/Media.ts writes to /app/media).
-      - app-media:/app/media
+      # Uploaded media (collections/Media.ts writes to /app/media). Deliberately NOT a separate
+      # volume: `.:/app` above already maps /app/media to ./media on the host, which is also where
+      # `npm run dev` on the host reads and writes, so both ways of running see the same pictures.
 
 volumes:
   postgres-data:
-  app-media:
