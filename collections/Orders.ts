@@ -159,6 +159,7 @@ export const Orders: CollectionConfig = {
       min: 0,
       access: { update: () => false },
       admin: {
+        components: { Cell: '/components/admin/OrderAmountCell#default' },
         description:
           'Snapshot taken when the order was placed (ADR-018). Cannot be edited after the order is created (ADR-028); to change an amount, cancel the order and create a replacement.',
       },
@@ -200,6 +201,7 @@ export const Orders: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: {
+        components: { Cell: '/components/admin/OrderCells#PaidCell' },
         position: 'sidebar',
         description:
           'Cash on Delivery: tick this when the cash has been collected (it is NOT set automatically when the order is marked Delivered).',
@@ -211,6 +213,7 @@ export const Orders: CollectionConfig = {
       required: true,
       defaultValue: 'PLACED',
       admin: {
+        components: { Cell: '/components/admin/OrderCells#StatusCell' },
         position: 'sidebar',
         description:
           'Move the order forward as it is fulfilled. Any status can be set from any other (no state machine, ADR-019). The customer sees this status when they look up their order.',

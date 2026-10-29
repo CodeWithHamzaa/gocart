@@ -399,3 +399,42 @@ textarea:focus,
     background: var(--mirza-primary-soft);
     border-color: var(--mirza-primary);
 }
+
+/* M96: inline status and paid controls in the Orders list. */
+.mirza-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mirza-inline__error {
+    font-size: 12px;
+    font-weight: 700;
+    color: #B3261E;
+}
+
+.mirza-pill--select,
+.mirza-pill--toggle {
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.mirza-pill--select {
+    appearance: none;
+    padding-right: 10px;
+    text-align: center;
+}
+
+.mirza-pill--select:disabled,
+.mirza-pill--toggle:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.mirza-pill--confirmed,
+.mirza-pill--processing,
+.mirza-pill--shipped {
+    background: var(--mirza-primary-soft);
+    color: var(--mirza-primary-dark);
+}

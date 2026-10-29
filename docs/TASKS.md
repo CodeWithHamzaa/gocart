@@ -438,6 +438,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M93` | Logo mark with two-tone store name, and a left-to-right scrolling announcement bar (UI only) | **Done** (2026-10-29) - merged to `main` via PR #40; owner sign-off 2026-10-29. CI green on the PR head. |
 | `M94` | Dev compose shares `./media` with the host instead of a separate `app-media` volume (dev only; prod unchanged) | **Done** (2026-10-29) - merged to `main` via PR #41; owner sign-off 2026-10-29. Not run with Docker in the sandbox (no daemon); owner to confirm on their machine. |
 | `M95` | Admin re-skin in the storefront's look and an Overview home from real data (ADR-043; Payload keeps `/admin`; no schema change) | **Done** (2026-10-29) - merged to `main` via PR #41; owner sign-off 2026-10-29. Verified locally in Chromium on PostgreSQL 16; CI green on the PR head. |
+| `M96` | Orders list: status pills, `Rs.` amounts, inline status dropdown and Paid toggle (ADR-044; Payload keeps the list; no schema change) | **In review** - PR open; verified locally in Chromium on PostgreSQL 16 (status and paid persist after reload). Awaiting owner sign-off. |
 
 ---
 

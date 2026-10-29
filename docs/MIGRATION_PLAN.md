@@ -1500,3 +1500,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: Revert the commit; no migration.
 - **Commit message**: `Re-skin the admin and add an Overview home (M95)`
 
+
+### M96 — Orders list: pills, Rs. amounts, inline status and paid
+- **Goal**: Make the admin Orders list readable and quick to work from: status pills, `Rs.` amounts, a Paid/Unpaid badge, and changing status or paid straight from a row ([ADR-044](./DECISIONS.md)). UI only; no schema, no migration, no dependency.
+- **Files**: `collections/Orders.ts`, `components/admin/{OrderCells,OrderAmountCell}.tsx`, `app/(payload)/custom.css`, `app/(payload)/admin/importMap.js` (generated), `docs/{DECISIONS,TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: see ADR-044.
+- **Dependencies**: M95
+- **Testing**: in `/admin/collections/orders`: totals show as `Rs. 4,699`; changing a row's status and toggling Paid persist after a reload; a failed save reverts the control and shows "Not saved"; search, sort, filters and the edit page still work; type-check (with and without `payload-types.ts`), lint, build pass.
+- **Rollback**: Revert the commit; no migration.
+- **Commit message**: `Add inline status and paid to the Orders list (M96)`
