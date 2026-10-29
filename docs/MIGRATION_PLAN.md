@@ -1491,3 +1491,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: Revert the commit. Pictures already in `./media` stay on the host.
 - **Commit message**: `Share ./media between host and dev container (M94)`
 
+### M95 — Admin re-skin and Overview home
+- **Goal**: Give `/admin` the storefront's look and an Overview home built from real data, from the sample admin screens the owner shared on 2026-10-29 ([ADR-043](./DECISIONS.md)). UI only; Payload keeps owning `/admin`; no schema, no migration, no dependency.
+- **Files**: `app/(payload)/custom.css`, `app/(payload)/layout.tsx`, `app/(payload)/admin/importMap.js` (generated), `payload.config.ts`, `components/admin/{Dashboard,Logo,NavLinks}.tsx`, `docs/{DECISIONS,TASKS,CHANGELOG,MIGRATION_PLAN}.md`
+- **Spec**: see ADR-043.
+- **Dependencies**: M3, M61
+- **Testing**: log in at `/admin`: the login page and sidebar show the logo and store name; the Overview shows the counts, sales and latest orders from real data (and an empty state with no orders); a signed-out visitor still cannot reach `/admin`; collection list and edit screens keep working and are restyled; no horizontal scroll of the Overview at 390px; type-check (with and without `payload-types.ts`), lint, build pass; Playwright passes in CI.
+- **Rollback**: Revert the commit; no migration.
+- **Commit message**: `Re-skin the admin and add an Overview home (M95)`
+

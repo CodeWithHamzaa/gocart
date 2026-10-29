@@ -1346,3 +1346,17 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 3. **SEO**: a sorted or filtered URL is `noindex, follow` with the plain category as its canonical, and has no `rel=prev/next`; the plain paginated listing is unchanged ([M41](./MIGRATION_PLAN.md)). The control is a plain GET form in a `<details>` panel, so it works without JavaScript.
 4. **Not built**: size, colour and free-delivery filters (no per-product data; delivery is a store-wide rule, [ADR-018](#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order)); a "Load more" button (pagination links keep every page crawlable).
 5. **Cart Undo**: removing a line shows "Removed {name}. Undo" and restores the line with its quantity (`restoreItem`), kept in component state only. The mobile sticky total bar of the design already exists (the cart's `MobileActionBar`, M65).
+
+## ADR-043: Admin look and Overview home, on Payload (`M95`)
+
+**Status**: **Accepted (2026-10-29)**, decided by the project owner in session after sharing sample admin screens from another shop (chose "Re-skin Payload + custom Overview", the storefront's colours, no extra fields, no online-payment states). Consistent with [ADR-009](#adr-009): Payload still owns `/admin`; nothing replaces its editing screens. No schema change.
+
+**Decisions**:
+
+1. **Re-skin, not rebuild.** One stylesheet (`app/(payload)/custom.css`, unlayered so it beats Payload's `@layer payload-default`) restyles the admin with the storefront's tokens and Plus Jakarta Sans: a dark-violet sidebar, tinted greys, rounded fields and buttons. Light theme only (`admin.theme: 'light'`). The sample's fully custom Orders and Products pages, and its serif maroon look, are not built.
+2. **Overview home** (`components/admin/Dashboard.tsx`, registered as `admin.components.views.dashboard`): counts of new orders to confirm (`PLACED`), ready to dispatch (`CONFIRMED`, `PROCESSING`), on the way (`SHIPPED`), products sold out and in the catalogue, sales, and the eight latest orders with status pills. Sales sum `orderTotal` of confirmed, processing, shipped and delivered orders (not cancelled or returned), read in one unpaginated query; revisit with an aggregate if order volume grows into the thousands.
+3. **Access.** Every read uses the signed-in user and `overrideAccess: false`, so the page shows only what that user may read; Payload still requires login for `/admin`.
+4. **Branding.** The sidebar and login show the storefront's four-bar logo and the Settings `storeName` (`components/admin/Logo.tsx`), plus "Overview" and "View store" links.
+5. **COD only.** No payment-verification cards: no such state exists ([ADR-004](#adr-004-cash-on-delivery-only-for-launch-architecture-stays-payment-extensible)). Courier and tracking number, draft/live visibility and product size/colour/fabric fields from the sample were not added.
+6. **Registry.** `app/(payload)/admin/importMap.js` is regenerated with `payload generate:importmap` whenever a component path in `payload.config.ts` changes.
+
