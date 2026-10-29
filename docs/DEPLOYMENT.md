@@ -248,9 +248,38 @@ The files then end in `.gpg` (GnuPG, AES256) and the plaintext copies are delete
 passphrase and the backup is unreadable.** Copy the encrypted files off the VPS (another machine, cloud
 drive, an external disk): a backup on the same disk as the database does not survive losing that disk.
 
-Backup times (manual for now, [ADR-015](./DECISIONS.md)): before every schema-changing deploy, and at
-least once a day while orders are coming in. Automating this with `cron` is a small follow-up (not done:
-unverified on a real VPS).
+Backup times ([ADR-015](./DECISIONS.md)): before every schema-changing deploy (by hand, as above), and
+at least once a day while orders are coming in (scheduled, below).
+
+### Scheduled backups (`M99`)
+
+`scripts/backup-cron.sh` runs `backup.sh` and then `backup-verify.sh` on the new dump, for cron. It cds to
+the checkout (so `docker-compose.prod.yml` is found), sets a full `PATH`, refuses to run without
+`BACKUP_PASSPHRASE_FILE` (an unattended dump is never left in plaintext), skips with exit 75 if the
+previous run is still going (`flock`), timestamps every log line, and writes `<backup dir>/LAST_OK` only
+when the backup **and** the restore check both passed. Exit status is non-zero on any failure.
+
+On the VPS, as a user that can run `docker`, with `gpg` and `flock` installed (`sudo apt install gnupg
+util-linux` on Debian/Ubuntu; the paths are examples; use your own, all outside the checkout except the
+script):
+
+```sh
+sudo tee /etc/cron.d/gocart-backup >/dev/null <<'CRON'
+SHELL=/bin/bash
+# Daily at 02:17 server time (check with `timedatectl`; Pakistan is UTC+5).
+17 2 * * * deploy BACKUP_PASSPHRASE_FILE=/srv/gocart/backup-passphrase /srv/gocart/app/scripts/backup-cron.sh /srv/gocart/gocart-prod.env /srv/gocart/backups >>/var/log/gocart-backup.log 2>&1
+CRON
+sudo touch /var/log/gocart-backup.log && sudo chown deploy /var/log/gocart-backup.log
+```
+
+Replace `deploy` with the user that runs the stack and `/srv/gocart/app` with the checkout. Before
+trusting the schedule, run the same command once by hand and read the log; afterwards
+`cat /srv/gocart/backups/LAST_OK` shows the last good run (a stale date means the job is failing:
+`tail /var/log/gocart-backup.log`). The job keeps the newest 14 sets on the VPS; copying the `.gpg` files
+off the host is still a separate, owner-run step. Verified locally against PostgreSQL 16 (encrypted
+backup and restore check, cron's minimal environment, overlap, a failing database, a missing or empty
+passphrase) and by CI `prod-stack` against the real compose stack; **not yet run by cron on the real
+VPS** (that run is the `M99` evidence).
 
 ### Proving a backup restores (do this, a backup never restored is a hope)
 
@@ -701,10 +730,10 @@ the section names to find them in the current file.
 | Tunnel token and hostname order | Create the tunnel and put `TUNNEL_TOKEN` in the env file; attach the public hostname only after the gated deploy succeeds. | `docs/DEPLOYMENT.md` 15-20, 328-333 |
 | Env file location | Outside the checkout, mode 600, passed with `--env-file`; an off-host copy in a password manager. | `docs/DEPLOYMENT.md` 247-254 |
 | Bootstrap admin removal | Remove both lines after the first successful deploy and re-run the gate. | `docs/DEPLOYMENT.md` 476-477 |
-| Backup schedule, encryption, off-host | Daily while orders flow and before every schema-changing deploy; `BACKUP_PASSPHRASE_FILE` set; `.gpg` copies kept off the VPS; a `cron` job is not written or verified. | `docs/DEPLOYMENT.md` 172-187 |
+| Backup schedule, encryption, off-host | Daily while orders flow and before every schema-changing deploy; `BACKUP_PASSPHRASE_FILE` set; `.gpg` copies kept off the VPS; scheduled with `scripts/backup-cron.sh` ("Scheduled backups", `M99`), first run on the VPS still to be observed. | `docs/DEPLOYMENT.md` 172-187 |
 | Restore drill | Run `backup-verify.sh` once and rehearse the manual restore once on a scratch machine before launch. | `docs/DEPLOYMENT.md` 189-199, 232-233 |
 | Uptime monitor | External monitor on `https://<host>/api/health` (200 expected). | `docs/DEPLOYMENT.md` 587; `docs/DECISIONS.md` 1241 |
-| Email (order notifications) | **Confirm the owner accepts launching without any order email.** ADR-015 names Resend, but no application code uses it (grep of `app`, `lib`, `collections`, `package.json` finds nothing), and which emails to send is unspecified. | `docs/DECISIONS.md` 319, 328; `docs/PROJECT_SPEC.md` 71 |
+| Email (order notifications) | **Decided (owner, 2026-10-29, `M99`): launch without any order email for now.** Customers see the order number on the confirmation page and check it at `/orders`; the admin sees new orders in `/admin`. ADR-015 names Resend, but no application code uses it; adding order email later needs its own milestone and ADR. | `docs/DECISIONS.md` 319, 328; `docs/PROJECT_SPEC.md` 71 |
 | Image optimizer | Stays off (`images.unoptimized: true`, `/_next/image` returns 404). Re-enabling is a later owner decision. | `docs/DEPLOYMENT.md` 552-557; `next.config.mjs` 30-39 |
 | Memory limits; `read_only` for `cloudflared` and `postgres` | Open: the owner accepts the risk for launch or defers it to a hardening milestone. | `docs/DECISIONS.md` 1241; `docs/CHANGELOG.md` 42, 81; `docs/DEPLOYMENT.md` 570 |
 | GitHub Actions pinned by SHA | Open: actions are pinned by tag, not SHA (CHANGELOG `M52` review). Owner accepts or defers. | `docs/CHANGELOG.md` 81 |
@@ -751,8 +780,8 @@ The stack is **not cleared for launch** until every item is done or explicitly a
   (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a VPS
   or Cloudflare is unverified until the owner follows it.
 - The release tag `v1.0.0` is not cut (owner, after the [Launch checklist](#launch-checklist)).
-- An automated backup schedule (no `cron` job exists), an off-host copy, a restore drill on a real stack and
-  an external uptime monitor (`M54` has the scripts and the manual procedure).
+- The scheduled backup's first run on the real VPS (`scripts/backup-cron.sh` exists, `M99`), an off-host
+  copy, a restore drill on a real stack and an external uptime monitor.
 - Memory limits, and `read_only` for `cloudflared` and `postgres` (not testable here).
-- Order notification email (ADR-015 names Resend; no code uses it).
+- Order notification email (ADR-015 names Resend; no code uses it). The owner decided on 2026-10-29 to launch without it (`M99`).
 - GitHub Actions are pinned by tag, not by SHA.

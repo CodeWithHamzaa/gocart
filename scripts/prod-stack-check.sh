@@ -109,6 +109,13 @@ tar tzf "$BK"/gocart-media-*.tar.gz | grep -q '\.png$' || fail "the media archiv
 (cd "$BK" && sha256sum -c SHA256SUMS-* >/dev/null) || fail "backup checksums do not match"
 scripts/backup-verify.sh "$ENV_FILE" "$BK"/gocart-db-*.dump >/dev/null || fail "the backup does not restore into a scratch database"
 pass "backup.sh: dump + media archive + checksums; backup-verify.sh restored the dump into a scratch database"
+# M99 (a): the cron wrapper, as cron runs it (minimal environment, another working directory).
+(umask 077; openssl rand -base64 32 >"$BK/pass")
+CRON_ENV="$(cd "$(dirname "$ENV_FILE")" && pwd)/$(basename "$ENV_FILE")"; CRON_SCRIPT="$(pwd)/scripts/backup-cron.sh"
+(cd / && env -i HOME="$HOME" PATH=/usr/bin:/bin BACKUP_PASSPHRASE_FILE="$BK/pass" \
+  "$CRON_SCRIPT" "$CRON_ENV" "$BK/cron" >/dev/null 2>&1) || fail "scripts/backup-cron.sh failed"
+ls "$BK"/cron/gocart-db-*.dump.gpg >/dev/null 2>&1 && [ -s "$BK/cron/LAST_OK" ] || fail "backup-cron.sh wrote no encrypted dump or no LAST_OK"
+pass "backup-cron.sh: encrypted backup + verify in cron's minimal environment, LAST_OK written"
 # Stop everything WITHOUT removing volumes, start again: the admin (database) and the upload (media volume) survive.
 "${PROD[@]}" down >/dev/null 2>&1 || fail "docker compose down failed"
 "${PROD[@]}" up -d app >/dev/null 2>&1 || fail "docker compose up after down failed"
