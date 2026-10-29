@@ -2,6 +2,7 @@ import * as migration_20261011_014606_initial from './20261011_014606_initial';
 import * as migration_20261011_181740_order_idempotency_key from './20261011_181740_order_idempotency_key';
 import * as migration_20261024_061017_product_label from './20261024_061017_product_label';
 import * as migration_20261024_061141_promo_cards from './20261024_061141_promo_cards';
+import * as migration_20261027_145423_deal_ends_at from './20261027_145423_deal_ends_at';
 
 export const migrations = [
   {
@@ -22,6 +23,11 @@ export const migrations = [
   {
     up: migration_20261024_061141_promo_cards.up,
     down: migration_20261024_061141_promo_cards.down,
-    name: '20261024_061141_promo_cards'
+    name: '20261024_061141_promo_cards',
+  },
+  {
+    up: migration_20261027_145423_deal_ends_at.up,
+    down: migration_20261027_145423_deal_ends_at.down,
+    name: '20261027_145423_deal_ends_at'
   },
 ];

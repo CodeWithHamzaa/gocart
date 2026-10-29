@@ -21,6 +21,8 @@ export type Product = {
   inStock: boolean
   isFeatured?: boolean | null
   label?: 'new' | 'limited' | 'sale' | null
+  /** M91: ISO timestamp; a deal is live while this is in the future. */
+  dealEndsAt?: string | null
 }
 
 export type GetProductsOptions = {
@@ -115,6 +117,33 @@ export async function getFeaturedProducts(
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
   }
+}
+
+/**
+ * M91 (ADR-041): live deals for the home page's "Deals of the day". In-stock products whose
+ * `dealEndsAt` is in the future AND that are really discounted (mrp > price: no discount, no deal),
+ * soonest-ending first. Returns [] on none; the section is hidden then.
+ */
+export async function getDealProducts(options: { limit?: number } = {}): Promise<Product[]> {
+  const { limit = 5 } = options
+  const payload = await getClient()
+
+  const result = await payload.find({
+    collection: 'products',
+    where: {
+      and: [
+        { dealEndsAt: { greater_than: new Date().toISOString() } },
+        { inStock: { equals: true } },
+      ],
+    },
+    // Fetch a little extra: products without a real discount are dropped below.
+    limit: limit * 3,
+    sort: 'dealEndsAt',
+    depth: 1,
+    overrideAccess: false,
+  })
+
+  return (result.docs as Product[]).filter((product) => product.mrp > product.price).slice(0, limit)
 }
 
 /**

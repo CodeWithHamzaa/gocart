@@ -3,11 +3,23 @@ import { useEffect, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore } from '../lib/store'
 import { hydrateCart } from '../lib/features/cart/cartSlice'
+import { hydrateWishlist } from '../lib/features/wishlist/wishlistSlice'
 
 // M30 (ADR-023): the cart is guest-only with no server identity to key it on,
 // so localStorage is the persistence layer. Key is namespaced to avoid
 // colliding with anything else that might use this origin's storage.
 const CART_STORAGE_KEY = 'gocart:cart'
+// M91: the browser-only wishlist, persisted the same way (an array of product-id strings).
+const WISHLIST_STORAGE_KEY = 'gocart:wishlist'
+
+function readPersistedWishlist() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(WISHLIST_STORAGE_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
 
 function readPersistedCart() {
   try {
@@ -46,6 +58,7 @@ export default function StoreProvider({ children }) {
     // storefront route. `hydrateCart` recomputes `total` from the restored
     // `cartItems` rather than trusting a persisted total.
     storeRef.current.dispatch(hydrateCart({ cartItems: readPersistedCart() }))
+    storeRef.current.dispatch(hydrateWishlist({ ids: readPersistedWishlist() }))
 
     // Persist on every state change, including clearCart — no special case
     // needed for it to clear storage too, since it writes {} like any other
@@ -55,6 +68,10 @@ export default function StoreProvider({ children }) {
         localStorage.setItem(
           CART_STORAGE_KEY,
           JSON.stringify(storeRef.current.getState().cart.cartItems),
+        )
+        localStorage.setItem(
+          WISHLIST_STORAGE_KEY,
+          JSON.stringify(storeRef.current.getState().wishlist.ids),
         )
       } catch {
         // localStorage unavailable or full — the cart still works for this
