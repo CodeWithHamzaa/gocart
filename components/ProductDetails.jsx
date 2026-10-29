@@ -68,7 +68,7 @@ const ProductDetails = ({ product, shipping }) => {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row-reverse lg:gap-4">
                 {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. */}
-                <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-[4/5] ${tileFor(productId)}`}>
+                <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-square ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
                     {mainImage && <Image src={mainImage} alt={product.name} width={600} height={600} sizes="(min-width: 1024px) 560px, 100vw" priority fetchPriority="high" className="relative h-[78%] w-[78%] object-contain mix-blend-multiply" />}
                     {status && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
@@ -106,11 +106,8 @@ const ProductDetails = ({ product, shipping }) => {
                             </>
                         )}
                     </div>
-                    <p className="mt-3 text-[13px] text-muted">{deliveryNote(shipping)}</p>
-                </div>
-
-                <div className="mt-3">
-                    <Badge tone={outOfStock ? 'neutral' : 'success'} className={outOfStock ? 'ring-1 ring-line-2' : ''}>{outOfStock ? 'Out of stock' : 'In stock'}</Badge>
+                    {/* M98: the stock pill sits with the price; the delivery note is said once, in the row below the buttons. */}
+                    <Badge tone={outOfStock ? 'neutral' : 'success'} className={`mt-3 ${outOfStock ? 'ring-1 ring-line-2' : ''}`}>{outOfStock ? 'Out of stock' : 'In stock'}</Badge>
                 </div>
 
                 {/* The action group: fixed to the bottom below `lg`, inline in the column from `lg`. */}

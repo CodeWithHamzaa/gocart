@@ -40,7 +40,7 @@ const ProductCard = ({ product, priority = false }) => {
         <article className='group relative flex h-full min-w-0 flex-col gap-1.5 rounded-card bg-white p-2.5 shadow-card ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:shadow-float-sm sm:p-3'>
             <div className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-tile ${tileFor(product.id)}`}>
                 {imageUrl && (
-                    <Image width={500} height={500} className='h-3/4 w-3/4 object-contain mix-blend-multiply transition duration-500 group-hover:scale-105' sizes='(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
+                    <Image width={500} height={500} className={`h-3/4 w-3/4 object-contain mix-blend-multiply transition duration-500 group-hover:scale-105 ${outOfStock ? 'opacity-55 grayscale' : ''}`} sizes='(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
                 )}
                 <WishlistButton productId={product.id} name={product.name} className='absolute right-1 top-1 z-10' />
                 {status && <Badge tone={status.tone} className='absolute left-2 top-2'>{status.text}</Badge>}
@@ -52,11 +52,13 @@ const ProductCard = ({ product, priority = false }) => {
             <Link href={`/product/${product.id}`} className='flex flex-1 flex-col gap-1 px-0.5 pt-1.5 pb-0.5 outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary'>
                 {categoryTitle && <span className='truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-muted'>{categoryTitle}</span>}
                 <span className='line-clamp-2 min-h-[2.7em] text-[13px] font-semibold leading-snug text-ink [overflow-wrap:anywhere] sm:text-[15px]'>{product.name}</span>
-                <span className='mt-auto flex flex-wrap items-baseline gap-x-1.5'>
+                {/* M98: the price sits right under the name and the "% OFF" row keeps its height when
+                    there is no discount, so prices line up across a row of cards. */}
+                <span className='mt-1 flex flex-wrap items-baseline gap-x-1.5'>
                     <span className='whitespace-nowrap text-[15px] font-extrabold text-primary sm:text-[17px]'>{formatPKR(product.price)}</span>
                     {discount > 0 && <s className='whitespace-nowrap text-[11px] text-strike sm:text-xs'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>}
                 </span>
-                {discount > 0 && <Badge tone='off' className='self-start'>{discount}% OFF</Badge>}
+                {discount > 0 ? <Badge tone='off' className='self-start'>{discount}% OFF</Badge> : <span aria-hidden='true' className='h-[19px]' />}
             </Link>
         </article>
     )

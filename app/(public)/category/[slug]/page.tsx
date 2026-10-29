@@ -124,7 +124,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         </div>
 
         <section aria-labelledby="category-title" className={`relative mt-3 overflow-hidden rounded-panel px-5 py-7 sm:px-10 sm:py-9 ${tint.tile}`}>
-          <CategoryIcon category={category} aria-hidden="true" size={140} strokeWidth={1} className={`pointer-events-none absolute -right-4 top-1/2 hidden -translate-y-1/2 opacity-60 sm:block ${tint.ink}`} />
+          <CategoryIcon category={category} aria-hidden="true" size={140} strokeWidth={1} className={`pointer-events-none absolute right-6 top-1/2 hidden sm:right-10 -translate-y-1/2 opacity-60 sm:block ${tint.ink}`} />
           <div className="relative flex max-w-2xl flex-col gap-3">
             <h1 id="category-title" className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[44px]">{category.title}</h1>
             {category.description && <p className="text-[15px] text-ink-3">{category.description}</p>}

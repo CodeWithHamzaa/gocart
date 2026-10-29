@@ -1,4 +1,5 @@
 import { default as default_7f1d8c01cb1dadfe5d04cab3cab72de8 } from '../../../components/admin/OrderAmountCell'
+import { StockCell as StockCell_28ed3dae73b0ea5b9003d6daff4035d0 } from '../../../components/admin/ProductCells'
 import { PaidCell as PaidCell_76d4865f7a4c9abd72d6825af89c725d } from '../../../components/admin/OrderCells'
 import { StatusCell as StatusCell_76d4865f7a4c9abd72d6825af89c725d } from '../../../components/admin/OrderCells'
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
@@ -11,6 +12,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 /** @type import('payload').ImportMap */
 export const importMap = {
   "/components/admin/OrderAmountCell#default": default_7f1d8c01cb1dadfe5d04cab3cab72de8,
+  "/components/admin/ProductCells#StockCell": StockCell_28ed3dae73b0ea5b9003d6daff4035d0,
   "/components/admin/OrderCells#PaidCell": PaidCell_76d4865f7a4c9abd72d6825af89c725d,
   "/components/admin/OrderCells#StatusCell": StatusCell_76d4865f7a4c9abd72d6825af89c725d,
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,

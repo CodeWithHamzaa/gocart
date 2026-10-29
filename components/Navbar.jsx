@@ -29,9 +29,11 @@ const Navbar = ({ storeName = 'GoCart', children }) => {
         router.push(`/shop?search=${encodeURIComponent(search.trim())}`)
     }
 
+    // M98: 83rem = the pages' max-w-7xl (80rem) plus this bar's own 1.5rem side padding, so the logo
+    // lines up with the page content below it (the bar, footer and category row use the same width).
     return (
         <header className="border-b border-line bg-white">
-            <nav aria-label="Primary" className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:gap-x-8 lg:py-4">
+            <nav aria-label="Primary" className="mx-auto flex max-w-[83rem] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:gap-x-8 lg:py-4">
 
                 <Link href="/" className="flex min-h-11 min-w-0 flex-1 items-center text-2xl font-extrabold tracking-[-0.03em] text-ink sm:text-[26px] lg:flex-none">
                     <BrandLogo name={storeName} />

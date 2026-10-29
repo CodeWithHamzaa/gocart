@@ -96,7 +96,7 @@ export default function Cart() {
     return cartArray.length > 0 ? (
         <div className="mx-4 min-h-screen sm:mx-6">
 
-            <div className="mx-auto max-w-[1120px] pb-10">
+            <div className="mx-auto max-w-7xl pb-10">
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
                 </div>

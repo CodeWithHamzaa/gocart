@@ -28,6 +28,9 @@ export default buildConfig({
     // M95 (ADR-043): light only, with the storefront's colours and logo (app/(payload)/custom.css,
     // components/admin/*), and an Overview home built from real order and product data.
     theme: 'light',
+    // M98: Payload's default is Gravatar, which showed a broken image (and sends a hash of the
+    // admin's email to gravatar.com) wherever that host is unreachable. The built-in icon is local.
+    avatar: 'default',
     meta: { titleSuffix: '- Admin' },
     components: {
       graphics: {

@@ -9,7 +9,7 @@ export default async function CategoryNav() {
   const categories = await getTopLevelCategoriesCached().catch(() => [])
 
   return (
-    <nav aria-label="Categories" className="no-scrollbar mx-auto hidden max-w-7xl gap-1 overflow-x-auto px-6 pb-2.5 text-sm font-semibold whitespace-nowrap lg:flex">
+    <nav aria-label="Categories" className="no-scrollbar mx-auto hidden max-w-[83rem] gap-1 overflow-x-auto px-6 pb-2.5 text-sm font-semibold whitespace-nowrap lg:flex">
       <Link href="/categories" className="flex min-h-11 items-center gap-2 rounded-control bg-primary-soft px-3.5 text-primary-dark transition hover:bg-lavender">
         <LayoutGridIcon size={16} aria-hidden="true" />
         All categories

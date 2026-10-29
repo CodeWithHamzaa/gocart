@@ -17,7 +17,7 @@ export default async function AnnouncementBar() {
   // and stands still for anyone who asked their device to reduce motion.
   return (
     <div className="bg-primary-soft text-[13px] font-semibold text-primary-dark">
-      <div className="mx-auto flex max-w-7xl items-center gap-x-6 px-4 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-[83rem] items-center gap-x-6 px-4 py-2.5 sm:px-6">
         <div className="marquee min-w-0 flex-1 overflow-hidden" tabIndex={0}>
           <p className="marquee-track inline-block whitespace-nowrap">{message}</p>
         </div>
