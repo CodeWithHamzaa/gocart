@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import { Users } from './collections/Users'
@@ -54,6 +55,21 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
+  // M100 (ADR-046): Vercel Blob media storage for the free test deployment only. Registered only
+  // when BLOB_READ_WRITE_TOKEN is set (Vercel sets it when a Blob store is connected); without it
+  // the local-volume storage of ADR-020 is used unchanged, in Docker development and production.
+  // clientUploads sends the file from the browser straight to Blob, because a serverless function
+  // cannot accept a large request body. alwaysInsertFields keeps the `media` columns (`prefix`,
+  // `_objectKey`) identical whether or not the token is set, so one committed migration fits both.
+  plugins: [
+    vercelBlobStorage({
+      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      alwaysInsertFields: true,
+      collections: { media: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      clientUploads: true,
+    }),
+  ],
   // M52a: migrations are committed files in /migrations and run by the production
   // `migrate` service (ADR-032). prodMigrations is deliberately not set.
   db: postgresAdapter({

@@ -37,6 +37,10 @@ const nextConfig = {
     // The cost is larger image downloads on mobile.
     images: {
         unoptimized: true,
+        // M100 (ADR-046): media stored in Vercel Blob (the free test deployment) lives on
+        // <store-id>.public.blob.vercel-storage.com. Harmless elsewhere: with `unoptimized` the
+        // optimizer is never called, and no other host is added.
+        remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
     },
 
     // ADR-036: /_next/image is closed (see above). `missing: []` is not used on purpose: the

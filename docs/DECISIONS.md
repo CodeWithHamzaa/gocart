@@ -1384,3 +1384,37 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 3. **Accepted, not fixed**: the advisories in `payload`, `@payloadcms/*`, `@lexical/headless` (`happy-dom`), `drizzle-kit` (`esbuild`) and `graphql-scalars`. npm's only offered fix is a downgrade to `0.1.x` releases (breaking), so none is applied. `graphql-scalars` (PhoneNumber ReDoS) is pinned exactly by `@payloadcms/graphql`, which imports only the `DateTime` and `EmailAddress` scalars, so the vulnerable code is not used. `esbuild` and `happy-dom` are build/dev-time or admin-side. Revisit on each Payload release.
 
 - **Rollback**: Revert the commit.
+
+## ADR-046: Free non-commercial test hosting: Vercel Hobby + Neon Free + Vercel Blob (`M100`)
+
+**Status**: **Accepted (2026-10-30)** under the project owner's delegation recorded in [GATES.md](../.claude/docs/GATES.md) ("Owner delegation: free test deployment"), governance commit `6d0edb8` (merged as `96fa6f3`). Owner decisions of 2026-10-30 are applied (ADR-032 and ADR-036 win; Turnstile skipped).
+
+**This ADR is test-only. It supersedes none of [ADR-015](#adr-015-initial-production-infrastructure-baseline), [ADR-020](#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor), [ADR-032](#adr-032-database-migrations-are-an-automatic-fail-closed-production-step--a-one-shot-migrate-service-that-the-app-waits-for-m52a) or [ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch).** It adds a second deployment target next to the production design; the production design is unchanged.
+
+**Context**: The owner wants a free, personal, non-commercial place to try the real application over the internet. The production design needs a VPS, a domain and Cloudflare, none of which the owner wants to pay for yet.
+
+**Decision**:
+
+1. **Hosting**: Vercel Hobby (project `gocart-test`, function region `iad1`), Neon Free (Postgres 17, matching the local Docker version, AWS us-east-1) and Vercel Blob (store `gocart-test-media`).
+2. **Media**: `@payloadcms/storage-vercel-blob@3.90.2` for the `media` collection with client uploads (a serverless function cannot accept a large request body), registered **only when `BLOB_READ_WRITE_TOKEN` is set**. `alwaysInsertFields: true` keeps the `media` schema identical with or without the token; the adapter's two extra columns (`prefix`, `_objectKey`) ship as one additive migration, which also runs in the Docker production stack and leaves them empty there. Without the token the local-volume adapter of ADR-020 is used. `Media` access control is not touched.
+3. **Migrations (ADR-032 stands; `prodMigrations` is not enabled anywhere)**: the committed files in `/migrations` are run as an explicit step with the Neon **owner** role, in this order of preference: (a) a direct Postgres connection from the deploying session to Neon; (b) a throwaway script **outside the repository** that runs the committed migrations over Neon's serverless driver on port 443, if feasible; (c) otherwise stop and report concrete options. No other path is invented.
+4. **Database roles (ADR-036 stands)**: the Vercel runtime does **not** use Neon's owner role. `scripts/db-roles.ts` creates the restricted `gocart_app` role on Neon with exactly the grants ADR-036 defines (`SELECT, INSERT, UPDATE, DELETE` on all public tables, `USAGE, SELECT` on sequences, `USAGE` on the schema, no `CREATE`, no write to `payload_migrations`, plus default privileges for later tables). Those grants are table-level, so the new `media.prefix` and `media._objectkey` columns are covered; this was verified with `has_column_privilege` on a throwaway database. Vercel's `DATABASE_URI` is the **pooled** endpoint with the `gocart_app` user; migrations and `db-roles` use the owner role.
+5. **First admin**: created with `scripts/bootstrap-admin.ts` (ADR-036), not the open create-first-user flow; `PAYLOAD_ALLOW_FIRST_REGISTER` is never set.
+6. **Images**: `images.unoptimized` stays `true` ([ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch)); only the Blob host is added to `remotePatterns`.
+7. **Turnstile is not configured (owner decision, 2026-10-30).** No keys are created, so **checkout is non-functional on this test deployment**. Missing keys block neither the build nor startup: `scripts/check-env.ts` runs only in the Docker `migrate` service (`package.json` `deploy:migrate`), and the only startup check in the app is `PAYLOAD_SECRET` (`payload.config.ts`). `check-env` is not weakened and no test keys or bypass flag are used.
+
+**Alternatives considered**:
+
+- **Cloudflare Quick Tunnel to a local Docker stack**: free and closest to production, but the URL is ephemeral and the stack must stay running on a personal machine. Kept as a fallback.
+- **Cloudflare R2 for media**: ADR-020's designated production successor, but it may require a payment card to enable, which rules it out for a no-card test environment. It remains the production choice.
+- **`prodMigrations` on Vercel**: rejected; ADR-032 records why it is not a deploy gate.
+
+**Consequences**:
+
+- **Non-commercial only.** Vercel Hobby is for personal, non-commercial use. This must move to paid hosting (or the ADR-015 stack) before any commercial or client launch. It is not production and closes no launch blocker in `docs/DEPLOYMENT.md`.
+- **Free-tier limits** (per the owner's brief; exact figures are unverified here and must be re-checked in the vendor docs before relying on them): Blob has a 1 GB storage cap and monthly operation limits; exceeding a Hobby or Blob limit can lock the account out for 30 days. Neon Free scales to zero, so the first request after idle is slow (cold start).
+- **Known gaps on this target, recorded and not fixed (code changes are out of scope of the delegation):**
+  - The rate limiter is in memory per process ([ADR-026](#adr-026-orders-are-created-only-by-a-server-side-function--orders-collection-create-access-closes-to-admins)), so on serverless it applies per instance, not globally.
+  - The client IP is read only from `cf-connecting-ip` ([ADR-033](#adr-033-cloudflare-tunnel-is-the-origin-boundary--and-production-environment-validation-is-a-deploy-gate-m52)); there is no Cloudflare in front, so every visitor shares one `unknown` bucket.
+  - Checkout and order lookup cannot work without Turnstile keys ([ADR-035](#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)); this is the owner's decision above.
+- **Rollback**: remove the `gocart-test*` resources; no production dependency exists.
