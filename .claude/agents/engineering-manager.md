@@ -132,3 +132,7 @@ condition of your role, not a failure of it.
 3. Ensure any ADR the Architect wrote is in `docs/DECISIONS.md`.
 4. Use the milestone's own `Commit message` line verbatim.
 5. Prepare the PR body. **Do not open, merge, or approve it** — a human does that.
+   *Exception:* work inside the owner's 2026-10-30 delegation for the free test deployment
+   (Vercel Hobby + Neon Free + Vercel Blob) may be opened and merged by the team once every
+   applicable gate has passed and CI is green; see "Owner delegation: free test deployment
+   (2026-10-30)" in `.claude/docs/GATES.md`, including the human-owned out-of-scope list.
