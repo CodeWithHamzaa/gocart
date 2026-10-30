@@ -1,7 +1,7 @@
 # GoCart AI Engineering Team
 
 A **development-time** engineering system for the GoCart Pakistan migration.
-Eight roles, one orchestrator, human approval before anything merges.
+Eight roles, one orchestrator, human approval before anything merges (one recorded exception: see "Owner delegation" in [docs/GATES.md](./docs/GATES.md)).
 
 > **The application never depends on this.** Delete `.claude/` and GoCart still
 > builds, runs, and deploys. See [docs/NO_PRODUCTION_AI.md](./docs/NO_PRODUCTION_AI.md).
@@ -60,4 +60,4 @@ that system — it does not replace it.
 ## Two rules that override everything else
 
 1. **Surface the conflict rather than guessing.** Stopping to escalate is a success.
-2. **A human approves before anything merges or deploys.** No role has that authority.
+2. **A human approves before anything merges or deploys.** No role has that authority, with one recorded exception: the owner's 2026-10-30 delegation for a free, non-commercial test deployment on Vercel Hobby + Neon Free + Vercel Blob. Its exact scope, and the list of things that stay human-owned (existing Accepted ADRs, force push and history rewrite, deleting resources the session did not create, paid actions, auth/payment/order-total/rate-limiting changes, printing or committing secrets), is "Owner delegation: free test deployment (2026-10-30)" in [docs/GATES.md](./docs/GATES.md). It is not a production deployment.

@@ -23,7 +23,7 @@ DevOps / Release       (branch, commit, PR preparation)
   ↓
 GitHub PR
   ↓
-HUMAN APPROVAL   ←  the team stops here, every time
+HUMAN APPROVAL   ←  the team stops here, every time (sole exception: GATES.md, "Owner delegation")
   ↓
 Merge → Production
 ```
@@ -42,7 +42,7 @@ Each gate is described in full in [GATES.md](./GATES.md).
 | **G5 Verification** | QA Engineer | Every acceptance criterion checked against a live server, with evidence |
 | **G6 Security / Performance** | Security / Performance Engineer | No access-control, PII, validation, or cost regression |
 | **G7 Release** | DevOps / Release Engineer | Correct branch, one commit, PR body prepared |
-| **G8 Human approval** | **HUMAN** | A person reviewed and approved. Non-delegable |
+| **G8 Human approval** | **HUMAN** | A person reviewed and approved. Non-delegable, except the owner's 2026-10-30 delegation for the free, non-commercial test deployment (Vercel Hobby + Neon Free + Vercel Blob), scoped in [GATES.md](./GATES.md), "Owner delegation" |
 
 A skipped gate is a failed gate. A gate that was not run is reported as *not run* —
 never as passed.
@@ -64,7 +64,7 @@ was skipped**. Running all seven on a trivial change buries the signal that matt
    and anything found-but-not-fixed.
 4. Any new ADR is in `docs/DECISIONS.md`.
 5. Commit uses the milestone's own `Commit message` line verbatim.
-6. PR prepared. **Not opened, not merged** — that is the human's call.
+6. PR prepared. **Not opened, not merged** — that is the human's call. (Exception: inside the owner's 2026-10-30 test-deployment delegation the team may open and merge once all applicable gates pass and CI is green; the out-of-scope list in [GATES.md](./GATES.md), "Owner delegation", stays human-owned.)
 
 ## When something goes wrong
 
