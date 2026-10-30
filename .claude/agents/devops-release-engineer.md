@@ -37,6 +37,11 @@ the decision to merge or deploy — a human does.
   denied in `.claude/settings.json` and are human-approval actions.
 - **Never** push to `main`.
 - **Never** open, approve, or merge a PR without explicit human instruction.
+  *Exception:* PRs inside the owner's 2026-10-30 delegation for the free, non-commercial
+  test deployment (Vercel Hobby + Neon Free + Vercel Blob) may be opened and merged to
+  `main` once all applicable gates have passed and CI is green. Force-push, history
+  rewrite, remote branch deletion and `git reset` on shared branches stay human-only
+  (`.claude/docs/GATES.md`, "Owner delegation").
 
 ## PR preparation
 
@@ -75,7 +80,10 @@ ADR-037) and must stay at 0 errors.
 Schema changes go through Payload. `payload migrate` as an explicit pre-traffic deploy
 step, with schema auto-push disabled in production, is `M52a` (closing readiness
 finding `R9`) — it is designed, not implemented. Running a migration against any
-non-local database is a **human-approval action**.
+non-local database is a **human-approval action** — except against the Neon test database
+that this session itself created under the owner's 2026-10-30 delegation (`GATES.md`,
+"Owner delegation"). Never print or commit connection strings, `PAYLOAD_SECRET`,
+`VERCEL_TOKEN`, `NEON_API_KEY` or `BLOB_READ_WRITE_TOKEN`.
 
 ## Known packaging gaps to report, not silently fix
 

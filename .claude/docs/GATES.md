@@ -121,13 +121,17 @@ Skipped checks are reported as **skipped by the owner's rule**, never as passed.
 
 ## G8 — Human approval  ·  **HUMAN — non-delegable**
 
-The team stops here. Every time.
+The team stops here. Every time — **except** for the one narrowly scoped, owner-recorded
+delegation in "Owner delegation: free test deployment (2026-10-30)" below. Outside that
+delegation, nothing in this file is relaxed.
 
 ---
 
 ## Actions requiring explicit human approval
 
-No role may perform any of these on its own initiative:
+No role may perform any of these on its own initiative (the only exception is the steps
+delegated in "Owner delegation: free test deployment (2026-10-30)" below, and only for
+that test deployment):
 
 - Changing, superseding, or reversing an **Accepted ADR**
 - Major **architectural** changes
@@ -146,6 +150,49 @@ No role may perform any of these on its own initiative:
 `.claude/settings.json` enforces the mechanical subset: destructive Git and Docker
 operations are **denied**, and pushes, merges, installs, seeds, and migrations are
 **ask**. The rest is enforced by these instructions and by the human at G8.
+
+## Owner delegation: free test deployment (2026-10-30)
+
+**Authority:** the project owner, Abdul, recorded this on 2026-10-30. Verbatim:
+
+> I authorize the AI agent team to perform, without waiting for my manual action, all
+> steps needed to deploy GoCart as a free, non-commercial, personal test environment on
+> Vercel Hobby + Neon Free + Vercel Blob, including: installing/uninstalling packages,
+> Accepting new ADRs, merging PRs to main after all gates pass and CI is green, creating
+> and configuring the Vercel project, Blob store, and Neon project, setting environment
+> variables, running database migrations and seeding on the new Neon test database,
+> deploying, and creating the first Payload admin user. This delegation is recorded by a
+> governance commit made under this authorization.
+
+**Scope: exactly that, and nothing wider.**
+
+- It applies only to a free, non-commercial, personal **test** environment on Vercel
+  Hobby + Neon Free + Vercel Blob. It is **not** a production deployment, does not touch
+  the ADR-015 production baseline, and does not authorize any commercial or client use.
+- For that purpose only, the steps in the quotation above are delegated to the agent team
+  and G8 for them is satisfied by this record, provided every other gate that applies
+  has passed and CI is green. "Merging PRs to main" means merging after those conditions,
+  never a push to `main`.
+- "Running database migrations and seeding" means against the Neon test database that the
+  session itself created. Every other non-local database stays a human-approval action.
+- New ADRs may be Accepted under this delegation, citing the governance commit. An
+  Accepted ADR already in `docs/DECISIONS.md` is not modified or superseded by it.
+
+**Out of scope of this delegation — these remain human-owned, absolute stops:**
+
+- Modifying or superseding any **existing** Accepted ADR.
+- Force push, history rewrite, branch deletion on a remote, `git reset` on shared branches.
+- Deleting any Vercel project, Neon project, database, or Blob store that this session did
+  not create.
+- Any paid action: buying domains, starting Pro trials, upgrading plans, adding a card.
+- Changes to authentication, payment, order-total validation, or rate-limiting logic.
+- Printing, logging, committing, or echoing `VERCEL_TOKEN`, `NEON_API_KEY`, connection
+  strings, `PAYLOAD_SECRET`, or `BLOB_READ_WRITE_TOKEN` anywhere (chat, files, commits, PRs).
+
+On any conflict with `CLAUDE.md`, `docs/MIGRATION_PLAN.md`, or an Accepted ADR: **STOP and
+report.** A gate that was not run is reported as "not run". This section overrides the
+general statements elsewhere in `.claude/` ("a human merges", "non-delegable") **only** for
+the scope above.
 
 ## Conflict escalation
 
