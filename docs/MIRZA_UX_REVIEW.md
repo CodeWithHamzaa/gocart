@@ -51,15 +51,63 @@ Additional notes from the baseline (not in the top 10):
 | # | Area | Change |
 |---|---|---|
 | 1 | Brand identity | `Mirza` code defaults plus a column-default migration. The og:title duplicate is fixed (`pageMetadata({ absoluteTitle })`). Multi-category positioning in the description, the home title, the hero and the footer. A near-black "M" monogram and a one-colour wordmark (header, footer, favicon `app/icon.svg` + `app/favicon.ico`, admin logo). The demo seed writes no fake contact details. The live site's fake address is Settings data: **the owner clears it in /admin**. |
-| 2 | Homepage hero | A two-column hero on a coral-to-saffron gradient with ink text: a positioning line, one supporting sentence, two CTAs, "Prices from", and a grid of real in-stock products (2 x 2 on a desktop and on a phone, at 4:3 on a phone; one row of four on a tablet). No tile or caption is ever hidden. No rotated tiles, sticker or chips. |
-| 3 | Design system | `@theme` values only, bright and playful (the owner's choice after a first warm-neutral pass read as dull): peach-cream page `#FFF8F1`, coral-to-saffron hero gradient (`#FF6B4A` to `#FFB020`, ink text 5.9-9.2:1), deep coral `primary` `#BD3016` (white 5.8:1, on the page 5.5:1), magenta sale `#D6246E`, bright pastel category and product tiles, a coral announcement bar, a tinted footer, radii 12-26 px. Headings are 700, not 800. Every text pair is 4.5:1 or more (the yellow icon tint, 4.2:1, is used only for icons, which need 3:1). |
-| 4 | Product cards | Full-bleed `object-cover` photo in one neutral tile with no card chrome. At most one label, and "Featured" is no longer one. Price in ink, with the MRP and "N% off" on the same line. White heart and quick-add buttons. |
+| 2 | Homepage hero | The owner's chosen mix: a banner slider of up to three slides built only from real data (`lib/hero-slides.ts`), round category shortcuts and one strip with the three promises under it (see section 1, row 2). No tile, caption or product name is ever hidden. |
+| 3 | Design system | `@theme` values only, "lavender wash" (the owner's choice): page `#FCFAFF`, lavender wells `#F1ECFF`, soft violet `#E9E2FF`, bright violet `primary` `#5F42EC` for actions, hot pink `#CC1966` for discounts and sale labels, amber `#FFC247` "Limited edition" labels with dark text, near-black ink `#1D1D1F`, muted `#636368`. Pill buttons and labels, surfaces separated by tone with almost no shadow, semibold headings with tight tracking. Every text pair is 4.5:1 or more (table below). |
+| 4 | Product cards | The home page's large card (`RailCard`), and the listing card (`ProductCard`) in the same look: lavender card, category, name, price with the struck MRP and a pink "N% off" pill, the photo full-bleed on a white tile at the bottom. At most one label, never "Featured". Heart and quick-add are siblings of the one stretched link. |
 | 5 | Category discovery | Category shortcuts with images under the banner (every department first, then sub-categories, then "View all"), and from `md` one large tile per top-level category with its child links and image. The owner removed the phone category row because the shortcuts already cover it. |
-| 6 | Product detail | Full-bleed main image and thumbnails. An unboxed price. One stock line (dot + word); the image no longer repeats "Out of stock". Buttons in green and ink outline. Delivery, COD and "no account" in one quiet list. The description has no card around it and uses 15 px text. |
+| 6 | Product detail | Full-bleed main image and thumbnails. An unboxed price with the "N% off" pill. One stock line (dot + word). Pill buttons ("Add to Cart" violet, "Buy Now" soft violet). Delivery, COD and "no account" in one lavender list. The description is open by default. "You may also like" is a rail of large cards. |
 | 7 | Homepage merchandising | "New arrivals" leave out featured products and, like "Featured", are a swipeable row of the large home cards (arrow buttons from `md`; Featured's category tabs still filter). No listing counts on the home page. Promo copy is admin data (**owner**). |
 | 8 | Trust | The announcement bar is a static light-grey strip. The hero chips are gone, and the home trust row is replaced by three real cash-on-delivery steps (order without an account, delivery and its charge, pay the courier and track the order). A blocked form ('disabled' or 'failed' Turnstile status) shows a visible notice that names the paused action; the check itself is unchanged. |
 | 9 | Mobile | A short static bar on phones. A compact hero with side-by-side CTAs. No horizontal overflow at 375-1440 (checked automatically). |
 | 10 | Consistency and accessibility | The 404 page has an `<h1>`. One badge style. Focus rings in the new accent. The same tokens on every route. |
+
+### Contrast of the pairs the pages use (WCAG 2.1, computed 2026-10-31)
+
+| Text on background | Ratio |
+|---|---|
+| ink `#1D1D1F` on lavender `#F1ECFF` | 14.6:1 |
+| ink-2 `#424245` on lavender | 8.7:1 |
+| muted `#636368` on page / white / lavender / lavender-2 `#E5DCFF` | 5.8 / 6.0 / 5.2 / 4.6:1 |
+| white on primary `#5F42EC` | 6.0:1 |
+| primary on page / lavender | 5.8 / 5.2:1 |
+| primary-dark `#4A2FD0` on white / soft violet `#E9E2FF` / lavender-2 | 8.1 / 6.4 / 6.1:1 |
+| pink-dark `#A8144F` on pink-soft `#FFE4F0` (the "N% off" pill) | 6.1:1 |
+| success `#0B6E4F` on white / lavender | 6.3 / 5.4:1 |
+
+### 2b. Every other storefront page in the approved style
+
+The owner approved the home page as it is at commit `94b2eae` and asked for the same style on every other
+page, without changing what the pages do. Layout and classes only: prices, totals, the Turnstile check,
+COD and the guest checkout are untouched.
+
+| Page or part | What changed |
+|---|---|
+| Header | The search field and its button are pills; Shop, wishlist and cart get a lavender hover. The desktop category row is pills. Every control is still 44 px or more at 320 px. |
+| Mobile tab bar | The active tab sits on a lavender pill. |
+| Listing card (`/shop`, search, category pages, wishlist) | The home page's large card in a grid cell (see row 4). Two columns on a phone; the name is never clamped or hidden. |
+| `/shop` and search | Semibold heading, the same card grid with wider gaps. The empty search result is the lavender empty state. |
+| `/categories` (and its loading skeleton) | The home page's category tiles: a lavender card with the name, white child-category pills and the category image on a white tile. One column on a phone (a row: text left, square image right), two from `sm`, four from `lg`. |
+| `/category/[slug]` | A lavender title panel (large semibold title, white subcategory pills, the category icon in a white circle from `sm`), a lavender Sort & filter panel with pill fields, white discount pills and a pill Apply button, and pill pagination. |
+| `/product/[id]` | See row 6. |
+| `/cart` | Each line is a lavender card (photo on a white tile, category, semibold name, price in ink, pill quantity stepper). The order summary is a lavender panel with white inner surfaces (address, delivery and payment cards, the paused-ordering notice) and a pill Place Order button. The undo notice is a soft-violet pill. |
+| Address dialog | A lavender card over the blurred page, with pill fields, a pill SAVE ADDRESS button and a round Close button. Same name ("Add new address"), fields and validation. |
+| `/orders` | A lavender panel with pill fields and a pill "Check order" button; the result card is lavender. |
+| `/order-confirmation` | Semibold headings, a lavender order-number card with a pill Copy button, pill buttons. |
+| `/wishlist` | A breadcrumb like the other listings, the same card grid. |
+| Empty states, 404s, error | The empty-state panel is lavender with a white icon circle and a pill button. The category 404 now has an `<h1>` (it had none). The category error page uses the same heading and a pill button. |
+| Footer | Unchanged (already lavender). |
+
+**Checked on a local production build** (PostgreSQL 16, `npm run seed:demo`, no Turnstile keys like the
+test site): 20 routes (including a filtered category, a no-match filter, an out-of-stock product, a cart
+with items, a filled order confirmation and a wishlist with items) at 375, 390, 430, 768, 1024 and 1440 px,
+120 page loads. Every route returned the expected status (200; 404 for the unknown URL and the unknown
+category), with no horizontal overflow, no image without `alt`, no "GoCart" text and exactly one `<h1>`.
+At 320 px: no overflow on eight main routes, and the header's Shop, Search and Cart are each 44 px or more.
+At Pixel 7: every product name's first text match is visible on `/shop`, the four department pages and the
+wishlist. Click tests: add to cart, the cart shows the name once, the address dialog opens and closes,
+phone validation, the saved address is selected, Place Order stays disabled without a Turnstile token,
+remove and undo, "Out of Stock" disabled, heart on and off, quick add, and category sort + discount filter
++ "Clear all". Not verified here: real Turnstile keys and the live test site (both after the merge).
 
 **Not done, and why:**
 - **Stock photography (Unsplash):** the review machine's network policy blocked `images.unsplash.com` and
