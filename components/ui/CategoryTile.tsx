@@ -29,16 +29,21 @@ export default function CategoryTile({ category, index, variant, className = '',
     )
   }
 
+  // M101: the home page tile leads with the category's own image (4:3, cover) on a warm neutral
+  // well, then the name, the child links and a quiet "Shop now". M62's pastel card with a large
+  // corner icon is gone; the icon is only the fallback when a category has no image.
   return (
-    <div className={`group relative flex min-h-[152px] flex-col gap-1 overflow-hidden rounded-card p-4 transition sm:min-h-[168px] sm:p-5 ${className}  duration-300 hover:-translate-y-0.5 hover:shadow-float-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary ${tint.tile}`}>
-      <span className={`mb-2.5 flex size-10 items-center justify-center rounded-control bg-white ${tint.ink}`} aria-hidden="true">
-        <CategoryIcon category={category} size={22} strokeWidth={1.8} />
+    <div className={`group relative flex flex-col gap-1 rounded-tile focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-primary ${className}`}>
+      <span className="mb-2 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-tile bg-tile-lavender text-ink-3" aria-hidden="true">
+        {image ? (
+          <Image src={image} alt="" width={480} height={360} sizes="(min-width: 1280px) 300px, (min-width: 768px) 24vw, 46vw" className="size-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+        ) : (
+          <CategoryIcon category={category} size={40} strokeWidth={1.4} />
+        )}
       </span>
-      <Link href={href} className="text-base font-bold text-ink outline-none after:absolute after:inset-0">{category.title}</Link>
-      {/* M98: the child links keep clear of the large corner icon from `sm`, where it shows. */}
-      {children && <div className="relative z-10 text-[13px] text-muted sm:pr-[5.5rem]">{children}</div>}
-      <span aria-hidden="true" className={`mt-1.5 text-[13px] font-bold ${tint.link}`}>Shop now &rarr;</span>
-      <CategoryIcon category={category} aria-hidden="true" size={96} strokeWidth={1} className={`pointer-events-none absolute -bottom-1.5 -right-1.5 hidden opacity-90 sm:block ${tint.ink}`} />
+      <Link href={href} className="text-base font-semibold text-ink outline-none after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-4">{category.title}</Link>
+      {children && <div className="relative z-10 text-[13px] leading-snug text-muted">{children}</div>}
+      <span aria-hidden="true" className="mt-0.5 text-[13px] font-semibold text-primary">Shop now &rarr;</span>
     </div>
   )
 }

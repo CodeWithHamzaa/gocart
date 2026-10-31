@@ -100,7 +100,7 @@ export default function Cart() {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
                 </div>
-                <h1 className="mb-5 mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">My Cart <span className="text-base font-semibold text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
+                <h1 className="mb-5 mt-2 text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl">My Cart <span className="text-base font-semibold text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
 
                 {undoNotice && <div className="mb-4">{undoNotice}</div>}
 
@@ -129,7 +129,7 @@ export default function Cart() {
                                                     <Trash2Icon size={18} aria-hidden="true" />
                                                 </button>
                                             </div>
-                                            <p className="text-lg font-extrabold text-primary">{formatPKR(item.price)}</p>
+                                            <p className="text-lg font-bold text-primary">{formatPKR(item.price)}</p>
                                             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                                                 <Counter productId={item.id} />
                                                 <p className="text-sm text-muted">Item total <strong className="whitespace-nowrap text-ink">{formatPKR(item.price * item.quantity)}</strong></p>

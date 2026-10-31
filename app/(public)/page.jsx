@@ -1,6 +1,6 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-import CategoryRow, { CategoryGrid } from "@/components/CategoryRow";
+import { CategoryGrid } from "@/components/CategoryRow";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
 import DealsOfTheDay from "@/components/DealsOfTheDay";
@@ -29,21 +29,23 @@ import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
 export const dynamic = 'force-dynamic'
 
 // M41: the home page's own title is the store name plus what it sells (no template suffix).
+// M101: `absoluteTitle` keeps the brand out of og:title a second time (it read "... | Mirza").
 export async function generateMetadata() {
     const { storeName } = await getSettings();
-    const base = pageMetadata({
+    return pageMetadata({
         storeName,
-        title: `${storeName} - Gadgets & accessories, Cash on Delivery`,
+        title: `${storeName} - Online shopping with Cash on Delivery in Pakistan`,
         description: DEFAULT_DESCRIPTION,
         path: '/',
+        absoluteTitle: true,
     });
-    return { ...base, title: { absolute: `${storeName} - Gadgets & accessories, Cash on Delivery` } };
 }
 
 export default async function Home() {
 
     const [latest, featured, cheapest, settings, topLevelCategories, promoCards, deals] = await Promise.all([
-        getProducts({ sort: '-createdAt', limit: 5 }),
+        // M101: ten newest, so up to five remain after the featured ones are taken out (below).
+        getProducts({ sort: '-createdAt', limit: 10 }),
         getFeaturedProducts({ limit: 12 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
@@ -56,7 +58,7 @@ export default async function Home() {
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
 
     // M45a: the hero's floating tiles are real, in-stock products with an image — featured first,
-    // then the latest — de-duplicated, at most three. No extra query: both lists are already here.
+    // then the latest — de-duplicated, at most four (M101). No extra query: both lists are already here.
     const seen = new Set();
     const showcase = [...featured.docs, ...latest.docs]
         .filter((product) => {
@@ -70,16 +72,22 @@ export default async function Home() {
             return imageUrl ? { id: product.id, name: product.name, price: product.price, imageUrl } : null;
         })
         .filter(Boolean)
-        .slice(0, 3);
+        .slice(0, 4);
+
+    // M101: "New arrivals" and "Featured" had the same products side by side. New arrivals now leave
+    // out anything already featured; if that leaves nothing (a tiny catalogue), the newest are shown.
+    const featuredIds = new Set(featured.docs.map((product) => product.id));
+    const notFeatured = latest.docs.filter((product) => !featuredIds.has(product.id));
+    const newArrivals = (notFeatured.length > 0 ? notFeatured : latest.docs).slice(0, 5);
 
     return (
         <div>
-            <Hero shipping={shipping} startingPrice={startingPrice} showcase={showcase} />
-            <CategoryRow categories={topLevelCategories} />
+            <Hero startingPrice={startingPrice} showcase={showcase} />
+            {/* M101: one category section (the phone-only circle row above it repeated the same links). */}
             <CategoryGrid categories={topLevelCategories} />
             <DealsOfTheDay products={deals} />
-            <LatestProducts products={latest.docs} total={latest.totalDocs} />
-            <BestSelling products={featured.docs} total={featured.totalDocs} categories={topLevelCategories} />
+            <LatestProducts products={newArrivals} />
+            <BestSelling products={featured.docs} categories={topLevelCategories} />
             <PromoCards cards={promoCards} />
             <OurSpecs shipping={shipping} />
         </div>

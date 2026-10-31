@@ -50,14 +50,14 @@ const Footer = async () => {
             <div className="mx-auto flex max-w-[83rem] flex-col gap-9 px-4 pb-7 pt-12 sm:px-6">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-[1.3fr_repeat(3,1fr)]">
                     <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
-                        <Link href="/" className="text-2xl font-extrabold tracking-[-0.03em] text-ink">
+                        <Link href="/" className="text-2xl text-ink">
                             <BrandLogo name={settings.storeName} mark={false} />
                         </Link>
-                        <p className="max-w-[260px]">Order online and pay cash on delivery across Pakistan.</p>
+                        <p className="max-w-[280px]">Electronics, fashion, home and beauty, delivered across Pakistan. Pay in cash when your order arrives.</p>
                     </div>
                     {linkSections.map((section) => (
                         <div key={section.title} className={section.title === "Contact" ? "col-span-2 lg:col-span-1" : undefined}>
-                            <h2 className="mb-2 font-bold text-ink">{section.title}</h2>
+                            <h2 className="mb-2 font-semibold text-ink">{section.title}</h2>
                             <ul>
                                 {section.links.map((link, i) => (
                                     <li key={i} className="flex items-center gap-2">

@@ -33,7 +33,7 @@ export default function PromoCards({ cards = [] }: { cards?: PromoCard[] }) {
                 </div>
               )}
               {card.eyebrow && <span className={`relative text-[13px] font-bold ${tone.text}`}>{card.eyebrow}</span>}
-              <span className={`relative ${imageUrl ? 'max-w-[280px] break-words' : 'max-w-[28rem]'} text-[26px] sm:text-3xl font-extrabold leading-tight tracking-tight`}>{card.title}</span>
+              <span className={`relative ${imageUrl ? 'max-w-[280px] break-words' : 'max-w-[28rem]'} text-[26px] sm:text-3xl font-bold leading-tight tracking-tight`}>{card.title}</span>
               <span className={`relative inline-flex min-h-11 items-center gap-1 text-sm font-bold ${tone.text}`}>
                 {card.ctaText}
                 <ArrowRightIcon size={16} aria-hidden="true" />

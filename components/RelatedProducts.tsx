@@ -33,7 +33,7 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
   return (
     <section aria-labelledby="related-products" className="my-10 sm:my-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="related-products" className="text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-[28px]">You may also like</h2>
+        <h2 id="related-products" className="text-xl font-bold tracking-[-0.02em] text-ink sm:text-[28px]">You may also like</h2>
         <Link href={`/category/${category.slug}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary-dark">
           View all in {category.title} &rarr;
         </Link>

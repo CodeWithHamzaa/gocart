@@ -167,7 +167,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     return (
         <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-[22px] bg-white p-5 text-sm shadow-card ring-1 ring-line sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
-            <h2 className='text-xl font-extrabold text-ink'>Order summary</h2>
+            <h2 className='text-xl font-bold text-ink'>Order summary</h2>
 
             <section aria-labelledby='step-address'>
                 <h3 id='step-address' className={step}><span className={stepNo} aria-hidden='true'>1</span>Delivery address</h3>
@@ -221,7 +221,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             </dl>
             <div className='flex items-baseline justify-between border-t border-line pt-4'>
                 <p className='font-semibold text-ink'>Total</p>
-                <p className='text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                <p className='text-[26px] font-bold leading-none tracking-[-0.02em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-muted'>
@@ -233,7 +233,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <div className='mx-auto flex max-w-xl items-center gap-3 lg:max-w-none'>
                     <div className='shrink-0 lg:hidden'>
                         <p className='text-xs text-muted'>Total</p>
-                        <p className='text-lg font-extrabold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                        <p className='text-lg font-bold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
                     </div>
                     <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-2xl bg-primary px-4 text-base font-bold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
                 </div>

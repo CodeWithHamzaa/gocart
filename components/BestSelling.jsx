@@ -16,7 +16,8 @@ import FeaturedTabs from './ui/FeaturedTabs'
 // tabs cost no query: each product maps to its top-level category (its own category's parent when it is a
 // child, else the category itself), and a tab exists only for a top-level category that has at least one
 // featured product, so no tab is ever empty. Every card stays in the HTML; FeaturedTabs only hides them.
-const BestSelling = ({ products = [], total = 0, categories = [] }) => {
+// M101: the description says what the section is, not a listing count.
+const BestSelling = ({ products = [], categories = [] }) => {
 
     if (products.length === 0) return null
 
@@ -40,7 +41,7 @@ const BestSelling = ({ products = [], total = 0, categories = [] }) => {
     return (
         <section className='mx-4 sm:mx-6 mt-12 sm:mt-14'>
             <div className='max-w-7xl mx-auto'>
-                <Title title='Featured' description={`Showing ${products.length} of ${total} products`} href='/shop' />
+                <Title title='Featured' description='Picked by the store, across every category' href='/shop' />
                 <FeaturedTabs
                     tabs={tabs}
                     items={items}

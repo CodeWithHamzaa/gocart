@@ -32,7 +32,7 @@ export default function WishlistPage() {
   return (
     <div className="mx-4 my-8 sm:mx-6">
       <div className="mx-auto max-w-7xl">
-        <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-[28px]">Your wishlist</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink sm:text-[28px]">Your wishlist</h1>
         <p className="mt-1 text-sm text-muted">Saved in this browser only. There are no accounts, so it does not follow you to another device.</p>
         {key && products === null ? (
           <p role="status" className="mt-8 text-sm text-muted">Loading…</p>

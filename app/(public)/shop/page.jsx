@@ -45,7 +45,7 @@ export default async function Shop({ searchParams }) {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={crumbs} />
                 </div>
-                <h1 className="mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl [overflow-wrap:anywhere]">
+                <h1 className="mt-2 text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl [overflow-wrap:anywhere]">
                     {query ? <>Results for &ldquo;{query}&rdquo;</> : 'All products'}
                 </h1>
                 {products.length > 0 ? (

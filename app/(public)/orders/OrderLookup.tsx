@@ -64,7 +64,7 @@ export function OrderLookup() {
     <div className="mx-4 my-8 min-h-[60vh] text-ink-2 sm:mx-6 sm:my-12">
       <div className="mx-auto max-w-2xl">
         <div className="rounded-panel bg-white p-5 shadow-card ring-1 ring-line sm:p-8">
-        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">Check your order</h1>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl">Check your order</h1>
         <p className="mt-2 text-muted">Enter your order number and the phone number you used when ordering.</p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">

@@ -9,7 +9,7 @@ export default function CategoryError({ reset }: { error: Error; reset: () => vo
   return (
     <div className="mx-4 sm:mx-6">
       <div className="mx-auto flex min-h-[70vh] max-w-7xl flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-2xl font-extrabold tracking-tight text-ink">Something went wrong</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Something went wrong</h1>
         <p className="max-w-md text-muted">
           We couldn&apos;t load this category right now. Please try again.
         </p>

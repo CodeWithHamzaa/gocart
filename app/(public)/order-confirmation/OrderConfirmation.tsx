@@ -53,7 +53,7 @@ export function OrderConfirmation() {
     return (
       <div className="mx-6 my-16 min-h-[60vh]">
         <div className="mx-auto max-w-2xl text-muted">
-          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink sm:text-3xl">
             We couldn&apos;t find a recent order in this browser
           </h1>
           <p className="mt-4">
@@ -82,7 +82,7 @@ export function OrderConfirmation() {
           <span className="flex size-16 items-center justify-center rounded-full bg-success-soft text-success">
             <CheckCircle2 size={36} aria-hidden="true" />
           </span>
-          <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl">Order placed!</h1>
+          <h1 className="text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl">Order placed!</h1>
           <p className="max-w-md text-sm text-muted">
             Pay in cash when your order is delivered. Keep your order number and phone number to
             check your order status on the Orders page.
@@ -106,7 +106,7 @@ export function OrderConfirmation() {
           <dl className="mt-4 grid gap-x-6 gap-y-2 border-t border-line-3 pt-4 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-xs text-muted">Total to pay</dt>
-              <dd className="font-extrabold text-ink">{formatPKR(order.orderTotal)}</dd>
+              <dd className="font-bold text-ink">{formatPKR(order.orderTotal)}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Payment</dt>
@@ -119,7 +119,7 @@ export function OrderConfirmation() {
           </dl>
         </div>
 
-        <h2 className="mt-8 text-lg font-extrabold text-ink">Items</h2>
+        <h2 className="mt-8 text-lg font-bold text-ink">Items</h2>
         <ul className="mt-2 divide-y divide-line border-y border-line">
           {order.items.map((item, index) => (
             <li key={index} className="flex justify-between gap-4 py-3 text-sm">
@@ -153,13 +153,13 @@ export function OrderConfirmation() {
           </div>
           <div className="flex justify-between border-t border-line pt-2 text-base text-ink">
             <dt>Total to pay on delivery</dt>
-            <dd className="font-extrabold">
+            <dd className="font-bold">
               {formatPKR(order.orderTotal)}
             </dd>
           </div>
         </dl>
 
-        <h2 className="mt-8 text-lg font-extrabold text-ink">Delivery details</h2>
+        <h2 className="mt-8 text-lg font-bold text-ink">Delivery details</h2>
         <div className="mt-2 space-y-1 text-sm">
           <p className="font-semibold text-ink">{delivery.name}</p>
           <p>{delivery.phone}</p>
@@ -168,7 +168,7 @@ export function OrderConfirmation() {
           <p>{delivery.city}</p>
         </div>
 
-        <h2 className="mt-8 text-lg font-extrabold text-ink">Payment method</h2>
+        <h2 className="mt-8 text-lg font-bold text-ink">Payment method</h2>
         <p className="mt-2 text-sm">Cash on Delivery (COD)</p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">

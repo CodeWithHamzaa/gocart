@@ -1,4 +1,4 @@
-# Development stack for GoCart Pakistan: PostgreSQL (M1) and the Next.js + Payload app (M50).
+# Development stack for Mirza (formerly GoCart Pakistan): PostgreSQL (M1) and the Next.js + Payload app (M50).
 #
 #   docker compose up -d postgres   database only; run `npm run dev` on the host against the
 #                                   published loopback port (this is what the README documents)

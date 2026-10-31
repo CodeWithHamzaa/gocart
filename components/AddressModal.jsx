@@ -77,7 +77,7 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
         <form onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-label="Add new address" className="fixed inset-0 z-50 overflow-y-auto bg-page/80 backdrop-blur">
             {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen. */}
             <div className="flex flex-col justify-center gap-5 text-ink w-full max-w-sm mx-auto px-6 py-16 min-h-dvh">
-                <h2 className="text-3xl font-extrabold tracking-[-0.02em]">Add New <span className="text-primary">Address</span></h2>
+                <h2 className="text-3xl font-bold tracking-[-0.02em]">Add New <span className="text-primary">Address</span></h2>
                 <input name="name" onChange={handleAddressChange} value={address.name} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="Full name" autoComplete="name" required />
                 {errors.name && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.name}</p>}
                 <input name="phone" onChange={handleAddressChange} value={address.phone} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />

@@ -1,4 +1,4 @@
-# Production stack for GoCart Pakistan (M50, M52a, M52): the Dockerfile's `production` target +
+# Production stack for Mirza, formerly GoCart Pakistan (M50, M52a, M52): the Dockerfile's `production` target +
 # PostgreSQL + a one-shot migrate step + the Cloudflare Tunnel connector (`cloudflared`).
 #
 #   docker compose --env-file /path/outside/checkout/gocart-prod.env \

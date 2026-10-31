@@ -49,7 +49,7 @@ export default async function CategoriesPage() {
           <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Categories' }]} />
         </div>
 
-        <h1 className="mb-6 mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
+        <h1 className="mb-6 mt-2 text-[28px] font-bold tracking-[-0.02em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
 
         {categories.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-5">
