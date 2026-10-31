@@ -1450,7 +1450,7 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
    | Order numbers prefixed `GC-` | order creation, `/orders` lookup, `lib/order-confirmation.ts` | Existing orders and customers' saved numbers depend on the format |
    | `gocart:cart` and `gocart:wishlist` localStorage keys | `app/StoreProvider.js` | Not in the owner's rename list; renaming without a fallback would empty every saved cart |
    | `gocartAdminBootstrap` request-context key | `collections/Users.ts` | Internal constant, never stored or shown |
-4. **Visual identity**: a deep-green "M" monogram (header, footer, favicon, admin logo) and a single-colour wordmark. Warm neutral surfaces, near-black ink, one deep-green accent and a muted terracotta for sales. The values change in the `@theme` block of `app/globals.css`; the token *names* (`lavender`, `pink`) are kept so components did not need rewriting, and the block's comment says what each name now means.
+4. **Visual identity** (bright and playful, the owner's choice on 2026-10-31 after a first warm-neutral pass read as dull): a coral "M" monogram (header, footer, favicon, admin logo) and a single-colour wordmark. A peach-cream page, a coral-to-saffron hero gradient with ink text, a deep coral accent, magenta for sales, and bright pastel category and product tiles. The values change in the `@theme` block of `app/globals.css`; the token *names* (`lavender`, `pink`) are kept so components did not need rewriting, and the block's comment says what each name now means.
 
 **Alternatives considered**:
 

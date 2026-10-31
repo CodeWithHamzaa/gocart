@@ -46,7 +46,7 @@ const Footer = async () => {
     ].filter((section) => section.links.length > 0);
 
     return (
-        <footer className="mt-14 border-t border-line bg-white text-sm text-muted">
+        <footer className="mt-14 border-t border-line-2 bg-lavender-tile text-sm text-muted">
             <div className="mx-auto flex max-w-[83rem] flex-col gap-9 px-4 pb-7 pt-12 sm:px-6">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-[1.3fr_repeat(3,1fr)]">
                     <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">

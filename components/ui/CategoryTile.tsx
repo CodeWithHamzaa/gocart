@@ -29,12 +29,12 @@ export default function CategoryTile({ category, index, variant, className = '',
     )
   }
 
-  // M101: the home page tile leads with the category's own image (4:3, cover) on a warm neutral
-  // well, then the name, the child links and a quiet "Shop now". M62's pastel card with a large
+  // M101: the home page tile leads with the category's own image (4:3, cover) in a well of the
+  // category's pastel tint, then the name, the child links and a "Shop now". M62's card with a large
   // corner icon is gone; the icon is only the fallback when a category has no image.
   return (
     <div className={`group relative flex flex-col gap-1 rounded-tile focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-primary ${className}`}>
-      <span className="mb-2 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-tile bg-tile-lavender text-ink-3" aria-hidden="true">
+      <span className={`mb-2 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-tile ${tint.tile} ${tint.ink}`} aria-hidden="true">
         {image ? (
           <Image src={image} alt="" width={480} height={360} sizes="(min-width: 1280px) 300px, (min-width: 768px) 24vw, 46vw" className="size-full object-cover transition duration-500 group-hover:scale-[1.03]" />
         ) : (

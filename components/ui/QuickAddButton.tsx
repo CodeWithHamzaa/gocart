@@ -29,7 +29,7 @@ export default function QuickAddButton({ productId, name, disabled = false, clas
         dispatch(addToCart({ productId }))
         toast.success('Added to cart')
       }}
-      className={`${base} text-ink hover:bg-ink hover:text-white active:scale-95`}
+      className={`${base} text-primary hover:bg-primary hover:text-white active:scale-95`}
     >
       <ShoppingCartIcon size={20} aria-hidden="true" />
     </button>
