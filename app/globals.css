@@ -1,98 +1,93 @@
 @import "tailwindcss";
 
-/* M101 (ADR-047): the Mirza palette, "bright and playful" (owner's choice, 2026-10-31, after the
-   first warm-neutral pass read as dull). M60 built every storefront colour, radius and shadow as a
-   Tailwind theme variable, so components use native utilities (bg-primary, text-muted, rounded-card,
-   shadow-card) and never a one-off hex value. M101 changes the values: a peach-cream page, a
-   coral-to-saffron hero gradient (dark text on it), a deep coral `primary` for buttons and links, a
-   magenta sale colour (`pink`), and bright pastel category and product tiles. The names are kept so
-   no component had to be rewritten; read `lavender*` as "the soft peach surface" and `pink*` as "the
-   sale accent".
+/* M101 (ADR-047): the Mirza palette, "minimal tech" (owner's choice, 2026-10-31, from three home-page
+   mockups; two earlier passes, warm neutral and bright coral, were rejected). M60 built every
+   storefront colour, radius and shadow as a Tailwind theme variable, so components use native
+   utilities (bg-primary, text-muted, rounded-card, shadow-card) and never a one-off hex value.
+   White page, near-black ink, light-grey surfaces for every product and category well, one deep
+   green accent (`primary`) for actions, and red (`pink`) only for real discounts. The names are kept
+   so no component had to be rewritten; read `lavender*` as "the light-grey surface" and `pink*` as
+   "the sale red".
 
    Contrast (WCAG 2.1, computed 2026-10-31; AA needs 4.5:1 for normal text): see the table in
-   docs/MIRZA_UX_REVIEW.md, section 2. Every text/background pair a component uses is 4.5:1 or more;
-   white text never sits on the light end of the hero gradient (the hero text is ink). */
+   docs/MIRZA_UX_REVIEW.md, section 2. Every text/background pair a component uses is 4.5:1 or more. */
 @theme {
     /* Brand and text. */
-    --color-primary: #BD3016;
-    --color-primary-dark: #9A2610;
-    --color-primary-deep: #BD3016;
-    --color-primary-soft: #FFE6DC;
-    --color-lavender: #FFEBD9;
-    --color-lavender-2: #FFD7B8;
-    --color-lavender-tile: #FFF2E6;
-    --color-ink: #1F1B2D;
-    --color-ink-2: #3A3550;
-    --color-ink-3: #4A4560;
-    --color-muted: #625C70;
-    --color-strike: #6B6578;
-    --color-disabled: #938DA0;
-    --color-line: #F6E6D8;
-    --color-line-2: #F0D9C6;
-    --color-line-3: #E6C6AC;
-    --color-page: #FFF8F1;
-    --color-on-deep: #FFF3EC;
-
-    /* The home hero's gradient (dark ink text on it). */
-    --color-hero-from: #FF6B4A;
-    --color-hero-to: #FFB020;
+    --color-primary: #0B6E4F;
+    --color-primary-dark: #08563E;
+    --color-primary-deep: #0B6E4F;
+    --color-primary-soft: #E6F2EE;
+    --color-lavender: #F5F5F7;
+    --color-lavender-2: #EBEBEF;
+    --color-lavender-tile: #F5F5F7;
+    --color-ink: #1D1D1F;
+    --color-ink-2: #424245;
+    --color-ink-3: #515154;
+    --color-muted: #636368;
+    --color-strike: #636368;
+    --color-disabled: #A1A1A6;
+    --color-line: #E8E8ED;
+    --color-line-2: #DCDCE1;
+    --color-line-3: #C7C7CC;
+    --color-page: #FFFFFF;
+    --color-on-deep: #E6F2EE;
 
     /* Accents and status. */
-    --color-pink: #D6246E;
-    --color-pink-dark: #B81C5C;
-    --color-pink-soft: #FFE1EC;
-    --color-sale-blue: #2457C5;
-    --color-success: #157544;
-    --color-success-soft: #DDF6E8;
+    --color-pink: #BF1F2F;
+    --color-pink-dark: #9E1826;
+    --color-pink-soft: #FCE8EA;
+    --color-sale-blue: #1D1D1F;
+    --color-success: #0B6E4F;
+    --color-success-soft: #E6F2EE;
 
-    /* Category tints: bright pastels, with an icon (-ink) and link text (-link) colour each. */
-    --color-tint-pink: #FFE1EA;
-    --color-tint-pink-ink: #C2185B;
-    --color-tint-pink-link: #A3154D;
-    --color-tint-blue: #DDEBFF;
-    --color-tint-blue-ink: #1F5FD1;
-    --color-tint-blue-link: #1A4FAE;
-    --color-tint-mint: #D8F5E6;
-    --color-tint-mint-ink: #157544;
-    --color-tint-mint-link: #11633A;
-    --color-tint-yellow: #FFF1C2;
-    --color-tint-yellow-ink: #9A6A00;
-    --color-tint-yellow-icon: #8A5F00;
-    --color-tint-yellow-link: #7A5400;
-    --color-tint-lavender: #EBE3FF;
-    --color-tint-lavender-ink: #5B3FD9;
-    --color-tint-lavender-link: #4B32C3;
-    --color-tint-peach: #FFE3D3;
-    --color-tint-peach-ink: #B8400F;
-    --color-tint-peach-link: #9C360D;
+    /* Category tints: one neutral surface and ink, so categories read as one family. */
+    --color-tint-pink: #F5F5F7;
+    --color-tint-pink-ink: #1D1D1F;
+    --color-tint-pink-link: #0B6E4F;
+    --color-tint-blue: #F5F5F7;
+    --color-tint-blue-ink: #1D1D1F;
+    --color-tint-blue-link: #0B6E4F;
+    --color-tint-mint: #F5F5F7;
+    --color-tint-mint-ink: #1D1D1F;
+    --color-tint-mint-link: #0B6E4F;
+    --color-tint-yellow: #F5F5F7;
+    --color-tint-yellow-ink: #1D1D1F;
+    --color-tint-yellow-icon: #1D1D1F;
+    --color-tint-yellow-link: #0B6E4F;
+    --color-tint-lavender: #F5F5F7;
+    --color-tint-lavender-ink: #1D1D1F;
+    --color-tint-lavender-link: #0B6E4F;
+    --color-tint-peach: #F5F5F7;
+    --color-tint-peach-ink: #1D1D1F;
+    --color-tint-peach-link: #0B6E4F;
     /* The deeper ring behind the category hero, and its body text. */
-    --color-sky-ring: #C7DCFF;
-    --color-sky-ink: #2F3D5C;
+    --color-sky-ring: #EBEBEF;
+    --color-sky-ink: #424245;
 
-    /* Product-image wells: a bright pastel per product, so a grid feels lively. */
-    --color-tile-lavender: #F1ECFF;
-    --color-tile-blue: #E8F1FF;
-    --color-tile-pink: #FFEAF1;
-    --color-tile-mint: #E4F8EE;
-    --color-tile-peach: #FFEDE2;
-    --color-tile-yellow: #FFF6D6;
+    /* Product-image wells: the same light grey for every product. */
+    --color-tile-lavender: #F5F5F7;
+    --color-tile-blue: #F5F5F7;
+    --color-tile-pink: #F5F5F7;
+    --color-tile-mint: #F5F5F7;
+    --color-tile-peach: #F5F5F7;
+    --color-tile-yellow: #F5F5F7;
 
-    /* Shape: friendly, rounder than the first M101 pass. */
+    /* Shape: soft, generous rounding on large surfaces; buttons are pills where they stand alone. */
     --radius-control: 12px;
-    --radius-tile: 14px;
+    --radius-tile: 18px;
     --radius-field: 12px;
-    --radius-card: 18px;
-    --radius-panel: 22px;
-    --radius-hero: 26px;
+    --radius-card: 22px;
+    --radius-panel: 26px;
+    --radius-hero: 28px;
 
-    /* Elevation: soft, slightly warm. */
-    --shadow-card: 0 1px 2px rgba(120, 50, 20, 0.05), 0 6px 18px rgba(120, 50, 20, 0.06);
-    --shadow-card-sm: 0 1px 2px rgba(120, 50, 20, 0.05), 0 4px 12px rgba(120, 50, 20, 0.05);
-    --shadow-chip: 0 2px 6px rgba(120, 50, 20, 0.12);
-    --shadow-float: 0 20px 44px rgba(201, 52, 26, 0.18);
-    --shadow-float-sm: 0 12px 28px rgba(201, 52, 26, 0.14);
-    --shadow-bar: 0 -4px 16px rgba(120, 50, 20, 0.08);
-    --shadow-pink: 0 10px 22px rgba(214, 36, 110, 0.25);
+    /* Elevation: almost none; surfaces are separated by tone, not shadow. */
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-card-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-chip: 0 1px 4px rgba(0, 0, 0, 0.1);
+    --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.1);
+    --shadow-float-sm: 0 8px 20px rgba(0, 0, 0, 0.08);
+    --shadow-bar: 0 -1px 0 rgba(0, 0, 0, 0.06);
+    --shadow-pink: 0 8px 18px rgba(0, 0, 0, 0.1);
 }
 
 /* M60: Plus Jakarta Sans is loaded by next/font in app/(public)/layout.jsx as the CSS variable

@@ -1,7 +1,7 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-import { CategoryGrid } from "@/components/CategoryRow";
-import OurSpecs from "@/components/OurSpec";
+import HomeCategories from "@/components/HomeCategories";
+import CodSteps from "@/components/CodSteps";
 import LatestProducts from "@/components/LatestProducts";
 import DealsOfTheDay from "@/components/DealsOfTheDay";
 import PromoCards from "@/components/PromoCards";
@@ -58,7 +58,7 @@ export default async function Home() {
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
 
     // M45a: the hero's floating tiles are real, in-stock products with an image — featured first,
-    // then the latest — de-duplicated, at most four (M101). No extra query: both lists are already here.
+    // then the latest — de-duplicated, at most three (the M101 banner's stage). No extra query: both lists are already here.
     const seen = new Set();
     const showcase = [...featured.docs, ...latest.docs]
         .filter((product) => {
@@ -72,24 +72,26 @@ export default async function Home() {
             return imageUrl ? { id: product.id, name: product.name, price: product.price, imageUrl } : null;
         })
         .filter(Boolean)
-        .slice(0, 4);
+        .slice(0, 3);
 
     // M101: "New arrivals" and "Featured" had the same products side by side. New arrivals now leave
     // out anything already featured; if that leaves nothing (a tiny catalogue), the newest are shown.
     const featuredIds = new Set(featured.docs.map((product) => product.id));
     const notFeatured = latest.docs.filter((product) => !featuredIds.has(product.id));
-    const newArrivals = (notFeatured.length > 0 ? notFeatured : latest.docs).slice(0, 5);
+    const newArrivals = (notFeatured.length > 0 ? notFeatured : latest.docs).slice(0, 8);
 
+    // M101 (ADR-047): the owner's chosen layout: the "V1" banner, then categories (tiles from `md`, a
+    // swipeable circle row on a phone), large-card rails for new arrivals and featured products, and the
+    // three cash-on-delivery steps in place of the trust row. Deals and promo cards stay as they were.
     return (
         <div>
             <Hero startingPrice={startingPrice} showcase={showcase} />
-            {/* M101: one category section (the phone-only circle row above it repeated the same links). */}
-            <CategoryGrid categories={topLevelCategories} />
+            <HomeCategories categories={topLevelCategories} />
             <DealsOfTheDay products={deals} />
             <LatestProducts products={newArrivals} />
+            <CodSteps shipping={shipping} />
             <BestSelling products={featured.docs} categories={topLevelCategories} />
             <PromoCards cards={promoCards} />
-            <OurSpecs shipping={shipping} />
         </div>
     );
 }

@@ -1,30 +1,10 @@
-import React from 'react'
-import Title from './Title'
-import ProductCard from './ProductCard'
+import ProductRail from './ProductRail'
 
-// M23: server component fed by real Payload data. Sorting/limiting happens in
-// the page's query (sort: '-createdAt'), not here — previously this pulled the
-// whole dummy list out of Redux and sorted it client-side.
-// M45a: a real grid (two columns on a phone, four on a desktop) instead of a wrapping row.
-// M62: the redesign's grid: two columns on a phone, then as many 210px+ columns as fit.
-// M101: "New arrivals", without the listing-page count ("Showing 5 of 24 products"). The home page passes
-// the newest products that are not already in Featured.
-const LatestProducts = ({ products = [] }) => {
-
-    if (products.length === 0) return null
-
-    return (
-        <section className='mx-4 sm:mx-6 mt-12 sm:mt-14'>
-            <div className='max-w-7xl mx-auto'>
-                <Title title='New arrivals' description='The latest additions to the store' href='/shop' />
-                <div className='mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4'>
-                    {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            </div>
-        </section>
-    )
-}
+// M23: server component fed by real Payload data (sorted and limited by the page's query).
+// M101: "New arrivals" is a swipeable row of the large home cards (ProductRail, RailCard). The home page
+// passes the newest products that are not already featured.
+const LatestProducts = ({ products = [] }) => (
+    <ProductRail title='New arrivals' description='The latest additions to the store.' href='/shop' products={products} />
+)
 
 export default LatestProducts

@@ -73,7 +73,9 @@ export async function getTopLevelCategories(): Promise<CategoryWithChildren[]> {
         where: { parent: { equals: category.id } },
         sort: CATEGORY_ORDER,
         limit: 0,
-        depth: 0,
+        // M101: depth 1 so a child's image is a Media object (the home page's phone category row shows
+        // it); was 0. No caller reads a child's `parent`.
+        depth: 1,
         overrideAccess: false,
       })
       return { ...category, children } as CategoryWithChildren
