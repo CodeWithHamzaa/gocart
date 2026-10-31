@@ -7,7 +7,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb'
 import CategoryControls from '@/components/ui/CategoryControls'
 import EmptyState from '@/components/ui/EmptyState'
 import { filtersToQuery, isRefined, parseCategoryFilters } from '@/lib/category-filters'
-import { CategoryIcon, tintFor } from '@/lib/category-style'
+import { CategoryIcon } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
 import { getSettings } from '@/lib/payload/settings'
@@ -98,15 +98,15 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     return query ? `${basePath}?${query}` : basePath
   }
 
-  const tint = tintFor(Number(category.id) || 0)
   const crumbs = [
     { label: 'Home', href: '/' },
     { label: 'Categories', href: '/categories' },
     ...(parent ? [{ label: parent.title, href: `/category/${parent.slug}` }] : []),
     { label: category.title },
   ]
-  const pageLink = 'inline-flex items-center justify-center min-h-11 px-4 rounded-control bg-white ring-1 ring-line-2 text-ink-2 font-semibold hover:bg-primary-soft hover:text-primary-dark transition'
-  const pageOff = 'inline-flex items-center justify-center min-h-11 px-4 rounded-control bg-line text-muted'
+  // M101: pill pagination in the home page's style (lavender pills, the current page in violet).
+  const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-ink font-semibold hover:bg-primary-soft hover:text-primary-dark transition'
+  const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-muted'
 
   // M63: the redesign. A tinted heading panel (title, description, and on a parent page its
   // subcategories as pills), the product count, a full-width grid and link-based pagination (a
@@ -123,10 +123,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <Breadcrumb items={crumbs} />
         </div>
 
-        <section aria-labelledby="category-title" className={`relative mt-3 overflow-hidden rounded-panel px-5 py-7 sm:px-10 sm:py-9 ${tint.tile}`}>
-          <CategoryIcon category={category} aria-hidden="true" size={140} strokeWidth={1} className={`pointer-events-none absolute right-6 top-1/2 hidden sm:right-10 -translate-y-1/2 opacity-60 sm:block ${tint.ink}`} />
+        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-lavender px-5 py-7 sm:px-10 sm:py-10">
+          {/* M101: the home banner's look: a lavender panel, a large semibold title, white pills. */}
+          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink-3 sm:flex lg:right-14">
+            <CategoryIcon category={category} size={72} strokeWidth={1.2} />
+          </span>
           <div className="relative flex max-w-2xl flex-col gap-3">
-            <h1 id="category-title" className="text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[44px]">{category.title}</h1>
+            <h1 id="category-title" className="text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] text-ink sm:text-5xl">{category.title}</h1>
             {category.description && <p className="text-[15px] text-ink-3">{category.description}</p>}
 
             {/* Child-category navigation: parent pages only */}
@@ -157,7 +160,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             <p className="mt-6 text-sm text-muted">
               Showing <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
             </p>
-            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4">
+            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
               {products.map((product, index) => (
                 <ProductCard key={product.id} product={product} priority={index < 4} />
               ))}
@@ -197,7 +200,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-white text-ink-2 ring-1 ring-line-2 hover:bg-primary-soft'}`}
+                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-lavender text-ink hover:bg-primary-soft'}`}
                 >
                   {n}
                 </Link>

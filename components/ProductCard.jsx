@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 import { formatPKR } from '@/lib/currency'
-import { tileFor } from '@/lib/category-style'
 import Badge from './ui/Badge'
 import { discountPercent, statusBadge } from '@/lib/product-badges'
 import QuickAddButton from './ui/QuickAddButton'
@@ -36,33 +35,37 @@ const ProductCard = ({ product, priority = false }) => {
     const outOfStock = product.inStock !== true
     const categoryTitle = typeof product.category === 'object' && product.category ? product.category.title : null
 
-    // M101: the Mirza card. The photo fills one warm-neutral square (object-cover), with no frame inside
-    // a frame and no card chrome around it, so a grid reads as one set. At most one status label on the
-    // photo (never "Featured"), the price in ink with the MRP and the discount as text on the same
-    // line (so prices line up across a row without a spacer), and quiet white heart and quick-add
-    // buttons. Still ONE link to the product, stretched over the card; the buttons sit above it.
+    // M101 (owner-approved home style): the listing card now matches the home page's RailCard, sized for
+    // a grid cell: a lavender card with the category, the name as a semibold line, the price with the
+    // struck MRP and a pink "N% off" pill, and the photo on a white tile at the bottom (pushed down with
+    // mt-auto, so photos line up across a row). Heart top-right of the card, quick-add on the photo.
+    // The name is never clamped or hidden (e2e finds it by text at every width).
     return (
-        <article className='group relative flex h-full min-w-0 flex-col gap-2.5 rounded-tile'>
-            <div className={`relative aspect-square overflow-hidden rounded-tile ${tileFor(product.id)}`}>
-                {imageUrl && (
-                    <Image width={600} height={600} className={`size-full object-cover transition duration-500 group-hover:scale-[1.03] ${outOfStock ? 'opacity-60 grayscale' : ''}`} sizes='(min-width: 1280px) 240px, (min-width: 1024px) 22vw, (min-width: 640px) 30vw, 46vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
+        <article className='group relative flex h-full min-w-0 flex-col rounded-card bg-lavender p-3 sm:p-4'>
+            <WishlistButton productId={product.id} name={product.name} className='absolute right-0.5 top-0.5 z-10 sm:right-1.5 sm:top-1.5' />
+            {categoryTitle && <p className='truncate pr-8 text-xs text-muted sm:text-[13px]'>{categoryTitle}</p>}
+            {/* M44: a long unbroken name wraps instead of pushing the card wider than its column. */}
+            <Link href={`/product/${product.id}`} className={`${categoryTitle ? 'mt-0.5 pr-6' : 'pr-8'} text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink outline-none [overflow-wrap:anywhere] after:absolute after:inset-0 after:rounded-card group-hover:underline group-hover:underline-offset-4 focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary sm:text-[17px] sm:tracking-[-0.02em]`}>
+                {product.name}
+            </Link>
+            <p className='mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1'>
+                <span className='whitespace-nowrap text-[15px] font-semibold text-ink'>{formatPKR(product.price)}</span>
+                {discount > 0 && (
+                    <>
+                        <s className='whitespace-nowrap text-xs text-strike sm:text-[13px]'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
+                        <Badge tone='off' className='self-center'>{discount}% off</Badge>
+                    </>
                 )}
-                <WishlistButton productId={product.id} name={product.name} className='absolute right-1 top-1 z-10' />
-                {status && <Badge tone={status.tone} className='absolute left-2.5 top-2.5'>{status.text}</Badge>}
+            </p>
+            <div className='relative mt-auto pt-3 sm:pt-4'>
+                <span className='block aspect-square overflow-hidden rounded-tile bg-white'>
+                    {imageUrl && (
+                        <Image width={600} height={600} className={`size-full object-cover transition duration-500 group-hover:scale-[1.03] ${outOfStock ? 'opacity-60 grayscale' : ''}`} sizes='(min-width: 1280px) 220px, (min-width: 1024px) 20vw, (min-width: 640px) 28vw, 42vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
+                    )}
+                </span>
+                {status && <Badge tone={status.tone} className='absolute left-2 top-5 sm:left-2.5 sm:top-6.5'>{status.text}</Badge>}
                 <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} className='absolute bottom-2 right-2 z-10' />
             </div>
-            {/* M44: a long unbroken name wraps instead of pushing the card wider than its column, so a
-                product called "Headphones" must not scroll the page. Prices wrap under each other
-                rather than overflow at 320px. */}
-            <Link href={`/product/${product.id}`} className='flex flex-1 flex-col gap-1 px-0.5 outline-none after:absolute after:inset-0 after:rounded-tile focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-primary'>
-                {categoryTitle && <span className='truncate text-[11px] font-medium uppercase tracking-[0.08em] text-muted'>{categoryTitle}</span>}
-                <span className='line-clamp-2 min-h-[2.7em] text-sm font-medium leading-snug text-ink [overflow-wrap:anywhere] group-hover:underline group-hover:decoration-line-3 group-hover:underline-offset-4 sm:text-[15px]'>{product.name}</span>
-                <span className='mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5'>
-                    <span className='whitespace-nowrap text-[15px] font-bold text-ink sm:text-base'>{formatPKR(product.price)}</span>
-                    {discount > 0 && <s className='whitespace-nowrap text-xs text-strike'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>}
-                    {discount > 0 && <span className='whitespace-nowrap text-xs font-semibold text-pink'>{discount}% off</span>}
-                </span>
-            </Link>
         </article>
     )
 }

@@ -27,6 +27,9 @@ export const dynamic = 'force-dynamic'
 // image when an admin uploaded one, else a tinted icon) with its child categories as pills beneath,
 // as docs/CATEGORY_REQUIREMENTS.md asks (the design's circles carry no children; the spec wins).
 //
+// M101: the home page's category tiles (CategoryTile): lavender cards, white child pills, no ring or
+// shadow. One column on a phone, two from `sm`, four from `lg`.
+//
 // M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
 // conventions as every other route.
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,20 +52,20 @@ export default async function CategoriesPage() {
           <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Categories' }]} />
         </div>
 
-        <h1 className="mb-6 mt-2 text-[28px] font-bold tracking-[-0.02em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
+        <h1 className="mb-6 mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
 
         {categories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-5">
-            {categories.map((category, index) => (
-              <div key={category.id} className="rounded-3xl bg-white px-3 pb-5 pt-6 shadow-card ring-1 ring-line">
-                <CategoryTile category={category} index={index} variant="circle">
+          <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+            {categories.map((category) => (
+              <li key={category.id}>
+                <CategoryTile category={category} variant="circle">
                   {category.children.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                       {category.children.map((child) => (
                         <Link
                           key={child.id}
                           href={`/category/${child.slug}`}
-                          className="inline-flex min-h-11 items-center rounded-full bg-primary-soft px-3.5 text-[13px] font-semibold text-primary-dark transition hover:bg-lavender"
+                          className="inline-flex min-h-11 items-center rounded-full bg-white px-3.5 text-[13px] font-semibold text-ink-2 transition hover:text-primary"
                         >
                           {child.title}
                         </Link>
@@ -70,9 +73,9 @@ export default async function CategoriesPage() {
                     </div>
                   )}
                 </CategoryTile>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
           <EmptyState icon={<ShapesIcon size={28} />} title="No categories yet" text="Check back soon, or browse every product." action={{ href: '/shop', label: 'View all products' }} />
         )}

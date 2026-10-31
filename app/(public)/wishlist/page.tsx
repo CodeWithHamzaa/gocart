@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { HeartIcon } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import ProductCard from '@/components/ProductCard'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import EmptyState from '@/components/ui/EmptyState'
 
 // M91 (ADR-041): the browser-only wishlist. The saved ids come from Redux (hydrated from
@@ -30,9 +31,13 @@ export default function WishlistPage() {
   const shown = (key ? products ?? [] : []).filter((product) => ids.includes(String(product.id)))
 
   return (
-    <div className="mx-4 my-8 sm:mx-6">
-      <div className="mx-auto max-w-7xl">
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink sm:text-[28px]">Your wishlist</h1>
+    // M101: the same frame as the other listings (breadcrumb, heading, card grid).
+    <div className="mx-4 sm:mx-6">
+      <div className="mx-auto min-h-[60vh] max-w-7xl pb-12">
+        <div className="mt-2 sm:mt-4">
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Wishlist' }]} />
+        </div>
+        <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Your wishlist</h1>
         <p className="mt-1 text-sm text-muted">Saved in this browser only. There are no accounts, so it does not follow you to another device.</p>
         {key && products === null ? (
           <p role="status" className="mt-8 text-sm text-muted">Loading…</p>
@@ -41,7 +46,7 @@ export default function WishlistPage() {
             <EmptyState icon={<HeartIcon size={28} />} title="Nothing saved yet" text="Tap the heart on a product to keep it here." action={{ href: '/shop', label: 'Browse products' }} />
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
             {shown.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
