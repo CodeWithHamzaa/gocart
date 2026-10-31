@@ -31,6 +31,8 @@
     --color-line-3: #C7C7CC;
     --color-page: #FFFFFF;
     --color-on-deep: #E6F2EE;
+    /* The home banner's "new arrivals" slide (a cool tint beside the green deals slide). */
+    --color-slide-blue: #EDF1F7;
 
     /* Accents and status. */
     --color-pink: #BF1F2F;

@@ -10,6 +10,7 @@ import { getProducts, getFeaturedProducts, getDealProducts } from "@/lib/payload
 import { getSettings } from "@/lib/payload/settings";
 import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
 import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
+import { buildHeroSlides } from "@/lib/hero-slides";
 
 // M68: up to twelve featured products, so smaller categories still get a tab.
 // M62: the redesigned layout. The latest and featured grids hold up to five and ten products (a row
@@ -57,35 +58,21 @@ export default async function Home() {
     const startingPrice = typeof cheapest.docs[0]?.price === 'number' ? cheapest.docs[0].price : null;
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold };
 
-    // M45a: the hero's floating tiles are real, in-stock products with an image — featured first,
-    // then the latest — de-duplicated, at most three (the M101 banner's stage). No extra query: both lists are already here.
-    const seen = new Set();
-    const showcase = [...featured.docs, ...latest.docs]
-        .filter((product) => {
-            if (seen.has(product.id) || product.inStock !== true) return false;
-            seen.add(product.id);
-            return true;
-        })
-        .map((product) => {
-            const image = product.images?.[0];
-            const imageUrl = typeof image === 'string' ? image : image?.url;
-            return imageUrl ? { id: product.id, name: product.name, price: product.price, imageUrl } : null;
-        })
-        .filter(Boolean)
-        .slice(0, 3);
-
     // M101: "New arrivals" and "Featured" had the same products side by side. New arrivals now leave
     // out anything already featured; if that leaves nothing (a tiny catalogue), the newest are shown.
     const featuredIds = new Set(featured.docs.map((product) => product.id));
     const notFeatured = latest.docs.filter((product) => !featuredIds.has(product.id));
     const newArrivals = (notFeatured.length > 0 ? notFeatured : latest.docs).slice(0, 8);
 
+    // M101: the banner's slides (deals, new arrivals, delivery), from data already loaded above.
+    const slides = buildHeroSlides({ latest: latest.docs, featured: featured.docs, topLevel: topLevelCategories, shipping, startingPrice });
+
     // M101 (ADR-047): the owner's chosen layout: the "V1" banner, then categories (tiles from `md`, a
     // swipeable circle row on a phone), large-card rails for new arrivals and featured products, and the
     // three cash-on-delivery steps in place of the trust row. Deals and promo cards stay as they were.
     return (
         <div>
-            <Hero startingPrice={startingPrice} showcase={showcase} />
+            <Hero slides={slides} categories={topLevelCategories} shipping={shipping} />
             <HomeCategories categories={topLevelCategories} />
             <DealsOfTheDay products={deals} />
             <LatestProducts products={newArrivals} />
