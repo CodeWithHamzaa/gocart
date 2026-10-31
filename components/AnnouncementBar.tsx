@@ -13,9 +13,9 @@ export default async function AnnouncementBar() {
 
   // M101: static, not a marquee (M93). On a phone the moving line was almost always cut mid-word, and
   // the same words were also in the hero. A phone shows the short promise only; from `sm` the delivery
-  // rule follows it, and the "Track order" link sits on the right. A quiet light-grey strip (minimal palette).
+  // rule follows it, and the "Track order" link sits on the right. A soft violet strip (lavender-wash palette).
   return (
-    <div className="bg-lavender text-xs text-ink-2 sm:text-[13px]">
+    <div className="bg-primary-soft text-xs font-medium text-sky-ink sm:text-[13px]">
       <div className="mx-auto flex min-h-9 max-w-[83rem] items-center justify-center gap-x-6 px-4 py-2 sm:justify-between sm:px-6">
         <p className="text-center">
           Cash on delivery across Pakistan

@@ -34,10 +34,10 @@ export default function RailCard({ product, priority = false }: { product: Produ
       <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-[15px]">
         <span className="whitespace-nowrap font-semibold text-ink">{formatPKR(product.price)}</span>
         {discount > 0 && (
-          <span className="whitespace-nowrap text-[13px]">
-            <s className="text-strike"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</s>
-            <span className="ml-1.5 font-semibold text-pink">{discount}% off</span>
-          </span>
+          <>
+            <s className="whitespace-nowrap text-[13px] text-strike"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</s>
+            <Badge tone="off" className="self-center">{discount}% off</Badge>
+          </>
         )}
       </p>
       <div className="relative mt-auto pt-5">
