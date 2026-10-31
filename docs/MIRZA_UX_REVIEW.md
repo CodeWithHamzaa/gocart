@@ -51,14 +51,14 @@ Additional notes from the baseline (not in the top 10):
 | # | Area | Change |
 |---|---|---|
 | 1 | Brand identity | `Mirza` code defaults plus a column-default migration. The og:title duplicate is fixed (`pageMetadata({ absoluteTitle })`). Multi-category positioning in the description, the home title, the hero and the footer. A deep-green "M" monogram and a one-colour wordmark (header, footer, favicon `app/icon.svg` + `app/favicon.ico`, admin logo). The demo seed writes no fake contact details. The live site's fake address is Settings data: **the owner clears it in /admin**. |
-| 2 | Homepage hero | A two-column editorial hero on a warm sand panel: a positioning line, one supporting sentence, two CTAs, "Prices from", and a 2 x 2 grid of real in-stock products (two on a phone). No rotated tiles, sticker or chips. |
+| 2 | Homepage hero | A two-column editorial hero on a warm sand panel: a positioning line, one supporting sentence, two CTAs, "Prices from", and a grid of real in-stock products (2 x 2 on a desktop and on a phone, at 4:3 on a phone; one row of four on a tablet). No tile or caption is ever hidden. No rotated tiles, sticker or chips. |
 | 3 | Design system | `@theme` values only: warm neutrals (`page #F8F5F0`), warm ink, a deep-green accent (`#1F4A3A`), a terracotta sale colour, earthy category tints, one product-tile colour, radii 8-20 px, softer warm shadows. Headings are 700, not 800. Contrast is measured in the `globals.css` comment; every text pair is 4.5:1 or more. |
 | 4 | Product cards | Full-bleed `object-cover` photo in one neutral tile with no card chrome. At most one label, and "Featured" is no longer one. Price in ink, with the MRP and "N% off" on the same line. White heart and quick-add buttons. |
 | 5 | Category discovery | The home page has one category section (the phone-only circle row is removed). Tiles show the category's own image (4:3), name, child links and "Shop now". |
 | 6 | Product detail | Full-bleed main image and thumbnails. An unboxed price. One stock line (dot + word); the image no longer repeats "Out of stock". Buttons in green and ink outline. Delivery, COD and "no account" in one quiet list. The description has no card around it and uses 15 px text. |
-| 7 | Homepage merchandising | "New arrivals" leave out featured products. No listing counts on the home page. Four new arrivals on a phone (full rows). Promo copy is admin data (**owner**). |
+| 7 | Homepage merchandising | "New arrivals" leave out featured products. No listing counts on the home page. Promo copy is admin data (**owner**). |
 | 8 | Trust | The announcement bar is static. The hero chips are gone, so each promise is said in the bar and in one trust row. A blocked form ('disabled' or 'failed' Turnstile status) shows a visible notice that names the paused action; the check itself is unchanged. |
-| 9 | Mobile | A short static bar on phones. A compact hero with side-by-side CTAs. Full rows of products. No horizontal overflow at 375-1440 (checked automatically). |
+| 9 | Mobile | A short static bar on phones. A compact hero with side-by-side CTAs. No horizontal overflow at 375-1440 (checked automatically). |
 | 10 | Consistency and accessibility | The 404 page has an `<h1>`. One badge style. Focus rings in the new accent. The same tokens on every route. |
 
 **Not done, and why:**
@@ -67,7 +67,7 @@ Additional notes from the baseline (not in the top 10):
   repository, so there is nothing to credit yet. The hero and the category tiles use the store's own
   product and category images.
 - **Featured grid orphan on desktop:** the Featured section's category tabs change how many cards show,
-  so an odd count can still leave one card alone on a row. Partly fixed (new arrivals use full rows).
+  so an odd count can still leave one card alone on a row; five new arrivals leave one alone on a phone. Not hidden on purpose: a product name that is in the HTML but hidden breaks the e2e golden path (it finds the first match).
 - **Colour token names** (`lavender`, `pink`) are kept and reinterpreted (ADR-047), to avoid rewriting
   every component.
 

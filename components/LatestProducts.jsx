@@ -18,11 +18,8 @@ const LatestProducts = ({ products = [] }) => {
             <div className='max-w-7xl mx-auto'>
                 <Title title='New arrivals' description='The latest additions to the store' href='/shop' />
                 <div className='mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4'>
-                    {/* M101: four on a phone (two full rows), up to five from `sm`. */}
-                    {products.map((product, index) => (
-                        <div key={product.id} className={index >= 4 ? 'max-sm:hidden' : undefined}>
-                            <ProductCard product={product} />
-                        </div>
+                    {products.map((product) => (
+                        <ProductCard key={product.id} product={product} />
                     ))}
                 </div>
             </div>

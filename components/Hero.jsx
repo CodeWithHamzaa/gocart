@@ -22,10 +22,9 @@ import { formatPKR } from '@/lib/currency'
 // sticker and trust chips (the chips repeated the announcement bar and the trust row). A warm sand
 // panel: a short positioning statement for a multi-category store, the real lowest price, two CTAs,
 // and a calm 2 x 2 grid of real in-stock products (still never stock photos of things the store does
-// not sell). A phone shows the first two products side by side and a tablet one row of four, so the
-// hero stays near one screen.
-// Captions show at every width: a product name that is in the HTML but hidden would be the first match
-// for anyone (or any test) looking for it.
+// not sell). Every tile is visible at every width: a compact 4:3 2 x 2 grid on a phone, one row of four
+// on a tablet. Captions and tiles are never hidden: a product name that is in the HTML but hidden
+// would be the first match for anyone (or any test, e2e/golden-path.spec.ts) looking for it.
 const Hero = ({ startingPrice = null, showcase = [] }) => {
     const tiles = showcase.slice(0, 4)
 
@@ -60,9 +59,9 @@ const Hero = ({ startingPrice = null, showcase = [] }) => {
                 {tiles.length > 0 && (
                     <ul className='grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:max-w-[500px] lg:grid-cols-2 lg:justify-self-end'>
                         {tiles.map((product, index) => (
-                            <li key={product.id} className={index >= 2 ? 'hidden sm:block' : ''}>
+                            <li key={product.id}>
                                 <Link href={`/product/${product.id}`} className='group block'>
-                                    <span className='block aspect-square overflow-hidden rounded-tile bg-tile-lavender'>
+                                    <span className='block aspect-[4/3] overflow-hidden rounded-tile bg-tile-lavender sm:aspect-square'>
                                         <Image
                                             src={product.imageUrl}
                                             alt=''
