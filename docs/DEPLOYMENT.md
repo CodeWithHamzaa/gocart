@@ -1,6 +1,6 @@
 # Deployment
 
-Production deployment of GoCart Pakistan. **This file covers the Cloudflare Tunnel origin boundary,
+Production deployment of Mirza (formerly GoCart Pakistan; the `gocart` names of the Docker project, volumes and database are kept on purpose, ADR-047). **This file covers the Cloudflare Tunnel origin boundary,
 environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the database migration
 workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
 limits (`M52b`, [ADR-035](./DECISIONS.md), amended by [ADR-036](./DECISIONS.md): a verified token is
@@ -707,7 +707,7 @@ The version tag is cut **by the owner**, after every box in the [Launch checklis
 (this milestone, `M59`, does not create a tag). On the release commit, as an owner command (shown, not run):
 
 ```sh
-git tag -a v1.0.0 -m "GoCart Pakistan v1.0.0: first production release"
+git tag -a v1.0.0 -m "Mirza v1.0.0: first production release"
 git push origin v1.0.0
 ```
 

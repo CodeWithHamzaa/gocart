@@ -1,6 +1,6 @@
-# Contributing to GoCart — Pakistan
+# Contributing to Mirza
 
-Thank you for contributing to **GoCart**.
+Thank you for contributing to **Mirza** (formerly GoCart Pakistan, [ADR-047](./docs/DECISIONS.md)).
 
 > **Read this first.** This repository started from the open-source
 > [GreatStack GoCart](https://github.com/GreatStackDev/goCart) **multi-vendor
@@ -54,7 +54,7 @@ Do not violate these, and do not quietly work around them:
 - **Payload runs embedded** in the Next.js app, owning `/admin` ([ADR-009](./docs/DECISIONS.md)).
 - **SEO-first and mobile-first** are defaults, not a later pass ([ADR-007](./docs/DECISIONS.md)).
 - **Everything runs in Docker** ([ADR-008](./docs/DECISIONS.md)).
-- **No AI/LLM dependency in the application.** Tooling used to build GoCart must never
+- **No AI/LLM dependency in the application.** Tooling used to build Mirza must never
   become a runtime dependency of it — see [.claude/docs/NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md).
 
 If a requirement seems to conflict with one of these, **raise the conflict** rather than
@@ -158,4 +158,4 @@ inventory, advanced settings.
 
 ---
 
-Thanks for helping build GoCart. 🚀
+Thanks for helping build Mirza.

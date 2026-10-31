@@ -1,6 +1,6 @@
 # docs/
 
-Detailed, living documentation for the GoCart Pakistan transformation. Root-level `README.md` and `CLAUDE.md` are the entry points; everything else lives here.
+Detailed, living documentation for Mirza (formerly the GoCart Pakistan transformation, [ADR-047](./DECISIONS.md)). Root-level `README.md` and `CLAUDE.md` are the entry points; everything else lives here.
 
 | File | Purpose |
 |---|---|

@@ -12,7 +12,7 @@ the decision to merge or deploy — a human does.
 
 ## Repository state you must know
 
-- **`main` is the canonical GoCart baseline.** It contains the accepted
+- **`main` is the canonical Mirza baseline.** It contains the accepted
   transformation through `M28` — the old multi-vendor/vendor/Prisma architecture has
   already been retired from it.
 - **Branch future milestone work from current `main`**, unless a human explicitly

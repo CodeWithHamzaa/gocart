@@ -1,4 +1,4 @@
-# Architecture — GoCart Pakistan
+# Architecture — Mirza (formerly GoCart Pakistan)
 
 This document describes the system **as it exists today** (a single-store Cash-on-Delivery storefront on Payload CMS v3 and PostgreSQL, checked against the code on 2026-10-24) and the **target architecture** it follows. Milestone status is in [TASKS.md](./TASKS.md); launch is not cleared (see "Launch blockers" in [DEPLOYMENT.md](./DEPLOYMENT.md)).
 

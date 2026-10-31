@@ -1,4 +1,4 @@
-# Category Browsing Requirements — GoCart Pakistan
+# Category Browsing Requirements — Mirza (formerly GoCart Pakistan)
 
 The behavior specification for customer-facing category browsing. **`M27a` and `M27b` in
 [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) implement against this document**; `M9`, `M10`, and `M22`
