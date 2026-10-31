@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from '@/lib/currency'
-import { tileFor } from '@/lib/category-style'
 
 // M28: previously resolved cart line items against `state.product.list`,
 // a Redux slice populated only from the dummy dataset (`productSlice.js`,
@@ -64,9 +63,9 @@ export default function Cart() {
     }
 
     const undoNotice = removed && (
-        <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-tile bg-lavender-tile px-4 py-2 text-sm text-ink">
+        <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-full bg-primary-soft py-1 pl-5 pr-2 text-sm text-ink">
             <span className="min-w-0 [overflow-wrap:anywhere]">Removed {removed.name}.</span>
-            <button type="button" onClick={handleUndo} className="inline-flex min-h-11 items-center px-2 font-bold text-primary hover:text-primary-dark">Undo</button>
+            <button type="button" onClick={handleUndo} className="inline-flex min-h-11 items-center rounded-full px-4 font-semibold text-primary-dark hover:bg-white">Undo</button>
         </p>
     )
 
@@ -89,6 +88,8 @@ export default function Cart() {
         }
     }, [cartItems, products]);
 
+    // M101 (owner-approved home style): each line is a lavender card with the photo on a white tile, the
+    // category above a semibold name (as on RailCard), the price in ink, and a pill quantity stepper.
     // M65: the redesigned layout (design: Cart / CartMobile). Items are cards, not a table; the
     // summary panel carries the checkout steps (OrderSummary). Checkout stays on /cart (owner decision).
     const itemCount = cartArray.reduce((sum, item) => sum + item.quantity, 0)
@@ -100,7 +101,7 @@ export default function Cart() {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
                 </div>
-                <h1 className="mb-5 mt-2 text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl">My Cart <span className="text-base font-semibold text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
+                <h1 className="mb-5 mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">My Cart <span className="text-base font-medium tracking-normal text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
 
                 {undoNotice && <div className="mb-4">{undoNotice}</div>}
 
@@ -114,22 +115,22 @@ export default function Cart() {
                                 const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
 
                                 return (
-                                    <article key={item.id} className="flex items-center gap-3 rounded-[22px] bg-white p-3 shadow-card ring-1 ring-line sm:gap-5 sm:p-4">
-                                        <div className={`flex size-24 shrink-0 items-center justify-center rounded-tile sm:size-32 ${tileFor(item.id)}`}>
-                                            {imageUrl && <Image src={imageUrl} className="h-3/4 w-3/4 object-contain mix-blend-multiply" alt="" width={96} height={96} sizes="96px" />}
+                                    <article key={item.id} className="flex items-center gap-3 rounded-card bg-lavender p-3 sm:gap-5 sm:p-4">
+                                        <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-tile bg-white sm:size-32">
+                                            {imageUrl && <Image src={imageUrl} className="size-full object-cover" alt="" width={256} height={256} sizes="(min-width: 640px) 128px, 96px" />}
                                         </div>
                                         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
-                                                    <Link href={`/product/${item.id}`} className="text-[15px] font-bold leading-snug text-ink [overflow-wrap:anywhere] hover:text-primary sm:text-[17px]">{item.name}</Link>
                                                     {categoryTitle && <p className="text-[13px] text-muted">{categoryTitle}</p>}
+                                                    <Link href={`/product/${item.id}`} className="text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink [overflow-wrap:anywhere] hover:underline hover:underline-offset-4 sm:text-lg sm:tracking-[-0.02em]">{item.name}</Link>
                                                 </div>
                                                 {/* M44 made removal reachable on a phone; M65 keeps one 44px button at every width. */}
-                                                <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-2 -mt-2 inline-flex size-11 shrink-0 items-center justify-center rounded-control text-strike transition hover:bg-pink-soft hover:text-pink-dark active:scale-95">
+                                                <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-1.5 -mt-1.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-3 transition hover:bg-white hover:text-pink-dark active:scale-95">
                                                     <Trash2Icon size={18} aria-hidden="true" />
                                                 </button>
                                             </div>
-                                            <p className="text-lg font-bold text-primary">{formatPKR(item.price)}</p>
+                                            <p className="text-base font-semibold text-ink sm:text-lg">{formatPKR(item.price)}</p>
                                             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                                                 <Counter productId={item.id} />
                                                 <p className="text-sm text-muted">Item total <strong className="whitespace-nowrap text-ink">{formatPKR(item.price * item.quantity)}</strong></p>
@@ -139,7 +140,7 @@ export default function Cart() {
                                 )
                             })
                         }
-                        <Link href="/shop" className="inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-primary hover:text-primary-dark">
+                        <Link href="/shop" className="inline-flex min-h-11 items-center gap-2 self-start rounded-full px-1 text-sm font-semibold text-primary hover:underline hover:underline-offset-4">
                             <ArrowLeftIcon size={18} aria-hidden="true" /> Continue shopping
                         </Link>
                     </section>

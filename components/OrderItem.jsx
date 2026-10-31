@@ -19,17 +19,17 @@ const OrderItem = ({ order }) => {
     const placedOn = new Date(order.createdAt);
 
     return (
-        <div className="rounded-card bg-white p-5 text-sm text-ink-2 shadow-card ring-1 ring-line">
+        <div className="rounded-card bg-lavender p-5 text-sm text-ink-2 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p className="text-xs text-muted">Order number</p>
                     <p className="break-all font-mono text-base font-semibold text-ink">{order.orderNumber}</p>
                     {!Number.isNaN(placedOn.getTime()) && <p className="mt-1 text-muted">{placedOn.toDateString()}</p>}
                 </div>
-                <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${status.className}`}>{status.label}</span>
+                <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${status.className}`}>{status.label}</span>
             </div>
 
-            <ul className="mt-4 divide-y divide-line border-y border-line">
+            <ul className="mt-4 divide-y divide-line-2 border-y border-line-2">
                 {order.items.map((item, index) => (
                     <li key={index} className="flex justify-between gap-4 py-3">
                         <div className="min-w-0">
@@ -50,7 +50,7 @@ const OrderItem = ({ order }) => {
                     <dt className="text-muted">Shipping</dt>
                     <dd className="font-medium">{order.shippingCost === 0 ? 'Free' : formatPKR(order.shippingCost)}</dd>
                 </div>
-                <div className="flex justify-between border-t border-line pt-2 text-base text-ink">
+                <div className="flex justify-between border-t border-line-2 pt-2 text-base text-ink">
                     <dt>Total</dt>
                     <dd className="font-semibold">{formatPKR(order.orderTotal)}</dd>
                 </div>

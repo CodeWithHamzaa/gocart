@@ -30,6 +30,8 @@ import { discountPercent, statusBadge } from "@/lib/product-badges";
 // nothing in the store states tax treatment.
 // M64: the redesign's layout. A pastel tile holds the real image (a thumbnail rail beside it from
 // `lg`, a strip below it on a phone), then category, name, a price card, stock, actions and info rows.
+// M101 (owner-approved home style): semibold title with tight tracking, the discount as the pink
+// "N% off" pill (as on the cards), pill buttons, and the delivery list on a lavender panel with no border.
 const ProductDetails = ({ product, shipping }) => {
 
     const productId = product.id;
@@ -93,19 +95,19 @@ const ProductDetails = ({ product, shipping }) => {
             </div>
 
             <div className="min-w-0 lg:pt-2">
-                {category && <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted">{category.title}</p>}
+                {category && <p className="text-[13px] text-muted">{category.title}</p>}
                 {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
-                <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink sm:text-3xl lg:text-[34px] [overflow-wrap:anywhere]">{product.name}</h1>
+                <h1 className="mt-2 text-[28px] font-semibold leading-[1.1] tracking-[-0.03em] text-ink sm:text-4xl lg:text-[40px] [overflow-wrap:anywhere]">{product.name}</h1>
 
                 {/* M101: the price is not boxed. Price in ink, the MRP and the discount as text beside it, then
                     one stock line (a dot and a word); the delivery note is said once, below the buttons (M98). */}
                 <div className="mt-4 border-b border-line pb-5">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <p className="text-[28px] font-bold leading-none tracking-[-0.01em] text-ink sm:text-[32px]">{formatPKR(product.price)}</p>
+                        <p className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-ink sm:text-[32px]">{formatPKR(product.price)}</p>
                         {discount > 0 && (
                             <>
                                 <p className="text-base text-strike line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
-                                <p className="text-sm font-semibold text-pink">{discount}% off</p>
+                                <Badge tone="off" className="self-center">{discount}% off</Badge>
                             </>
                         )}
                     </div>
@@ -119,23 +121,23 @@ const ProductDetails = ({ product, shipping }) => {
                 <MobileActionBar label="Add to cart" inline>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
-                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-control bg-line px-6 text-sm font-semibold text-muted">
+                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-full bg-lavender px-6 text-sm font-semibold text-muted">
                                 Out of Stock
                             </button>
                         ) : inCart ? (
                             <>
                                 <Counter productId={productId} />
-                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-control bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     View Cart
                                 </button>
                             </>
                         ) : (
                             <>
-                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     <ShoppingCartIcon size={18} aria-hidden="true" />
                                     Add to Cart
                                 </button>
-                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-control border border-ink bg-white px-4 text-sm font-semibold text-ink transition hover:bg-ink hover:text-white active:scale-[0.98]">
+                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-primary-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-lavender-2 active:scale-[0.98]">
                                     Buy Now
                                 </button>
                             </>
@@ -144,7 +146,7 @@ const ProductDetails = ({ product, shipping }) => {
                 </MobileActionBar>
 
                 {/* M101: one quiet list instead of two boxed cards with tinted circles. */}
-                <ul className="mt-6 divide-y divide-line rounded-card border border-line bg-white text-sm text-ink-2 lg:mt-8">
+                <ul className="mt-6 divide-y divide-line-2 rounded-card bg-lavender px-1 text-sm text-ink-2 lg:mt-8">
                     <li className="flex items-center gap-3 px-4 py-3.5">
                         <TruckIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
                         {deliveryNote(shipping)}

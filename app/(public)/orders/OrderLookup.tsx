@@ -14,7 +14,8 @@ import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWi
 import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidget'
 
 // M66: the redesign's field style (tokens, visible focus).
-const inputClass = 'w-full min-h-12 rounded-field border border-line-2 bg-white p-2 px-4 text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary'
+// M101 (owner-approved home style): a lavender panel with pill fields and a pill button, no shadow.
+const inputClass = 'w-full min-h-12 rounded-full border border-line-2 bg-white px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
 
 export function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -63,8 +64,8 @@ export function OrderLookup() {
   return (
     <div className="mx-4 my-8 min-h-[60vh] text-ink-2 sm:mx-6 sm:my-12">
       <div className="mx-auto max-w-2xl">
-        <div className="rounded-panel bg-white p-5 shadow-card ring-1 ring-line sm:p-8">
-        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-ink sm:text-4xl">Check your order</h1>
+        <div className="rounded-panel bg-lavender p-5 sm:p-8">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Check your order</h1>
         <p className="mt-2 text-muted">Enter your order number and the phone number you used when ordering.</p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
@@ -101,7 +102,7 @@ export function OrderLookup() {
           <button
             type="submit"
             disabled={pending || turnstile.status !== 'verified'}
-            className="min-h-12 rounded-control bg-primary px-6 py-3 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+            className="min-h-12 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
             {pending ? 'Checking...' : 'Check order'}
           </button>
@@ -110,7 +111,7 @@ export function OrderLookup() {
 
         <div aria-live="polite" className="mt-6">
           {result && !result.ok && (
-            <p className="rounded-card bg-lavender-tile p-4 text-sm text-ink ring-1 ring-line-3">
+            <p className="rounded-tile bg-primary-soft px-5 py-4 text-sm text-ink">
               {result.message}
             </p>
           )}

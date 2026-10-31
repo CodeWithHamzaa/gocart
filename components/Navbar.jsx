@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 // page, and /orders' e2e expects its own form to hold the only type=submit button. Enter in the field
 // submits as before. The category row (CategoryNav, a server component) arrives as `children`.
 // M91: the wishlist heart (browser-only, ADR-041) sits before the cart.
+// M101: the search field and its button are pills, like every other action in the owner-approved style.
 // Left out on purpose: Sign in (admin-only auth, no customer accounts), notification
 // bell and menu button (none of them has a destination in this store).
 const Navbar = ({ storeName = 'Mirza', children }) => {
@@ -39,25 +40,25 @@ const Navbar = ({ storeName = 'Mirza', children }) => {
                     <BrandLogo name={storeName} />
                 </Link>
 
-                <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-[50px] w-full items-center gap-2.5 rounded-field border border-line-2 bg-white pl-3.5 pr-1 text-sm transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary lg:order-none lg:w-auto lg:flex-1">
+                <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-[50px] w-full items-center gap-2.5 rounded-full border border-line-2 bg-white pl-4 pr-1 text-sm transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary lg:order-none lg:w-auto lg:flex-1">
                     <SearchIcon size={20} className="shrink-0 text-muted" aria-hidden="true" />
                     <input aria-label="Search products" className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-muted" type="text" enterKeyHint="search" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
-                    <button type="button" onClick={() => formRef.current?.requestSubmit()} aria-label="Search" className="flex h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary-dark sm:px-5">
+                    <button type="button" onClick={() => formRef.current?.requestSubmit()} aria-label="Search" className="flex h-11 min-w-11 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary-dark sm:px-5">
                         <SearchIcon size={18} className="sm:hidden" aria-hidden="true" />
                         <span className="hidden sm:inline">Search</span>
                     </button>
                 </form>
 
-                <Link href="/shop" className="flex min-h-11 min-w-11 items-center justify-center rounded-control px-2 text-sm font-semibold text-ink hover:text-primary">Shop</Link>
+                <Link href="/shop" className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 text-sm font-semibold text-ink hover:bg-lavender">Shop</Link>
 
-                <Link href="/wishlist" aria-label={`Wishlist, ${wishCount} items`} className="relative flex size-11 items-center justify-center rounded-control text-ink hover:text-primary">
+                <Link href="/wishlist" aria-label={`Wishlist, ${wishCount} items`} className="relative flex size-11 items-center justify-center rounded-full text-ink hover:bg-lavender">
                     <HeartIcon size={22} strokeWidth={1.8} aria-hidden="true" />
                     {wishCount > 0 && (
                         <span aria-hidden="true" className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-pink-dark px-1 text-[11px] font-bold leading-none text-white">{wishCount}</span>
                     )}
                 </Link>
 
-                <Link href="/cart" aria-label={`Cart, ${cartCount} items`} className="relative flex size-11 items-center justify-center rounded-control text-ink hover:text-primary">
+                <Link href="/cart" aria-label={`Cart, ${cartCount} items`} className="relative flex size-11 items-center justify-center rounded-full text-ink hover:bg-lavender">
                     <ShoppingCartIcon size={22} strokeWidth={1.8} aria-hidden="true" />
                     {cartCount > 0 && (
                         <span aria-hidden="true" className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-white">{cartCount}</span>

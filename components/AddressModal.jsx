@@ -73,28 +73,33 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
         setShowAddressModal(false)
     }
 
+    const field = 'h-12 w-full min-w-0 rounded-full border border-line-2 bg-white px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
+
     return (
         <form onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-label="Add new address" className="fixed inset-0 z-50 overflow-y-auto bg-page/80 backdrop-blur">
-            {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen. */}
-            <div className="flex flex-col justify-center gap-5 text-ink w-full max-w-sm mx-auto px-6 py-16 min-h-dvh">
-                <h2 className="text-3xl font-bold tracking-[-0.02em]">Add New <span className="text-primary">Address</span></h2>
-                <input name="name" onChange={handleAddressChange} value={address.name} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="Full name" autoComplete="name" required />
+            {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen.
+                M101: the fields sit on a lavender card (pill fields, a pill button), like the order summary. */}
+            <div className="mx-auto flex min-h-dvh w-full max-w-md items-center px-4 py-10">
+            <div className="relative flex w-full flex-col gap-5 rounded-panel bg-lavender px-5 pb-6 pt-7 text-ink shadow-float sm:px-7">
+                <h2 className="pr-10 text-[26px] font-semibold tracking-[-0.03em]">Add new address</h2>
+                <input name="name" onChange={handleAddressChange} value={address.name} className={field} type="text" placeholder="Full name" autoComplete="name" required />
                 {errors.name && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.name}</p>}
-                <input name="phone" onChange={handleAddressChange} value={address.phone} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />
+                <input name="phone" onChange={handleAddressChange} value={address.phone} className={field} type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />
                 {errors.phone && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.phone}</p>}
-                <input name="email" onChange={handleAddressChange} value={address.email} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="email" placeholder="Email address" required />
-                <input name="address" onChange={handleAddressChange} value={address.address} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="House #, street, locality" autoComplete="street-address" required />
+                <input name="email" onChange={handleAddressChange} value={address.email} className={field} type="email" placeholder="Email address" required />
+                <input name="address" onChange={handleAddressChange} value={address.address} className={field} type="text" placeholder="House #, street, locality" autoComplete="street-address" required />
                 {errors.address && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.address}</p>}
-                <div className="flex gap-4">
-                    <input name="city" onChange={handleAddressChange} value={address.city} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="City" required />
-                    <input name="area" onChange={handleAddressChange} value={address.area} className="min-h-11 w-full rounded-field border border-line-2 bg-white p-2 px-4 outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="Area" required />
+                <div className="flex gap-3">
+                    <input name="city" onChange={handleAddressChange} value={address.city} className={field} type="text" placeholder="City" required />
+                    <input name="area" onChange={handleAddressChange} value={address.area} className={field} type="text" placeholder="Area" required />
                 </div>
                 {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.city || errors.area}</p>}
-                <button className="min-h-12 rounded-control bg-primary py-3 text-sm font-bold text-white transition-all hover:bg-primary-dark active:scale-95">SAVE ADDRESS</button>
+                <button className="min-h-12 rounded-full bg-primary py-3 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-95">SAVE ADDRESS</button>
+                <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute right-2.5 top-3 inline-flex size-11 items-center justify-center rounded-full text-ink-2 hover:bg-white hover:text-ink">
+                    <XIcon size={24} aria-hidden="true" />
+                </button>
             </div>
-            <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute top-3 right-3 inline-flex items-center justify-center size-11 text-muted hover:text-ink">
-                <XIcon size={28} aria-hidden="true" />
-            </button>
+            </div>
         </form>
     )
 }

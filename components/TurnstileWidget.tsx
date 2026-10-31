@@ -191,6 +191,7 @@ export function TurnstileWidget({
 
   // M101: a status that blocks the form ('failed', 'disabled') is a visible notice, not small grey
   // text under the total. The live region stays the same element, so it is announced as before.
+  // A white note, so it reads on the lavender order summary and lookup panels.
   const message = status === 'disabled' ? DISABLED_TEXT[action] : (STATUS_TEXT[status] ?? '')
   const blocking = status === 'disabled' || status === 'failed'
   return (
@@ -198,7 +199,7 @@ export function TurnstileWidget({
       <div ref={containerRef} className="max-w-full" />
       <p
         aria-live="polite"
-        className={blocking ? 'rounded-control border border-line-2 bg-lavender px-3 py-2.5 text-[13px] leading-snug text-ink-2' : 'text-xs text-muted'}
+        className={blocking ? 'rounded-tile bg-white px-4 py-3 text-[13px] leading-snug text-ink-2 ring-1 ring-line-2' : 'text-xs text-muted'}
       >
         {message}
       </p>
