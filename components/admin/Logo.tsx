@@ -1,4 +1,4 @@
-// M95: the admin's logo (login page and sidebar header): the storefront's four-bar mark and the
+// M95: the admin's logo (login page and sidebar header): the storefront's mark and the
 // store name. Server component; the name is the Settings `storeName`, like the storefront, with a
 // plain fallback so the login page still renders if Settings cannot be read.
 import { getSettings } from '@/lib/payload/settings'
@@ -10,19 +10,14 @@ export default async function AdminLogo() {
   } catch {
     // keep the fallback
   }
-  const split = name.length > 3 ? name.length - 2 : name.length
+  // M101 (ADR-047): the storefront's Mirza monogram (components/ui/BrandLogo.tsx), in one colour.
   return (
     <span className="mirza-logo">
-      <svg width="28" height="28" viewBox="0 0 30 30" aria-hidden="true">
-        <rect x="2" y="12" width="4" height="10" rx="2" fill="#8F7BFF" />
-        <rect x="9" y="6" width="4" height="22" rx="2" fill="#8F7BFF" />
-        <rect x="16" y="2" width="4" height="18" rx="2" fill="#FF5C93" />
-        <rect x="23" y="10" width="4" height="12" rx="2" fill="#8F7BFF" />
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#1F4A3A" />
+        <path d="M9 22.5V10l7 8.5 7-8.5v12.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className="mirza-logo__name">
-        {name.slice(0, split)}
-        <span className="mirza-logo__accent">{name.slice(split)}</span>
-      </span>
+      <span className="mirza-logo__name">{name}</span>
       <span className="mirza-logo__tag">Admin</span>
     </span>
   )

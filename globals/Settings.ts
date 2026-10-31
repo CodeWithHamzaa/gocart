@@ -16,7 +16,9 @@ export const Settings: GlobalConfig = {
       name: 'storeName',
       type: 'text',
       required: true,
-      defaultValue: 'GoCart',
+      // M101 (ADR-047): the brand is Mirza. Migration 20261031_160131_mirza_store_name changes the column
+      // default only; a value an admin has saved is never touched.
+      defaultValue: 'Mirza',
     },
     {
       name: 'contactPhone',

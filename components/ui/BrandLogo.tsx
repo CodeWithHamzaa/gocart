@@ -1,23 +1,22 @@
-// The store logo from the redesign (design: Main, header and footer): four rounded bars with the
-// tall one in pink, then the store name with its last two letters in the brand colour ("mir" + "za").
-// The name is the Settings `storeName`, never hard-coded, so renaming the store in /admin renames
-// the logo. A name of three letters or fewer is shown in one colour.
+// M101 (ADR-047): the Mirza logo. A deep-green square monogram (an "M" drawn as one stroke) and the
+// store name as a single-colour wordmark. It replaces M61's four-bar mark and two-tone name, which
+// read as a template. The name is still the Settings `storeName`, never hard-coded, so renaming the
+// store in /admin renames the logo. The same mark is the favicon (app/icon.svg, app/favicon.ico)
+// and the admin logo (components/admin/Logo.tsx).
+export function BrandMark({ size = 28, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className={`shrink-0 ${className}`}>
+      <rect width="32" height="32" rx="7" className="fill-primary" />
+      <path d="M9 22.5V10l7 8.5 7-8.5v12.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export default function BrandLogo({ name, mark = true }: { name: string; mark?: boolean }) {
-  const split = name.length > 3 ? name.length - 2 : name.length
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      {mark && (
-        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" className="shrink-0">
-          <rect x="2" y="12" width="4" height="10" rx="2" className="fill-primary" />
-          <rect x="9" y="6" width="4" height="22" rx="2" className="fill-primary" />
-          <rect x="16" y="2" width="4" height="18" rx="2" className="fill-pink" />
-          <rect x="23" y="10" width="4" height="12" rx="2" className="fill-primary" />
-        </svg>
-      )}
-      <span className="truncate">
-        {name.slice(0, split)}
-        <span className="text-primary">{name.slice(split)}</span>
-      </span>
+      {mark && <BrandMark />}
+      <span className="truncate font-bold tracking-[-0.02em] text-ink">{name}</span>
     </span>
   )
 }

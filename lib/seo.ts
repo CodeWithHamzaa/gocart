@@ -5,8 +5,9 @@ import { getSiteUrl } from './site-url'
 // storefront route follows the same canonical / Open Graph conventions. Pure functions;
 // the site origin comes only from NEXT_PUBLIC_SITE_URL (lib/site-url.ts), never a literal.
 
+// M101: Mirza sells electronics, fashion, home and beauty, not only gadgets.
 export const DEFAULT_DESCRIPTION =
-  'Shop gadgets and accessories online with Cash on Delivery across Pakistan.'
+  'Shop electronics, fashion, home and beauty online at Mirza. Cash on Delivery across Pakistan, no account needed.'
 
 /** Absolute URL for a site path, or the input unchanged if it is already absolute. */
 export function absoluteUrl(pathOrUrl: string): string {
@@ -39,6 +40,11 @@ type PageMetaInput = {
   /** Absolute or site-relative image URLs; the first is the share image. */
   images?: string[]
   noindex?: boolean
+  /**
+   * M101: the title already names the store (the home page), so neither the layout template nor
+   * Open Graph appends " | storeName" again.
+   */
+  absoluteTitle?: boolean
 }
 
 /**
@@ -48,10 +54,10 @@ type PageMetaInput = {
  * this helper is how they are never forgotten.
  */
 export function pageMetadata(input: PageMetaInput): Metadata {
-  const { storeName, title, description, path, images = [], noindex } = input
-  const fullTitle = `${title} | ${storeName}`
+  const { storeName, title, description, path, images = [], noindex, absoluteTitle } = input
+  const fullTitle = absoluteTitle ? title : `${title} | ${storeName}`
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: { canonical: path },
     ...(noindex ? { robots: { index: false, follow: true } } : {}),

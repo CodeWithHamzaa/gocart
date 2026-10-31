@@ -15,7 +15,7 @@ import { useSelector } from "react-redux";
 // M91: the wishlist heart (browser-only, ADR-041) sits before the cart.
 // Left out on purpose: Sign in (admin-only auth, no customer accounts), notification
 // bell and menu button (none of them has a destination in this store).
-const Navbar = ({ storeName = 'GoCart', children }) => {
+const Navbar = ({ storeName = 'Mirza', children }) => {
 
     const router = useRouter();
 
@@ -35,7 +35,7 @@ const Navbar = ({ storeName = 'GoCart', children }) => {
         <header className="border-b border-line bg-white">
             <nav aria-label="Primary" className="mx-auto flex max-w-[83rem] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:gap-x-8 lg:py-4">
 
-                <Link href="/" className="flex min-h-11 min-w-0 flex-1 items-center text-2xl font-extrabold tracking-[-0.03em] text-ink sm:text-[26px] lg:flex-none">
+                <Link href="/" className="flex min-h-11 min-w-0 flex-1 items-center text-2xl font-bold tracking-[-0.03em] text-ink sm:text-[26px] lg:flex-none">
                     <BrandLogo name={storeName} />
                 </Link>
 
