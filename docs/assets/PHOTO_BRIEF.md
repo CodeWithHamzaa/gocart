@@ -1,6 +1,8 @@
 # Photo brief, sourcing plan and licence status (M104), 2026-11-01
 
-**Status: brief and sourcing plan complete. No photograph has been selected, downloaded or licence-verified**, because Unsplash and Pexels are blocked by the environment's network policy (section 5) and `demo-assets/_inbox/` is empty. Every manifest row is therefore `status=needed`; no source URL, author or licence field is filled, because none could be checked. Nothing was invented to fill them.
+**Update 2026-11-01 (second session, `M104` sourcing done with gaps): 53 of 61 slots were sourced from Unsplash, licence-recorded, processed and integrated locally; 4 products (8 slots) found no acceptable photo. Results, rejections, limits and the full inventory are in [PHOTO_INVENTORY.md](./PHOTO_INVENTORY.md); provenance is in [MANIFEST.csv](./MANIFEST.csv). The text below is the original plan and first-session findings and is kept as written (section 5 is superseded by section 1 of the inventory: `images.unsplash.com` became reachable, the Unsplash and Pexels pages stay behind browser checks that are not bypassed).**
+
+**Original status (first session): brief and sourcing plan complete. No photograph has been selected, downloaded or licence-verified**, because Unsplash and Pexels are blocked by the environment's network policy (section 5) and `demo-assets/_inbox/` is empty. Every manifest row is therefore `status=needed`; no source URL, author or licence field is filled, because none could be checked. Nothing was invented to fill them.
 
 Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [MANIFEST.csv](./MANIFEST.csv) (61 rows), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). ADR-049 remains Proposed. `M105` and later are not started.
 
