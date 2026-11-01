@@ -1580,7 +1580,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Add free test deployment on Vercel Hobby, Neon Free and Vercel Blob (M100)`
 
 ### M101 — Mirza brand migration and the 10-issue storefront UX pass
-- **Status (2026-10-31)**: Approved by the owner's M101 brief (2026-10-31). Do not merge without the owner's explicit approval. A second review follows on the live test site after the merge.
+- **Status (2026-11-01)**: **Done.** Approved by the owner's M101 brief (2026-10-31); merged (PR #53), deployed and migrated on Neon 2026-11-01; the live second review passed (`MIRZA_UX_REVIEW.md`, section 4).
 - **Goal**: Mirza is the single brand in the application, its code defaults and the current-state docs ([ADR-047](./DECISIONS.md)), and the ten highest-impact UX problems from a real-browser baseline review of the test site are fixed ([MIRZA_UX_REVIEW.md](./MIRZA_UX_REVIEW.md)).
 - **Files**:
   - Brand: `globals/Settings.ts`, `lib/payload/settings.ts`, `components/Navbar.jsx` (default `Mirza`); `migrations/20261031_160131_mirza_store_name.{ts,json}` and `migrations/index.ts` (column default only); `lib/order-confirmation.ts` (`mirza:last-order`, reads `gocart:last-order` as a fallback); `scripts/seed-demo.ts` (store name `Mirza`, no fake contact details); `lib/seo.ts` and `app/(public)/page.jsx` (og:title no longer repeats the brand; multi-category description); `app/(public)/layout.jsx` (default title); `components/ui/BrandLogo.tsx`, `components/admin/Logo.tsx`, `app/(payload)/custom.css`, `app/icon.svg`, `app/favicon.ico` (monogram).
@@ -1595,7 +1595,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Rebrand to Mirza and fix ten storefront UX problems (M101)`
 
 ### M102 — Flat categories (no sub-categories) and the home page's category row
-- **Status (2026-11-01)**: Approved by the owner's request of 2026-11-01 (choices recorded in ADR-048). Do not merge without the owner's explicit approval.
+- **Status (2026-11-01)**: **Done.** Approved by the owner's request of 2026-11-01 (choices recorded in ADR-048); merged (PR #54), deployed to the test site and migrated on Neon the same day.
 - **Goal**: Categories are one flat level holding products, everywhere (schema, admin, storefront, seeds); the home page loses the desktop "Shop by category" tiles, and its category shortcuts become a swipeable row of circles on a phone ([ADR-048](./DECISIONS.md)).
 - **Files**: `collections/Categories.ts` (no `parent`), `collections/Products.ts` (comment), `migrations/20261101_205147_flat_categories.{ts,json}` and `migrations/index.ts`, `lib/payload/categories.ts` (flat `getCategories`/`getCategoriesCached`, no roll-up), `lib/hero-slides.ts`, `app/(public)/page.jsx`, `app/(public)/category/[slug]/page.tsx`, `app/(public)/categories/{page,loading}.tsx`, `app/sitemap.ts`, `components/{HeroShortcuts.tsx,BestSelling.jsx,Footer.jsx}`, `components/ui/{CategoryNav,CategoryTile}.tsx`; `components/HomeCategories.tsx` removed; `scripts/{seed.ts,seed-demo.ts}`, `scripts/demo-data/catalogue.ts`, `demo-assets/README.md`; docs `DECISIONS` (ADR-048), `MIGRATION_PLAN`, `TASKS`, `CHANGELOG`, `CATEGORY_REQUIREMENTS` (note).
 - **Spec**: one schema change (drop `categories.parent_id`) with the data steps in ADR-048: Smart Watches merged into Watches, display order renumbered, empty former departments deleted, no product left without a category. No new dependency; no change to checkout, prices, Turnstile or access control.

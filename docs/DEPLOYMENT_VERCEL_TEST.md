@@ -111,6 +111,21 @@ Push to `main`, or run a production deploy of `gocart-test` through the Vercel A
 any `NEXT_PUBLIC_*` variable, redeploy so the value is rebuilt in. After adding a migration, run
 `npx payload migrate` (owner role) against Neon **before** the new code serves traffic.
 
+**Record of the 2026-11-01 rollout (`M101` + `M102`), done from a cloud session at the owner's request:**
+- The `gocart-test` project is not connected to Git, so merging does not deploy. The deploy was a Vercel API
+  production deployment from GitHub (`CodeWithHamzaa/gocart`, `main` at `a6aedc1`). The dashboard's
+  "Redeploy" button would rebuild the *old* source; do not use it to ship new code.
+- Port 5432 to Neon was not reachable from the cloud session, so `payload migrate` could not connect. The
+  two committed migrations' `up` SQL ran unchanged, in one transaction, through the Neon connector as the
+  owner role, with the two `payload_migrations` rows (batch 2) that `payload migrate` writes. Checked
+  afterwards with the same assertions as `scripts/verify-migrations.ts` plus the data (10 categories, 24 of
+  24 products with a category, no `parent_id`). From a machine that reaches port 5432, use `payload migrate`.
+- Order used: **deploy first, then migrate**, because the new code was checked to run on the old schema while
+  the old code fails once `categories.parent_id` is dropped. Check this for each migration; the default rule
+  above (migrate first) stands when old code still works on the new schema.
+- A Neon branch `backup-before-m101-m102-2026-11-01` (no compute) holds the database as it was before.
+  Delete it from the Neon console once it is no longer needed.
+
 ## Revoking access when you are done
 
 1. Vercel: <https://vercel.com/account/tokens> -> delete the token used for deployment (tokens expire
