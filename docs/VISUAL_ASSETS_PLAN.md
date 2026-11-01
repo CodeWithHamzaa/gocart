@@ -1,6 +1,6 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. `M103` approved and done as a code-reading audit 2026-11-01 (awaiting owner sign-off); `M104`–`M109` are not approved.** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. `M104` brief and sourcing plan done 2026-11-01 (no photo selected: sources blocked; awaiting owner review); `M105`–`M109` are not approved.** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
 Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
@@ -155,7 +155,7 @@ Local, development-time only; output is plain files. No new dependency: `sharp` 
 
 `asset_id`, `catalogue` (`demo`|`original`), `usage`, `component`, `target_collection`, `target_record`, `source_site`, `source_url`, `author`, `author_url`, `licence`, `licence_url`, `licence_checked_on`, `attribution_required`, `attribution_text`, `retrieved_on`, `original_filename`, `original_sha256`, `archive_path`, `processed_filename`, `processed_sha256`, `width`, `height`, `bytes`, `format`, `alt_text`, `media_id`, `media_env` (`local`|`test`), `status`, `approved_by`, `approved_on`, `notes`.
 
-`status` flow: `candidate` → `licence-verified` → `approved` → `processed` → `validated` → `uploaded-local` → `integrated-test` → `removed`. A row cannot pass `licence-verified` without `licence_url`, `licence_checked_on` and the author (or "not shown"). `media_id` is only meaningful together with `media_env`; ids differ per database.
+`status` flow: `needed` (slot defined, no photo chosen) → `candidate` → `licence-verified` → `approved` → `processed` → `validated` → `uploaded-local` → `integrated-test` → `removed`. A row cannot pass `licence-verified` without `licence_url`, `licence_checked_on` and the author (or "not shown"). `media_id` is only meaningful together with `media_env`; ids differ per database.
 
 Rules:
 - The licence text is **read at download time** from the source site's own licence page and its URL and date recorded. Pexels and Unsplash licences are understood to allow free commercial use without attribution, with restrictions (for example no selling unmodified copies, no implied endorsement, no trademarks/logos/people shown in a misleading way), but that is **unverified here** and must be re-read per image. Photos showing visible brand names, logos or identifiable people are rejected for product use.
@@ -231,8 +231,8 @@ Still open: whether to approve ADR-049 and `M104` (next step), and whether a mea
 
 - [x] Stage 0: this plan, manifest header, `M103`–`M109` proposed, ADR-049 proposed (2026-11-01)
 - [x] Owner approval of Stage 0; decisions D1–D8 recorded (2026-11-01)
-- [x] `M103` media audit by code reading (2026-11-01; awaiting sign-off; database measurements unverified)
-- [ ] `M104` brief, sourcing and licence verification
+- [x] `M103` media audit by code reading (accepted 2026-11-01; database measurements unverified, measured audit skipped by owner)
+- [~] `M104` brief and sourcing plan written ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md), 61 slots in the manifest); photos and licence verification blocked on source access (owner action) — in review
 - [ ] `M105` processing pipeline
 - [ ] `M106` local integration
 - [ ] `M107` storefront QA

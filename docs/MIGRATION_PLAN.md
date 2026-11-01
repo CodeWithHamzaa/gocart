@@ -1609,7 +1609,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 **Status: Proposed (2026-11-01). Not approved: none of these is work until the owner approves it** ([VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md) is the master objective and decision record; [ADR-049](./DECISIONS.md) is Proposed). Goal of the group: the temporary demo catalogue shows genuine, licence-verified product photography instead of generated art and blank placeholders, and can be removed safely before launch. Constraints: `images.unoptimized: true` and ADR-036 stay; no new dependency, no new image store, no schema change unless the owner approves one separately; local first, then the approved test environment only; never production. Order (by dependency): `M103`, `M104`, `M105`, `M106`, `M107`, `M108`; `M109` last, before launch.
 
 ### M103 — Media audit (read-only)
-- **Status (2026-11-01)**: **In review.** Approved by the owner 2026-11-01 (D1), narrowed by the owner: everything on the project is demo, so demo-versus-real classification was skipped. Done as a code-reading audit; no database was available, so row counts, file sizes and dimensions in real databases are **unverified**.
+- **Status (2026-11-01)**: **Done** (owner accepted the audit 2026-11-01; the measured database audit is skipped). Approved by the owner 2026-11-01 (D1), narrowed by the owner: everything on the project is demo, so demo-versus-real classification was skipped. Done as a code-reading audit; no database was available, so row counts, file sizes and dimensions in real databases are **unverified**.
 - **Goal**: Know which images are generated art or blank, which assets are missing, and which seed and component behaviours constrain the later stages.
 - **Files**: `docs/assets/MEDIA_AUDIT.md` (new); `docs/VISUAL_ASSETS_PLAN.md`, `docs/MIGRATION_PLAN.md`, `docs/TASKS.md` (status and decisions). No application code, schema, data or dependency change. `DEMO_INVENTORY.csv` is not created.
 - **Spec**: audit of the seeds, components and metadata; D7 network re-test; D8 assessment.
@@ -1619,7 +1619,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Audit demo media and image surfaces (M103)`
 
 ### M104 — Photo brief, sourcing and licence verification
-- **Status (2026-11-01)**: Proposed.
+- **Status (2026-11-01)**: **In progress, partly blocked.** Approved by the owner 2026-11-01 (this milestone only; ADR-049 stays Proposed). Delivered: photo brief, 61-slot shot list and sourcing plan, licence protocol, network findings and alternatives ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)), and the manifest with every slot at `status=needed`. **Not delivered**: any selected photo or verified licence, because Unsplash and Pexels return 403 from the environment's network policy and `demo-assets/_inbox/` is empty. Needs an owner action (network setting or supplying photos) before this milestone can be marked Done.
 - **Goal**: A shot list and a set of owner-approved, licence-verified candidate photos for the 24 demo products, 10 categories, promo areas and a default share image.
 - **Files**: `docs/assets/MANIFEST.csv`; photos only under git-ignored `demo-assets/_inbox/` and `_archive/`.
 - **Spec**: Unsplash and Pexels preferred; licence text read per image and recorded; no visible third-party logos or identifiable people on products; if a source is unreachable, record it and use `_inbox/` (no bypass).
