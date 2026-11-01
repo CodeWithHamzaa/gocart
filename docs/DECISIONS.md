@@ -1463,3 +1463,37 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - Run migration `20261031_160131_mirza_store_name` against each database with the owner role before the new code serves traffic. It is metadata-only (`ALTER COLUMN ... SET DEFAULT`).
 - The retained identifiers above still contain "gocart". They are intentional; do not "fix" them without a new decision.
 - **Owner data, not code:** the test site's Settings still has the demo placeholder address (`Demo Store, Sample Street, Placeholder City (fake address)`), and its promo cards say "Summer Sale" and "Winter Sale" side by side. Both are edited in /admin.
+
+## ADR-048: Categories are flat: one level, no sub-categories (`M102`)
+
+**Status**: **Accepted (2026-11-01)**. Owner decision in the M102 request (2026-11-01): "only categories -> products, no sub-category across the project", with the choices recorded below made by the owner in the same session. The PR merge is the owner's confirmation.
+
+**Supersedes** the two-level hierarchy of [ADR-013](#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy) (parent/child categories, the parent roll-up, the parent breadcrumb and child navigation). ADR-013's other decisions stand: category browsing ships, on flat `/category/[slug]` URLs, with `/categories` as the index. ADR-013's text is not edited.
+
+**Context**: The catalogue was four departments (Electronics, Fashion, Home & Living, Beauty & Care) holding no products of their own, and eleven sub-categories holding all 24 products. The owner wants customers and admins to see one list of categories with products in them.
+
+**Decision**:
+
+1. **Schema**: the `parent` field is removed from the `Categories` collection (with its two-level validation and the admin list column). Admins can no longer create a sub-category.
+2. **Migration `20261101_205147_flat_categories`** (run with the owner role, like every migration, ADR-032), in this order:
+   - **Smart Watches is merged into Watches** (owner's choice, so the store keeps 10 categories): its products move to Watches and the empty Smart Watches row is deleted. Only when both slugs exist.
+   - **`display_order` is renumbered 1..n** in the old reading order (each department's sub-categories in turn), so the flat list keeps the order customers saw.
+   - **A former department is deleted only if no product is filed directly under it.** One that still holds products stays as an ordinary category. No product loses its category.
+   - The `parent_id` column, its foreign key and index are dropped.
+   - `down` restores the column, key and index only. The hierarchy, the deleted departments and Smart Watches are not restorable except from a database backup.
+3. **Storefront**: `lib/payload/categories.ts` returns one flat list (`getCategories`, `getCategoriesCached`); a category page lists only its own products (no roll-up), has no sub-category pills and no parent breadcrumb; `/categories`, the header row, the footer, the sitemap, the home banner shortcuts and the Featured tabs all use the flat list.
+4. **Home page** (same request): the desktop "Shop by category" tiles are removed. The category shortcuts under the banner are circles with the name below on a phone (about 4 to 5 visible, swipe for the rest, then "View all") and stay the existing pills from `md`.
+5. **Seeds**: `scripts/demo-data/catalogue.ts` lists the 10 flat categories (Smart Watches products filed under Watches); `scripts/seed.ts` (CI) creates four flat categories (Electronics, Speakers, Headphones, Watches).
+
+**Alternatives considered**:
+
+- **Keep the four departments and move every product into them.** Offered; the owner chose to promote the sub-categories instead.
+- **Hide sub-categories on the storefront only, keep `parent` in the schema.** Offered; the owner chose full removal, so admins cannot recreate a hierarchy by accident.
+- **Keep all eleven sub-categories.** Offered; the owner chose 10, merging Smart Watches into Watches.
+
+**Consequences**:
+
+- Run migration `20261101_205147_flat_categories` on every database (Neon test included) with the owner role **before** the new code serves traffic: the new code no longer reads `parent_id`, and the old code fails without it.
+- `/category/electronics`, `/category/fashion`, `/category/home-living`, `/category/beauty-care` and `/category/smart-watches` return 404 on databases where the migration deleted them. They were not in any external link we control; search engines drop them on the next crawl (the sitemap no longer lists them).
+- The demo Watches description now says "Analog and smart watches"; the migration does not edit descriptions, so an existing database keeps its text until an admin edits it.
+- `docs/CATEGORY_REQUIREMENTS.md`'s parent/child sections describe the former design; the file carries a note pointing here.
