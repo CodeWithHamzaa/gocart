@@ -1,6 +1,6 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. Nothing else is approved.** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` approved and done as a code-reading audit 2026-11-01 (awaiting owner sign-off); `M104`–`M109` are not approved.** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
 Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
@@ -210,22 +210,28 @@ Order is by dependency, not ID. `M107`'s scope depends on D2 (dedicated hero or 
 | Checkout or order regressions | No change to checkout, prices, Orders or access control; full regression in `M107` and `M109` |
 | Vercel Blob/Hobby limits | Small budgets; limits to be confirmed from current Vercel docs in `M108` (*unverified*) |
 
-## 11. Open decisions (owner)
+## 11. Owner decisions (2026-11-01) and what is still open
 
-- **D1.** Approve ADR-049 (Proposed), and the milestones `M103`–`M109`.
-- **D2.** Hero: keep the product-photo-driven slider (no schema change), or add a dedicated, admin-editable banner image (schema change, separate ADR).
-- **D3.** When a photo cannot match a demo description exactly: edit the demo copy to match the photo, or choose a different photo.
-- **D4.** Where the originals archive lives permanently (it is git-ignored and local); owner's backup location.
-- **D5.** Route to the test site (admin uploads, or an approved one-off script run with the owner's test credentials).
-- **D6.** Gallery size per product (current seed: 2) and whether to add Payload thumbnails (`imageSizes`, a schema change) to avoid downloading 1000 px files for small cards.
-- **D7.** Network access to Unsplash/Pexels for the working sandbox, or owner-downloaded files only.
-- **D8.** Whether to add an `isDemo` flag (section 5.4). Recommended: no.
+Decided by the owner, 2026-11-01 (after PR #56):
+
+- **D1.** Approve `M103` only. ADR-049 stays **Proposed**. `M104`–`M109` stay Proposed and are not authorised.
+- **D2.** Keep the product-driven hero. No new banner field, no schema change.
+- **D3.** Prefer a better-matching photo; if necessary, adjust the temporary demo product copy rather than show a misleading image.
+- **D4.** Originals are preserved outside Git in a dedicated archive (`demo-assets/_archive/originals/`, git-ignored). Recommend a second secure backup location, for example an encrypted external drive or a private cloud folder the owner controls. Originals are never committed.
+- **D5.** Test-site upload route is deferred until local integration is complete.
+- **D6.** Two images per demo product initially (matches the seed). No thumbnail (`imageSizes`) work.
+- **D7.** If external sources stay unreachable: try to fix the network issue and advise an alternative. Result 2026-11-01: not fixable from inside the session (proxy `403` policy denial); fix and alternatives are in [assets/MEDIA_AUDIT.md](./assets/MEDIA_AUDIT.md) section 7.
+- **D8.** No `isDemo` field yet. Assessment in [assets/MEDIA_AUDIT.md](./assets/MEDIA_AUDIT.md) section 5: conventions are enough while the whole database is demo; the weak point is the import into the same database (`M109`), where a pre-import id list is the proposed safeguard. A separate proposal is needed before any flag.
+
+Scope note from the owner: everything on the project is currently demo, so `M103` skipped classifying demo versus real rows and does not create `DEMO_INVENTORY.csv`. Sections 5 and 6 above stay valid for `M109` (demo and original rows in one database) but a per-database id list taken before the import replaces the inventory file unless the owner wants one earlier.
+
+Still open: whether to approve ADR-049 and `M104` (next step), and whether a measured database audit (needs dependency installation and a database) is wanted before `M105`.
 
 ## 12. Progress checklist
 
 - [x] Stage 0: this plan, manifest header, `M103`–`M109` proposed, ADR-049 proposed (2026-11-01)
-- [ ] Owner approval of Stage 0 and decisions D1–D8 as needed
-- [ ] `M103` demo inventory and audit
+- [x] Owner approval of Stage 0; decisions D1–D8 recorded (2026-11-01)
+- [x] `M103` media audit by code reading (2026-11-01; awaiting sign-off; database measurements unverified)
 - [ ] `M104` brief, sourcing and licence verification
 - [ ] `M105` processing pipeline
 - [ ] `M106` local integration

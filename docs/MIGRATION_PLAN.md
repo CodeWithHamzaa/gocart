@@ -1608,15 +1608,15 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 
 **Status: Proposed (2026-11-01). Not approved: none of these is work until the owner approves it** ([VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md) is the master objective and decision record; [ADR-049](./DECISIONS.md) is Proposed). Goal of the group: the temporary demo catalogue shows genuine, licence-verified product photography instead of generated art and blank placeholders, and can be removed safely before launch. Constraints: `images.unoptimized: true` and ADR-036 stay; no new dependency, no new image store, no schema change unless the owner approves one separately; local first, then the approved test environment only; never production. Order (by dependency): `M103`, `M104`, `M105`, `M106`, `M107`, `M108`; `M109` last, before launch.
 
-### M103 — Demo inventory and read-only media audit
-- **Status (2026-11-01)**: Proposed.
-- **Goal**: A reliable list of every demo product, category, media, order and promo card in the local database, and an audit of which images are generated art, blank, oversized or lack alt text.
-- **Files**: `docs/assets/DEMO_INVENTORY.csv` (new), the audit report, optionally a read-only helper under `scripts/`. No application code, schema or data change.
-- **Spec**: identification rules of VISUAL_ASSETS_PLAN.md section 5; each row cites how it was identified and whether anything non-demo references it.
-- **Dependencies**: Stage 0 (this plan) approved.
-- **Testing**: counts match `scripts/demo-data/catalogue.ts` (24 products, 10 categories); no row selected by a rule the plan does not state; nothing written to the database.
-- **Rollback**: Delete the new files.
-- **Commit message**: `Inventory demo records and audit demo media (M103)`
+### M103 — Media audit (read-only)
+- **Status (2026-11-01)**: **In review.** Approved by the owner 2026-11-01 (D1), narrowed by the owner: everything on the project is demo, so demo-versus-real classification was skipped. Done as a code-reading audit; no database was available, so row counts, file sizes and dimensions in real databases are **unverified**.
+- **Goal**: Know which images are generated art or blank, which assets are missing, and which seed and component behaviours constrain the later stages.
+- **Files**: `docs/assets/MEDIA_AUDIT.md` (new); `docs/VISUAL_ASSETS_PLAN.md`, `docs/MIGRATION_PLAN.md`, `docs/TASKS.md` (status and decisions). No application code, schema, data or dependency change. `DEMO_INVENTORY.csv` is not created.
+- **Spec**: audit of the seeds, components and metadata; D7 network re-test; D8 assessment.
+- **Dependencies**: Stage 0 (merged or open as PR #56).
+- **Testing**: nothing was written to any database; findings are checkable against the cited files. A measured database audit (query on `media`) remains an optional follow-up.
+- **Rollback**: Delete `docs/assets/MEDIA_AUDIT.md` and revert the status edits.
+- **Commit message**: `Audit demo media and image surfaces (M103)`
 
 ### M104 — Photo brief, sourcing and licence verification
 - **Status (2026-11-01)**: Proposed.
