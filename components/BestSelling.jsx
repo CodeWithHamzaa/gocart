@@ -19,6 +19,7 @@ import ScrollRail from './ui/ScrollRail'
 // child, else the category itself), and a tab exists only for a top-level category that has at least one
 // featured product, so no tab is ever empty. Every card stays in the HTML; FeaturedTabs only hides them.
 // M101: the description says what the section is, not a listing count.
+// M102 (ADR-048): categories are flat, so each product's tab is simply its own category.
 const BestSelling = ({ products = [], categories = [] }) => {
 
     if (products.length === 0) return null
@@ -26,8 +27,7 @@ const BestSelling = ({ products = [], categories = [] }) => {
     const topLevelOf = (product) => {
         const category = typeof product.category === 'object' && product.category ? product.category : null
         if (!category) return null
-        const parentId = category.parent && typeof category.parent === 'object' ? category.parent.id : category.parent
-        return String(parentId ?? category.id)
+        return String(category.id)
     }
 
     const items = products.map((product) => ({

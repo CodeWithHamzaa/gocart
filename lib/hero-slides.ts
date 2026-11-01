@@ -1,7 +1,7 @@
 import { discountPercent } from './product-badges'
 import { formatPKR } from './currency'
 import type { Product } from './payload/products'
-import type { CategoryWithChildren } from './payload/categories'
+import type { Category } from './payload/categories'
 
 // M101: the home banner's slides, built only from real data (pure, no Payload import). A slide whose data
 // is missing is left out, never filled with a made-up claim:
@@ -23,7 +23,7 @@ export type HeroSlide = {
 type Input = {
   latest: Product[]
   featured: Product[]
-  topLevel: CategoryWithChildren[]
+  categories: Category[]
   shipping: { flatRate: number | null; freeShippingThreshold: number | null }
   startingPrice: number | null
 }
@@ -41,17 +41,17 @@ const joinNames = (names: string[]) => {
   return unique.length > 1 ? `${unique.slice(0, -1).join(', ')} and ${unique[unique.length - 1]}` : unique[0]
 }
 
-export function buildHeroSlides({ latest, featured, topLevel, shipping, startingPrice }: Input): HeroSlide[] {
+export function buildHeroSlides({ latest, featured, categories, shipping, startingPrice }: Input): HeroSlide[] {
   const slides: HeroSlide[] = []
   const seen = new Map<Product['id'], Product>()
   for (const product of [...featured, ...latest]) if (!seen.has(product.id)) seen.set(product.id, product)
   const pool = [...seen.values()].filter(usable)
 
+  // M102 (ADR-048): categories are flat, so a product's department is its own category.
   const topLevelOf = (product: Product) => {
     const category = categoryOf(product)
     if (!category) return null
-    const parentId = category.parent && typeof category.parent === 'object' ? category.parent.id : category.parent
-    return topLevel.find((c) => String(c.id) === String(parentId ?? category.id)) ?? null
+    return categories.find((c) => String(c.id) === String(category.id)) ?? null
   }
 
   const deals = pool

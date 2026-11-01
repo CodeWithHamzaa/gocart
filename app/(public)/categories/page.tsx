@@ -1,7 +1,6 @@
-import Link from 'next/link'
 import { ShapesIcon } from 'lucide-react'
 import type { Metadata } from 'next'
-import { getTopLevelCategoriesCached } from '@/lib/payload/categories'
+import { getCategoriesCached } from '@/lib/payload/categories'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import CategoryTile from '@/components/ui/CategoryTile'
 import EmptyState from '@/components/ui/EmptyState'
@@ -27,8 +26,8 @@ export const dynamic = 'force-dynamic'
 // image when an admin uploaded one, else a tinted icon) with its child categories as pills beneath,
 // as docs/CATEGORY_REQUIREMENTS.md asks (the design's circles carry no children; the spec wins).
 //
-// M101: the home page's category tiles (CategoryTile): lavender cards, white child pills, no ring or
-// shadow. One column on a phone, two from `sm`, four from `lg`.
+// M101: the home page's category tiles (CategoryTile): lavender cards, no ring or shadow. Two columns on
+// a phone, three from `sm`, four from `lg`, five from `xl`. M102 (ADR-048): categories are flat, so no child pills.
 //
 // M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
 // conventions as every other route.
@@ -43,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CategoriesPage() {
-  const categories = await getTopLevelCategoriesCached()
+  const categories = await getCategoriesCached()
 
   return (
     <div className="mx-4 sm:mx-6">
@@ -55,24 +54,10 @@ export default async function CategoriesPage() {
         <h1 className="mb-6 mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:mb-8 sm:text-4xl">Categories</h1>
 
         {categories.length > 0 ? (
-          <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
             {categories.map((category) => (
               <li key={category.id}>
-                <CategoryTile category={category} variant="circle">
-                  {category.children.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {category.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          href={`/category/${child.slug}`}
-                          className="inline-flex min-h-11 items-center rounded-full bg-white px-3.5 text-[13px] font-semibold text-ink-2 transition hover:text-primary"
-                        >
-                          {child.title}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </CategoryTile>
+                <CategoryTile category={category} variant="circle" />
               </li>
             ))}
           </ul>

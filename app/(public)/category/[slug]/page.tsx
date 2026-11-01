@@ -88,10 +88,6 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   // state — page 1 is the only page allowed to be legitimately empty).
   if (page > 1 && page > totalPages) notFound()
 
-  const isParent = !category.parent
-  const parent =
-    typeof category.parent === 'object' && category.parent ? category.parent : null
-
   const basePath = `/category/${slug}`
   const pageHref = (targetPage: number) => {
     const query = filtersToQuery(filters, targetPage)
@@ -101,15 +97,14 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const crumbs = [
     { label: 'Home', href: '/' },
     { label: 'Categories', href: '/categories' },
-    ...(parent ? [{ label: parent.title, href: `/category/${parent.slug}` }] : []),
     { label: category.title },
   ]
   // M101: pill pagination in the home page's style (lavender pills, the current page in violet).
   const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-ink font-semibold hover:bg-primary-soft hover:text-primary-dark transition'
   const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-muted'
 
-  // M63: the redesign. A tinted heading panel (title, description, and on a parent page its
-  // subcategories as pills), the product count, a full-width grid and link-based pagination (a
+  // M63: the redesign. A tinted heading panel (title and description; M102 removed the sub-category
+  // pills, ADR-048), the product count, a full-width grid and link-based pagination (a
   // "load more" button would need client fetching, and every page must stay its own crawlable URL).
   // M92 adds a sort and a price / discount filter (CategoryControls). The design's size, colour and
   // delivery filters have no data behind them, so they stay Future Phase (CATEGORY_REQUIREMENTS.md).
@@ -124,28 +119,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         </div>
 
         <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-lavender px-5 py-7 sm:px-10 sm:py-10">
-          {/* M101: the home banner's look: a lavender panel, a large semibold title, white pills. */}
+          {/* M101: the home banner's look: a lavender panel and a large semibold title. */}
           <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink-3 sm:flex lg:right-14">
             <CategoryIcon category={category} size={72} strokeWidth={1.2} />
           </span>
           <div className="relative flex max-w-2xl flex-col gap-3">
             <h1 id="category-title" className="text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] text-ink sm:text-5xl">{category.title}</h1>
             {category.description && <p className="text-[15px] text-ink-3">{category.description}</p>}
-
-            {/* Child-category navigation: parent pages only */}
-            {isParent && category.children.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-2">
-                {category.children.map((child) => (
-                  <Link
-                    key={child.id}
-                    href={`/category/${child.slug}`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-white px-4 text-sm font-semibold text-ink-2 transition hover:text-primary"
-                  >
-                    {child.title}
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         </section>
 

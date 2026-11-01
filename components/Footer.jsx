@@ -2,7 +2,7 @@ import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 import { getSettings } from "@/lib/payload/settings";
-import { getTopLevelCategoriesCached } from "@/lib/payload/categories";
+import { getCategoriesCached } from "@/lib/payload/categories";
 
 // M55a: server component. The contact block is read from the Settings global (M13a)
 // so an admin edit shows without a redeploy (the public layout revalidates), and a
@@ -16,14 +16,14 @@ const SAFE_EMAIL = /^[^\s@?&#]+@[^\s@?&#]+$/
 
 const Footer = async () => {
 
-    const [settings, topLevel] = await Promise.all([getSettings(), getTopLevelCategoriesCached().catch(() => [])])
+    const [settings, categories] = await Promise.all([getSettings(), getCategoriesCached().catch(() => [])])
 
     const linkSections = [
         {
             // M44: real categories (these used to be fake "Smartphones"/"Laptops" links to /).
             title: "Shop",
             links: [
-                ...topLevel.slice(0, 6).map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
+                ...categories.slice(0, 6).map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
                 { text: "All products", path: '/shop', icon: null },
             ]
         },

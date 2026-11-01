@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { BanknoteIcon, LayoutGridIcon, TruckIcon, UserRoundIcon } from 'lucide-react'
-import type { Category, CategoryWithChildren } from '@/lib/payload/categories'
+import type { Category } from '@/lib/payload/categories'
 import { CategoryIcon } from '@/lib/category-style'
 import { formatPKR } from '@/lib/currency'
 import type { DeliverySettings } from '@/lib/delivery'
@@ -9,8 +9,16 @@ import type { DeliverySettings } from '@/lib/delivery'
 // M101: what sits right under the home banner (the owner took these from the "B" mockup): round category
 // shortcuts with their images, then the three promises as one strip. The delivery wording comes from
 // Settings, like every other delivery statement (lib/delivery.ts); nothing is shown that is not true.
-const MAX_CHIPS = 6
+// From `lg` the pills wrap in rows, so only the first few show there (today's desktop row); below `lg`
+// the row scrolls sideways and holds every category.
+const DESKTOP_CHIPS = 6
 const imageOf = (category: Category) => (category.image && typeof category.image === 'object' ? (category.image.url ?? null) : null)
+
+// Phone: a 68px column (56px circle, name below), so 4 fit across at 320-375px and 5 from 390px. From `md`: the pill (44px circle, name beside it).
+const CHIP =
+  'flex w-[68px] flex-col items-center gap-1.5 rounded-tile text-center text-xs font-medium text-ink md:min-h-14 md:w-auto md:flex-row md:gap-2.5 md:rounded-full md:bg-lavender md:py-1.5 md:pl-1.5 md:pr-5 md:text-left md:text-[15px] md:transition md:hover:bg-lavender-2'
+const CIRCLE = 'flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full md:size-11'
+const LABEL = 'line-clamp-2 leading-tight [overflow-wrap:break-word] md:line-clamp-none md:leading-normal'
 
 function deliveryPromise({ flatRate, freeShippingThreshold }: DeliverySettings) {
   if (typeof flatRate !== 'number') return { title: 'Delivery across Pakistan', text: 'Charges are shown at checkout' }
@@ -21,13 +29,9 @@ function deliveryPromise({ flatRate, freeShippingThreshold }: DeliverySettings) 
   return { title: 'Delivery across Pakistan', text: `${formatPKR(flatRate)} per order` }
 }
 
-export default function HeroShortcuts({ categories = [], shipping = {} }: { categories?: CategoryWithChildren[]; shipping?: DeliverySettings }) {
-  // Every top-level category first, then their children taken in turn, so no department is crowded out.
-  const children: Category[] = []
-  for (let i = 0; children.length < MAX_CHIPS && categories.some((c) => c.children[i]); i++) {
-    for (const c of categories) if (c.children[i]) children.push(c.children[i])
-  }
-  const chips = [...categories, ...children].slice(0, MAX_CHIPS)
+export default function HeroShortcuts({ categories = [], shipping = {} }: { categories?: Category[]; shipping?: DeliverySettings }) {
+  // M102 (ADR-048): categories are flat, so the shortcuts are simply the categories in the admin's order.
+  const chips = categories
   const delivery = deliveryPromise(shipping)
   const promises = [
     { icon: BanknoteIcon, title: 'Cash on delivery', text: 'Pay when it arrives' },
@@ -37,26 +41,28 @@ export default function HeroShortcuts({ categories = [], shipping = {} }: { cate
 
   return (
     <div className="mt-6 sm:mt-8">
+      {/* M102: on a phone each shortcut is a circle (image) with its name under it, sized so 4-5 fit across
+          and the rest are a swipe away; from `md` they are today's pills. One set of links at every width. */}
       {chips.length > 0 && (
         <nav aria-label="Popular categories">
-          <ul className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0">
-            {chips.map((category) => {
+          <ul className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:gap-3 lg:mx-0 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0">
+            {chips.map((category, index) => {
               const image = imageOf(category)
               return (
-                <li key={category.id} className="shrink-0">
-                  <Link href={`/category/${category.slug}`} className="flex min-h-14 items-center gap-2.5 rounded-full bg-lavender py-1.5 pl-1.5 pr-5 text-[15px] font-medium text-ink transition hover:bg-lavender-2">
-                    <span className="flex size-11 items-center justify-center overflow-hidden rounded-full bg-white text-ink-3">
-                      {image ? <Image src={image} alt="" width={88} height={88} sizes="44px" className="size-full object-cover" /> : <CategoryIcon category={category} size={20} strokeWidth={1.6} aria-hidden="true" />}
+                <li key={category.id} className={`shrink-0 ${index >= DESKTOP_CHIPS ? 'lg:hidden' : ''}`}>
+                  <Link href={`/category/${category.slug}`} className={CHIP}>
+                    <span className={`${CIRCLE} bg-lavender text-ink-3 md:bg-white`}>
+                      {image ? <Image src={image} alt="" width={128} height={128} sizes="(min-width: 768px) 44px, 56px" className="size-full object-cover" /> : <CategoryIcon category={category} size={24} strokeWidth={1.6} aria-hidden="true" />}
                     </span>
-                    {category.title}
+                    <span className={LABEL}>{category.title}</span>
                   </Link>
                 </li>
               )
             })}
             <li className="shrink-0">
-              <Link href="/categories" className="flex min-h-14 items-center gap-2.5 rounded-full bg-primary-soft py-1.5 pl-1.5 pr-5 text-[15px] font-semibold text-primary-dark transition hover:bg-lavender-2">
-                <span className="flex size-11 items-center justify-center rounded-full bg-white"><LayoutGridIcon size={20} strokeWidth={1.7} aria-hidden="true" /></span>
-                View all
+              <Link href="/categories" className={`${CHIP} md:bg-primary-soft md:font-semibold md:text-primary-dark`}>
+                <span className={`${CIRCLE} bg-primary-soft text-primary-dark md:bg-white`}><LayoutGridIcon size={22} strokeWidth={1.7} aria-hidden="true" /></span>
+                <span className={`${LABEL} font-semibold text-primary-dark`}>View all</span>
               </Link>
             </li>
           </ul>

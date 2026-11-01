@@ -1,10 +1,10 @@
 import type { MetadataRoute } from 'next'
-import { getTopLevelCategories } from '@/lib/payload/categories'
+import { getCategories } from '@/lib/payload/categories'
 import { getProducts } from '@/lib/payload/products'
 import { getSiteUrl } from '@/lib/site-url'
 
 // M42: generated from the live catalog so it cannot drift from what the routes serve:
-// home, /shop, /categories, every category (parent and child) and every product. Paginated
+// home, /shop, /categories, every category (flat since M102) and every product. Paginated
 // category pages are not listed — they are reachable from page 1.
 //
 // Rendered per request (not at build time), like the home page: the production image build
@@ -21,12 +21,10 @@ const modified = (doc: Dated) => (doc.updatedAt ? new Date(doc.updatedAt) : unde
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl()
-  const [{ docs: products }, topLevel] = await Promise.all([
+  const [{ docs: products }, categories] = await Promise.all([
     getProducts({ limit: 0, sort: '-updatedAt' }),
-    getTopLevelCategories(),
+    getCategories(),
   ])
-
-  const categories = topLevel.flatMap((parent) => [parent, ...parent.children])
 
   const entries: MetadataRoute.Sitemap = [
     { url: `${base}/` },
