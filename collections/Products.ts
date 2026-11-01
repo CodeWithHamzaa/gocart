@@ -57,9 +57,8 @@ export const Products: CollectionConfig = {
       required: true,
     },
     {
-      // A product belongs to exactly one category, the most specific one that
-      // applies. Parent category pages roll up their children's products rather
-      // than admins double-filing under both — per ADR-013.
+      // A product belongs to exactly one category. M102 (ADR-048): categories are
+      // flat, so there is no parent roll-up (ADR-013's hierarchy is superseded).
       name: 'category',
       type: 'relationship',
       relationTo: 'categories',

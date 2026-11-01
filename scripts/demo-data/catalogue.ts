@@ -1,6 +1,6 @@
 // M90: demo catalogue for scripts/seed-demo.ts. Invented, brand-neutral product names and plain,
 // factual copy: no ratings or reviews (ADR-016), and no warranty, certification, shipping or
-// "best seller" claims. Prices are PKR (whole rupees). Two category levels only (ADR-013).
+// "best seller" claims. Prices are PKR (whole rupees). One flat level of categories (M102, ADR-048; was two levels, ADR-013).
 // `slugify(name)` is the demo "product slug": products have no slug field (URLs use the id),
 // so it is used only to name image files (<slug>-1.webp, <slug>-2.webp) and demo-assets overrides.
 import type { Motif } from './art'
@@ -18,30 +18,24 @@ export type CategorySeed = {
   slug: string
   description: string
   displayOrder: number
-  /** Slug of the parent category; absent for a top-level category. */
-  parent?: string
   motif: Motif
   hue: number
 }
 
-// Slugs electronics, speakers, headphones, fashion and watches match scripts/seed.ts so a
-// database that already ran the basic seed is reused rather than duplicated.
+// Slugs speakers, headphones and watches match scripts/seed.ts so a database that already ran the
+// basic seed is reused rather than duplicated. M102: flat; the former departments (Electronics,
+// Fashion, Home & Living, Beauty & Care) are gone and their sub-categories are the categories.
 export const CATEGORIES: CategorySeed[] = [
-  { title: 'Electronics', slug: 'electronics', description: 'Audio, wearables and everyday gadgets.', displayOrder: 1, motif: 'collection', hue: 215 },
-  { title: 'Headphones', slug: 'headphones', description: 'Wireless and over-ear headphones.', displayOrder: 1, parent: 'electronics', motif: 'headphones', hue: 225 },
-  { title: 'Speakers', slug: 'speakers', description: 'Portable Bluetooth speakers.', displayOrder: 2, parent: 'electronics', motif: 'speaker', hue: 255 },
-  { title: 'Smart Watches', slug: 'smart-watches', description: 'Fitness and everyday smart watches.', displayOrder: 3, parent: 'electronics', motif: 'smartwatch', hue: 190 },
-  { title: 'Power Banks', slug: 'power-banks', description: 'Portable chargers for phones and small devices.', displayOrder: 4, parent: 'electronics', motif: 'powerbank', hue: 160 },
-  { title: 'Fashion', slug: 'fashion', description: 'Watches, bags and accessories.', displayOrder: 2, motif: 'collection', hue: 340 },
-  { title: 'Watches', slug: 'watches', description: 'Analog wrist watches for every day.', displayOrder: 1, parent: 'fashion', motif: 'watch', hue: 20 },
-  { title: 'Bags', slug: 'bags', description: 'Backpacks, totes and travel bags.', displayOrder: 2, parent: 'fashion', motif: 'bag', hue: 35 },
-  { title: 'Sunglasses', slug: 'sunglasses', description: 'Sunglasses in classic frame shapes.', displayOrder: 3, parent: 'fashion', motif: 'sunglasses', hue: 290 },
-  { title: 'Home & Living', slug: 'home-living', description: 'Lighting and kitchen essentials for the home.', displayOrder: 3, motif: 'collection', hue: 95 },
-  { title: 'Lamps', slug: 'lamps', description: 'Table and desk lamps.', displayOrder: 1, parent: 'home-living', motif: 'lamp', hue: 50 },
-  { title: 'Kitchen', slug: 'kitchen', description: 'Cookware and storage for the kitchen.', displayOrder: 2, parent: 'home-living', motif: 'kitchen', hue: 120 },
-  { title: 'Beauty & Care', slug: 'beauty-care', description: 'Skincare and fragrance.', displayOrder: 4, motif: 'collection', hue: 320 },
-  { title: 'Skincare', slug: 'skincare', description: 'Everyday face and skin care.', displayOrder: 1, parent: 'beauty-care', motif: 'skincare', hue: 150 },
-  { title: 'Fragrances', slug: 'fragrances', description: 'Perfumes and body sprays.', displayOrder: 2, parent: 'beauty-care', motif: 'fragrance', hue: 270 },
+  { title: 'Headphones', slug: 'headphones', description: 'Wireless and over-ear headphones.', displayOrder: 1, motif: 'headphones', hue: 225 },
+  { title: 'Speakers', slug: 'speakers', description: 'Portable Bluetooth speakers.', displayOrder: 2, motif: 'speaker', hue: 255 },
+  { title: 'Power Banks', slug: 'power-banks', description: 'Portable chargers for phones and small devices.', displayOrder: 3, motif: 'powerbank', hue: 160 },
+  { title: 'Watches', slug: 'watches', description: 'Analog and smart watches for every day.', displayOrder: 4, motif: 'watch', hue: 20 },
+  { title: 'Bags', slug: 'bags', description: 'Backpacks, totes and travel bags.', displayOrder: 5, motif: 'bag', hue: 35 },
+  { title: 'Sunglasses', slug: 'sunglasses', description: 'Sunglasses in classic frame shapes.', displayOrder: 6, motif: 'sunglasses', hue: 290 },
+  { title: 'Lamps', slug: 'lamps', description: 'Table and desk lamps.', displayOrder: 7, motif: 'lamp', hue: 50 },
+  { title: 'Kitchen', slug: 'kitchen', description: 'Cookware and storage for the kitchen.', displayOrder: 8, motif: 'kitchen', hue: 120 },
+  { title: 'Skincare', slug: 'skincare', description: 'Everyday face and skin care.', displayOrder: 9, motif: 'skincare', hue: 150 },
+  { title: 'Fragrances', slug: 'fragrances', description: 'Perfumes and body sprays.', displayOrder: 10, motif: 'fragrance', hue: 270 },
 ]
 
 export type ProductLabel = 'new' | 'limited' | 'sale'
@@ -65,9 +59,9 @@ const RAW_PRODUCTS: RawProduct[] = [
   // Speakers
   { name: 'Capsule Portable Bluetooth Speaker', category: 'speakers', price: 3299, mrp: 4499, label: 'sale', description: 'A compact Bluetooth speaker that fits in a bag. Connect it to your phone wirelessly to play music in a room or outdoors.' },
   { name: 'Cylinder Mini Speaker', category: 'speakers', price: 1899, mrp: 1899, description: 'A small cylinder-shaped speaker for desks and shelves. Easy to pair with a phone or tablet.' },
-  // Smart Watches
-  { name: 'Pulse Active Smart Watch', category: 'smart-watches', price: 5999, mrp: 8499, isFeatured: true, description: 'A smart watch with a bright rectangular screen and a silicone strap. Shows the time and phone notifications once paired.' },
-  { name: 'Orbit Slim Smart Watch', category: 'smart-watches', price: 4299, mrp: 5499, description: 'A slim smart watch with a round face and a comfortable strap. Pairs with your phone for notifications and simple activity tracking.' },
+  // Smart watches (filed under Watches since M102)
+  { name: 'Pulse Active Smart Watch', category: 'watches', price: 5999, mrp: 8499, isFeatured: true, description: 'A smart watch with a bright rectangular screen and a silicone strap. Shows the time and phone notifications once paired.' },
+  { name: 'Orbit Slim Smart Watch', category: 'watches', price: 4299, mrp: 5499, description: 'A slim smart watch with a round face and a comfortable strap. Pairs with your phone for notifications and simple activity tracking.' },
   // Power Banks
   { name: 'Volt Compact Power Bank', category: 'power-banks', price: 2199, mrp: 2999, description: 'A pocket-friendly power bank for topping up a phone on the go. Charges over a USB cable and has a small indicator for the charge level.' },
   { name: 'Volt Max Power Bank', category: 'power-banks', price: 3799, mrp: 3799, label: 'new', description: 'A larger power bank for longer days away from a socket. Charges phones and small devices over USB, with an indicator for the charge level.' },

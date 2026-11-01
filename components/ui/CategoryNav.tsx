@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { LayoutGridIcon } from 'lucide-react'
-import { getTopLevelCategoriesCached } from '@/lib/payload/categories'
+import { getCategoriesCached } from '@/lib/payload/categories'
 
-// M61: the header's category row (desktop). Real top-level categories, in the admin's order, plus
+// M61: the header's category row (desktop). Real categories (flat since M102), in the admin's order, plus
 // "All categories". It is hidden below `lg`, where the bottom tab bar and the home page's circle
 // row cover the same ground. M101: pills (the active-looking "All categories" in soft violet). A failed read shows just "All categories", like the footer does.
 export default async function CategoryNav() {
-  const categories = await getTopLevelCategoriesCached().catch(() => [])
+  const categories = await getCategoriesCached().catch(() => [])
 
   return (
     <nav aria-label="Categories" className="no-scrollbar mx-auto hidden max-w-[83rem] gap-1 overflow-x-auto px-6 pb-2.5 text-sm font-semibold whitespace-nowrap lg:flex">

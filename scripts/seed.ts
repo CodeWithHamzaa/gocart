@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { getPayload } from 'payload'
 import config from '../payload.config'
 
-// M13: seed a handful of dev records — parent/child categories with products —
+// M13: seed a handful of dev records — categories with products (flat since M102, ADR-048) —
 // so later milestones (M22+) have real data to build against.
 //
 // This originally read placeholder images from assets/, but M28 (8c20d4f) deleted
@@ -82,31 +82,21 @@ async function seed() {
 
   const speakers = await payload.create({
     collection: 'categories',
-    data: { title: 'Speakers', slug: 'speakers', parent: electronics.id, displayOrder: 1 },
+    data: { title: 'Speakers', slug: 'speakers', displayOrder: 2 },
   })
 
   const headphonesCategory = await payload.create({
     collection: 'categories',
-    data: { title: 'Headphones', slug: 'headphones', parent: electronics.id, displayOrder: 2 },
-  })
-
-  const fashion = await payload.create({
-    collection: 'categories',
-    data: {
-      title: 'Fashion',
-      slug: 'fashion',
-      description: 'Watches and accessories.',
-      displayOrder: 2,
-    },
+    data: { title: 'Headphones', slug: 'headphones', displayOrder: 3 },
   })
 
   const watches = await payload.create({
     collection: 'categories',
-    data: { title: 'Watches', slug: 'watches', parent: fashion.id, displayOrder: 1 },
+    data: { title: 'Watches', slug: 'watches', displayOrder: 4 },
   })
 
   await Promise.all([
-    // Directly under a parent category (valid — appears on the parent's page).
+    // In Electronics (M102: every category is flat, so this is an ordinary category).
     payload.create({
       collection: 'products',
       data: {

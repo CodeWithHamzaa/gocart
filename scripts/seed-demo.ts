@@ -9,7 +9,7 @@ import { CATEGORIES, PRODUCTS } from './demo-data/catalogue'
 import type { CategorySeed, ProductSeed } from './demo-data/catalogue'
 
 // M90: idempotent, local-only demo data for showing the storefront and /admin to a client:
-// 15 categories (4 parents), 24 products with 2 generated images each, store Settings and,
+// 11 flat categories (M102, ADR-048), 24 products with 2 generated images each, store Settings and,
 // with --with-orders, 8 sample orders. It is NOT scripts/seed.ts (the minimal M13 dev seed) and
 // changes no schema, access rule or production behaviour.
 //
@@ -154,7 +154,6 @@ async function ensureMedia(payload: Payload, filename: string, alt: string, buil
 
 async function ensureCategories(payload: Payload): Promise<Map<string, number>> {
   const ids = new Map<string, number>()
-  // CATEGORIES lists every parent before its children, so a parent id is always known first.
   for (const cat of CATEGORIES) {
     const existing = await payload.find({
       collection: 'categories',
@@ -170,7 +169,6 @@ async function ensureCategories(payload: Payload): Promise<Map<string, number>> 
       continue
     }
     const image = await categoryImage(payload, cat)
-    const parentId = cat.parent ? ids.get(cat.parent) : undefined
     const created = await payload.create({
       collection: 'categories',
       data: {
@@ -179,7 +177,6 @@ async function ensureCategories(payload: Payload): Promise<Map<string, number>> 
         description: cat.description,
         displayOrder: cat.displayOrder,
         image,
-        ...(parentId !== undefined ? { parent: parentId } : {}),
       },
       overrideAccess: true,
     })

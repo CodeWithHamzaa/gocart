@@ -25,7 +25,6 @@ export type Category = {
   id: number | string
   title: string
   slug: string
-  parent?: Category | null | number | string
   description?: null | string
   image?: Media | null | number | string
   seo?: {
@@ -34,8 +33,6 @@ export type Category = {
   }
   displayOrder?: null | number
 }
-
-export type CategoryWithChildren = Category & { children: Category[] }
 
 export type ProductsByCategoryResult = {
   docs: unknown[]
@@ -51,53 +48,36 @@ async function getClient() {
 }
 
 /**
- * Top-level categories (no parent), each with its children resolved,
- * ordered by displayOrder then title. Backs /categories (M27b).
+ * Every category, ordered by displayOrder then title. Backs /categories (M27b), the header's
+ * category row, the footer, the home page and the sitemap.
+ * M102 (ADR-048): categories are flat (no parent, no children), so this is one query.
  */
-export async function getTopLevelCategories(): Promise<CategoryWithChildren[]> {
+export async function getCategories(): Promise<Category[]> {
   const payload = await getClient()
 
-  const { docs: topLevel } = await payload.find({
+  const { docs } = await payload.find({
     collection: 'categories',
-    where: { parent: { exists: false } },
     sort: CATEGORY_ORDER,
     limit: 0,
+    // depth 1 so a category's image is a Media object (the home page's shortcuts and /categories show it).
     depth: 1,
     overrideAccess: false,
   })
 
-  const withChildren = await Promise.all(
-    topLevel.map(async (category) => {
-      const { docs: children } = await payload.find({
-        collection: 'categories',
-        where: { parent: { equals: category.id } },
-        sort: CATEGORY_ORDER,
-        limit: 0,
-        // M101: depth 1 so a child's image is a Media object (the home page's phone category row shows
-        // it); was 0. No caller reads a child's `parent`.
-        depth: 1,
-        overrideAccess: false,
-      })
-      return { ...category, children } as CategoryWithChildren
-    }),
-  )
-
-  return withChildren
+  return docs as Category[]
 }
 
 /**
  * M61: the same read, memoised for one server request. The header's category row, the footer and
- * the page body all need the top-level categories, so they share a single fetch instead of three.
- * Read-only; the query above is unchanged.
+ * the page body all need the categories, so they share a single fetch instead of three.
  */
-export const getTopLevelCategoriesCached = cache(getTopLevelCategories)
+export const getCategoriesCached = cache(getCategories)
 
 /**
- * A single category by slug, with its parent and children resolved, for the
- * page body and breadcrumbs. Returns null for an unknown slug so the route
- * can call notFound().
+ * A single category by slug, for the page body and breadcrumbs. Returns null for an unknown slug so
+ * the route can call notFound().
  */
-export async function getCategoryBySlug(slug: string): Promise<CategoryWithChildren | null> {
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const payload = await getClient()
 
   const { docs } = await payload.find({
@@ -108,27 +88,14 @@ export async function getCategoryBySlug(slug: string): Promise<CategoryWithChild
     overrideAccess: false,
   })
 
-  const category = docs[0]
-  if (!category) return null
-
-  const { docs: children } = await payload.find({
-    collection: 'categories',
-    where: { parent: { equals: category.id } },
-    sort: CATEGORY_ORDER,
-    limit: 0,
-    depth: 0,
-    overrideAccess: false,
-  })
-
-  return { ...category, children } as CategoryWithChildren
+  return (docs[0] as Category | undefined) ?? null
 }
 
 /**
- * Paginated products for a category. When the category is a parent (no
- * `parent` of its own), rolls up products filed under every child too — the
- * single implementation of "which products are in this category" per
- * ADR-013, shared by the category routes and the sitemap so they cannot
- * disagree. Returns null for an unknown slug.
+ * Paginated products for a category: the products filed under it. The single implementation of
+ * "which products are in this category", shared by the category routes and the sitemap so they
+ * cannot disagree. M102 (ADR-048): no parent roll-up any more, since categories are flat.
+ * Returns null for an unknown slug.
  */
 export async function getProductsByCategory(
   slug: string,
@@ -151,25 +118,12 @@ export async function getProductsByCategory(
   const category = matches[0]
   if (!category) return null
 
-  let categoryIds: (number | string)[] = [category.id]
-
-  if (!category.parent) {
-    const { docs: children } = await payload.find({
-      collection: 'categories',
-      where: { parent: { equals: category.id } },
-      limit: 0,
-      depth: 0,
-      overrideAccess: false,
-    })
-    categoryIds = [category.id, ...children.map((child) => child.id)]
-  }
-
   // M92: price range and price sort are database queries. The discount filter and sort compare
   // price with MRP, which Payload cannot express, so those fetch the matching rows and are
   // filtered, sorted and paged here. The plain listing (no filters) is the same query as before.
   const where: Where = {
     and: [
-      { category: { in: categoryIds } },
+      { category: { equals: category.id } },
       ...(filters.minPrice !== undefined ? [{ price: { greater_than_equal: filters.minPrice } }] : []),
       ...(filters.maxPrice !== undefined ? [{ price: { less_than_equal: filters.maxPrice } }] : []),
     ],

@@ -1,5 +1,10 @@
 # Category Browsing Requirements — Mirza (formerly GoCart Pakistan)
 
+> **M102 ([ADR-048](./DECISIONS.md), 2026-11-01): categories are flat.** There is no `parent` field, no
+> sub-category, no parent roll-up, no parent breadcrumb and no child navigation any more. The sections
+> below on parent/child behaviour describe the former two-level design (ADR-013) and are kept as a
+> record; where they disagree with ADR-048, ADR-048 wins.
+
 The behavior specification for customer-facing category browsing. **`M27a` and `M27b` in
 [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) implement against this document**; `M9`, `M10`, and `M22`
 supply the data model and queries it depends on.
