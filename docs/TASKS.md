@@ -445,6 +445,13 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M100` | Free non-commercial test deployment: Vercel Hobby + Neon Free + Vercel Blob (ADR-046; test environment only, not production) | **In progress** (2026-10-30) - approved under the owner's 2026-10-30 delegation (`GATES.md`). See `docs/MIGRATION_PLAN.md` `M100` |
 | `M101` | Mirza brand migration and the 10-issue storefront UX pass (ADR-047; one column-default migration; no new dependency) | **Done** (2026-11-01) - merged (PR #53), deployed to `gocart-test`, migration `20261031_160131_mirza_store_name` applied on Neon, live second review at six widths passed (`docs/MIRZA_UX_REVIEW.md`, section 4) |
 | `M102` | Flat categories (no sub-categories), Smart Watches merged into Watches (10 categories), no desktop "Shop by category", circle category shortcuts on phones (ADR-048; one migration; no new dependency) | **Done** (2026-11-01) - merged (PR #54), deployed to `gocart-test`, migration `20261101_205147_flat_categories` applied on Neon (10 categories, 24 of 24 products with a category); backup branch `backup-before-m101-m102-2026-11-01` kept on Neon |
+| `M103` | Demo inventory and read-only media audit (docs/CSV only; [VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md)) | **Proposed** (2026-11-01), awaiting owner approval |
+| `M104` | Demo photo brief, sourcing and licence verification (Unsplash/Pexels or owner files in `demo-assets/_inbox/`) | **Proposed** (2026-11-01) |
+| `M105` | Local image-processing pipeline: archive, WebP, budgets, metadata strip, validation (existing `sharp`; ADR-049 Proposed) | **Proposed** (2026-11-01) |
+| `M106` | Local integration of demo photos into the demo seed and local database | **Proposed** (2026-11-01) |
+| `M107` | Storefront image-surface QA and fixes | **Proposed** (2026-11-01) |
+| `M108` | Test-site rollout of demo photos (test environment only, never production) | **Proposed** (2026-11-01) |
+| `M109` | Pre-launch demo cleanup and original-catalogue import | **Proposed** (2026-11-01), run only when the owner is ready to launch |
 
 ---
 
