@@ -79,7 +79,14 @@ const STATUS_TEXT: Partial<Record<TurnstileStatus, string>> = {
   loading: 'Running a quick security check…',
   failed:
     "The security check couldn't load, so this can't be done online right now. Please reload the page and try again, or contact us.",
-  disabled: 'Online ordering is not available right now. Please contact us.',
+}
+
+// M101: with no site key the form is off on purpose (for example the test deployment, owner decision
+// 2026-10-30), so the message says which action is paused instead of always saying "ordering"
+// (the order lookup said it too). The check itself is unchanged: nothing is submitted without a token.
+const DISABLED_TEXT: Record<'place_order' | 'order_lookup', string> = {
+  place_order: "Online ordering is paused right now, so this order can't be placed here. Please contact us to order.",
+  order_lookup: 'Online order lookup is paused right now. Please contact us about your order.',
 }
 
 export function TurnstileWidget({
@@ -182,11 +189,19 @@ export function TurnstileWidget({
     }
   }, [action])
 
+  // M101: a status that blocks the form ('failed', 'disabled') is a visible notice, not small grey
+  // text under the total. The live region stays the same element, so it is announced as before.
+  // A white note, so it reads on the lavender order summary and lookup panels.
+  const message = status === 'disabled' ? DISABLED_TEXT[action] : (STATUS_TEXT[status] ?? '')
+  const blocking = status === 'disabled' || status === 'failed'
   return (
     <div data-turnstile-status={status} className={`max-w-full ${className}`}>
       <div ref={containerRef} className="max-w-full" />
-      <p aria-live="polite" className="text-xs text-slate-500">
-        {STATUS_TEXT[status] ?? ''}
+      <p
+        aria-live="polite"
+        className={blocking ? 'rounded-tile bg-white px-4 py-3 text-[13px] leading-snug text-ink-2 ring-1 ring-line-2' : 'text-xs text-muted'}
+      >
+        {message}
       </p>
     </div>
   )

@@ -12,11 +12,12 @@ export default function NotFound() {
       <div className="mx-auto flex min-h-[60vh] max-w-7xl flex-col items-center justify-center gap-4 py-10">
         <EmptyState
           icon={<CompassIcon size={28} />}
+          headingLevel={1}
           title="Page not found"
           text="This page doesn't exist or has moved. Try searching, or start from the shop."
           action={{ href: '/shop', label: 'Browse all products' }}
         />
-        <Link href="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">Back to home</Link>
+        <Link href="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline hover:underline-offset-4">Back to home</Link>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { TruckIcon, BanknoteIcon, ShoppingCartIcon } from "lucide-react";
+import { TruckIcon, BanknoteIcon, ShoppingBagIcon, ShoppingCartIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
@@ -30,6 +30,8 @@ import { discountPercent, statusBadge } from "@/lib/product-badges";
 // nothing in the store states tax treatment.
 // M64: the redesign's layout. A pastel tile holds the real image (a thumbnail rail beside it from
 // `lg`, a strip below it on a phone), then category, name, a price card, stock, actions and info rows.
+// M101 (owner-approved home style): semibold title with tight tracking, the discount as the pink
+// "N% off" pill (as on the cards), pill buttons, and the delivery list on a lavender panel with no border.
 const ProductDetails = ({ product, shipping }) => {
 
     const productId = product.id;
@@ -70,12 +72,13 @@ const ProductDetails = ({ product, shipping }) => {
                 {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. */}
                 <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-square ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
-                    {mainImage && <Image src={mainImage} alt={product.name} width={600} height={600} sizes="(min-width: 1024px) 560px, 100vw" priority fetchPriority="high" className="relative h-[78%] w-[78%] object-contain mix-blend-multiply" />}
-                    {status && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
+                    {mainImage && <Image src={mainImage} alt={product.name} width={900} height={900} sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw" priority fetchPriority="high" className="size-full object-cover" />}
+                    {/* M101: "Out of stock" is said once, by the stock line; the photo keeps only an admin label. */}
+                    {status && !outOfStock && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
                     {images.length > 1 && (
                         <span aria-hidden="true" className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
                             {images.map((image, index) => (
-                                <span key={index} className={`h-1.5 rounded-full ${index === imageIndex ? 'w-[18px] bg-primary' : 'w-1.5 bg-line-3'}`} />
+                                <span key={index} className={`h-1.5 rounded-full ${index === imageIndex ? 'w-[18px] bg-ink' : 'w-1.5 bg-white/80'}`} />
                             ))}
                         </span>
                     )}
@@ -83,8 +86,8 @@ const ProductDetails = ({ product, shipping }) => {
                 {images.length > 1 && (
                     <div className="no-scrollbar flex gap-3 overflow-x-auto p-1 lg:flex-col lg:overflow-visible">
                         {images.map((image, index) => (
-                            <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className={`flex size-16 shrink-0 items-center justify-center rounded-tile ring-2 transition sm:size-[72px] ${tileFor(productId)} ${mainImage === image ? 'ring-primary' : 'ring-transparent hover:ring-line-3'}`}>
-                                <Image src={image} className="h-3/4 w-3/4 object-contain mix-blend-multiply" alt="" width={64} height={64} sizes="64px" />
+                            <button type="button" key={index} onClick={() => setMainImage(images[index])} aria-label={`Show image ${index + 1} of ${images.length}`} aria-pressed={mainImage === image} className={`flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-tile ring-2 ring-offset-2 ring-offset-page transition sm:size-[72px] ${tileFor(productId)} ${mainImage === image ? 'ring-ink' : 'ring-transparent hover:ring-line-3'}`}>
+                                <Image src={image} className="size-full object-cover" alt="" width={144} height={144} sizes="72px" />
                             </button>
                         ))}
                     </div>
@@ -92,45 +95,49 @@ const ProductDetails = ({ product, shipping }) => {
             </div>
 
             <div className="min-w-0 lg:pt-2">
-                {category && <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted">{category.title}</p>}
+                {category && <p className="text-[13px] text-muted">{category.title}</p>}
                 {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
-                <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-3xl lg:text-[34px] [overflow-wrap:anywhere]">{product.name}</h1>
+                <h1 className="mt-2 text-[28px] font-semibold leading-[1.1] tracking-[-0.03em] text-ink sm:text-4xl lg:text-[40px] [overflow-wrap:anywhere]">{product.name}</h1>
 
-                <div className="mt-4 rounded-card bg-white p-4 ring-1 ring-line sm:p-5">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                        <p className="text-[28px] font-extrabold leading-none text-primary sm:text-[32px]">{formatPKR(product.price)}</p>
+                {/* M101: the price is not boxed. Price in ink, the MRP and the discount as text beside it, then
+                    one stock line (a dot and a word); the delivery note is said once, below the buttons (M98). */}
+                <div className="mt-4 border-b border-line pb-5">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <p className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-ink sm:text-[32px]">{formatPKR(product.price)}</p>
                         {discount > 0 && (
                             <>
                                 <p className="text-base text-strike line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
-                                <Badge tone="off">{discount}% OFF</Badge>
+                                <Badge tone="off" className="self-center">{discount}% off</Badge>
                             </>
                         )}
                     </div>
-                    {/* M98: the stock pill sits with the price; the delivery note is said once, in the row below the buttons. */}
-                    <Badge tone={outOfStock ? 'neutral' : 'success'} className={`mt-3 ${outOfStock ? 'ring-1 ring-line-2' : ''}`}>{outOfStock ? 'Out of stock' : 'In stock'}</Badge>
+                    <p className={`mt-3 flex items-center gap-2 text-sm font-medium ${outOfStock ? 'text-muted' : 'text-success'}`}>
+                        <span aria-hidden="true" className={`size-2 rounded-full ${outOfStock ? 'bg-disabled' : 'bg-success'}`} />
+                        {outOfStock ? 'Out of stock' : 'In stock'}
+                    </p>
                 </div>
 
                 {/* The action group: fixed to the bottom below `lg`, inline in the column from `lg`. */}
                 <MobileActionBar label="Add to cart" inline>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
-                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-control bg-line px-6 text-sm font-bold text-disabled">
+                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-full bg-lavender px-6 text-sm font-semibold text-muted">
                                 Out of Stock
                             </button>
                         ) : inCart ? (
                             <>
                                 <Counter productId={productId} />
-                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-control bg-primary px-6 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     View Cart
                                 </button>
                             </>
                         ) : (
                             <>
-                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-4 text-sm font-bold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     <ShoppingCartIcon size={18} aria-hidden="true" />
                                     Add to Cart
                                 </button>
-                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-control border border-line-3 bg-white px-4 text-sm font-bold text-primary-dark transition hover:border-primary active:scale-[0.98]">
+                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-primary-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-lavender-2 active:scale-[0.98]">
                                     Buy Now
                                 </button>
                             </>
@@ -138,16 +145,21 @@ const ProductDetails = ({ product, shipping }) => {
                     </div>
                 </MobileActionBar>
 
-                <div className="mt-6 grid gap-3 text-sm lg:mt-8">
-                    <p className="flex items-center gap-3 rounded-card bg-white p-3 text-ink-2 ring-1 ring-line">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><TruckIcon size={18} aria-hidden="true" /></span>
+                {/* M101: one quiet list instead of two boxed cards with tinted circles. */}
+                <ul className="mt-6 divide-y divide-line-2 rounded-card bg-lavender px-1 text-sm text-ink-2 lg:mt-8">
+                    <li className="flex items-center gap-3 px-4 py-3.5">
+                        <TruckIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
                         {deliveryNote(shipping)}
-                    </p>
-                    <p className="flex items-center gap-3 rounded-card bg-white p-3 text-ink-2 ring-1 ring-line">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tint-mint text-tint-mint-ink"><BanknoteIcon size={18} aria-hidden="true" /></span>
-                        Cash on Delivery — pay when your order arrives
-                    </p>
-                </div>
+                    </li>
+                    <li className="flex items-center gap-3 px-4 py-3.5">
+                        <BanknoteIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
+                        Cash on Delivery: pay in cash when your order arrives
+                    </li>
+                    <li className="flex items-center gap-3 px-4 py-3.5">
+                        <ShoppingBagIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
+                        No account needed to order
+                    </li>
+                </ul>
             </div>
         </div>
     )

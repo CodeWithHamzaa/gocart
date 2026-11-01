@@ -1,12 +1,14 @@
 <div align="center">
-  <h1><img src="https://gocart-gs.vercel.app/favicon.ico" width="20" height="20" alt="GoCart Favicon">
-   GoCart — Pakistan</h1>
+  <h1><img src="./app/icon.svg" width="22" height="22" alt="">
+   Mirza</h1>
   <p>
-    A production-ready, Cash-on-Delivery ecommerce platform for the Pakistani market, built on Next.js, Payload CMS v3, and PostgreSQL.
+    Mirza: a single-store, Cash-on-Delivery online shop for Pakistan (electronics, fashion, home and beauty), built on Next.js, Payload CMS v3, and PostgreSQL.
   </p>
 </div>
 
 ---
+
+> **Brand:** the store is **Mirza** ([ADR-047](./docs/DECISIONS.md)). The project was called "GoCart Pakistan" until 2026-10-31; older ADRs, the changelog and some infrastructure names (the `gocart` repository, Docker project, `gocart_app` database role, `gocart-test` Vercel project) keep the old name on purpose. ADR-047 lists them.
 
 > **Status: implemented, launch NOT cleared.** This repository started as the open-source [GoCart](https://github.com/GreatStackDev/goCart) storefront and is now a single-store, admin-managed, Cash-on-Delivery platform for Pakistan on Next.js 16, Payload CMS v3 and PostgreSQL. The storefront, guest COD checkout, order confirmation, guest order lookup (order number + phone), the Payload admin, Cloudflare Turnstile on ordering, migrations as a deploy step, backups and health checks are implemented. **Launch is not cleared:** real-key Turnstile checks, a Cloudflare WAF rule, first-deploy checks and an external uptime monitor remain open (see "Launch blockers" in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)). [docs/TASKS.md](./docs/TASKS.md) is the source of truth for milestone status.
 
@@ -78,7 +80,7 @@ production reference. `docker build --target dev .` builds the development image
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
 
-## Building GoCart
+## Building Mirza
 
 Day-to-day engineering runs through a development-time AI engineering team defined in
 [.claude/](./.claude/) — seven specialists under an Engineering Manager, with human approval

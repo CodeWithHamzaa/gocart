@@ -1,9 +1,9 @@
 # The AI team is development-time only
 
-**Absolute rule.** The GoCart application that ships to the client must run with no
+**Absolute rule.** The Mirza application that ships to the client must run with no
 knowledge that this team ever existed.
 
-## Production GoCart must never depend on
+## Production Mirza must never depend on
 
 - Claude, Claude Code, or any Anthropic API
 - Any AI or LLM provider, SDK, or API key

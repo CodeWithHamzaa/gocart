@@ -1,4 +1,4 @@
-# Tasks — GoCart Pakistan
+# Tasks — Mirza (formerly GoCart Pakistan)
 
 Status roll-up for the migration. **This file tracks status; it does not define execution order.**
 
@@ -443,6 +443,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M98` | Design review pass: store 404 page, aligned header/footer width, card price alignment, dimmed sold-out cards, product page de-duplication, `/shop` breadcrumb, count and empty search, category icon fixes, two-column mobile footer, admin Products `Rs.` and stock pills, local admin avatar (UI only) | **Done** (2026-10-29) - PR #45; owner asked for the review and approved the milestone, then asked to mark it Done and merge, 2026-10-29. Lint, type-check, `test:category-filters`, production build and a 320px overflow check pass locally; all six CI jobs (checks, e2e, image, migrations, prod-stack, turnstile-contract) green. |
 | `M99` | Launch hardening: close the five `docs/DEPLOYMENT.md` launch blockers with recorded evidence or written owner acceptance (mostly owner-run on the real VPS and Cloudflare) | **In progress** (2026-10-29) - blocker 1: `npm audit --omit=dev` on `main` shows 0 critical (15: 4 low, 5 moderate, 6 high, all accepted in ADR-045), recorded in `docs/DEPLOYMENT.md`; release-commit re-audit and deploy are owner steps. (a) `scripts/backup-cron.sh` written and tested locally and in CI `prod-stack`; its first cron run on the VPS is pending. (d) owner decided 2026-10-29: launch without order email. Owner approved with (a) a scheduled backup job and (d) the order-email decision included; (b) memory limits / `read_only` and (c) Actions pinned by SHA left out. See `docs/MIGRATION_PLAN.md` `M99` |
 | `M100` | Free non-commercial test deployment: Vercel Hobby + Neon Free + Vercel Blob (ADR-046; test environment only, not production) | **In progress** (2026-10-30) - approved under the owner's 2026-10-30 delegation (`GATES.md`). See `docs/MIGRATION_PLAN.md` `M100` |
+| `M101` | Mirza brand migration and the 10-issue storefront UX pass (ADR-047; one column-default migration; no new dependency) | **In review** (2026-10-31) - branch `claude/sleepy-hamilton-34jlov`, draft PR; baseline review and branch review done in Chromium at six widths; waiting for the owner to approve the merge, then the migration on Neon and the second review on the live test site. See `docs/MIRZA_UX_REVIEW.md` |
 
 ---
 

@@ -10,6 +10,9 @@ ADR-032 or ADR-036, and it closes no launch blocker.
 > decision, 2026-10-30).** Placing an order and looking one up both need a verified Turnstile token
 > ([ADR-035](./DECISIONS.md)). Browsing, product pages and the admin work.
 
+> **Names:** the store is **Mirza** ([ADR-047](./DECISIONS.md)). The Vercel project, Neon project, Blob store
+> and URL keep their `gocart-test` names on purpose.
+
 ## Architecture
 
 ```

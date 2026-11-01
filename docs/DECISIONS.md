@@ -1,4 +1,4 @@
-# Decisions — GoCart Pakistan
+# Decisions — Mirza (formerly GoCart Pakistan)
 
 Architecture Decision Record (ADR) log. Each entry: Context, Decision, Consequences. Newest at the bottom. Add a new entry rather than editing history — if a decision changes, record the change as a new ADR that supersedes the old one.
 
@@ -1418,3 +1418,48 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
   - The client IP is read only from `cf-connecting-ip` ([ADR-033](#adr-033-cloudflare-tunnel-is-the-origin-boundary--and-production-environment-validation-is-a-deploy-gate-m52)); there is no Cloudflare in front, so every visitor shares one `unknown` bucket.
   - Checkout and order lookup cannot work without Turnstile keys ([ADR-035](#adr-035-cloudflare-turnstile-on-order-placement-and-lookup-a-per-phone-order-limit-and-a-per-ip-flood-ceiling--cgnat-safe-rate-limits-m52b)); this is the owner's decision above.
 - **Rollback**: remove the `gocart-test*` resources; no production dependency exists.
+
+## ADR-047: The brand is Mirza; old "GoCart" identifiers kept for compatibility are listed (`M101`)
+
+**Status**: **Accepted (2026-10-31)**. The rename itself, the list of identifiers to rename and the list to keep are the owner's own decisions (M101 brief, 2026-10-31). The PR merge is the owner's confirmation.
+
+**This ADR edits no earlier ADR.** Accepted ADRs keep their wording, including "GoCart" and "GoCart Pakistan". Read those as the project's former name: they describe this same application. Where an earlier ADR quotes the storefront's text, the current text is in the code. For example, ADR-036's ordering-unavailable message now names the paused action (`components/TurnstileWidget.tsx`, `M101`).
+
+**Context**: The project began as a fork of the open-source GreatStack "GoCart" multi-vendor storefront and kept the name through the migration. The owner has chosen **Mirza** as the official, permanent brand, and the test site already showed it (through the Settings global). The code defaults still said "GoCart". The UX review in [MIRZA_UX_REVIEW.md](./MIRZA_UX_REVIEW.md) also found a visual identity that read as a template (violet and pink, a four-bar mark, a generic favicon).
+
+**Decision**:
+
+1. **Mirza is the brand** in customer-facing text, code defaults, metadata and current-state documentation. The store name shown on the storefront and in /admin is still the Settings `storeName`, so an admin edit still renames everything.
+2. **Renamed (the safe set):**
+   - `storeName` default `GoCart` -> `Mirza` (`globals/Settings.ts`, `lib/payload/settings.ts` fallback, `components/Navbar.jsx` fallback), plus migration `20261031_160131_mirza_store_name`, which changes the **column default only**. Saved values are never touched.
+   - Order-confirmation sessionStorage key `gocart:last-order` -> `mirza:last-order`. The reader falls back to the old key, and the writer removes it, so a confirmation saved during the deploy is not lost.
+   - The demo seed's store name (`mirza` -> `Mirza`). The seed no longer writes fake contact details.
+3. **Kept on purpose (compatibility):**
+
+   | Identifier | Where | Why kept |
+   |---|---|---|
+   | `gocart_app` database role | ADR-036, `scripts/db-roles.ts`, Neon, `DATABASE_URI` | Renaming means a new role, new grants and a secret rotation on every environment |
+   | Docker Compose project name `gocart` (so volumes are `gocart_postgres-data`, `gocart_app-media`), container names `gocart-*`, and the default Postgres user and database `gocart` | `docker-compose*.yml`, `.env.example`, backup scripts | Changing the project name changes the volume names, which detaches the existing database and media |
+   | CI database names and users | `.github/workflows/ci.yml` | Internal to CI; nothing user-visible |
+   | Production Compose project `gocart-prod` (volumes `gocart-prod_postgres-data`, `gocart-prod_app-media`), env file name `gocart-prod.env`, backup file names `gocart-db-*.dump` / `gocart-media-*.tar.gz`, cron file and log `gocart-backup` | `docker-compose.prod.yml`, `scripts/backup*.sh`, `docs/DEPLOYMENT.md` | Backup rotation and verification match these names; renaming would orphan existing backups and volumes |
+   | CI image tags (`gocart:ci`, `gocart-migrate:ci`) and `check-env` test fixtures | `.github/workflows/ci.yml`, `scripts/check-env.test.ts` | Internal to CI and tests |
+   | Historical documents (`docs/REPOSITORY_ANALYSIS.md`, `docs/PHASE_1_READINESS_REPORT.md`, the changelog, Accepted ADRs, the owner's verbatim delegation in `.claude/docs/GATES.md`) | docs | They record what was true, or said, at the time |
+   | Historical migrations and their JSON snapshots | `migrations/` | Migrations are immutable once applied |
+   | GitHub repository `gocart`, Vercel project `gocart-test`, Neon project `gocart-test`, Blob store `gocart-test-media`, URL `gocart-test-inky.vercel.app` | external services | Renaming breaks links, deploy hooks and documented steps; the owner decides separately |
+   | `package.json` `name` (`gocart`) | npm | Private package, never shown to customers |
+   | Order numbers prefixed `GC-` | order creation, `/orders` lookup, `lib/order-confirmation.ts` | Existing orders and customers' saved numbers depend on the format |
+   | `gocart:cart` and `gocart:wishlist` localStorage keys | `app/StoreProvider.js` | Not in the owner's rename list; renaming without a fallback would empty every saved cart |
+   | `gocartAdminBootstrap` request-context key | `collections/Users.ts` | Internal constant, never stored or shown |
+4. **Visual identity** ("lavender wash", the owner's choice on 2026-10-31 from three lighter-violet options on the real home page; warm-neutral, bright-coral and minimal-green passes came before it): a near-black "M" monogram (header, footer, favicon, admin logo) and a one-colour wordmark. A faintly violet page (`#FCFAFF`), lavender wells and strips (`#F1ECFF`), one bright violet (`#5F42EC`) for actions, hot pink (`#CC1966`) for real discounts and sale labels, amber for "Limited edition", near-black text. The home page layout combines the owner's chosen mockups (banner slider, category shortcuts and promises, large-card rails, cash-on-delivery steps). The values change in the `@theme` block of `app/globals.css`; the token *names* (`lavender`, `pink`) are kept so components did not need rewriting, and the block's comment says what each name now means.
+
+**Alternatives considered**:
+
+- **Rename every identifier, including infrastructure.** Rejected: data loss and outage risk (the volume, the database role, live URLs) for no customer benefit.
+- **Edit the Accepted ADRs to say Mirza.** Rejected by the owner: Accepted ADRs are a historical record.
+- **Rename the colour tokens to match their new values.** Deferred: dozens of files would change for no visible effect. It is a candidate for a later clean-up.
+
+**Consequences**:
+
+- Run migration `20261031_160131_mirza_store_name` against each database with the owner role before the new code serves traffic. It is metadata-only (`ALTER COLUMN ... SET DEFAULT`).
+- The retained identifiers above still contain "gocart". They are intentional; do not "fix" them without a new decision.
+- **Owner data, not code:** the test site's Settings still has the demo placeholder address (`Demo Store, Sample Street, Placeholder City (fake address)`), and its promo cards say "Summer Sale" and "Winter Sale" side by side. Both are edited in /admin.

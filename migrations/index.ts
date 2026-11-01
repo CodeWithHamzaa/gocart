@@ -4,6 +4,7 @@ import * as migration_20261024_061017_product_label from './20261024_061017_prod
 import * as migration_20261024_061141_promo_cards from './20261024_061141_promo_cards';
 import * as migration_20261027_145423_deal_ends_at from './20261027_145423_deal_ends_at';
 import * as migration_20261030_172753_media_storage_fields from './20261030_172753_media_storage_fields';
+import * as migration_20261031_160131_mirza_store_name from './20261031_160131_mirza_store_name';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20261030_172753_media_storage_fields.up,
     down: migration_20261030_172753_media_storage_fields.down,
-    name: '20261030_172753_media_storage_fields'
+    name: '20261030_172753_media_storage_fields',
+  },
+  {
+    up: migration_20261031_160131_mirza_store_name.up,
+    down: migration_20261031_160131_mirza_store_name.down,
+    name: '20261031_160131_mirza_store_name',
   },
 ];

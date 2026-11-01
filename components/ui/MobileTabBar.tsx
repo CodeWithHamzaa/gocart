@@ -8,6 +8,7 @@ import { HouseIcon, LayoutGridIcon, PackageIcon, StoreIcon, type LucideIcon } fr
 // here: the header owns those, and e2e/mobile.spec.ts expects exactly one of each. The product page
 // and the cart have their own bottom action bar, so the tab bar steps aside there, and a spacer
 // keeps the end of the page clear of whichever bar is showing.
+// M101: the active tab sits on a lavender pill (violet on lavender, 5.2:1).
 const TABS: Array<{ href: string; label: string; Icon: LucideIcon; match: (path: string) => boolean }> = [
   { href: '/', label: 'Home', Icon: HouseIcon, match: (path) => path === '/' },
   { href: '/categories', label: 'Categories', Icon: LayoutGridIcon, match: (path) => path === '/categories' || path.startsWith('/category/') },
@@ -30,7 +31,7 @@ export default function MobileTabBar() {
           {TABS.map(({ href, label, Icon, match }) => {
             const active = match(path)
             return (
-              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-control text-[11px] ${active ? 'font-bold text-primary' : 'font-medium text-muted'}`}>
+              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-tile text-[11px] ${active ? 'bg-lavender font-semibold text-primary' : 'font-medium text-muted'}`}>
                 <Icon size={22} strokeWidth={1.8} aria-hidden="true" className={active ? 'fill-primary-soft' : ''} />
                 {label}
               </Link>

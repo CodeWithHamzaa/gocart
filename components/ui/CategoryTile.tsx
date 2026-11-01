@@ -1,44 +1,38 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { CategoryIcon, tintFor } from '@/lib/category-style'
+import { CategoryIcon } from '@/lib/category-style'
 
-// M61: the two category tiles. `tile` is the home page's pastel card and `circle` the categories
-// page's large circle. Both are server components, and both put child links beside the main link
-// rather than inside it (a link cannot contain a link): the main link is stretched over the tile
-// and the child links sit above it. A category's own image is used when an admin uploaded one;
+// M61: the categories page's large category circle (M101 moved the home page's tile variant to
+// components/HomeCategories.tsx; `variant` stays 'circle' so callers read the same). A server
+// component; child links sit beside the main link rather than inside it (a link cannot contain a link). A category's own image is used when an admin uploaded one;
 // otherwise a tinted icon stands in.
+// M101 (owner-approved home style): the circle became the home page's category tile. A lavender card
+// with the name as a semibold heading-sized link stretched over the card, the child links (passed as
+// `children`, raised above the stretch), and the image on a white tile. On a phone the card is a row
+// (text left, a square image right) so four categories fit without a long scroll; from `sm` it is the
+// home page's tall tile with the image at the bottom.
 type TileCategory = { slug: string; title: string; image?: { url?: string | null } | number | string | null }
 
-export default function CategoryTile({ category, index, variant, className = '', children }: { category: TileCategory; index: number; variant: 'tile' | 'circle'; className?: string; children?: ReactNode }) {
-  const tint = tintFor(index)
+export default function CategoryTile({ category, className = '', children }: { category: TileCategory; index?: number; variant: 'circle'; className?: string; children?: ReactNode }) {
   const image = typeof category.image === 'object' && category.image ? category.image.url : null
   const href = `/category/${category.slug}`
 
-  if (variant === 'circle') {
-    return (
-      <div className={`flex flex-col items-center gap-3 text-center ${className}`}>
-        <Link href={href} className="group flex flex-col items-center gap-3">
-          <span className={`flex size-28 items-center justify-center overflow-hidden rounded-full transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-float-sm sm:size-32 ${tint.tile} ${tint.ink}`}>
-            {image ? <Image src={image} alt="" width={128} height={128} sizes="128px" className="size-full object-cover" /> : <CategoryIcon category={category} size={44} strokeWidth={1.6} aria-hidden="true" />}
-          </span>
-          <span className="text-base font-bold text-ink">{category.title}</span>
-        </Link>
-        {children}
-      </div>
-    )
-  }
-
   return (
-    <div className={`group relative flex min-h-[152px] flex-col gap-1 overflow-hidden rounded-card p-4 transition sm:min-h-[168px] sm:p-5 ${className}  duration-300 hover:-translate-y-0.5 hover:shadow-float-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary ${tint.tile}`}>
-      <span className={`mb-2.5 flex size-10 items-center justify-center rounded-control bg-white ${tint.ink}`} aria-hidden="true">
-        <CategoryIcon category={category} size={22} strokeWidth={1.8} />
+    <div className={`group relative flex h-full gap-4 overflow-hidden rounded-card bg-lavender p-5 focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-primary sm:min-h-[360px] sm:flex-col sm:px-6 sm:pb-0 sm:pt-6 ${className}`}>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-none">
+        <Link href={href} className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-ink outline-none after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-4">
+          {category.title}
+        </Link>
+        {children && <div className="relative z-10">{children}</div>}
+      </div>
+      <span aria-hidden="true" className="flex size-24 shrink-0 items-center justify-center self-start overflow-hidden rounded-tile bg-white text-ink-3 sm:mt-auto sm:aspect-[4/3] sm:size-auto sm:w-full sm:self-stretch sm:rounded-b-none">
+        {image ? (
+          <Image src={image} alt="" width={480} height={360} sizes="(min-width: 1024px) 260px, (min-width: 640px) 45vw, 96px" className="size-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+        ) : (
+          <CategoryIcon category={category} size={44} strokeWidth={1.4} />
+        )}
       </span>
-      <Link href={href} className="text-base font-bold text-ink outline-none after:absolute after:inset-0">{category.title}</Link>
-      {/* M98: the child links keep clear of the large corner icon from `sm`, where it shows. */}
-      {children && <div className="relative z-10 text-[13px] text-muted sm:pr-[5.5rem]">{children}</div>}
-      <span aria-hidden="true" className={`mt-1.5 text-[13px] font-bold ${tint.link}`}>Shop now &rarr;</span>
-      <CategoryIcon category={category} aria-hidden="true" size={96} strokeWidth={1} className={`pointer-events-none absolute -bottom-1.5 -right-1.5 hidden opacity-90 sm:block ${tint.ink}`} />
     </div>
   )
 }

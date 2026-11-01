@@ -2,7 +2,11 @@
 // through sessionStorage (ADR-027). No server imports. Stored data is untrusted:
 // readLastOrder shape-validates everything and returns null on any mismatch.
 
-export const STORAGE_KEY = 'gocart:last-order'
+// M101 (ADR-047): renamed from the pre-rebrand key. A confirmation written by a tab that loaded
+// the old code is still read through the legacy key, then moved, so nobody loses their
+// confirmation page during the deploy.
+export const STORAGE_KEY = 'mirza:last-order'
+export const LEGACY_STORAGE_KEY = 'gocart:last-order'
 
 const ORDER_NUMBER_PATTERN = /^GC-[0-9A-Z]+-[0-9A-F]{8}$/
 const MAX_AGE_MS = 24 * 60 * 60 * 1000
@@ -43,6 +47,11 @@ function text(value: unknown, max: number): value is string {
 export function writeLastOrder(entry: LastOrder): boolean {
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(entry))
+    try {
+      window.sessionStorage.removeItem(LEGACY_STORAGE_KEY)
+    } catch {
+      // Removing the old copy is best effort; the new key wins on read.
+    }
     return true
   } catch {
     return false
@@ -51,7 +60,8 @@ export function writeLastOrder(entry: LastOrder): boolean {
 
 export function readLastOrder(): LastOrder | null {
   try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY)
+    const raw =
+      window.sessionStorage.getItem(STORAGE_KEY) ?? window.sessionStorage.getItem(LEGACY_STORAGE_KEY)
     if (!raw) return null
     const data: unknown = JSON.parse(raw)
     if (!isRecord(data)) return null

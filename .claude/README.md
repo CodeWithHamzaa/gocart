@@ -1,9 +1,9 @@
-# GoCart AI Engineering Team
+# Mirza AI Engineering Team
 
-A **development-time** engineering system for the GoCart Pakistan migration.
+A **development-time** engineering system for Mirza (formerly the GoCart Pakistan migration).
 Eight roles, one orchestrator, human approval before anything merges (one recorded exception: see "Owner delegation" in [docs/GATES.md](./docs/GATES.md)).
 
-> **The application never depends on this.** Delete `.claude/` and GoCart still
+> **The application never depends on this.** Delete `.claude/` and Mirza still
 > builds, runs, and deploys. See [docs/NO_PRODUCTION_AI.md](./docs/NO_PRODUCTION_AI.md).
 
 ## Structure

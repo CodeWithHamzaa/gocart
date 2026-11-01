@@ -1,6 +1,8 @@
-import Link from 'next/link'
 import { Suspense } from 'react'
-import ProductCard from '@/components/ProductCard'
+import RailCard from '@/components/RailCard'
+import Title from '@/components/Title'
+import { RAIL_ROW } from '@/components/ProductRail'
+import ScrollRail from '@/components/ui/ScrollRail'
 import { getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
 
@@ -30,33 +32,32 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
 
   if (related.length === 0) return null
 
+  // M101: the home page's rail (Title, ScrollRail, RailCard), so "You may also like" looks like "New arrivals".
   return (
-    <section aria-labelledby="related-products" className="my-10 sm:my-12">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="related-products" className="text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-[28px]">You may also like</h2>
-        <Link href={`/category/${category.slug}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary-dark">
-          View all in {category.title} &rarr;
-        </Link>
+    <section aria-labelledby="related-products" className="my-12 sm:my-16">
+      <Title id="related-products" title="You may also like" href={`/category/${category.slug}`} linkLabel="View all" />
+      <div className="mt-6">
+        <ScrollRail label="You may also like">
+          <ul className={RAIL_ROW}>
+            {related.map((product) => (
+              <li key={product.id}>
+                <RailCard product={product} />
+              </li>
+            ))}
+          </ul>
+        </ScrollRail>
       </div>
-      {/* A phone scrolls sideways inside this box (the page itself never does); wider screens get a grid. */}
-      <ul className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4 sm:overflow-visible sm:px-0">
-        {related.map((product) => (
-          <li key={product.id} className="w-[148px] shrink-0 sm:w-auto">
-            <ProductCard product={product} />
-          </li>
-        ))}
-      </ul>
     </section>
   )
 }
 
 function RelatedSkeleton() {
   return (
-    <div aria-hidden="true" className="my-10 sm:my-12">
-      <div className="h-7 w-48 animate-pulse rounded bg-line" />
-      <div className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-hidden px-4 sm:mx-0 sm:grid sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4 sm:px-0">
+    <div aria-hidden="true" className="my-12 sm:my-16">
+      <div className="h-9 w-56 animate-pulse rounded-full bg-lavender" />
+      <div className="no-scrollbar -mx-4 mt-6 flex gap-4 overflow-hidden px-4 sm:-mx-6 sm:gap-5 sm:px-6 xl:mx-0 xl:px-0">
         {Array.from({ length: SHOWN }, (_, i) => (
-          <div key={i} className="aspect-[3/4] w-[148px] shrink-0 animate-pulse rounded-card bg-line sm:w-auto" />
+          <div key={i} className="h-[420px] w-[248px] shrink-0 animate-pulse rounded-card bg-lavender sm:h-[480px] sm:w-[300px]" />
         ))}
       </div>
     </div>

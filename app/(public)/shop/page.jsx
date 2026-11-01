@@ -45,17 +45,17 @@ export default async function Shop({ searchParams }) {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={crumbs} />
                 </div>
-                <h1 className="mt-2 text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-4xl [overflow-wrap:anywhere]">
+                <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl [overflow-wrap:anywhere]">
                     {query ? <>Results for &ldquo;{query}&rdquo;</> : 'All products'}
                 </h1>
                 {products.length > 0 ? (
                     <>
                         <p className="mt-2 text-sm text-muted">
                             Showing <strong className="text-ink">{products.length}</strong> product{products.length === 1 ? '' : 's'}
-                            {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">Clear search</Link></>}
+                            {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline hover:underline-offset-4">Clear search</Link></>}
                         </p>
                         {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. */}
-                        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4">
+                        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
                             {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                         </div>
                     </>

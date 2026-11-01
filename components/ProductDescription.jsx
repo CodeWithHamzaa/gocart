@@ -6,24 +6,25 @@ import { deliveryNote } from '@/lib/delivery'
 // No remaining state (M25 removed the Reviews tab), so this drops 'use
 // client' and renders as a server component, same direction as M23's
 // Redux-shedding cleanup.
+// M101: no card around the sections (a top rule instead), 15px body text for reading.
 // M64: two native <details> sections (Description, open; Delivery & payment) on every width: no
 // script, keyboard-accessible, and the text stays in the HTML. The description is the real one,
 // with its line breaks; the delivery section repeats only what Settings and ADR-004 say. The
 // design's size-guide, returns and reviews tabs are not built (no data, no policy, ADR-016).
 const Section = ({ title, open = false, children }) => (
     <details open={open} className="group border-b border-line last:border-b-0">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-base font-bold text-ink [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-base font-semibold text-ink [&::-webkit-details-marker]:hidden">
             {title}
-            <span aria-hidden="true" className="text-xl leading-none text-primary transition group-open:rotate-45">+</span>
+            <span aria-hidden="true" className="text-xl leading-none text-ink-3 transition group-open:rotate-45">+</span>
         </summary>
-        <div className="pb-4 text-sm leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{children}</div>
+        <div className="pb-5 text-[15px] leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{children}</div>
     </details>
 )
 
 const ProductDescription = ({ product, shipping = null }) => {
 
     return (
-        <section className="my-8 max-w-3xl rounded-panel bg-white px-5 shadow-card ring-1 ring-line sm:my-12 sm:px-8">
+        <section className="my-8 max-w-3xl border-t border-line sm:my-12">
             {product.description && (
                 <Section title="Description" open>
                     <p className="whitespace-pre-line">{product.description}</p>

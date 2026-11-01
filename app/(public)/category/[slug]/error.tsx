@@ -9,14 +9,14 @@ export default function CategoryError({ reset }: { error: Error; reset: () => vo
   return (
     <div className="mx-4 sm:mx-6">
       <div className="mx-auto flex min-h-[70vh] max-w-7xl flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-2xl font-extrabold tracking-tight text-ink">Something went wrong</h1>
+        <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-ink">Something went wrong</h1>
         <p className="max-w-md text-muted">
           We couldn&apos;t load this category right now. Please try again.
         </p>
         <button
           type="button"
           onClick={() => reset()}
-          className="inline-flex min-h-11 items-center rounded-control bg-primary px-6 text-sm font-bold text-white transition hover:bg-primary-dark"
+          className="inline-flex min-h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark"
         >
           Try again
         </button>

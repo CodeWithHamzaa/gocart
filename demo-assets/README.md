@@ -48,7 +48,7 @@ There is deliberately no delete routine. In /admin (`/admin`), in this order, be
 2. Products: open Products, select the 24 demo products listed below by name, Delete. Do not select products you added yourself.
 3. Categories: open Categories. Delete the children first (Headphones, Speakers, Smart Watches, Power Banks, Watches, Bags, Sunglasses, Lamps, Kitchen, Skincare, Fragrances), then the parents (Electronics, Fashion, Home & Living, Beauty & Care). Skip `electronics`, `speakers`, `headphones`, `fashion` and `watches` if they existed before the demo seed (for example from `npm run seed`).
 4. Media: open Media and delete the files named `category-<slug>.webp` and `<product-slug>-1.webp` / `<product-slug>-2.webp`.
-5. Settings: open Settings and replace the placeholder store name and contact details (demo values: store name `GoCart Demo Store`, phone `0300-0000000`, email `demo@example.com`) with the real ones.
+5. Settings: the seed sets only the store name (`Mirza`, and only while Settings is untouched). Add the real phone, email and address yourself; an empty one is not shown on the storefront. Seeds run before `M101` also wrote placeholder contact details (phone `0300-0000000`, email `demo@example.com`, address `Demo Store, Sample Street, Placeholder City (fake address)`): replace or clear them.
 
 ## Product slugs
 

@@ -1,6 +1,8 @@
 import Title from './Title'
-import ProductCard from './ProductCard'
+import RailCard from './RailCard'
+import { RAIL_ROW } from './ProductRail'
 import FeaturedTabs from './ui/FeaturedTabs'
+import ScrollRail from './ui/ScrollRail'
 
 // M23: server component fed by real Payload data. Its products are the ones an
 // admin flagged `isFeatured` — not a computed ranking. There is no sales-count
@@ -16,7 +18,8 @@ import FeaturedTabs from './ui/FeaturedTabs'
 // tabs cost no query: each product maps to its top-level category (its own category's parent when it is a
 // child, else the category itself), and a tab exists only for a top-level category that has at least one
 // featured product, so no tab is ever empty. Every card stays in the HTML; FeaturedTabs only hides them.
-const BestSelling = ({ products = [], total = 0, categories = [] }) => {
+// M101: the description says what the section is, not a listing count.
+const BestSelling = ({ products = [], categories = [] }) => {
 
     if (products.length === 0) return null
 
@@ -30,22 +33,21 @@ const BestSelling = ({ products = [], total = 0, categories = [] }) => {
     const items = products.map((product) => ({
         key: product.id,
         categoryId: topLevelOf(product),
-        node: <ProductCard product={product} />,
+        node: <RailCard product={product} />,
     }))
     const present = new Set(items.map((item) => item.categoryId).filter(Boolean))
     const tabs = categories
         .filter((category) => present.has(String(category.id)))
         .map((category) => ({ id: String(category.id), label: category.title }))
 
+    // M101: the large home cards in a swipeable row; the category tabs (M68) still filter it.
     return (
-        <section className='mx-4 sm:mx-6 mt-12 sm:mt-14'>
-            <div className='max-w-7xl mx-auto'>
-                <Title title='Featured' description={`Showing ${products.length} of ${total} products`} href='/shop' />
-                <FeaturedTabs
-                    tabs={tabs}
-                    items={items}
-                    gridClassName='mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4'
-                />
+        <section className='mx-4 mt-16 sm:mx-6 sm:mt-24'>
+            <div className='mx-auto max-w-7xl'>
+                <Title title='Featured' description='Picked by the store, across every category.' href='/shop' />
+                <ScrollRail label='Featured'>
+                    <FeaturedTabs tabs={tabs} items={items} gridClassName={`${RAIL_ROW} mt-6`} />
+                </ScrollRail>
             </div>
         </section>
     )

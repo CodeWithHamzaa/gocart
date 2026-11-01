@@ -1,6 +1,6 @@
 # Milestone workflow
 
-The one path work takes through the GoCart AI engineering team.
+The one path work takes through the Mirza AI engineering team.
 
 ```
 HUMAN

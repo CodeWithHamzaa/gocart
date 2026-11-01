@@ -141,10 +141,6 @@ h4 {
     color: var(--mirza-on-side);
 }
 
-.mirza-logo__accent {
-    color: #A99BFF;
-}
-
 .mirza-logo__tag {
     align-self: flex-end;
     margin-bottom: 4px;
@@ -159,10 +155,6 @@ h4 {
 .template-minimal .mirza-logo,
 .template-minimal .mirza-logo__name {
     color: var(--mirza-ink);
-}
-
-.template-minimal .mirza-logo__accent {
-    color: var(--mirza-primary);
 }
 
 .template-minimal .mirza-logo__tag {

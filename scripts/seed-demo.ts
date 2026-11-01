@@ -251,32 +251,29 @@ async function ensureProducts(payload: Payload, categoryIds: Map<string, number>
 
 // Settings is a global, so there is nothing to find-or-create: it is filled only while it still
 // looks untouched (default name, default shipping rule, no contact details) so a person's edits
-// are never overwritten. Values are clearly fake placeholders.
+// are never overwritten.
+// M101 (ADR-047): the demo sets only the brand name. It used to add a fake phone, email and
+// address, which the storefront footer then showed as if they were real; contact details are the
+// owner's to enter in /admin, and an empty one is simply not shown. 'GoCart' is still treated as
+// untouched so a database created before the rename is recognised.
 const DEMO_SETTINGS = {
-  storeName: 'mirza',
-  contactPhone: '0300-0000000',
-  contactEmail: 'demo@example.com',
-  contactAddress: 'Demo Store, Sample Street, Placeholder City (fake address)',
+  storeName: 'Mirza',
 }
+const UNTOUCHED_STORE_NAMES = new Set(['Mirza', 'GoCart'])
 
 async function ensureSettings(payload: Payload): Promise<{ flatRate: number; threshold: number }> {
   const current = await payload.findGlobal({ slug: 'settings', overrideAccess: true })
   const flatRate = typeof current.shippingFlatRate === 'number' ? current.shippingFlatRate : 200
   const threshold = typeof current.freeShippingThreshold === 'number' ? current.freeShippingThreshold : 3000
   const untouched =
-    current.storeName === 'GoCart' &&
+    UNTOUCHED_STORE_NAMES.has(current.storeName) &&
     flatRate === 200 &&
     threshold === 3000 &&
     !current.contactPhone &&
     !current.contactEmail &&
     !current.contactAddress
   if (!untouched) {
-    const filledByDemo =
-      current.storeName === DEMO_SETTINGS.storeName &&
-      current.contactPhone === DEMO_SETTINGS.contactPhone &&
-      current.contactEmail === DEMO_SETTINGS.contactEmail &&
-      current.contactAddress === DEMO_SETTINGS.contactAddress
-    console.log(filledByDemo ? 'Settings: already filled (demo values).' : 'Settings: left as is (already edited).')
+    console.log('Settings: left as is (already edited).')
     return { flatRate, threshold }
   }
   await payload.updateGlobal({
@@ -288,7 +285,7 @@ async function ensureSettings(payload: Payload): Promise<{ flatRate: number; thr
     },
     overrideAccess: true,
   })
-  console.log('Settings: filled with demo placeholder values.')
+  console.log('Settings: store name set to the demo default.')
   return { flatRate: 200, threshold: 3000 }
 }
 

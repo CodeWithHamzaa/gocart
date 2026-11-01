@@ -18,7 +18,7 @@ export default function DealsOfTheDay({ products = [] }: { products?: Product[] 
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <h2 id="deals-heading" className="text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-[28px]">Deals of the day</h2>
+            <h2 id="deals-heading" className="text-xl font-bold tracking-[-0.02em] text-ink sm:text-[28px]">Deals of the day</h2>
             <Countdown endsAt={endsAt} />
           </div>
           <Link href="/shop" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark">

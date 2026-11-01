@@ -1,4 +1,4 @@
-# Feature Matrix — GoCart Pakistan
+# Feature Matrix — Mirza (formerly GoCart Pakistan)
 
 Feature-by-feature disposition for the single-store, Payload CMS v3 + PostgreSQL, guest-checkout, COD-only rebuild. Grounded in the current-state findings in [REPOSITORY_ANALYSIS.md](./REPOSITORY_ANALYSIS.md) and the accepted decisions in [DECISIONS.md](./DECISIONS.md); open items are cross-referenced to [PROJECT_SPEC.md](./PROJECT_SPEC.md).
 

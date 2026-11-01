@@ -1,4 +1,4 @@
-# Project Spec — GoCart Pakistan
+# Project Spec — Mirza (formerly GoCart Pakistan)
 
 ## Vision
 

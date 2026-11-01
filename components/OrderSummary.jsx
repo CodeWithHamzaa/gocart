@@ -162,26 +162,28 @@ const OrderSummary = ({ totalPrice, items }) => {
         }
     }
 
-    const step = 'mb-3 flex items-center gap-2.5 text-[15px] font-bold text-ink'
+    // M101 (owner-approved home style): a lavender panel with white inner surfaces, pill buttons, semibold
+    // headings and no shadow. Behaviour, totals and the Turnstile check are unchanged.
+    const step = 'mb-3 flex items-center gap-2.5 text-[15px] font-semibold text-ink'
     const stepNo = 'flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white'
 
     return (
-        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-[22px] bg-white p-5 text-sm shadow-card ring-1 ring-line sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
-            <h2 className='text-xl font-extrabold text-ink'>Order summary</h2>
+        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-card bg-lavender p-5 text-sm sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
+            <h2 className='text-[22px] font-semibold tracking-[-0.02em] text-ink'>Order summary</h2>
 
             <section aria-labelledby='step-address'>
                 <h3 id='step-address' className={step}><span className={stepNo} aria-hidden='true'>1</span>Delivery address</h3>
                 {
                     selectedAddress ? (
-                        <div className='flex items-center gap-2 rounded-tile border border-line-3 bg-lavender-tile p-3'>
+                        <div className='flex items-center gap-2 rounded-tile bg-white p-3 pl-4'>
                             <p className='min-w-0 flex-1 text-ink-2 [overflow-wrap:anywhere]'>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
-                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-control text-primary hover:bg-primary-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
                         </div>
                     ) : (
                         <div>
                             {
                                 addressList.length > 0 && (
-                                    <select aria-label='Delivery address' className='mb-2 min-h-11 w-full rounded-control border border-line-2 bg-white px-3 text-ink' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
+                                    <select aria-label='Delivery address' className='mb-2 min-h-11 w-full rounded-full border border-line-2 bg-white px-4 text-ink' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
                                         <option value="">Select Address</option>
                                         {
                                             addressList.map((address, index) => (
@@ -191,7 +193,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                                     </select>
                                 )
                             }
-                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-control border border-line-3 px-4 font-semibold text-primary-dark transition hover:border-primary' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-5 font-semibold text-primary-dark transition hover:bg-primary-soft' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
                         </div>
                     )
                 }
@@ -214,14 +216,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <RadioCard name='payment' value='cod' checked title='Cash on Delivery (COD)' description='Pay in cash when your order arrives' />
             </section>
 
-            <dl className='grid grid-cols-[1fr_auto] gap-2.5 border-t border-line pt-4'>
+            <dl className='grid grid-cols-[1fr_auto] gap-2.5 border-t border-line-2 pt-4'>
                 <dt className='text-muted'>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</dt><dd className='text-right font-semibold text-ink'>{formatPKR(totalPrice)}</dd>
                 {savings > 0 && (<><dt className='text-muted'>You save</dt><dd className='text-right font-semibold text-success'>&minus; {formatPKR(savings)}</dd></>)}
                 <dt className='text-muted'>Delivery</dt><dd className='text-right font-semibold text-ink'>{shipping === null ? '...' : (shipping === 0 ? 'Free' : formatPKR(shipping))}</dd>
             </dl>
-            <div className='flex items-baseline justify-between border-t border-line pt-4'>
+            <div className='flex items-baseline justify-between border-t border-line-2 pt-4'>
                 <p className='font-semibold text-ink'>Total</p>
-                <p className='text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                <p className='text-[28px] font-semibold leading-none tracking-[-0.03em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-muted'>
@@ -233,9 +235,9 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <div className='mx-auto flex max-w-xl items-center gap-3 lg:max-w-none'>
                     <div className='shrink-0 lg:hidden'>
                         <p className='text-xs text-muted'>Total</p>
-                        <p className='text-lg font-extrabold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                        <p className='text-lg font-semibold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
                     </div>
-                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-2xl bg-primary px-4 text-base font-bold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-full bg-primary px-4 text-base font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
                 </div>
             </MobileActionBar>
             <p className='flex items-center justify-center gap-2 text-xs text-muted'><LockIcon size={14} aria-hidden='true' />Cash on delivery &middot; no online payment</p>

@@ -4,7 +4,7 @@ Guidance for Claude Code (and any AI agent) working in this repository. Kept sho
 
 ## What this project is
 
-GoCart is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** (embedded in Next.js 16) and **PostgreSQL**. Context: [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md), [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before structural decisions.
+**Mirza** (the project was called GoCart Pakistan until 2026-10-31, [ADR-047](./docs/DECISIONS.md)) is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** (embedded in Next.js 16) and **PostgreSQL**. Context: [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md), [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before structural decisions.
 
 ## Where things stand
 
@@ -17,6 +17,7 @@ Code facts that save a search:
 - Payload `/admin` is the only authenticated surface; no middleware, no customer or vendor login.
 - Gotcha: a `loading.tsx` on `/category/[slug]` makes `notFound()` return HTTP 200 (Next App Router limitation), so that route deliberately has none ([MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md), `M27a`).
 - TypeScript is established (`tsconfig.json`, `moduleResolution: "bundler"`, `allowJs`). New files are `.ts`/`.tsx`; never convert existing `.jsx` opportunistically. Lint is `npm run lint` (ESLint CLI; `next lint` no longer exists).
+- Brand: **Mirza** (ADR-047). Identifiers that still say `gocart` (DB role `gocart_app`, Docker project, `GC-` order numbers, `gocart:cart`/`gocart:wishlist` storage keys, repo and Vercel names, historical migrations) are kept on purpose; do not rename them without a new decision. Accepted ADRs keep the old name.
 - Currency symbol is `Rs. ` via `NEXT_PUBLIC_CURRENCY_SYMBOL`; PKR formatting (`Rs. 1,500`, no decimals) is done by `M55` ([ADR-029](./docs/DECISIONS.md)).
 - All legacy multi-vendor surface (`app/store/*`, vendor approval, `Store` model, Prisma, the dummy `assets/` dataset) is **removed**. If you see any of it, something has gone wrong. Treat any doc implying single-vs-multi-vendor is still open as stale.
 
@@ -28,7 +29,7 @@ Code facts that save a search:
 
 Day-to-day engineering runs through a **development-time** team in [.claude/](./.claude/): an Engineering Manager orchestrating seven specialists (Product, Architecture, UI/UX, Full-Stack, QA, Security/Performance, DevOps/Release), with **human approval required before anything merges or deploys** (one recorded exception: the owner's 2026-10-30 delegation for a free, non-commercial test deployment on Vercel Hobby + Neon Free + Vercel Blob, scoped in [GATES.md](./.claude/docs/GATES.md), "Owner delegation"; it is not a production deployment and does not change the ADR-015 baseline). Start at [.claude/README.md](./.claude/README.md); pipeline and gates in [.claude/docs/WORKFLOW.md](./.claude/docs/WORKFLOW.md) and [GATES.md](./.claude/docs/GATES.md); house style and the do-not-touch list in [CONVENTIONS.md](./.claude/docs/CONVENTIONS.md). Commands: `/milestone <id>`, `/milestone-dryrun <id>`, `/team-status`, `/write-adr`, `/escalate`. Scale the team to the task: a docs or config fix does not need all seven roles.
 
-This file remains the constitution, `MIGRATION_PLAN.md` the roadmap, milestone IDs the only units of work. **The team is build-time only:** production GoCart must never depend on Claude, Anthropic APIs, MCP, agents, prompts or `.claude/`; deleting `.claude/` must leave a fully working app ([NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md)).
+This file remains the constitution, `MIGRATION_PLAN.md` the roadmap, milestone IDs the only units of work. **The team is build-time only:** production Mirza must never depend on Claude, Anthropic APIs, MCP, agents, prompts or `.claude/`; deleting `.claude/` must leave a fully working app ([NO_PRODUCTION_AI.md](./.claude/docs/NO_PRODUCTION_AI.md)).
 
 ## Hard constraints (do not silently violate)
 

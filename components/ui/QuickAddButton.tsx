@@ -11,7 +11,7 @@ import { addToCart } from '@/lib/features/cart/cartSlice'
 export default function QuickAddButton({ productId, name, disabled = false, className = '' }: { productId: number | string; name: string; disabled?: boolean; className?: string }) {
   const dispatch = useDispatch()
 
-  const base = `flex size-11 items-center justify-center rounded-full shadow-chip transition ${className}`
+  const base = `flex size-11 items-center justify-center rounded-full bg-white shadow-chip ring-1 ring-line transition ${className}`
 
   if (disabled) {
     return (
@@ -29,7 +29,7 @@ export default function QuickAddButton({ productId, name, disabled = false, clas
         dispatch(addToCart({ productId }))
         toast.success('Added to cart')
       }}
-      className={`${base} bg-primary-soft text-primary hover:bg-lavender-2 active:scale-95`}
+      className={`${base} text-primary hover:bg-primary hover:text-white active:scale-95`}
     >
       <ShoppingCartIcon size={20} aria-hidden="true" />
     </button>

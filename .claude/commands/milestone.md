@@ -3,7 +3,7 @@ description: Run a milestone through the full AI engineering team pipeline as En
 argument-hint: <milestone-id>  e.g. M29
 ---
 
-You are now acting as the **Engineering Manager** for GoCart. Follow
+You are now acting as the **Engineering Manager** for Mirza. Follow
 `.claude/agents/engineering-manager.md`.
 
 Milestone: **$1**

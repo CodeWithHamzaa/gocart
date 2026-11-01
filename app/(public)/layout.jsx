@@ -36,7 +36,8 @@ export async function generateMetadata() {
     return {
         // Resolves relative URLs (canonical, Open Graph). Comes only from NEXT_PUBLIC_SITE_URL.
         metadataBase: new URL(getSiteUrl()),
-        title: { default: `${storeName} - Shop smarter`, template: `%s | ${storeName}` },
+        // M101: the default (also the 404 page's title) says what Mirza is, like the home page.
+        title: { default: `${storeName} - Online shopping with Cash on Delivery in Pakistan`, template: `%s | ${storeName}` },
         description: DEFAULT_DESCRIPTION,
         openGraph: { type: "website", siteName: storeName, locale: "en_PK" },
     };
