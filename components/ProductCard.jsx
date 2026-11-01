@@ -43,20 +43,21 @@ const ProductCard = ({ product, priority = false }) => {
     return (
         <article className='group relative flex h-full min-w-0 flex-col rounded-card bg-lavender p-3 sm:p-4'>
             <WishlistButton productId={product.id} name={product.name} className='absolute right-0.5 top-0.5 z-10 sm:right-1.5 sm:top-1.5' />
-            {categoryTitle && <p className='truncate pr-8 text-xs text-muted sm:text-[13px]'>{categoryTitle}</p>}
-            {/* M44: a long unbroken name wraps instead of pushing the card wider than its column. */}
-            <Link href={`/product/${product.id}`} className={`${categoryTitle ? 'mt-0.5 pr-6' : 'pr-8'} text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink outline-none [overflow-wrap:anywhere] after:absolute after:inset-0 after:rounded-card group-hover:underline group-hover:underline-offset-4 focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary sm:text-[17px] sm:tracking-[-0.02em]`}>
-                {product.name}
+            {/* ONE link wraps the category, the name and the price (e2e reads the price from the card's link),
+                stretched over the card. M44: a long unbroken name wraps instead of widening the column. */}
+            <Link href={`/product/${product.id}`} className='flex flex-col outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary'>
+                {categoryTitle && <span className='truncate pr-8 text-xs text-muted sm:text-[13px]'>{categoryTitle}</span>}
+                <span className={`${categoryTitle ? 'mt-0.5 pr-6' : 'pr-8'} text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink [overflow-wrap:anywhere] group-hover:underline group-hover:underline-offset-4 sm:text-[17px] sm:tracking-[-0.02em]`}>{product.name}</span>
+                <span className='mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1'>
+                    <span className='whitespace-nowrap text-[15px] font-semibold text-ink'>{formatPKR(product.price)}</span>
+                    {discount > 0 && (
+                        <>
+                            <s className='whitespace-nowrap text-xs text-strike sm:text-[13px]'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
+                            <Badge tone='off' className='self-center'>{discount}% off</Badge>
+                        </>
+                    )}
+                </span>
             </Link>
-            <p className='mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1'>
-                <span className='whitespace-nowrap text-[15px] font-semibold text-ink'>{formatPKR(product.price)}</span>
-                {discount > 0 && (
-                    <>
-                        <s className='whitespace-nowrap text-xs text-strike sm:text-[13px]'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
-                        <Badge tone='off' className='self-center'>{discount}% off</Badge>
-                    </>
-                )}
-            </p>
             <div className='relative mt-auto pt-3 sm:pt-4'>
                 <span className='block aspect-square overflow-hidden rounded-tile bg-white'>
                     {imageUrl && (
