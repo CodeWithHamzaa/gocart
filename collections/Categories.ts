@@ -4,6 +4,8 @@ import type { CollectionConfig } from 'payload'
 // stable slugs the storefront category routes (M27a, M27b) require. Field list and
 // constraints are specified in full in docs/CATEGORY_REQUIREMENTS.md — nothing here
 // is speculative. M13 adds the access rules below.
+// M102 (ADR-048): categories are flat. The owner removed sub-categories on 2026-11-01, so the `parent`
+// field (and its two-level validation) is gone; migration 20261101_*_flat_categories drops the column.
 
 function slugify(value: string): string {
   return value
@@ -17,7 +19,7 @@ export const Categories: CollectionConfig = {
   slug: 'categories',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'parent', 'displayOrder'],
+    defaultColumns: ['title', 'slug', 'displayOrder'],
   },
   // M13: public-read/admin-write.
   access: {
@@ -41,35 +43,6 @@ export const Categories: CollectionConfig = {
       admin: {
         description:
           'Generated from the title on create, then stable — never auto-regenerated on a title edit.',
-      },
-    },
-    {
-      name: 'parent',
-      type: 'relationship',
-      relationTo: 'categories',
-      hasMany: false,
-      validate: async (value, { req, id }) => {
-        if (!value) return true
-
-        // Non-polymorphic single relationship: the value is the raw id at
-        // submit time, not a populated document.
-        const parentId = typeof value === 'object' && value !== null ? value.value : value
-
-        if (parentId === id) {
-          return 'A category cannot be its own parent.'
-        }
-
-        const parentDoc = await req.payload.findByID({
-          collection: 'categories',
-          id: parentId as string | number,
-          depth: 0,
-        })
-
-        if (parentDoc?.parent) {
-          return 'A category cannot be nested more than two levels deep (parent already has a parent).'
-        }
-
-        return true
       },
     },
     {
