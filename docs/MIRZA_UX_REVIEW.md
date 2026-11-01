@@ -131,5 +131,16 @@ remove and undo, "Out of Stock" disabled, heart on and off, quick add, and categ
 
 ## 4. Live second review (after merge)
 
-Pending. The owner merges, the test site is redeployed, migration `20261031_160131_mirza_store_name` runs
-on Neon, and then the same review runs again on `https://gocart-test-inky.vercel.app/` at all six widths.
+- **Date:** 2026-11-01, after `M101` (PR #53) and `M102` (PR #54, flat categories) were merged and deployed
+  (deployment `dpl_254K4bWXkz2nWdXJXKwwP9YxMnTP`, commit `a6aedc1`), with migrations
+  `20261031_160131_mirza_store_name` and `20261101_205147_flat_categories` applied on Neon.
+- **Target:** `https://gocart-test-inky.vercel.app/`.
+- **Method:** the same script as sections 1 and 3: 21 routes (including a filtered category, a no-match
+  filter, an out-of-stock product, a cart with items, a filled order confirmation, a wishlist with items, an
+  unknown URL, an unknown category and the removed `/category/electronics`) at 375, 390, 430, 768, 1024 and
+  1440 px: 126 page loads.
+- **Results:** every route returned the expected status (200; 404 for the unknown URL, the unknown category
+  and the removed category). No horizontal overflow, no image without `alt`, no "GoCart" text, exactly one
+  `<h1>` per page. The sitemap lists the ten flat categories only. The store name is Mirza.
+- **Not verified live:** placing an order or an order lookup (no Turnstile keys on this deployment, by owner
+  decision); covered by CI's `e2e` job.
