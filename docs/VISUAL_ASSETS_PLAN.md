@@ -1,6 +1,6 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. `M104` brief and sourcing plan done 2026-11-01 (no photo selected: sources blocked; awaiting owner review); `M105`–`M109` are not approved.** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 53 of 61 slots; 4 products have no acceptable photo), `M105` (pipeline) and `M106` (local integration) were completed the same day and are awaiting owner review; `M107`–`M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
 Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
@@ -225,16 +225,18 @@ Decided by the owner, 2026-11-01 (after PR #56):
 
 Scope note from the owner: everything on the project is currently demo, so `M103` skipped classifying demo versus real rows and does not create `DEMO_INVENTORY.csv`. Sections 5 and 6 above stay valid for `M109` (demo and original rows in one database) but a per-database id list taken before the import replaces the inventory file unless the owner wants one earlier.
 
-Still open: whether to approve ADR-049 and `M104` (next step), and whether a measured database audit (needs dependency installation and a database) is wanted before `M105`.
+Owner authorisation of 2026-11-01 (second session): complete `M104`–`M106` without per-image approval, stop after `M106`. D2, D3, D4, D5, D6, D7 and D8 were applied as decided (no banner field, closest photo plus adjusted demo copy, originals archived outside Git, no test-site upload, two images per product, no `isDemo`); ADR-049 stays Proposed.
+
+Still open: whether to approve ADR-049 and the next milestones, and whether a measured database audit (needs dependency installation and a database) is wanted before `M105`.
 
 ## 12. Progress checklist
 
 - [x] Stage 0: this plan, manifest header, `M103`–`M109` proposed, ADR-049 proposed (2026-11-01)
 - [x] Owner approval of Stage 0; decisions D1–D8 recorded (2026-11-01)
 - [x] `M103` media audit by code reading (accepted 2026-11-01; database measurements unverified, measured audit skipped by owner)
-- [~] `M104` brief and sourcing plan written ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md), 61 slots in the manifest); photos and licence verification blocked on source access (owner action) — in review
-- [ ] `M105` processing pipeline
-- [ ] `M106` local integration
+- [x] `M104` brief and sourcing plan ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)); photos sourced and licence-recorded for 53 of 61 slots from Unsplash (2026-11-01, owner-delegated approval); 8 slots (Cylinder Mini Speaker, Volt Max, Classic Steel, Chrono Sport) have no acceptable photo — report in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md), awaiting owner review
+- [x] `M105` processing pipeline (`npm run process:demo-images`, `npm run test:demo-images`; sharp only, no new dependency) — awaiting owner review
+- [x] `M106` local integration (seed uses the processed photos; verified on a throwaway local database, nothing remote) — awaiting owner review
 - [ ] `M107` storefront QA
 - [ ] `M108` test-site rollout
 - [ ] `M109` pre-launch cleanup and original-catalogue import (not before launch preparation)
