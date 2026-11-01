@@ -6,6 +6,8 @@ import type { Payload } from 'payload'
 import { validatePhone } from '../lib/validation/pk'
 import { renderArt } from './demo-data/art'
 import { CATEGORIES, PRODUCTS } from './demo-data/catalogue'
+import { ASSETS, altForFilename } from './demo-data/photos'
+import { validateOutput } from './demo-images-core'
 import type { CategorySeed, ProductSeed } from './demo-data/catalogue'
 
 // M90: idempotent, local-only demo data for showing the storefront and /admin to a client:
@@ -17,10 +19,14 @@ import type { CategorySeed, ProductSeed } from './demo-data/catalogue'
 // (the dev compose file maps /app/media to ./media):
 //   docker compose exec app npm run seed:demo
 //   docker compose exec app npm run seed:demo -- --with-orders
-// Optional real photos: put <product-slug>-<1|2>.<jpg|jpeg|png|webp> directly in demo-assets/
-// (or the folder named by DEMO_ASSETS_DIR). See demo-assets/README.md, which also lists the
+// Photos (M106): `npm run process:demo-images` writes the licensed demo photography to
+// demo-assets/_processed/ (git-ignored). The seed uses those files byte for byte, after validating
+// them again against the size budgets, with the alt text from scripts/demo-data/photos.ts; a product
+// or category without a processed photo keeps its generated artwork. Older optional route: put
+// <product-slug>-<1|2>.<jpg|jpeg|png|webp> directly in demo-assets/ (re-encoded to <=1600px q80).
+// The folder can be changed with DEMO_ASSETS_DIR. See demo-assets/README.md, which also lists the
 // product slugs and the exact /admin steps to remove the demo rows by hand (there is no delete
-// routine on purpose).
+// routine on purpose). Like every row, media that already exists is reused, never replaced.
 //
 // Safety: refuses to run when NODE_ENV=production, a production-only variable is set, or
 // DATABASE_URI uses the gocart_app role or a host other than postgres/localhost/127.0.0.1/::1,
@@ -118,6 +124,34 @@ const counts: Record<string, Counts> = {
 }
 let overridesUsed = 0
 let overrideFailures = 0
+let processedUsed = 0
+let processedRejected = 0
+/** Names of products and categories that ended up with generated artwork instead of a photo. */
+const artFallback = new Set<string>()
+
+/**
+ * M106: a pipeline output (demo-assets/_processed/<name>) is used unchanged, but only after it
+ * passes the same validation the pipeline applies (format, exact size, byte budget, no metadata,
+ * naming convention, alt text). A missing file is the normal case; an invalid one is reported and
+ * the seed falls back, it never aborts.
+ */
+async function loadProcessed(dir: string, filename: string): Promise<Buffer | null> {
+  const asset = ASSETS.find((a) => a.out === filename)
+  if (!asset) return null
+  let data: Buffer
+  try {
+    data = fs.readFileSync(path.join(dir, '_processed', filename))
+  } catch {
+    return null
+  }
+  const check = await validateOutput(data, filename, asset.kind, asset.alt)
+  if (!check.ok) {
+    processedRejected += 1
+    console.warn(`processed photo rejected for ${filename}: ${check.problems.join('; ')}`)
+    return null
+  }
+  return data
+}
 
 /** Finds media by filename, then by alt, before creating, so reruns add nothing. */
 async function ensureMedia(payload: Payload, filename: string, alt: string, build: () => Promise<Buffer>): Promise<number> {
@@ -152,7 +186,7 @@ async function ensureMedia(payload: Payload, filename: string, alt: string, buil
   return Number(created.id)
 }
 
-async function ensureCategories(payload: Payload): Promise<Map<string, number>> {
+async function ensureCategories(payload: Payload, dir: string): Promise<Map<string, number>> {
   const ids = new Map<string, number>()
   for (const cat of CATEGORIES) {
     const existing = await payload.find({
@@ -168,7 +202,7 @@ async function ensureCategories(payload: Payload): Promise<Map<string, number>> 
       counts.categories.existing += 1
       continue
     }
-    const image = await categoryImage(payload, cat)
+    const image = await categoryImage(payload, cat, dir)
     const created = await payload.create({
       collection: 'categories',
       data: {
@@ -186,14 +220,29 @@ async function ensureCategories(payload: Payload): Promise<Map<string, number>> 
   return ids
 }
 
-function categoryImage(payload: Payload, cat: CategorySeed): Promise<number> {
-  return ensureMedia(payload, `category-${cat.slug}.webp`, `${cat.title} category artwork`, () =>
-    generated(cat.motif, cat.hue, 1),
-  )
+async function categoryImage(payload: Payload, cat: CategorySeed, dir: string): Promise<number> {
+  const filename = `category-${cat.slug}.webp`
+  const processed = await loadProcessed(dir, filename)
+  const alt = processed ? (altForFilename(filename) ?? `${cat.title} category`) : `${cat.title} category artwork`
+  return ensureMedia(payload, filename, alt, async () => {
+    if (processed) {
+      processedUsed += 1
+      return processed
+    }
+    artFallback.add(`category ${cat.title}`)
+    return generated(cat.motif, cat.hue, 1)
+  })
 }
 
 async function productImage(payload: Payload, product: ProductSeed, n: 1 | 2, dir: string): Promise<number> {
-  return ensureMedia(payload, `${product.slug}-${n}.webp`, `${product.name}, view ${n}`, async () => {
+  const filename = `${product.slug}-${n}.webp`
+  const processed = await loadProcessed(dir, filename)
+  const alt = processed ? (altForFilename(filename) ?? `${product.name}, view ${n}`) : `${product.name}, view ${n}`
+  return ensureMedia(payload, filename, alt, async () => {
+    if (processed) {
+      processedUsed += 1
+      return processed
+    }
     const override = findOverride(dir, product.slug, n)
     if (override) {
       try {
@@ -206,6 +255,7 @@ async function productImage(payload: Payload, product: ProductSeed, n: 1 | 2, di
         console.warn(`override failed for ${path.basename(override)}`)
       }
     }
+    artFallback.add(product.name)
     return generated(product.motif, product.hue, n)
   })
 }
@@ -386,7 +436,7 @@ async function seedDemo() {
 
   console.log('Seeding demo data...')
   const dir = assetsDir()
-  const categoryIds = await ensureCategories(payload)
+  const categoryIds = await ensureCategories(payload, dir)
   await ensureProducts(payload, categoryIds, dir)
   const shipping = await ensureSettings(payload)
   if (withOrders) await ensureOrders(payload, shipping)
@@ -396,7 +446,9 @@ async function seedDemo() {
     if (label === 'orders' && !withOrders) continue
     console.log(`${label}: ${c.created} created, ${c.existing} already present`)
   }
+  console.log(`processed photos used: ${processedUsed}${processedRejected ? ` (${processedRejected} failed validation and were skipped)` : ''}`)
   console.log(`demo-assets photos used: ${overridesUsed}${overrideFailures ? ` (${overrideFailures} unreadable, generated artwork used)` : ''}`)
+  if (artFallback.size > 0) console.log(`generated artwork still used for: ${[...artFallback].join(', ')}`)
   console.log('Demo seed complete.')
   process.exit(0)
 }

@@ -2,7 +2,17 @@
 
 Optional photos for the demo seed (`scripts/seed-demo.ts`). Everything in this folder except this README is git-ignored: photos are never committed.
 
-The seed works with this folder empty. It then generates simple vector artwork (no text) for every image. Drop real photos in only if you want a more realistic demo.
+The seed works with this folder empty. It then generates simple vector artwork (no text) for every image.
+
+**Licensed demo photography (M104-M106).** The tracked spec `scripts/demo-data/photos.ts` and the provenance record `docs/assets/MANIFEST.csv` describe 53 Unsplash photos (Unsplash License). The photos are never committed. To rebuild them on a machine that has the originals in `demo-assets/_archive/originals/` (git-ignored; keep a second copy of that folder somewhere safe):
+
+```
+npm run process:demo-images            # writes demo-assets/_processed/, updates the manifest
+npm run process:demo-images -- --check # validates outputs and originals without writing
+npm run test:demo-images
+```
+
+The seed then uses `demo-assets/_processed/` files unchanged (after validating them again) with the alt text from the spec. Products and categories with no processed photo keep generated artwork (currently Cylinder Mini Speaker, Volt Max Power Bank, Classic Steel Analog Watch and Chrono Sport Wrist Watch). Media that already exists is reused, never replaced, so to swap art on an existing database remove the demo products and media first (steps below), then re-seed. Report: `docs/assets/PHOTO_INVENTORY.md`.
 
 ## Running the seed
 
