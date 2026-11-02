@@ -1619,7 +1619,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Audit demo media and image surfaces (M103)`
 
 ### M104 — Photo brief, sourcing and licence verification
-- **Status (2026-11-01)**: **In progress, partly blocked.** Approved by the owner 2026-11-01 (this milestone only; ADR-049 stays Proposed). Delivered: photo brief, 61-slot shot list and sourcing plan, licence protocol, network findings and alternatives ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)), and the manifest with every slot at `status=needed`. **Not delivered**: any selected photo or verified licence, because Unsplash and Pexels return 403 from the environment's network policy and `demo-assets/_inbox/` is empty. Needs an owner action (network setting or supplying photos) before this milestone can be marked Done.
+- **Status (2026-11-02)**: **Done.** Approved by the owner 2026-11-01. All 61 slots are sourced from Unsplash with author, photo page, licence URL, check date and SHA-256 recorded ([assets/MANIFEST.csv](./assets/MANIFEST.csv)); report, method and limits in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md). The first pass (2026-11-01) filled 53 slots under a no-visible-brand rule; the owner then accepted visible brands in demo photos (everything is demo content) and the remaining 4 products were sourced on 2026-11-02. No Pexels photo was usable (Cloudflare challenge, API blocked; not bypassed). Author and licence lines were read through the WebFetch tool, not by opening the pages directly.
 - **Goal**: A shot list and a set of owner-approved, licence-verified candidate photos for the 24 demo products, 10 categories, promo areas and a default share image.
 - **Files**: `docs/assets/MANIFEST.csv`; photos only under git-ignored `demo-assets/_inbox/` and `_archive/`.
 - **Spec**: Unsplash and Pexels preferred; licence text read per image and recorded; no visible third-party logos or identifiable people on products; if a source is unreachable, record it and use `_inbox/` (no bypass).
@@ -1629,7 +1629,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Record candidate demo photos and licences (M104)`
 
 ### M105 — Local image-processing pipeline
-- **Status (2026-11-01)**: Proposed.
+- **Status (2026-11-01)**: **Done.** `scripts/process-demo-images.ts`, `scripts/demo-images-core.ts`, `scripts/demo-data/photos.ts` (provenance, crops, alt text), `npm run process:demo-images` and `npm run test:demo-images`. Sharp only; no dependency added; ADR-049 still Proposed.
 - **Goal**: Originals archived, storefront WebP generated per placement, metadata stripped, size budgets enforced and validated before upload, with checksums in the manifest (VISUAL_ASSETS_PLAN.md section 7).
 - **Files**: a new script and its test under `scripts/`; `package.json` (an npm script entry only); `docs/assets/MANIFEST.csv`; `demo-assets/README.md`.
 - **Spec**: uses the existing `sharp` dependency; installs nothing; never modifies originals; rejects images too small, wrong format or over budget.
@@ -1639,7 +1639,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Add local demo image processing and validation (M105)`
 
 ### M106 — Local integration of demo photos
-- **Status (2026-11-01)**: Proposed.
+- **Status (2026-11-01)**: **Done locally.** `scripts/seed-demo.ts` uses `demo-assets/_processed/` files byte for byte after re-validation, with alt text from the spec, plus category photos; temporary demo descriptions adjusted where a photo contradicts them (D3). Verified on a throwaway local PostgreSQL only; no remote upload, no deploy. No generated art remains in the demo seed; `scripts/seed.ts` (CI) left unchanged on purpose.
 - **Goal**: Replace generated art and the blank placeholders with the processed photos in the local demo data, without touching non-demo rows.
 - **Files**: `scripts/seed-demo.ts`, `scripts/demo-data/*`, possibly `scripts/seed.ts`, `demo-assets/README.md`, `docs/assets/MANIFEST.csv`.
 - **Spec**: existing find-or-create seed rules and database guards unchanged; replacement touches only inventory rows; `media_id` recorded with `media_env=local`.

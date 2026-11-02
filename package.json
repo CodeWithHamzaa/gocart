@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "process:demo-images": "tsx scripts/process-demo-images.ts",
     "migrate": "payload migrate",
     "migrate:create": "payload migrate:create",
     "migrate:status": "payload migrate:status",
@@ -20,6 +21,7 @@
     "test:idempotency": "tsx scripts/idempotency.test.ts",
     "test:category-filters": "tsx scripts/category-filters.test.ts",
     "test:users-guard": "tsx scripts/users-guard.test.ts",
+    "test:demo-images": "tsx scripts/demo-images.test.ts",
     "deploy:migrate": "tsx scripts/check-env.ts && payload migrate && tsx scripts/verify-migrations.ts && tsx scripts/db-roles.ts && tsx scripts/bootstrap-admin.ts",
     "test:e2e": "playwright test"
   },
