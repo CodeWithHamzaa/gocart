@@ -1,6 +1,6 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 53 of 61 slots; 4 products have no acceptable photo), `M105` (pipeline) and `M106` (local integration) were completed the same day and are awaiting owner review; `M107`–`M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 61 of 61 slots after a second pass on 2026-11-02), `M105` (pipeline) and `M106` (local integration) are complete and awaiting merge; `M107`–`M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
 Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
@@ -234,7 +234,7 @@ Still open: whether to approve ADR-049 and the next milestones, and whether a me
 - [x] Stage 0: this plan, manifest header, `M103`–`M109` proposed, ADR-049 proposed (2026-11-01)
 - [x] Owner approval of Stage 0; decisions D1–D8 recorded (2026-11-01)
 - [x] `M103` media audit by code reading (accepted 2026-11-01; database measurements unverified, measured audit skipped by owner)
-- [x] `M104` brief and sourcing plan ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)); photos sourced and licence-recorded for 53 of 61 slots from Unsplash (2026-11-01, owner-delegated approval); 8 slots (Cylinder Mini Speaker, Volt Max, Classic Steel, Chrono Sport) have no acceptable photo — report in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md), awaiting owner review
+- [x] `M104` brief and sourcing plan ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)); photos sourced and licence-recorded for all 61 slots from Unsplash (2026-11-01 and 2026-11-02, owner-delegated approval; the last 4 products after the owner accepted visible brands in demo photos) — report in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md)
 - [x] `M105` processing pipeline (`npm run process:demo-images`, `npm run test:demo-images`; sharp only, no new dependency) — awaiting owner review
 - [x] `M106` local integration (seed uses the processed photos; verified on a throwaway local database, nothing remote) — awaiting owner review
 - [ ] `M107` storefront QA

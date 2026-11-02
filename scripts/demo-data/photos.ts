@@ -61,6 +61,10 @@ export const SOURCES: Record<string, Source> = {
   tubesPeach: S('Xp0bTCLD07k', 'a-tube-of-cream-sitting-on-top-of-a-table-', 'Point Normal', 'normals', '2024-04-03', 'photo-1712168044214-f5a272c23a5b', 'Two unbranded white cosmetic tubes on a peach block. No aloe cue in the image.'),
   tubeWet: S('GdsFTnarsog', 'white-tube-on-glass-table-', 'Birgith Roosipuu', 'msbirgith', '2021-03-26', 'photo-1616750819456-5cdee9b85d22', 'Unbranded white tube on a wet glass surface with water droplets. No foam shown.'),
   perfumeAmber: S('nka_sIQpKEU', 'perfume-bottle-and-cosmetic-jars-', 'Birgith Roosipuu', 'msbirgith', '2021-06-02', 'photo-1622618991746-fe6004db3a47', 'Glass perfume bottle in warm amber light with two small cosmetic jars. No label or logo visible.'),
+  speakerBeige: S('EXiDx2JcFdE', 'a-close-up-of-a-speaker-on-a-white-surface-', 'Berke Can', 'berkaroon', '2022-04-13', 'photo-1649875951986-917ce191719f', 'Beige cylindrical portable speaker with a honeycomb grille on white. A maker name is printed on the speaker (acceptable for demo content, owner decision 2026-11-02).'),
+  powerbankWhite: S('7JbgHNq4h4k', 'white-power-bank-with-three-charging-cables-', 'Andrey Matveev', 'zelebb', '2025-10-17', 'photo-1760708825913-65a50b3dc39b', 'Large white power bank with a black three-way charging cable on grey concrete. A small maker mark is embossed on the bank (acceptable for demo content, owner decision 2026-11-02).'),
+  watchSteel: S('QQ_nm-OFlBs', 'a-watch-sitting-on-top-of-a-white-table-', 'Tareq Hasan', 'tareq_hasan', '2023-09-13', 'photo-1694598152256-a346298ae0b5', 'Steel-bracelet analog watch with a white dial and black bezel on white. A maker name is printed on the dial (acceptable for demo content, owner decision 2026-11-02).'),
+  watchChrono: S('3XbFQkhWKIA', 'a-close-up-of-a-luxury-chronograph-wristwatch-', 'Ryan Chan', 'runie', '2026-03-17', 'photo-1773755060442-6d128b70dd20', 'Steel-bracelet chronograph with a blue dial and rose-gold bezel on white. A maker name is printed on the dial (acceptable for demo content, owner decision 2026-11-02).'),
   perfumeClear: S('j1vg92xdoX4', 'a-clear-glass-perfume-bottle-with-black-cap-', 'Kier in Sight Archives', 'kierinsightarchives', '2025-10-20', 'photo-1760920250029-36af9369a0bb', 'Clear glass bottle with a black cap on white fur. No label or logo, no citrus cue, and it does not show a spray nozzle.'),
 }
 
@@ -108,6 +112,10 @@ const products: P[] = [
   { n: 22, name: 'Gentle Foaming Face Wash', slug: 'gentle-foaming-face-wash', src: 'tubeWet', c1: { cx: 0.5, cy: 0.6, zoom: 1 }, c2: { cx: 0.6, cy: 0.48, zoom: 0.45 }, alt1: 'Plain white tube lying on a wet glass surface covered in water droplets', alt2: 'Close-up of the white tube and water droplets', mismatch: 'Generic tube; no foam shown' },
   { n: 23, name: 'Amber Oud Eau de Parfum', slug: 'amber-oud-eau-de-parfum', src: 'perfumeAmber', c1: { cx: 0.38, cy: 0.5, zoom: 0.65 }, c2: { cx: 0.4, cy: 0.4, zoom: 0.5 }, alt1: 'Glass perfume bottle lit in warm amber light with long soft shadows', alt2: 'Close-up of the glass perfume bottle cap and shoulder in warm golden light' },
   { n: 24, name: 'Citrus Mist Body Spray', slug: 'citrus-mist-body-spray', src: 'perfumeClear', c1: { cx: 0.6, cy: 0.66, zoom: 0.8 }, c2: { cx: 0.62, cy: 0.55, zoom: 0.35 }, alt1: 'Clear glass bottle with a black cap standing on white fur in soft grey light', alt2: 'Close-up of the black bottle cap and clear glass', mismatch: 'No citrus cue and no visible spray nozzle (copy changed)' },
+  { n: 4, name: 'Cylinder Mini Speaker', slug: 'cylinder-mini-speaker', src: 'speakerBeige', c1: { cx: 0.5, cy: 0.48, zoom: 1 }, c2: { cx: 0.5, cy: 0.35, zoom: 0.45 }, alt1: 'Small beige cylindrical Bluetooth speaker with a honeycomb grille on a white background', alt2: 'Close-up of the speaker honeycomb grille from the top' },
+  { n: 8, name: 'Volt Max Power Bank', slug: 'volt-max-power-bank', src: 'powerbankWhite', c1: { cx: 0.4, cy: 0.44, zoom: 0.7 }, c2: { cx: 0.42, cy: 0.62, zoom: 0.45 }, alt1: 'Large white power bank with a black three-way charging cable lying on grey concrete', alt2: 'Close-up of the three charging connectors of the cable' },
+  { n: 9, name: 'Classic Steel Analog Watch', slug: 'classic-steel-analog-watch', src: 'watchSteel', c1: { cx: 0.5, cy: 0.52, zoom: 0.62 }, c2: { cx: 0.5, cy: 0.5, zoom: 0.4 }, alt1: 'Steel analog wrist watch with a white dial, black bezel and metal bracelet on a white surface', alt2: 'Close-up of the white watch dial with Roman numerals and sub-dials' },
+  { n: 11, name: 'Chrono Sport Wrist Watch', slug: 'chrono-sport-wrist-watch', src: 'watchChrono', c1: { cx: 0.5, cy: 0.5, zoom: 1 }, c2: { cx: 0.5, cy: 0.42, zoom: 0.4 }, alt1: 'Steel chronograph wrist watch with a blue dial and rose-gold bezel on a white background', alt2: 'Close-up of the blue chronograph dial with three white sub-dials' },
 ]
 
 const pid = (n: number) => `A-P${String(n).padStart(2, '0')}`
@@ -147,13 +155,12 @@ const extraAssets: Asset[] = [
 
 export const ASSETS: Asset[] = [...productAssets, ...categoryAssets, ...extraAssets]
 
-/** Products and slots with no acceptable photo yet (every candidate showed a brand mark or the wrong item). */
-export const UNSOURCED_PRODUCTS = [
-  { n: 4, slug: 'cylinder-mini-speaker', reason: 'Candidates showed a visible brand badge (BOOMS BASS) or were not cylindrical.' },
-  { n: 8, slug: 'volt-max-power-bank', reason: 'The only larger power bank found had a visible printed brand name.' },
-  { n: 9, slug: 'classic-steel-analog-watch', reason: 'Steel-case watches found had a brand name on the dial; the plain-dial one was a different style.' },
-  { n: 11, slug: 'chrono-sport-wrist-watch', reason: 'Chronograph candidates all carried a visible brand name on the dial.' },
-] as const
+/**
+ * Products with no acceptable photo (they keep generated artwork). Empty since 2026-11-02, when the
+ * owner accepted visible brand names in demo photos and the last four products were sourced.
+ * Add { n, slug, reason } here if a product ever loses its photo again.
+ */
+export const UNSOURCED_PRODUCTS: ReadonlyArray<{ n: number; slug: string; reason: string }> = []
 
 /** Output budgets (docs/VISUAL_ASSETS_PLAN.md section 7). The optimizer is off, so one file serves every placement. */
 export const BUDGETS = {
