@@ -1603,3 +1603,77 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: `npx tsc --noEmit`, `npm run lint` (no new warnings), `npm run build`, `test:env`, `test:turnstile`, `test:category-filters`; the migration up, down and up again on a copy of the demo database, then `verify-migrations`; 10 categories and 24 of 24 products with a category afterwards; the storefront at six widths with no overflow, alt or heading problems; e2e `seo` and `mobile` specs against the CI seed; CI green on the PR.
 - **Rollback**: Revert the commit and run the migration's `down` (restores the column only). To get the old categories back, restore the database from a backup taken before the migration.
 - **Commit message**: `Flat categories, no sub-categories, and circle category shortcuts on phones (M102)`
+
+## Group: Demo visual assets — `M103` onward
+
+**Status: Proposed (2026-11-01). Not approved: none of these is work until the owner approves it** ([VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md) is the master objective and decision record; [ADR-049](./DECISIONS.md) is Proposed). Goal of the group: the temporary demo catalogue shows genuine, licence-verified product photography instead of generated art and blank placeholders, and can be removed safely before launch. Constraints: `images.unoptimized: true` and ADR-036 stay; no new dependency, no new image store, no schema change unless the owner approves one separately; local first, then the approved test environment only; never production. Order (by dependency): `M103`, `M104`, `M105`, `M106`, `M107`, `M108`; `M109` last, before launch.
+
+### M103 — Media audit (read-only)
+- **Status (2026-11-01)**: **Done** (owner accepted the audit 2026-11-01; the measured database audit is skipped). Approved by the owner 2026-11-01 (D1), narrowed by the owner: everything on the project is demo, so demo-versus-real classification was skipped. Done as a code-reading audit; no database was available, so row counts, file sizes and dimensions in real databases are **unverified**.
+- **Goal**: Know which images are generated art or blank, which assets are missing, and which seed and component behaviours constrain the later stages.
+- **Files**: `docs/assets/MEDIA_AUDIT.md` (new); `docs/VISUAL_ASSETS_PLAN.md`, `docs/MIGRATION_PLAN.md`, `docs/TASKS.md` (status and decisions). No application code, schema, data or dependency change. `DEMO_INVENTORY.csv` is not created.
+- **Spec**: audit of the seeds, components and metadata; D7 network re-test; D8 assessment.
+- **Dependencies**: Stage 0 (merged or open as PR #56).
+- **Testing**: nothing was written to any database; findings are checkable against the cited files. A measured database audit (query on `media`) remains an optional follow-up.
+- **Rollback**: Delete `docs/assets/MEDIA_AUDIT.md` and revert the status edits.
+- **Commit message**: `Audit demo media and image surfaces (M103)`
+
+### M104 — Photo brief, sourcing and licence verification
+- **Status (2026-11-01)**: **In progress, partly blocked.** Approved by the owner 2026-11-01 (this milestone only; ADR-049 stays Proposed). Delivered: photo brief, 61-slot shot list and sourcing plan, licence protocol, network findings and alternatives ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)), and the manifest with every slot at `status=needed`. **Not delivered**: any selected photo or verified licence, because Unsplash and Pexels return 403 from the environment's network policy and `demo-assets/_inbox/` is empty. Needs an owner action (network setting or supplying photos) before this milestone can be marked Done.
+- **Goal**: A shot list and a set of owner-approved, licence-verified candidate photos for the 24 demo products, 10 categories, promo areas and a default share image.
+- **Files**: `docs/assets/MANIFEST.csv`; photos only under git-ignored `demo-assets/_inbox/` and `_archive/`.
+- **Spec**: Unsplash and Pexels preferred; licence text read per image and recorded; no visible third-party logos or identifiable people on products; if a source is unreachable, record it and use `_inbox/` (no bypass).
+- **Dependencies**: `M103`; network access or owner-supplied files.
+- **Testing**: every row has source URL, author (or "not shown"), licence URL and check date before `approved`; the owner has approved each image against its product.
+- **Rollback**: Remove the manifest rows and the git-ignored files.
+- **Commit message**: `Record candidate demo photos and licences (M104)`
+
+### M105 — Local image-processing pipeline
+- **Status (2026-11-01)**: Proposed.
+- **Goal**: Originals archived, storefront WebP generated per placement, metadata stripped, size budgets enforced and validated before upload, with checksums in the manifest (VISUAL_ASSETS_PLAN.md section 7).
+- **Files**: a new script and its test under `scripts/`; `package.json` (an npm script entry only); `docs/assets/MANIFEST.csv`; `demo-assets/README.md`.
+- **Spec**: uses the existing `sharp` dependency; installs nothing; never modifies originals; rejects images too small, wrong format or over budget.
+- **Dependencies**: `M104` (at least one approved image); ADR-049 decision.
+- **Testing**: outputs meet exact dimensions and byte budgets; no EXIF; archive checksums unchanged; bad inputs fail; `npm run type-check` and `npm run lint` pass.
+- **Rollback**: Revert the commit; delete `demo-assets/_processed/`.
+- **Commit message**: `Add local demo image processing and validation (M105)`
+
+### M106 — Local integration of demo photos
+- **Status (2026-11-01)**: Proposed.
+- **Goal**: Replace generated art and the blank placeholders with the processed photos in the local demo data, without touching non-demo rows.
+- **Files**: `scripts/seed-demo.ts`, `scripts/demo-data/*`, possibly `scripts/seed.ts`, `demo-assets/README.md`, `docs/assets/MANIFEST.csv`.
+- **Spec**: existing find-or-create seed rules and database guards unchanged; replacement touches only inventory rows; `media_id` recorded with `media_env=local`.
+- **Dependencies**: `M105`.
+- **Testing**: no generated-art or blank image remains locally; every demo product has a matching photo; a rerun adds nothing; the seed still refuses production and non-local hosts.
+- **Rollback**: Revert the commit; restore the local database from a pre-run dump.
+- **Commit message**: `Use real demo photography in the demo seed (M106)`
+
+### M107 — Storefront image-surface QA
+- **Status (2026-11-01)**: Proposed.
+- **Goal**: Every customer-facing image surface looks right with the new photos at all widths; fix only what the photos expose.
+- **Files**: likely `lib/seo.ts`, `components/{HeroSlider,HeroShortcuts,PromoCards,ProductCard,RailCard,ProductDetails}.*`, e2e specs. A dedicated hero banner field would be a schema change and needs its own approval (VISUAL_ASSETS_PLAN.md, D2).
+- **Spec**: no change to checkout, prices, Orders, access control, `images.unoptimized` or the `/_next/image` closure.
+- **Dependencies**: `M106`.
+- **Testing**: lint, type-check, build, `test:*`, Playwright including the checkout golden path; screenshots at 320, 390, 768, 1024, 1440 px; no broken image or horizontal scroll; page weight within the budgets.
+- **Rollback**: Revert the commit.
+- **Commit message**: `Fix image presentation across the storefront (M107)`
+
+### M108 — Test-site rollout
+- **Status (2026-11-01)**: Proposed.
+- **Goal**: The validated demo photos appear on the approved test environment (Neon + Vercel Blob).
+- **Files**: `docs/assets/MANIFEST.csv`, `docs/assets/DEMO_INVENTORY.csv`; no application code unless the owner approves an upload route (VISUAL_ASSETS_PLAN.md, D5).
+- **Spec**: test environment only; never production; no deploy by the AI team unless the owner asks; seed database guards are not loosened.
+- **Dependencies**: `M107`; owner approval of the upload route.
+- **Testing**: `/`, `/shop`, a category, a product and `/cart` checked on the test URL; uploads land on the Blob host; `media_id` recorded with `media_env=test`.
+- **Rollback**: Remove the uploaded demo media by inventory id after the reference check (section 6 of the plan).
+- **Commit message**: `Record test-site demo photo rollout (M108)`
+
+### M109 — Pre-launch demo cleanup and original-catalogue import
+- **Status (2026-11-01)**: Proposed. Run only when the owner is ready to launch.
+- **Goal**: Remove only demo records and demo-only media, import the owner's original catalogue, and verify the storefront and checkout.
+- **Files**: a dry-run-by-default cleanup tool under `scripts/` and a runbook; `docs/assets/DEMO_INVENTORY.csv`, `docs/assets/MANIFEST.csv`.
+- **Spec**: procedure of VISUAL_ASSETS_PLAN.md section 6: inventory, verified backup, orders first, products, media reference check, empty demo categories, import, verification, regression. Production use needs its own explicit owner approval.
+- **Dependencies**: `M103`, the owner's catalogue, verified backups.
+- **Testing**: dry run reviewed against the inventory; on a restored copy, cleanup then import leaves no demo rows or demo media and no broken image; a restore from backup is rehearsed; lint, type-check, build, `test:*` and Playwright pass.
+- **Rollback**: Restore the database dump and re-upload the backed-up media files.
+- **Commit message**: `Add demo catalogue cleanup runbook and tool (M109)`

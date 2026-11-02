@@ -1497,3 +1497,34 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - `/category/electronics`, `/category/fashion`, `/category/home-living`, `/category/beauty-care` and `/category/smart-watches` return 404 on databases where the migration deleted them. They were not in any external link we control; search engines drop them on the next crawl (the sitemap no longer lists them).
 - The demo Watches description now says "Analog and smart watches"; the migration does not edit descriptions, so an existing database keeps its text until an admin edits it.
 - `docs/CATEGORY_REQUIREMENTS.md`'s parent/child sections describe the former design; the file carries a note pointing here.
+
+## ADR-049: Demo photography: identification of demo records without a schema change, a provenance manifest, and a local image-processing pipeline (`M103`–`M109`)
+
+**Status**: **Proposed (2026-11-01)**. Not Accepted: the owner has not approved it. Until then it binds nothing. It edits no Accepted ADR and, if accepted, supersedes none: [ADR-020](#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor) (media storage), [ADR-034](#adr-034-image-optimisation-under-docker--nexts-built-in-optimizer-webp-only-local-media-only-m51) as amended by [ADR-036](#adr-036-strict-turnstile-policy-idempotent-orders-no-victim-lock-out-a-closed-first-admin-window-separate-database-roles-and-interim-nextjs-mitigations-m52b-security-batch) (optimizer off, upload formats), [ADR-046](#adr-046-free-non-commercial-test-hosting-vercel-hobby--neon-free--vercel-blob-m100) (test hosting) and [ADR-048](#adr-048-categories-are-flat-one-level-no-sub-categories-m102) (flat categories) all stand. Owner decisions this records: the brief of 2026-11-01 (keep `images.unoptimized: true`, no new storage system, no unnecessary schema change, local first, never production). Full plan: [VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md).
+
+**Context**: The demo catalogue (24 products, 10 categories, generated vector art; plus 4 blank-image products from `scripts/seed.ts`) is temporary and will be removed before launch. The owner wants real, licence-verified photography for the demo and a safe way to remove demo data later. No collection has a demo marker. `Media` records no source or licence. The image optimizer is off, so each uploaded file is what customers download.
+
+**Decision** (proposed):
+
+1. **Demo records are identified without a schema change**, by the conventions the seed already follows (product exact name from `scripts/demo-data/catalogue.ts`; category slug; media filename `<product-slug>-<n>.webp` / `category-<slug>.webp`; demo order customer names, phones and idempotency keys), plus a `demo-` filename prefix for any new demo media (hero, promo, share image). Matching on a single signal is not enough; deletion acts only on rows listed in a per-environment `docs/assets/DEMO_INVENTORY.csv` that records how each row was identified and whether anything non-demo references it.
+2. **Provenance is kept in `docs/assets/MANIFEST.csv`**, outside the database: source, author, licence URL and check date, checksums of original and processed files, dimensions, bytes, target record, media id and environment, and a `catalogue` column (`demo`|`original`). A licence is read per image; none is assumed.
+3. **A local, development-time image pipeline** archives originals, produces WebP (JPEG for the share image), resizes per placement, strips metadata, enforces dimension and byte budgets, and validates files before upload. It uses the existing `sharp` dependency and adds none. Output is ordinary files uploaded through the existing Payload `Media` collection.
+4. **Demo cleanup is inventory-driven, dry-run by default, and backup-first**: orders, then products, then a media reference check, then empty categories. Media referenced by any non-demo record is never deleted. Production use needs its own owner approval.
+5. **No change** to `images.unoptimized`, the `/_next/image` closure, `Media.mimeTypes`, access control, checkout or any collection field.
+
+**Alternatives considered**:
+
+- **An `isDemo` boolean on products, categories, media and promo cards.** Makes the cleanup a single filter, but needs a migration on every database, four collection edits and a field that is useless after launch. Held back: the owner asked for no unnecessary schema change. Can be proposed on its own if the inventory proves too fragile.
+- **Payload `imageSizes` (generated thumbnails).** Would let small cards avoid downloading a 1000 px file. It is a schema change (extra columns per size) and was not requested; the single-file budgets are the default. Left as open decision D6.
+- **Re-enable the Next.js image optimizer.** Rejected by the owner for this project; ADR-036 stands.
+- **Commit photos to the repository.** Rejected: the existing `demo-assets/*` rule keeps photos out of git, and licences are tracked in the manifest instead.
+- **Match demo rows by name alone.** Rejected: names and the `headphones`/`speakers`/`watches` slugs can collide with the owner's real catalogue.
+
+**Consequences**:
+
+- Cleanup correctness depends on keeping `DEMO_INVENTORY.csv` accurate per environment; a row not in it is never deleted.
+- A real catalogue that reuses a demo category slug keeps that category (edited, not deleted).
+- Originals live in a git-ignored folder on one machine; the manifest checksums let the owner verify a copy but do not replace a backup.
+- Single-file budgets mean cards download the same file as the product page; the cost is bounded by the budget, not removed.
+- Photos of real products are not stock photos: this ADR covers temporary demo items only. The owner's original catalogue uses the owner's own images.
+- Open points for the owner are listed in [VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md), section 11 (D1–D8).
