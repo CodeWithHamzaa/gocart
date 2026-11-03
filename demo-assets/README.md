@@ -7,6 +7,7 @@ The seed works with this folder empty. It then generates simple vector artwork (
 **Licensed demo photography (M104-M106).** The tracked spec `scripts/demo-data/photos.ts` and the provenance record `docs/assets/MANIFEST.csv` describe 61 images cut from 24 Unsplash photographs (Unsplash License). The photos are never committed. To rebuild them on a machine that has the originals in `demo-assets/_archive/originals/` (git-ignored; keep a second copy of that folder somewhere safe):
 
 ```
+npm run fetch:demo-originals           # re-downloads the 24 originals, kept only if they match the manifest's checksums
 npm run process:demo-images            # writes demo-assets/_processed/, updates the manifest
 npm run process:demo-images -- --check # validates outputs and originals without writing
 npm run test:demo-images

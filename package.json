@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "fetch:demo-originals": "tsx scripts/fetch-demo-originals.ts",
     "process:demo-images": "tsx scripts/process-demo-images.ts",
     "migrate": "payload migrate",
     "migrate:create": "payload migrate:create",

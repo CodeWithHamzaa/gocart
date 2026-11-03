@@ -105,38 +105,83 @@ one test image uploads to Blob, is served and is deleted. Server-side order tota
 **not** tested live (checkout is off); they are covered by CI: the `e2e` job (golden-path order against a
 seeded database), `npm run test:idempotency`, `npm run test:turnstile` and `npm run test:users-guard`.
 
-## Verified state (2026-11-03)
+## Verified state (2026-11-03, updated after the redeploy)
 
-Read through the authorised Vercel and Neon connectors (read-only calls; no value of any secret was
-requested or printed). Re-check before relying on it; anything not in this list is not verified.
+Read through the authorised Vercel and Neon connectors; no value of any secret was requested or
+printed. Re-check before relying on it; anything not in this list is not verified.
 
 | Item | Observed |
 |---|---|
 | Vercel project | `gocart-test`, Hobby scope, Node 22.x, not Git-connected. Domains: `gocart-test-inky.vercel.app` (the `NEXT_PUBLIC_SITE_URL`) and two `*.vercel.app` aliases. Deployment protection reported as `ssoProtection: all_except_custom_domains` (which URLs that leaves public was not checked) |
-| Deployed code | Two READY production deployments: 2026-10-30 (no Git metadata, `M100`) and 2026-11-01 from `main` at **`a6aedc1`** (`M102`), the current one. Everything merged after it (`M103`–`M108` tooling, PR #60) is **not deployed** |
-| Environment variables (Production) | `DATABASE_URI` and `PAYLOAD_SECRET` (type *sensitive*), `NEXT_PUBLIC_SITE_URL` (plain), `BLOB_READ_WRITE_TOKEN` (type *encrypted*, all three targets; Vercel flags it `readable-secret`). **No** `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`: real-key Turnstile is not configured, so checkout and lookup stay off |
+| Deployed code | **`main` at `9183777`** (PR #61), deployed 2026-11-03 at the owner's request: `dpl_9vxaFkYF…` then, after the Blob token change below, `dpl_AwfA3Y1u…` (current, READY, aliased to `gocart-test-inky.vercel.app`). Earlier: 2026-11-01 `a6aedc1` (`M102`, `dpl_254K…`, kept as the rollback candidate) and 2026-10-30 (`M100`). No migration was pending (the 8 on Neon equal the 8 in `/migrations`), so no migrate step ran |
+| Live checks (2026-11-03, through the connector's fetch) | 200: `/api/health` (`{"status":"ok"}`), `/`, `/shop`, `/categories`, `/category/headphones`, `/category/watches`, `/product/24`, `/cart`, `/wishlist`, `/admin/login`; 404: `/category/does-not-exist`. **`M107` is live**: `og:image` on home, shop, categories, category and product pages (the category page had none before the redeploy; the others were not fetched before) and the category photo in the category banner; the product main image uses its own alt ("Citrus Mist Body Spray, view 1"). PR #60 (`disableCreateDatabase`) is in the deployed commit; the database connects (health and pages). A Blob-backed file (`/api/media/file/category-headphones.webp`) returns 200 `image/webp`, 12,164 bytes, equal to its media row |
+| Environment variables (Production) | `DATABASE_URI` and `PAYLOAD_SECRET` (type *sensitive*), `NEXT_PUBLIC_SITE_URL` (plain), `BLOB_READ_WRITE_TOKEN` (all three targets; was type *encrypted*, which Vercel flags `readable-secret`; **changed to *sensitive* in place on 2026-11-03**, see below; no variable now has a security issue). **No** `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`: real-key Turnstile is not configured, so checkout and lookup stay off |
 | Neon | Project `gocart-test`, AWS us-east-1, Postgres 17, 0.25 CU, scale-to-zero; branches `main` (default) and `backup-before-m101-m102-2026-11-01` |
 | Schema | `payload_migrations` holds all 8 committed migrations (6 in batch 1, `mirza_store_name` and `flat_categories` in batch 2), the same 8 as `/migrations` on `main`. Roles `neondb_owner` and `gocart_app` exist; `gocart_app` has `SELECT, INSERT, UPDATE, DELETE` on `media` |
 | Data | 24 products, 10 categories, 63 media rows (all `.webp`, all created 2026-10-30, generated art), 48 product image links, 1 admin user, 0 orders |
 | Blob store | `gocart-test-media`, iad1, public access, connected to `gocart-test` only, 63 objects, 726,320 bytes (matches the 63 media rows), quota not exceeded, token not expired |
 | Code (repo, not a connector) | `collections/Orders.ts:44`: `delete` is allowed for any logged-in user, and only admins can log in (ADR-006), so admins can delete orders, which ADR-049 had listed as unverified for `M109` |
-| CI on `main` | The `CI` workflow succeeded on the last five pushes to `main`, including PR #59 (`8a6ccdf`) and PR #60 (`4ae9dfe`) |
+| CI on `main` | The `CI` workflow succeeded on every push to `main` checked, including PR #59 (`8a6ccdf`), PR #60 (`4ae9dfe`) and PR #61 (`9183777`, the deployed commit) |
+| Runtime log | One recurring warning, pre-existing since 2026-10-30: `pg` says `sslmode=require` is treated as `verify-full` and will change meaning in pg v9. Not an error; found, not fixed (switching the string to `sslmode=verify-full` is an owner edit of the sensitive `DATABASE_URI`) |
+| Admin page | `/admin/login` advertises `og:image` `http://localhost:3000/api/og…`: Payload's `serverURL` is not set. Cosmetic (admin only, `noindex`); found, not fixed |
 
-Not verified: an HTTP check of the live pages (the cloud session's network policy denies `*.vercel.app`);
-the Hobby/Blob plan limits (not exposed by the connector); real Neon/Blob behaviour of the `M108` tool.
+Not verified: the Hobby/Blob plan limits (not exposed by the connector); real Neon/Blob behaviour of
+the `M108` tool. Live pages were fetched through the Vercel connector (it creates a temporary share
+link, which expires after 23 hours); the cloud session itself cannot reach `*.vercel.app`.
 
-**Recommended owner actions (not done by the team):**
-- Redeploy `main` to `gocart-test` when you want `M107` and PR #60 live there. There are no new
-  migrations since `a6aedc1`, so no migrate step is needed first. The `M108` spec says the team does
-  not deploy unless you ask.
-- Mark `BLOB_READ_WRITE_TOKEN` *Sensitive* in Vercel (Settings, Environment Variables), which needs
-  the value re-entered; rotating the token at the same time is the clean way to do it.
+### `BLOB_READ_WRITE_TOKEN`: why it was flagged and what was done (2026-11-03)
+
+- **Why**: Vercel connected the Blob store with a variable of type *encrypted*, which is a readable
+  *config* value: anyone with access to the project can decrypt it in the dashboard or through the
+  API. Vercel reports that as `readable-secret`. Its supported form for credentials is type
+  *sensitive* (visibility *secret*): write-only once saved, readable only by the running deployment.
+- **Done**: the variable was switched to *sensitive* in place through the Vercel API (only the
+  `type` field was sent, so the value never passed through the session), the project was redeployed,
+  and the new deployment serves Blob files (the check above). Vercel now lists no security issue for
+  any variable of the project.
+- **Not done: rotation.** There was no sign of exposure (the value had never been decrypted, and the
+  Hobby scope has one member), and the Vercel connector has no Blob-token rotation call. If you want
+  to rotate anyway: Vercel dashboard, Storage, `gocart-test-media`, rotate the read-write token; the
+  connected variable is updated by Vercel; redeploy afterwards.
+- Consequence for `M108`: because the variable is now write-only, the token cannot be read back from
+  Vercel by anyone, the team included. Whoever runs the rollout copies a token from the Blob store's
+  page in the dashboard (or rotates one) into their own env file.
 
 ## Demo photo rollout (`M108`, ADR-049 item 6)
 
-**Status (2026-11-03): not run.** Expected result from a read-only pre-flight on Neon: all 24 demo
-products and 10 demo categories exist, so a run should report **58 to upload, 34 to relink, 0 to
-create** and no skipped targets. A different dry-run count means the database changed: stop and look.
+**Status (2026-11-03): live rollout NOT run; everything up to it is done and verified.**
+
+- **Photos: ready.** `npm run fetch:demo-originals` re-downloads the 24 licence-checked originals and keeps
+  each one only if its SHA-256 equals the `original_sha256` recorded in `MANIFEST.csv` (24 of 24 matched
+  on 2026-11-03). `npm run process:demo-images` then rebuilt all 61 processed files **byte-identical to the
+  recorded `processed_sha256`** (manifest unchanged; `--check` and `test:demo-images` pass).
+- **Pre-flight on Neon (read-only SQL):** all 24 demo products and 10 demo categories exist, so a run should
+  report **58 to upload, 34 to relink, 0 to create** and no skipped targets. A different dry-run count means
+  the database changed: stop and look.
+- **Rehearsal (2026-11-03)** of the tool's own `runRollout` with the 58 real processed photos, on a loopback
+  `*_throwaway` PostgreSQL 16 with the 8 committed migrations and the generated-art demo seed (the test
+  site's state), local file storage instead of Blob, and a different `PAYLOAD_SECRET` from the seed's:
+  all 58 photos pass the tool's validation; dry run 58 / 34 / 0; apply uploaded 58 and relinked 34
+  (every product's two images and every category image now the new photos); rerun uploaded nothing
+  (34 already correct); no schema change (`payload_migrations` unchanged); nothing deleted.
+- **Still missing for the live run** (none of it can be supplied from this cloud session without putting a
+  secret in the transcript):
+  1. A Blob read-write token for `gocart-test-media` (write-only in Vercel now; copy or rotate it in the
+     dashboard).
+  2. A `DATABASE_URI` for the Neon test database (`gocart_app` role, pooled host
+     `ep-twilight-forest-b8h0vrog-pooler.c-14.us-east-1.aws.neon.tech`, `sslmode=require`), from the Neon
+     console.
+  3. A machine that reaches that host on port 5432 and `https://vercel.com/api/blob` (the Blob SDK's API).
+     A cloud session reaches neither unless its environment's network access allows them.
+  `PAYLOAD_SECRET` can be any newly generated 32+ character value: the rollout signs nothing (the rehearsal
+  used a different secret from the seed's).
+
+Two ways to finish:
+- **On your machine:** `npm ci`, `npm run fetch:demo-originals`, `npm run process:demo-images`, then steps 1-5
+  below with `DEMO_ROLLOUT_DB_HOST=ep-twilight-forest-b8h0vrog-pooler.c-14.us-east-1.aws.neon.tech`.
+- **In a cloud session:** in the environment's settings add the three values as environment secrets
+  (`DATABASE_URI`, `BLOB_READ_WRITE_TOKEN`, `DEMO_ROLLOUT_DB_HOST`) and allow the two hosts under network
+  access; a new session then runs the same commands without anyone pasting a secret into chat.
 
 How the upload path works (read from the installed adapter source, `@payloadcms/plugin-cloud-storage`
 `dist/hooks/afterChange.js` and `@payloadcms/storage-vercel-blob` `dist/uploadFile.js`, version 3.90.2): a server-side `payload.create` file has no `clientUploadContext`, so the Blob
@@ -161,7 +206,9 @@ to Neon and Blob.
    each uploaded media id to a rollback log (`rollout-test-<time>.jsonl`) in `demo-assets/_processed/`. It also
    sets `PAYLOAD_MIGRATING=true` so Payload does not push a dev schema to Neon; migrations stay a separate
    step. `DEMO_ROLLOUT_DB_HOST` only proves you named the host twice: make sure it is the test database.
-5. Check `/`, `/shop`, a category, a product and `/cart` on the test URL; images must come from the Blob host.
+5. Check `/`, `/shop`, a category, a product and `/cart` on the test URL. Images are served through
+   `/api/media/file/<name>` (the adapter reads them from Blob); a new photo's URL returns 200 `image/webp`
+   with the processed file's byte size, and its name has a `-1`-style suffix if the old art used the name.
 
 Nothing is deleted: media that no longer has a reference is left for `M109`'s reference-checked cleanup.
 Rollback of a rollout: relink in `/admin` or re-seed, then remove the logged media ids after a reference check.
