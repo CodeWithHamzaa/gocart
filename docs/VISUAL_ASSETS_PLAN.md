@@ -1,8 +1,8 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 61 of 61 slots after a second pass on 2026-11-02), `M105` (pipeline) and `M106` (local integration) are complete and merged (PRs #56 and #57); `M107` (storefront QA) was started on the owner's instruction and finished 2026-11-03, pending review; `M108` and `M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 61 of 61 slots after a second pass on 2026-11-02), `M105` (pipeline) and `M106` (local integration) are complete and merged (PRs #56 and #57); `M107` (storefront QA) was finished 2026-11-03 and accepted the same day under the owner's delegation (PR #58 merged); on 2026-11-03 the owner delegated technical decisions to the AI team ([GATES.md](../.claude/docs/GATES.md)), ADR-049 was **Accepted** and `M108` was approved for the test environment only. `M108` tooling is built and tested; the live rollout needs test credentials and the processed photos (section 12). **`M109` stays on hold** until the owner gives the client's go-ahead. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M107` are Done, `M108` is approved (test only), `M109` is Proposed and on hold. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
-Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
+Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Accepted 2026-11-03; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
 ---
 
@@ -227,7 +227,9 @@ Scope note from the owner: everything on the project is currently demo, so `M103
 
 Owner authorisation of 2026-11-01 (second session): complete `M104`–`M106` without per-image approval, stop after `M106`. D2, D3, D4, D5, D6, D7 and D8 were applied as decided (no banner field, closest photo plus adjusted demo copy, originals archived outside Git, no test-site upload, two images per product, no `isDemo`); ADR-049 stays Proposed.
 
-Still open: whether to approve ADR-049 and the next milestones, and whether a measured database audit (needs dependency installation and a database) is wanted before `M105`.
+Still open (as of 2026-11-01): whether to approve ADR-049 and the next milestones, and whether a measured database audit (needs dependency installation and a database) is wanted before `M105`.
+
+**Resolved 2026-11-03** (owner delegation recorded in [GATES.md](../.claude/docs/GATES.md)): ADR-049 is **Accepted**, amended before acceptance (no committed `DEMO_INVENTORY.csv` until `M109`; item 6 for the rollout tool). `M107` is accepted. **D5** (test-site upload route) is decided: a guarded one-off operator tool, `scripts/rollout-demo-photos.ts`, not an app route and not a change to the seed guard. `M109` and anything production remain on hold until the owner gives the client's go-ahead.
 
 ## 12. Progress checklist
 
@@ -237,6 +239,6 @@ Still open: whether to approve ADR-049 and the next milestones, and whether a me
 - [x] `M104` brief and sourcing plan ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)); photos sourced and licence-recorded for all 61 slots from Unsplash (2026-11-01 and 2026-11-02, owner-delegated approval; the last 4 products after the owner accepted visible brands in demo photos) — report in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md)
 - [x] `M105` processing pipeline (`npm run process:demo-images`, `npm run test:demo-images`; sharp only, no new dependency) — awaiting owner review
 - [x] `M106` local integration (seed uses the processed photos; verified on a throwaway local database, nothing remote) — awaiting owner review
-- [x] `M107` storefront QA (2026-11-03; [assets/STOREFRONT_QA_M107.md](./assets/STOREFRONT_QA_M107.md)) — pending owner review
-- [ ] `M108` test-site rollout
+- [x] `M107` storefront QA (2026-11-03; [assets/STOREFRONT_QA_M107.md](./assets/STOREFRONT_QA_M107.md)) — accepted 2026-11-03 (owner delegation), PR #58 merged
+- [~] `M108` test-site rollout: tooling Done and tested 2026-11-03 (`npm run rollout:demo-photos`, `test:rollout-demo-photos`); the live run on Neon + Blob is **not done**, it needs the test credentials, a route to Neon/Blob and the processed photos (see [DEPLOYMENT_VERCEL_TEST.md](./DEPLOYMENT_VERCEL_TEST.md))
 - [ ] `M109` pre-launch cleanup and original-catalogue import (not before launch preparation)
