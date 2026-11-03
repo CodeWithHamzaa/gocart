@@ -1,0 +1,95 @@
+name: M108 test-site photo rollout
+
+# M108 (ADR-049 item 6): runs scripts/rollout-demo-photos.ts against the TEST environment only
+# (Neon `gocart-test` + Vercel Blob `gocart-test-media`, ADR-046). Never production.
+#
+# Why a workflow: the credentials live only in GitHub encrypted secrets of the `gocart-test`
+# environment, so nobody pastes them into a chat, a terminal or a file, GitHub masks them in logs,
+# and the runner reaches Neon and the Blob API. Started by hand only (no push, PR or schedule
+# trigger), only from `main`, one run at a time. Dry run unless `mode` is `apply`.
+#
+# The `gocart-test` environment MUST be protected before any secret is added (Settings ->
+# Environments -> gocart-test): "Deployment branches and tags" = selected branches, `main` only,
+# and the owner as a required reviewer. Without those, a copy of this file on another branch could
+# read the secrets. The `if:` below is defence in depth, not the control.
+#
+# Required environment secrets:
+#   TEST_DATABASE_URI           Neon pooled connection string for the restricted gocart_app role
+#   TEST_DATABASE_HOST          the exact host of TEST_DATABASE_URI (the tool refuses a mismatch)
+#   TEST_BLOB_READ_WRITE_TOKEN  read-write token of the gocart-test-media Blob store
+# Remove them after the rollout. Never put a production value here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run writes nothing; apply uploads and relinks'
+        type: choice
+        options: [dry-run, apply]
+        default: dry-run
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m108-rollout
+  cancel-in-progress: false
+
+jobs:
+  rollout:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: gocart-test
+    timeout-minutes: 20
+    steps:
+      # Pinned to commit SHAs: this is the only workflow that holds credentials.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The 24 licence-checked originals, each kept only if it matches the manifest's original_sha256.
+      - run: npm run fetch:demo-originals
+      # Rebuild the 61 processed files; they must come out byte-identical to the manifest.
+      - run: npm run process:demo-images
+      - run: npm run process:demo-images -- --check
+      - name: Processed files match the committed manifest
+        run: git diff --exit-code -- docs/assets/MANIFEST.csv
+      - name: Rollout (${{ inputs.mode }})
+        env:
+          DATABASE_URI: ${{ secrets.TEST_DATABASE_URI }}
+          DEMO_ROLLOUT_DB_HOST: ${{ secrets.TEST_DATABASE_HOST }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.TEST_BLOB_READ_WRITE_TOKEN }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          # A throwaway secret for this process only: the rollout signs no session or API key.
+          PAYLOAD_SECRET="$(openssl rand -hex 32)"
+          echo "::add-mask::$PAYLOAD_SECRET"
+          export PAYLOAD_SECRET
+          if [ "$MODE" = "apply" ]; then
+            npx tsx scripts/rollout-demo-photos.ts --env test --apply
+          else
+            npx tsx scripts/rollout-demo-photos.ts --env test
+          fi
+      # The rollback log names the database host; drop that field before the file leaves the runner.
+      - name: Strip the host from the rollback log
+        if: ${{ !cancelled() && inputs.mode == 'apply' }}
+        run: |
+          for f in demo-assets/_processed/rollout-test-*.jsonl; do
+            [ -e "$f" ] || continue
+            node -e 'const fs=require("fs");const f=process.argv[1];fs.writeFileSync(f,fs.readFileSync(f,"utf8").split("\n").filter(Boolean).map(l=>{const o=JSON.parse(l);delete o.host;return JSON.stringify(o)}).join("\n")+"\n")' "$f"
+          done
+      # After an apply (also a failed one): the manifest with media_id / media_env=test and the
+      # rollback log, for the PR that records them. No secret is in either file.
+      - if: ${{ !cancelled() && inputs.mode == 'apply' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m108-rollout-${{ github.run_id }}
+          path: |
+            docs/assets/MANIFEST.csv
+            demo-assets/_processed/rollout-test-*.jsonl
+          if-no-files-found: warn
+          retention-days: 30

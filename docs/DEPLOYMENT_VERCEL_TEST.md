@@ -177,7 +177,29 @@ link, which expires after 23 hours); the cloud session itself cannot reach `*.ve
   from the seed's). Never change the deployed `PAYLOAD_SECRET` for this (that logs the admin out) and never
   reuse a production value.
 
-Two ways to finish:
+**Preferred way to finish (from 2026-11-03): the `M108 test-site photo rollout` GitHub Actions workflow**
+(`.github/workflows/m108-rollout.yml`). The credentials live only in GitHub encrypted secrets, so nobody
+pastes them anywhere, GitHub masks them in logs, and GitHub's runners reach Neon and the Blob API. It is
+started by hand only, only from `main`, one run at a time, and is a dry run unless `mode` is `apply`. Each
+run re-fetches the originals (checksum-verified), rebuilds the processed files, fails if they differ from the
+committed manifest, and then runs the guarded tool with a throwaway `PAYLOAD_SECRET`.
+
+- **Owner, once, in this order:** GitHub, repository Settings, Environments, `gocart-test` (create it if it
+  is not listed).
+  1. **Protect it first (mandatory):** "Deployment branches and tags" = selected branches, `main` only; and
+     add yourself as a **required reviewer**. Without the branch rule a copy of the workflow on any other
+     branch could read the secrets; without the reviewer a merged change to the workflow could. Every run
+     then waits for your click in the Actions tab (two or three clicks for the whole rollout).
+  2. Then add three environment secrets: `TEST_DATABASE_URI` (the Neon pooled connection string for
+     `gocart_app`, from the Neon console), `TEST_DATABASE_HOST` (the host part of that string), and
+     `TEST_BLOB_READ_WRITE_TOKEN` (the `gocart-test-media` read-write token, from the Vercel dashboard, Storage).
+- **AI team:** run the workflow with `mode=dry-run` (you approve the run); check the counts
+  (58 / 34 / 0); run `mode=apply`; verify through the Vercel and Neon connectors; run `dry-run` again
+  (expect 0 to upload, 34 already correct); record the manifest from the run's artifact in a PR.
+- **Owner, after:** delete the three secrets (and rotate the Blob token if you like). The team has no tool that can
+  delete GitHub secrets.
+
+Other ways:
 - **On your machine:** `npm ci`, `npm run fetch:demo-originals`, `npm run process:demo-images`, then steps 1-5
   below with `DEMO_ROLLOUT_DB_HOST` set to that same pooled host.
 - **In a cloud session:** in the environment's settings add the three values as environment secrets
