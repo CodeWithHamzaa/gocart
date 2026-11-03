@@ -8,7 +8,7 @@ import { getPromoCards } from "@/lib/payload/promo-cards";
 import { getProducts, getFeaturedProducts, getDealProducts } from "@/lib/payload/products";
 import { getSettings } from "@/lib/payload/settings";
 import { getCategoriesCached } from "@/lib/payload/categories";
-import { DEFAULT_DESCRIPTION, pageMetadata } from "@/lib/seo";
+import { DEFAULT_DESCRIPTION, pageMetadata, shareImages } from "@/lib/seo";
 import { buildHeroSlides } from "@/lib/hero-slides";
 
 // M68: up to twelve featured products, so smaller categories still get a tab.
@@ -31,13 +31,16 @@ export const dynamic = 'force-dynamic'
 // M41: the home page's own title is the store name plus what it sells (no template suffix).
 // M101: `absoluteTitle` keeps the brand out of og:title a second time (it read "... | Mirza").
 export async function generateMetadata() {
-    const { storeName } = await getSettings();
+    const [{ storeName }, featured] = await Promise.all([getSettings(), getFeaturedProducts({ limit: 1 })]);
+    // M107: the share image is the lead featured product's photo (the newest product if none is featured).
+    const lead = featured.docs[0] ?? (await getProducts({ sort: '-createdAt', limit: 1 })).docs[0];
     return pageMetadata({
         storeName,
         title: `${storeName} - Online shopping with Cash on Delivery in Pakistan`,
         description: DEFAULT_DESCRIPTION,
         path: '/',
         absoluteTitle: true,
+        images: shareImages(lead?.images?.[0]),
     });
 }
 

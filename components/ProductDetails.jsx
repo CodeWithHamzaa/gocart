@@ -41,7 +41,11 @@ const ProductDetails = ({ product, shipping }) => {
 
     const router = useRouter()
 
-    const images = product.images.map((image) => typeof image === 'string' ? image : image?.url).filter(Boolean)
+    // M107: each photo carries its own description (Media alt); the product name is the fallback.
+    const gallery = product.images
+        .map((image) => (typeof image === 'string' ? { url: image, alt: '' } : { url: image?.url, alt: image?.alt || '' }))
+        .filter((entry) => entry.url)
+    const images = gallery.map((entry) => entry.url)
     const [mainImage, setMainImage] = useState(images[0]);
     const imageIndex = Math.max(images.indexOf(mainImage), 0);
 
@@ -72,7 +76,7 @@ const ProductDetails = ({ product, shipping }) => {
                 {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. */}
                 <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-square ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
-                    {mainImage && <Image src={mainImage} alt={product.name} width={900} height={900} sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw" priority fetchPriority="high" className="size-full object-cover" />}
+                    {mainImage && <Image src={mainImage} alt={gallery[imageIndex]?.alt || product.name} width={900} height={900} sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw" priority fetchPriority="high" className="size-full object-cover" />}
                     {/* M101: "Out of stock" is said once, by the stock line; the photo keeps only an admin label. */}
                     {status && !outOfStock && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
                     {images.length > 1 && (

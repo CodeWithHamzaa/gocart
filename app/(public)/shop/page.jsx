@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/ui/Breadcrumb"
 import EmptyState from "@/components/ui/EmptyState"
 import { getProducts } from "@/lib/payload/products"
 import { getSettings } from "@/lib/payload/settings"
-import { pageMetadata } from "@/lib/seo"
+import { pageMetadata, shareImages } from "@/lib/seo"
 
 // M24: server component reading real Payload data (ADR-007 — SEO-first is a
 // non-negotiable default for storefront UI, not a later pass). The name
@@ -17,12 +17,15 @@ import { pageMetadata } from "@/lib/seo"
 export async function generateMetadata({ searchParams }) {
     const { search } = await searchParams
     const { storeName } = await getSettings()
+    // M107: the share image is the newest product's photo. A search is noindex, so it gets none.
+    const newest = search ? undefined : (await getProducts({ sort: '-createdAt', limit: 1 })).docs[0]
     return pageMetadata({
         storeName,
         title: search ? 'Search results' : 'Shop all products',
         description: 'Browse every product, with Cash on Delivery across Pakistan.',
         path: '/shop',
         noindex: Boolean(search),
+        images: shareImages(newest?.images?.[0]),
     })
 }
 
