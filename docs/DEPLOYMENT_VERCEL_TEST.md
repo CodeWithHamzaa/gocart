@@ -139,7 +139,7 @@ link, which expires after 23 hours); the cloud session itself cannot reach `*.ve
   `type` field was sent, so the value never passed through the session), the project was redeployed,
   and the new deployment serves Blob files (the check above). Vercel now lists no security issue for
   any variable of the project.
-- **Not done: rotation.** There was no sign of exposure (the value had never been decrypted, and the
+- **Not done: rotation.** There was no sign of exposure (no evidence it was ever decrypted, and the
   Hobby scope has one member), and the Vercel connector has no Blob-token rotation call. If you want
   to rotate anyway: Vercel dashboard, Storage, `gocart-test-media`, rotate the read-write token; the
   connected variable is updated by Vercel; redeploy afterwards.
@@ -168,20 +168,23 @@ link, which expires after 23 hours); the cloud session itself cannot reach `*.ve
   secret in the transcript):
   1. A Blob read-write token for `gocart-test-media` (write-only in Vercel now; copy or rotate it in the
      dashboard).
-  2. A `DATABASE_URI` for the Neon test database (`gocart_app` role, pooled host
-     `ep-twilight-forest-b8h0vrog-pooler.c-14.us-east-1.aws.neon.tech`, `sslmode=require`), from the Neon
-     console.
+  2. A `DATABASE_URI` for the Neon test database (`gocart_app` role, the pooled
+     host shown in the Neon console for the `gocart-test` project, `sslmode=require`), from the Neon console.
   3. A machine that reaches that host on port 5432 and `https://vercel.com/api/blob` (the Blob SDK's API).
      A cloud session reaches neither unless its environment's network access allows them.
-  `PAYLOAD_SECRET` can be any newly generated 32+ character value: the rollout signs nothing (the rehearsal
-  used a different secret from the seed's).
+  `PAYLOAD_SECRET` for the local rollout process only can be any newly generated 32+ character value: the
+  rollout creates and relinks rows and signs no session or API key (the rehearsal used a different secret
+  from the seed's). Never change the deployed `PAYLOAD_SECRET` for this (that logs the admin out) and never
+  reuse a production value.
 
 Two ways to finish:
 - **On your machine:** `npm ci`, `npm run fetch:demo-originals`, `npm run process:demo-images`, then steps 1-5
-  below with `DEMO_ROLLOUT_DB_HOST=ep-twilight-forest-b8h0vrog-pooler.c-14.us-east-1.aws.neon.tech`.
+  below with `DEMO_ROLLOUT_DB_HOST` set to that same pooled host.
 - **In a cloud session:** in the environment's settings add the three values as environment secrets
   (`DATABASE_URI`, `BLOB_READ_WRITE_TOKEN`, `DEMO_ROLLOUT_DB_HOST`) and allow the two hosts under network
-  access; a new session then runs the same commands without anyone pasting a secret into chat.
+  access; a new session then runs the same commands without anyone pasting a secret into chat. Every later
+  session of that environment can then write to the test site, so remove the three secrets after the
+  rollout, and never put production values there.
 
 How the upload path works (read from the installed adapter source, `@payloadcms/plugin-cloud-storage`
 `dist/hooks/afterChange.js` and `@payloadcms/storage-vercel-blob` `dist/uploadFile.js`, version 3.90.2): a server-side `payload.create` file has no `clientUploadContext`, so the Blob

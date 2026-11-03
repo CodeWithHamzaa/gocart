@@ -18,7 +18,11 @@ import { SOURCES } from './demo-data/photos'
 // The renditions were found on 2026-11-03 to be served byte-identically by these query strings (the
 // "w=5000 max, q=90" of the M104 notes); they are tried in order, at most three requests per photo.
 const VARIANTS = ['w=5000&q=90&fit=max', 'w=5000&q=90&fit=max&fm=jpg', 'w=5000&q=90&fit=max&fm=pjpg']
+/** A stalled CDN connection fails instead of hanging; no original is near this size (largest about 2 MB). */
+const TIMEOUT_MS = 60_000
+const MAX_BYTES = 50 * 1024 * 1024
 
+// Same base as scripts/process-demo-images.ts (run both from the repository root, as `npm run` does).
 const root = process.cwd()
 const ORIGINALS = path.join(root, 'demo-assets', '_archive', 'originals')
 const MANIFEST = path.join(root, 'docs', 'assets', 'MANIFEST.csv')
@@ -54,9 +58,11 @@ async function main(): Promise<number> {
     }
     let matched = false
     for (const query of VARIANTS) {
-      const response = await fetch(`https://images.unsplash.com/${source.cdn}?${query}`)
+      const response = await fetch(`https://images.unsplash.com/${source.cdn}?${query}`, { signal: AbortSignal.timeout(TIMEOUT_MS) })
       if (!response.ok) continue
+      if (Number(response.headers.get('content-length') ?? 0) > MAX_BYTES) continue
       const data = Buffer.from(await response.arrayBuffer())
+      if (data.length > MAX_BYTES) continue
       if (sha256(data) !== want) continue
       // Written only after the checksum matched; a temporary name keeps a half-written file out.
       fs.writeFileSync(`${target}.part`, data)
