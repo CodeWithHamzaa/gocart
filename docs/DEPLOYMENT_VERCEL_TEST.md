@@ -184,6 +184,11 @@ started by hand only, only from `main`, one run at a time, and is a dry run unle
 run re-fetches the originals (checksum-verified), rebuilds the processed files, fails if they differ from the
 committed manifest, and then runs the guarded tool with a throwaway `PAYLOAD_SECRET`.
 
+- **First run, 2026-11-03 (run 41715649234, `mode=dry-run`, before any secret existed):** on GitHub's runner
+  `npm ci`, `fetch:demo-originals` (24/24 verified), `process:demo-images`, `--check` and the manifest diff all
+  passed; the tool then refused before opening any connection (`DATABASE_URI`, `DEMO_ROLLOUT_DB_HOST`,
+  `BLOB_READ_WRITE_TOKEN` not set). So the route works end to end except for the credentials. That run
+  created the `gocart-test` environment **without protection**: protect it before adding a secret.
 - **Owner, once, in this order:** GitHub, repository Settings, Environments, `gocart-test` (create it if it
   is not listed).
   1. **Protect it first (mandatory):** "Deployment branches and tags" = selected branches, `main` only; and
