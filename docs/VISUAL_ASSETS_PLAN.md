@@ -1,6 +1,6 @@
 # Visual assets programme: realistic demo photography for Mirza
 
-**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 61 of 61 slots after a second pass on 2026-11-02), `M105` (pipeline) and `M106` (local integration) are complete and awaiting merge; `M107`–`M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
+**Status: Stage 0 (documentation) done 2026-11-01. `M103` accepted 2026-11-01. Under the owner's autonomous authorisation of 2026-11-01, `M104` (sourcing, 61 of 61 slots after a second pass on 2026-11-02), `M105` (pipeline) and `M106` (local integration) are complete and merged (PRs #56 and #57); `M107` (storefront QA) was started on the owner's instruction and finished 2026-11-03, pending review; `M108` and `M109` are not approved. See [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md).** Milestones `M103`–`M109` and ADR-049 are **Proposed**; per [CLAUDE.md](../CLAUDE.md) a Proposed entry is not work until the owner approves it. This file is the master objective: it must survive across sessions, so read it before any visual-asset work and update the progress checklist (section 12) as stages finish.
 
 Related: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) (`M103`–`M109`), [TASKS.md](./TASKS.md), [DECISIONS.md](./DECISIONS.md) (ADR-049 Proposed; ADR-020, 034, 036, 046, 048 stand), [assets/MANIFEST.csv](./assets/MANIFEST.csv), [../demo-assets/README.md](../demo-assets/README.md).
 
@@ -237,6 +237,6 @@ Still open: whether to approve ADR-049 and the next milestones, and whether a me
 - [x] `M104` brief and sourcing plan ([assets/PHOTO_BRIEF.md](./assets/PHOTO_BRIEF.md)); photos sourced and licence-recorded for all 61 slots from Unsplash (2026-11-01 and 2026-11-02, owner-delegated approval; the last 4 products after the owner accepted visible brands in demo photos) — report in [assets/PHOTO_INVENTORY.md](./assets/PHOTO_INVENTORY.md)
 - [x] `M105` processing pipeline (`npm run process:demo-images`, `npm run test:demo-images`; sharp only, no new dependency) — awaiting owner review
 - [x] `M106` local integration (seed uses the processed photos; verified on a throwaway local database, nothing remote) — awaiting owner review
-- [ ] `M107` storefront QA
+- [x] `M107` storefront QA (2026-11-03; [assets/STOREFRONT_QA_M107.md](./assets/STOREFRONT_QA_M107.md)) — pending owner review
 - [ ] `M108` test-site rollout
 - [ ] `M109` pre-launch cleanup and original-catalogue import (not before launch preparation)

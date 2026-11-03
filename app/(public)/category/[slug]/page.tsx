@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { PackageOpenIcon } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -11,7 +12,7 @@ import { CategoryIcon } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
 import type { Product } from '@/lib/payload/products'
 import { getSettings } from '@/lib/payload/settings'
-import { pageMetadata } from '@/lib/seo'
+import { pageMetadata, shareImages } from '@/lib/seo'
 
 // M27a: server-rendered category detail + product listing route, per
 // docs/CATEGORY_REQUIREMENTS.md and ADR-007. `.tsx`, not `.jsx`, per M2a's
@@ -65,7 +66,16 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const refined = isRefined(filters)
   const canonicalPath = !refined && page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`
 
-  return pageMetadata({ storeName, title, description, path: canonicalPath, noindex: refined })
+  // M107: the category's own photo, else the first product's photo on this page.
+  const firstProduct = result.docs[0] as { images?: unknown[] } | undefined
+  return pageMetadata({
+    storeName,
+    title,
+    description,
+    path: canonicalPath,
+    noindex: refined,
+    images: shareImages(category.image, firstProduct?.images?.[0]),
+  })
 }
 
 export default async function CategoryPage({ params, searchParams }: PageProps) {
@@ -94,6 +104,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     return query ? `${basePath}?${query}` : basePath
   }
 
+  const bannerImage = typeof category.image === 'object' && category.image ? category.image.url : null
   const crumbs = [
     { label: 'Home', href: '/' },
     { label: 'Categories', href: '/categories' },
@@ -120,8 +131,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
         <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-lavender px-5 py-7 sm:px-10 sm:py-10">
           {/* M101: the home banner's look: a lavender panel and a large semibold title. */}
-          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink-3 sm:flex lg:right-14">
-            <CategoryIcon category={category} size={72} strokeWidth={1.2} />
+          {/* M107: the category's photo fills the circle when an admin uploaded one (as on the tiles and shortcuts); the icon stands in otherwise. */}
+          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white text-ink-3 sm:flex lg:right-14">
+            {bannerImage ? (
+              <Image src={bannerImage} alt="" width={320} height={320} sizes="160px" className="size-full object-cover" />
+            ) : (
+              <CategoryIcon category={category} size={72} strokeWidth={1.2} />
+            )}
           </span>
           <div className="relative flex max-w-2xl flex-col gap-3">
             <h1 id="category-title" className="text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] text-ink sm:text-5xl">{category.title}</h1>

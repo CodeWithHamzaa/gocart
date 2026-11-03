@@ -16,6 +16,25 @@ export function absoluteUrl(pathOrUrl: string): string {
 }
 
 /**
+ * M107: the share image for a page that has no photo of its own (home, listings, categories).
+ * Takes Media-like values in order of preference (an object with a `url`, or a URL string) and
+ * returns the first usable one as an absolute URL, or an empty list so the page keeps the plain
+ * `summary` card. It reads whatever the catalogue holds, so it survives replacing the demo data.
+ */
+export function shareImages(...candidates: unknown[]): string[] {
+  for (const candidate of candidates) {
+    const url =
+      typeof candidate === 'string'
+        ? candidate
+        : candidate && typeof candidate === 'object'
+          ? (candidate as { url?: unknown }).url
+          : null
+    if (typeof url === 'string' && url.length > 0) return [absoluteUrl(url)]
+  }
+  return []
+}
+
+/**
  * Plain-text snippet for <meta name="description"> / OG: tags and runs of whitespace
  * collapsed, cut at a word boundary with an ellipsis when longer than `max`.
  */

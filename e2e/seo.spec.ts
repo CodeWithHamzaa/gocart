@@ -53,6 +53,25 @@ test('a product page has its own metadata and a valid Product JSON-LD (M41, M43)
   })
 })
 
+test('home, shop and category pages share a real product photo (M107)', async ({ request }) => {
+  const list = await (await request.get('/api/categories?limit=1&depth=0&sort=displayOrder')).json()
+  const slug = list.docs[0].slug
+  for (const path of ['/', '/shop', `/category/${slug}`]) {
+    const html = await (await request.get(path)).text()
+    const image = meta(html, 'property', 'og:image')
+    expect(image, `${path} has an og:image`).toBeTruthy()
+    expect(image).toMatch(new RegExp(`^${SITE}/api/media/file/`)) // absolute, on this site, from the media store
+    expect(meta(html, 'name', 'twitter:image')).toBe(image)
+    expect(meta(html, 'name', 'twitter:card')).toBe('summary_large_image')
+    const file = await request.get(image!.replace(SITE, ''))
+    expect(file.status(), `${image} resolves`).toBe(200)
+    expect(file.headers()['content-type']).toMatch(/^image\//)
+  }
+  // A search is noindex and carries no share image.
+  const search = await (await request.get('/shop?search=lamp')).text()
+  expect(meta(search, 'property', 'og:image')).toBeUndefined()
+})
+
 test('robots.txt and sitemap.xml are valid and every sitemap URL resolves (M42)', async ({
   request,
 }) => {

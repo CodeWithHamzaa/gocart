@@ -5,7 +5,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb'
 import CategoryTile from '@/components/ui/CategoryTile'
 import EmptyState from '@/components/ui/EmptyState'
 import { getSettings } from '@/lib/payload/settings'
-import { pageMetadata } from '@/lib/seo'
+import { pageMetadata, shareImages } from '@/lib/seo'
 
 // M27b: a browsable index of the whole catalog structure — every top-level
 // category with its children — the single entry point into category
@@ -32,12 +32,14 @@ export const dynamic = 'force-dynamic'
 // M41: built with pageMetadata() so the canonical and Open Graph fields follow the same
 // conventions as every other route.
 export async function generateMetadata(): Promise<Metadata> {
-  const { storeName } = await getSettings()
+  const [{ storeName }, categories] = await Promise.all([getSettings(), getCategoriesCached()])
   return pageMetadata({
     storeName,
     title: 'Categories',
     description: `Browse every product category at ${storeName}.`,
     path: '/categories',
+    // M107: the first category photo (in display order) is the share image.
+    images: shareImages(...categories.map((category) => category.image)),
   })
 }
 
