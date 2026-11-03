@@ -105,6 +105,30 @@ one test image uploads to Blob, is served and is deleted. Server-side order tota
 **not** tested live (checkout is off); they are covered by CI: the `e2e` job (golden-path order against a
 seeded database), `npm run test:idempotency`, `npm run test:turnstile` and `npm run test:users-guard`.
 
+## Demo photo rollout (`M108`, ADR-049 item 6)
+
+Puts the licensed demo photos on this test site. Test only; never production. Run it from a machine that
+has the processed photos (`npm run process:demo-images`, git-ignored `demo-assets/_processed/`) and a route
+to Neon and Blob.
+
+1. Create an env file **outside the repository** (`.gitignore` now ignores `.env.*` too, but keep it out anyway) with
+   `DATABASE_URI` (Neon; the restricted `gocart_app` role is enough; the pooled string with `sslmode=require` as
+   Neon gives it, and no extra `host=` or `port=` parameter, which the tool refuses), `PAYLOAD_SECRET`,
+   `BLOB_READ_WRITE_TOKEN` and `DEMO_ROLLOUT_DB_HOST` (the exact Neon host you mean to change). Never commit,
+   paste or print these values.
+2. Dry run (writes nothing): `npx tsx --env-file=<that file> scripts/rollout-demo-photos.ts --env test`
+3. Read the counts, then apply: add `--apply`. Add `--create-missing` only if the test database lacks the demo
+   categories or products (otherwise they are listed and skipped). Reruns upload nothing.
+4. It records `media_id` and `media_env=test` in `docs/assets/MANIFEST.csv` (commit that change) and appends
+   each uploaded media id to a rollback log (`rollout-test-<time>.jsonl`) in `demo-assets/_processed/`. It also
+   sets `PAYLOAD_MIGRATING=true` so Payload does not push a dev schema to Neon; migrations stay a separate
+   step. `DEMO_ROLLOUT_DB_HOST` only proves you named the host twice: make sure it is the test database.
+5. Check `/`, `/shop`, a category, a product and `/cart` on the test URL; images must come from the Blob host.
+
+Nothing is deleted: media that no longer has a reference is left for `M109`'s reference-checked cleanup.
+Rollback of a rollout: relink in `/admin` or re-seed, then remove the logged media ids after a reference check.
+Blob Hobby operation limits are unverified; one full rollout is 58 uploads.
+
 ## Redeploying
 
 Push to `main`, or run a production deploy of `gocart-test` through the Vercel API or CLI. After changing

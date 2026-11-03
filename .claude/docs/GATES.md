@@ -194,6 +194,30 @@ report.** A gate that was not run is reported as "not run". This section overrid
 general statements elsewhere in `.claude/` ("a human merges", "non-delegable") **only** for
 the scope above.
 
+## Owner delegation: technical decisions and approvals for the test environment (2026-11-03)
+
+**Authority:** the project owner, Abdul, instructed this in the session of 2026-11-03 (relayed through the owner's own chat message; recorded here by the governance commit that carries this section). Verbatim extracts:
+
+> I am delegating full technical decision-making and approval authority to my AI Engineering Team. [...]
+> You are authorized to evaluate, amend, and accept technical ADRs, resolve milestone blockers, update documentation, and approve implementation approaches within the existing project governance and authorized scope.
+> Resume M108 [...] Resolve all identified blockers, complete ADR-049 evaluation and M107 review, and proceed with M108 implementation, testing, PR review, and merging when all checks pass. [...]
+> Never bypass security controls, production safeguards, branch protection, or required CI checks.
+> M109 MUST remain on hold. Do not execute any M109 or production-related operations until I explicitly provide the client's go-ahead.
+
+**What this delegation covers (and G8 for it is satisfied by this record, provided every other gate that applies has passed and CI is green):**
+
+- Evaluating, amending and accepting technical ADRs that are **Proposed** (not an already-Accepted ADR: modifying or superseding one stays human-owned unless the owner names it), resolving milestone blockers, and approving implementation approaches.
+- Reviewing and accepting a finished milestone, and opening and merging its PR **to the repository's default branch** after all gates pass, CI is green and branch protection is satisfied (never a push to `main`, never a bypass of a required check).
+- The test environment of ADR-046 (Neon Free + Vercel Blob) and the demo-photography work of ADR-049 (`M103`-`M108`).
+
+**Not delegated by this section, still absolute stops:**
+
+- `M109` (demo cleanup and original-catalogue import) and **any production operation or deployment**, until the owner gives the client's go-ahead in words. Preparing nothing for `M109` counts as part of this stop.
+- Anything the 2026-10-30 delegation lists as out of scope that this message does not override: force push, history rewrite, remote branch deletion, deleting Vercel/Neon/Blob resources the session did not create, paid actions, changes to authentication, payment, order-total validation or rate-limiting logic, and printing or committing any token, connection string or `PAYLOAD_SECRET`.
+- Credentials and access the session does not have. A task that needs them is reported as blocked on access, never worked around.
+
+On any conflict with `CLAUDE.md`, `docs/MIGRATION_PLAN.md`, or an Accepted ADR: **STOP and report.**
+
 ## Conflict escalation
 
 **STOP and surface** — never guess — when you find:

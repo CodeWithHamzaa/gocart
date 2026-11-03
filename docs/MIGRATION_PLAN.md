@@ -1606,7 +1606,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 
 ## Group: Demo visual assets — `M103` onward
 
-**Status: Proposed (2026-11-01). Not approved: none of these is work until the owner approves it** ([VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md) is the master objective and decision record; [ADR-049](./DECISIONS.md) is Proposed). Goal of the group: the temporary demo catalogue shows genuine, licence-verified product photography instead of generated art and blank placeholders, and can be removed safely before launch. Constraints: `images.unoptimized: true` and ADR-036 stay; no new dependency, no new image store, no schema change unless the owner approves one separately; local first, then the approved test environment only; never production. Order (by dependency): `M103`, `M104`, `M105`, `M106`, `M107`, `M108`; `M109` last, before launch.
+**Status (2026-11-03): `M103`–`M107` Done; `M108` approved for the test environment only (tooling Done, live run pending credentials); `M109` Proposed and ON HOLD until the owner gives the client's go-ahead** ([VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md) is the master objective and decision record; [ADR-049](./DECISIONS.md) is Accepted 2026-11-03). Goal of the group: the temporary demo catalogue shows genuine, licence-verified product photography instead of generated art and blank placeholders, and can be removed safely before launch. Constraints: `images.unoptimized: true` and ADR-036 stay; no new dependency, no new image store, no schema change unless the owner approves one separately; local first, then the approved test environment only; never production. Order (by dependency): `M103`, `M104`, `M105`, `M106`, `M107`, `M108`; `M109` last, before launch.
 
 ### M103 — Media audit (read-only)
 - **Status (2026-11-01)**: **Done** (owner accepted the audit 2026-11-01; the measured database audit is skipped). Approved by the owner 2026-11-01 (D1), narrowed by the owner: everything on the project is demo, so demo-versus-real classification was skipped. Done as a code-reading audit; no database was available, so row counts, file sizes and dimensions in real databases are **unverified**.
@@ -1659,16 +1659,18 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Fix image presentation across the storefront (M107)`
 
 ### M108 — Test-site rollout
+- **Status (2026-11-03)**: **Tooling Done; live rollout NOT yet run.** Approved under the owner's delegation of 2026-11-03 (GATES.md); ADR-049 Accepted with item 6. Built: `scripts/rollout-demo-photos.ts` (guarded entry), `rollout-demo-photos-core.ts`, `rollout-demo-photos-run.ts`, `npm run rollout:demo-photos`, `npm run test:rollout-demo-photos` (CI), `npm run test:rollout-demo-photos:db` (manual). Independent QA and Security review found and the team fixed a `?host=` guard bypass, Payload's connect-time dev schema push, rollback-log loss and orphan uploads (CHANGELOG). Verified on a throwaway local PostgreSQL seeded with generated art: dry run writes nothing, apply replaces the art, rerun adds nothing, missing products are skipped or created. **Blocked on access:** the cloud session has no Neon or Vercel credentials, no route to either service and no processed photos (`demo-assets/` is git-ignored). Needed to finish: the test env file, the processed photos and one `--apply` run; see DEPLOYMENT_VERCEL_TEST.md. Not verified on real Neon/Blob.
 - **Status (2026-11-01)**: Proposed.
 - **Goal**: The validated demo photos appear on the approved test environment (Neon + Vercel Blob).
 - **Files**: `docs/assets/MANIFEST.csv`, `docs/assets/DEMO_INVENTORY.csv`; no application code unless the owner approves an upload route (VISUAL_ASSETS_PLAN.md, D5).
 - **Spec**: test environment only; never production; no deploy by the AI team unless the owner asks; seed database guards are not loosened.
-- **Dependencies**: `M107`; owner approval of the upload route.
+- **Dependencies**: `M107` (Done); upload route decided 2026-11-03 (guarded one-off tool, ADR-049 item 6).
 - **Testing**: `/`, `/shop`, a category, a product and `/cart` checked on the test URL; uploads land on the Blob host; `media_id` recorded with `media_env=test`.
 - **Rollback**: Remove the uploaded demo media by inventory id after the reference check (section 6 of the plan).
 - **Commit message**: `Record test-site demo photo rollout (M108)`
 
 ### M109 — Pre-launch demo cleanup and original-catalogue import
+- **Status (2026-11-03)**: **ON HOLD by the owner.** Nothing for `M109` is built or run, and nothing production-related is done, until the owner gives the client's go-ahead in words (GATES.md, 2026-11-03).
 - **Status (2026-11-01)**: Proposed. Run only when the owner is ready to launch.
 - **Goal**: Remove only demo records and demo-only media, import the owner's original catalogue, and verify the storefront and checkout.
 - **Files**: a dry-run-by-default cleanup tool under `scripts/` and a runbook; `docs/assets/DEMO_INVENTORY.csv`, `docs/assets/MANIFEST.csv`.
