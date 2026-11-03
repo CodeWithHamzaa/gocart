@@ -126,6 +126,7 @@ async function main() {
       `Framing: ${crop}.`,
       `Downloaded from images.unsplash.com/${source.cdn} as a JPEG rendition (w=5000 max, q=90), not the untouched upload. Author, date and licence line were read from the photo page through the WebFetch tool (the page itself shows scripts a browser check).`,
       asset.mismatch ? `CLOSE MATCH ONLY (D3): ${asset.mismatch}.` : '',
+      asset.note ?? '',
       asset.kind === 'product' && asset.id.endsWith('-2') ? 'Gallery image 2 is a detail crop of the same photograph.' : '',
     ]
       .filter(Boolean)

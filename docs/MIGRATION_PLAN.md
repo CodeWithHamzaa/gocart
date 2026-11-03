@@ -1649,7 +1649,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Use real demo photography in the demo seed (M106)`
 
 ### M107 — Storefront image-surface QA
-- **Status (2026-11-01)**: Proposed.
+- **Status (2026-11-03)**: **Done, pending owner review.** Report: [assets/STOREFRONT_QA_M107.md](./assets/STOREFRONT_QA_M107.md). The crawl of 40 routes at 320/390/768/1024/1440 px found no broken image, horizontal overflow or missing alt. Fixes: the category page banner shows the category photo (`app/(public)/category/[slug]/page.tsx`); `shareImages()` in `lib/seo.ts` gives the home, shop, categories and category pages a share image from their own photo (no committed file, no schema field; the pipeline's `demo-og-default.jpg` is therefore unused); the product main image uses the photo's own alt (`components/ProductDetails.jsx`); `test:demo-images` and the new `test:seo` run in CI. D2 respected: the hero stays product-driven.
 - **Goal**: Every customer-facing image surface looks right with the new photos at all widths; fix only what the photos expose.
 - **Files**: likely `lib/seo.ts`, `components/{HeroSlider,HeroShortcuts,PromoCards,ProductCard,RailCard,ProductDetails}.*`, e2e specs. A dedicated hero banner field would be a schema change and needs its own approval (VISUAL_ASSETS_PLAN.md, D2).
 - **Spec**: no change to checkout, prices, Orders, access control, `images.unoptimized` or the `/_next/image` closure.

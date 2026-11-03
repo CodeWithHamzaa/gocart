@@ -87,6 +87,8 @@ export type Asset = {
   alt: string
   /** Why this image is only a close match (D3), shown in the manifest. */
   mismatch?: string
+  /** Free-form note appended to the manifest row. */
+  note?: string
 }
 
 type P = { n: number; name: string; slug: string; src: string; c1: Crop; c2: Crop; alt1: string; alt2: string; mode1?: 'crop' | 'contain'; mismatch?: string }
@@ -148,7 +150,7 @@ const categoryAssets: Asset[] = categories.map((c) => ({
 }))
 
 const extraAssets: Asset[] = [
-  { id: 'A-O01', kind: 'og', out: 'demo-og-default.jpg', src: 'headphonesCream', crop: { cx: 0.5, cy: 0.5, zoom: 1 }, alt: 'Mirza storefront share image: headphones on a soft beige background' },
+  { id: 'A-O01', kind: 'og', out: 'demo-og-default.jpg', src: 'headphonesCream', crop: { cx: 0.5, cy: 0.5, zoom: 1 }, alt: 'Mirza storefront share image: headphones on a soft beige background', note: 'NOT USED by the storefront (M107): each page shares its own photo through shareImages() in lib/seo.ts, which needs no committed file or schema field. Kept as an unused extra.' },
   { id: 'A-R01', kind: 'promo', out: 'demo-promo-1.webp', src: 'headphonesCream', crop: { cx: 0.48, cy: 0.55, zoom: 0.6 }, alt: 'Cream and grey headphones' },
   { id: 'A-R02', kind: 'promo', out: 'demo-promo-2.webp', src: 'lampCream', crop: { cx: 0.45, cy: 0.57, zoom: 0.7 }, alt: 'Cream desk lamp' },
 ]
