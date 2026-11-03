@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { parseCsv } from './demo-images-core'
 import { ASSETS } from './demo-data/photos'
-import { applyPayloadSafety, checkTarget, isSameMedia, mediaStem, recordInManifest, rolloutTargets, sameIds } from './rollout-demo-photos-core'
+import { applyPayloadSafety, checkLocalThrowaway, checkTarget, isSameMedia, mediaStem, recordInManifest, rolloutTargets, sameIds } from './rollout-demo-photos-core'
 
 const GOOD = {
   DATABASE_URI: 'postgres://gocart_app:secret-password@ep-test-123-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
@@ -66,6 +66,13 @@ const GOOD = {
   // Payload switches that drop the database or force a schema push on connect.
   refuse({ ...GOOD, PAYLOAD_DROP_DATABASE: 'true' }, 'test', /PAYLOAD_DROP_DATABASE/)
   refuse({ ...GOOD, PAYLOAD_FORCE_DRIZZLE_PUSH: 'true' }, 'test', /PAYLOAD_FORCE_DRIZZLE_PUSH/)
+  // Differentials between WHATWG URL and pg (found in the second review).
+  refuse({ ...GOOD, DATABASE_URI: ' ' + GOOD.DATABASE_URI }, 'test', /whitespace/)
+  refuse({ ...GOOD, DATABASE_URI: GOOD.DATABASE_URI + ' ' }, 'test', /whitespace/)
+  refuse({ ...GOOD, DATABASE_URI: GOOD.DATABASE_URI.replace('://', ':// ') }, 'test', /whitespace|parsed|host/)
+  refuse(withQuery('sslmode=require&sslmode=disable'), 'test', /repeats/)
+  refuse(withQuery('sslmode=disable&sslmode=require'), 'test', /repeats/)
+  refuse({ ...GOOD, DATABASE_URI: 'postgres://u:p@ep-x%2e.neon.tech/db?sslmode=require', DEMO_ROLLOUT_DB_HOST: 'ep-x%2e.neon.tech' }, 'test', /characters other than/)
   // Payload must not push a dev schema to the test database on connect.
   const pushEnv: Record<string, string | undefined> = {}
   applyPayloadSafety(pushEnv)
@@ -73,6 +80,29 @@ const GOOD = {
   // The result never carries the URI or the token.
   const serialized = JSON.stringify(checkTarget({ ...GOOD, BLOB_READ_WRITE_TOKEN: undefined }, 'test'))
   assert.ok(!serialized.includes('secret-password') && !serialized.includes('gocart_app'), 'no credentials in the result')
+}
+
+// ---- checkLocalThrowaway (the guard of the deleting DB test) ----
+{
+  const LOCAL = { DATABASE_URI: 'postgresql://u:pw@localhost:5432/m108_throwaway', ROLLOUT_DB_TEST_CONFIRM: 'wipe-local-demo-data' }
+  assert.equal(checkLocalThrowaway(LOCAL).ok, true, checkLocalThrowaway(LOCAL).problems.join('; '))
+  const refuse = (env: Record<string, string | undefined>, why: RegExp) => {
+    const r = checkLocalThrowaway(env)
+    assert.equal(r.ok, false)
+    assert.ok(r.problems.some((p) => why.test(p)), `expected ${why}, got: ${r.problems.join('; ')}`)
+  }
+  refuse({ ...LOCAL, ROLLOUT_DB_TEST_CONFIRM: undefined }, /CONFIRM/)
+  refuse({ ...LOCAL, ROLLOUT_DB_TEST_CONFIRM: 'yes' }, /CONFIRM/)
+  refuse({ ...LOCAL, BLOB_READ_WRITE_TOKEN: 'x' }, /BLOB_READ_WRITE_TOKEN/)
+  refuse({ ...LOCAL, DATABASE_URI: 'postgresql://u:pw@localhost:5432/gocart' }, /_throwaway/)
+  refuse({ ...LOCAL, DATABASE_URI: 'postgresql://u:pw@db.example.com:5432/x_throwaway' }, /localhost/)
+  refuse({ ...LOCAL, DATABASE_URI: 'postgresql://u:pw@localhost:5432/x_throwaway?host=prod.example.com' }, /query parameter/)
+  refuse({ ...LOCAL, DATABASE_URI: 'postgresql://gocart_app:pw@localhost:5432/x_throwaway' }, /gocart_app/)
+  refuse({ ...LOCAL, NODE_ENV: 'production' }, /NODE_ENV/)
+  refuse({ ...LOCAL, TUNNEL_TOKEN: 'x' }, /TUNNEL_TOKEN/)
+  refuse({ ...LOCAL, PAYLOAD_DROP_DATABASE: 'true' }, /PAYLOAD_DROP_DATABASE/)
+  refuse({ ...LOCAL, DATABASE_URI: undefined }, /not set/)
+  refuse({ ...LOCAL, DATABASE_URI: ' ' + LOCAL.DATABASE_URI }, /whitespace/)
 }
 
 // ---- rolloutTargets: every demo product has two photos, every category one, all defined in the spec ----

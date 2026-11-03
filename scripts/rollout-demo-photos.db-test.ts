@@ -2,34 +2,29 @@
 // committed migrations applied and the generated-art demo seed run, and it DELETES products and
 // categories). Simulates a test site that was seeded before the photos existed.
 //
-//   export DATABASE_URI=postgresql://<user>:<pw>@localhost:5432/<throwaway db> PAYLOAD_SECRET=<any>
+//   export DATABASE_URI=postgresql://<user>:<pw>@localhost:5432/<name>_throwaway PAYLOAD_SECRET=<any>
 //   npx payload migrate && npm run seed:demo
 //   ROLLOUT_DB_TEST_CONFIRM=wipe-local-demo-data npm run test:rollout-demo-photos:db
 //
-// Refuses unless the host is loopback/localhost and the confirmation variable is set. Uses synthetic
+// Refuses (checkLocalThrowaway) unless the host is loopback, the database name ends in _throwaway, the
+// confirmation variable is set, no Blob token is set and no production marker is present. Uses synthetic
 // photos (valid WebP of distinct sizes), never real ones, and never touches Neon.
-const DB_URI = process.env.DATABASE_URI ?? ''
-const DB_HOST = (() => {
-  try {
-    return new URL(DB_URI).hostname.replace(/^\[|\]$/g, '')
-  } catch {
-    return ''
-  }
-})()
-if (!['localhost', '127.0.0.1', '::1'].includes(DB_HOST) || process.env.ROLLOUT_DB_TEST_CONFIRM !== 'wipe-local-demo-data') {
-  console.error('rollout-demo-photos.db-test: refusing: needs a localhost DATABASE_URI and ROLLOUT_DB_TEST_CONFIRM=wipe-local-demo-data (see the header).')
-  process.exit(1)
-}
-process.env.PAYLOAD_MIGRATING = 'true'
-
 import assert from 'node:assert/strict'
 import sharp from 'sharp'
 import { getPayload } from 'payload'
 import config from '../payload.config'
 import { runRollout } from './rollout-demo-photos-run'
-import { rolloutTargets } from './rollout-demo-photos-core'
+import { checkLocalThrowaway, rolloutTargets } from './rollout-demo-photos-core'
 import { ASSETS } from './demo-data/photos'
 import type { Loaded } from './rollout-demo-photos-run'
+
+const guard = checkLocalThrowaway(process.env)
+if (!guard.ok) {
+  console.error('rollout-demo-photos.db-test: refusing to run:')
+  for (const p of guard.problems) console.error(`  - ${p}`)
+  process.exit(1)
+}
+process.env.PAYLOAD_MIGRATING = 'true'
 
 async function main() {
   const payload = await getPayload({ config })

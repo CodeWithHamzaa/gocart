@@ -26,6 +26,59 @@ export function applyPayloadSafety(env: Record<string, string | undefined>): voi
   env.PAYLOAD_MIGRATING = 'true'
 }
 
+/**
+ * Shape rules shared by every guard that reads a connection string. WHATWG `URL` (used to read the host)
+ * and `pg` (used to connect) disagree on some odd inputs, so the odd inputs are refused outright:
+ * surrounding or inner whitespace and control characters (a leading space makes `pg` parse a different
+ * host), a repeated query key (`URL.get` reads the first, `pg` the last), a host with anything but
+ * letters, digits, dots and hyphens (`pg` percent-decodes), and any query parameter outside `allowed`.
+ */
+export function uriShapeProblems(uri: string, allowed: readonly string[]): string[] {
+  const problems: string[] = []
+  if (uri !== uri.trim() || /[\s\u0000-\u001f\u007f]/.test(uri)) problems.push('DATABASE_URI contains whitespace or control characters')
+  try {
+    const url = new URL(uri)
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+    if (!/^[a-z0-9.-]+$/.test(host)) problems.push('DATABASE_URI host has characters other than letters, digits, dots and hyphens')
+    const keys = [...url.searchParams.keys()]
+    if (new Set(keys).size !== keys.length) problems.push('DATABASE_URI repeats a query parameter')
+    const unknown = [...new Set(keys.filter((k) => !allowed.includes(k)))]
+    if (unknown.length > 0) problems.push(`DATABASE_URI has query parameter(s) that can redirect the connection or are not expected: ${unknown.join(', ')}`)
+  } catch {
+    problems.push('DATABASE_URI cannot be parsed')
+  }
+  return problems
+}
+
+/**
+ * Guard for scripts/rollout-demo-photos.db-test.ts, which DELETES products, categories and media: only a
+ * loopback database whose name ends in `_throwaway`, no production marker, not the restricted app role,
+ * and NO Blob token (with one set, Payload would upload and delete real files on the test Blob store).
+ */
+export function checkLocalThrowaway(env: Record<string, string | undefined>): { ok: boolean; problems: string[] } {
+  const problems: string[] = []
+  if (env.ROLLOUT_DB_TEST_CONFIRM !== 'wipe-local-demo-data') problems.push('ROLLOUT_DB_TEST_CONFIRM=wipe-local-demo-data is not set')
+  if (env.NODE_ENV?.trim().toLowerCase() === 'production') problems.push('NODE_ENV=production')
+  for (const name of [...PRODUCTION_ONLY_VARS, ...FORBIDDEN_PAYLOAD_VARS]) if (env[name]) problems.push(`${name} is set`)
+  if (env.BLOB_READ_WRITE_TOKEN) problems.push('BLOB_READ_WRITE_TOKEN is set (this test would upload and delete real Blob files); unset it')
+  const uri = env.DATABASE_URI
+  if (!uri) {
+    problems.push('DATABASE_URI is not set')
+  } else {
+    problems.push(...uriShapeProblems(uri, []))
+    try {
+      const url = new URL(uri)
+      const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+      if (!['localhost', '127.0.0.1', '::1'].includes(host)) problems.push('DATABASE_URI host is not localhost, 127.0.0.1 or ::1')
+      if (decodeURIComponent(url.username) === 'gocart_app') problems.push('DATABASE_URI uses the restricted gocart_app role')
+      if (!/_throwaway$/.test(url.pathname.replace(/^\//, ''))) problems.push('the database name must end in _throwaway')
+    } catch {
+      // already reported by uriShapeProblems
+    }
+  }
+  return { ok: problems.length === 0, problems }
+}
+
 export type TargetCheck = { ok: boolean; problems: string[]; host: string | null }
 
 /**
@@ -58,9 +111,8 @@ export function checkTarget(env: Record<string, string | undefined>, envArg: str
       host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '')
       if (!host.endsWith('.neon.tech')) problems.push('DATABASE_URI host is not a *.neon.tech host')
       // `pg` lets a query parameter override the URL: `?host=localhost` connects to localhost whatever the
-      // URL hostname says. So the hostname alone proves nothing; only these parameters are allowed.
-      const unknown = [...new Set([...url.searchParams.keys()].filter((k) => !ALLOWED_URI_PARAMS.includes(k)))]
-      if (unknown.length > 0) problems.push(`DATABASE_URI has query parameter(s) that can redirect the connection or are not expected: ${unknown.join(', ')}`)
+      // URL hostname says. So the hostname alone proves nothing; see uriShapeProblems.
+      problems.push(...uriShapeProblems(uri, ALLOWED_URI_PARAMS))
       const ssl = url.searchParams.get('sslmode')
       if (ssl !== 'require' && ssl !== 'verify-full' && ssl !== 'verify-ca') problems.push('DATABASE_URI needs sslmode=require (or verify-full)')
     } catch {
