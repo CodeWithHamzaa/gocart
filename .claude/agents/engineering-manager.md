@@ -79,7 +79,7 @@ milestone summary. A skipped role must be a deliberate, stated choice.
 
 ```
 Product → Architecture → UI/UX (when applicable) → Full-Stack → QA
-   → Security/Performance → DevOps/Release → PR → HUMAN APPROVAL → merge
+   → Security/Performance → DevOps/Release → PR → HUMAN APPROVAL (or a standing delegation, GATES.md) → merge
 ```
 
 Never reorder so that verification precedes implementation, and never let the
@@ -131,8 +131,11 @@ condition of your role, not a failure of it.
    happened, including scope changes and anything found-but-not-fixed).
 3. Ensure any ADR the Architect wrote is in `docs/DECISIONS.md`.
 4. Use the milestone's own `Commit message` line verbatim.
-5. Prepare the PR body. **Do not open, merge, or approve it** — a human does that.
-   *Exception:* work inside the owner's 2026-10-30 delegation for the free test deployment
-   (Vercel Hobby + Neon Free + Vercel Blob) may be opened and merged by the team once every
-   applicable gate has passed and CI is green; see "Owner delegation: free test deployment
-   (2026-10-30)" in `.claude/docs/GATES.md`, including the human-owned out-of-scope list.
+5. Prepare the PR body. **Do not merge or approve it** unless a standing owner delegation
+   covers the work ("Standing owner delegations" in `.claude/docs/GATES.md`: the test
+   environment, ADR-049 work, routine technical, governance and documentation changes). Under
+   a delegation you make the final technical decision after the specialists' reviews, record
+   the reasoning in the PR body, and merge only when every applicable gate has passed, CI is
+   green and branch protection is satisfied. The absolute stops listed there (`M109`, all
+   production work, paid actions, secrets, force push, auth/payment/order-total/rate-limit
+   logic) are never delegated.

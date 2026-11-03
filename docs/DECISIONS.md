@@ -237,6 +237,8 @@ The decisive factors are performance on the SEO-critical path and the absence of
 
 **Status**: **Accepted (2026-08-16)** — stakeholder-confirmed. Closes readiness finding **C8**.
 
+> **Superseded in part (annotation added 2026-11-03):** the two-level hierarchy below is superseded by [ADR-048](#adr-048-categories-are-flat-one-level-no-sub-categories-m102) (flat categories, `M102`). Dedicated slug routes, server rendering and the browsing-versus-filtering boundary stand. Text below is unchanged history.
+
 **Context**: The target product is a multi-category, multi-product storefront, but customer-facing category browsing exists neither in the codebase nor in the plan. Verified read-only:
 
 - **No `/categories` route and no `/category/[slug]` route exist.** Categories appear only as a hardcoded six-item array in `assets/assets.js`, a second conflicting ten-item array in the vendor add-product form (itself scheduled for deletion at `M14`), a free-text `category` string on each dummy product, unlinked breadcrumb text on the product page, and `components/CategoriesMarquee.jsx`, which renders bare `<button>`s with no `onClick` and no `href`.
@@ -1197,6 +1199,8 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 ## ADR-037: Next.js 16.3.8 — closing the framework advisories (`M52c`)
 
 **Status**: **Accepted (2026-10-11)** — the owner approved the upgrade as its own branch and PR after the M52b security batch (ADR-036 decision 7 and `docs/DEPLOYMENT.md` "Launch blockers" item 1). Amends [ADR-011](#adr-011-payload-v3-dependency-set--exact-pins-a-raised-nextjs-floor-and-patched-sharp) (the Next pin) and closes the open consequence ADR-011 recorded ("Next 15.3.9 is not advisory-free … must be decided before production"). Reverses no Accepted ADR. Adds one npm `overrides` entry and no new dependency.
+
+> **Version pin amended (annotation added 2026-11-03):** [ADR-040](#adr-040-nextjs-1642--closing-the-advisories-published-after-m52c-m79) moves the pin to Next.js 16.4.2 (`M79`). Text below is unchanged history.
 
 **Context**:
 

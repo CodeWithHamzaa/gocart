@@ -33,11 +33,12 @@ sequence.
 3. **The orchestrator never implements.** The Engineering Manager coordinates; if it
    writes application code, no one is left holding scope.
 4. **Only the Architect writes ADRs.** One author, one numbering sequence.
-5. **Only a human approves and merges.** No role has that authority — with one recorded
-   exception: the owner's 2026-10-30 delegation for the free, non-commercial test
-   deployment (Vercel Hobby + Neon Free + Vercel Blob). Its exact scope, and the list of
-   things that stay human-owned, is "Owner delegation: free test deployment (2026-10-30)"
-   in [GATES.md](./GATES.md). Outside that scope this rule is unchanged.
+5. **Only a human approves and merges, unless a standing owner delegation covers it.** The
+   delegations, what each covers and the absolute stops that none of them lifts (`M109`,
+   production, paid actions, force push, secrets, auth/payment/order-total/rate-limit logic)
+   are listed in "Standing owner delegations" in [GATES.md](./GATES.md). Under a delegation the
+   Engineering Manager makes the final technical call after the specialists' reviews; rules 1-4
+   still hold.
 
 ## Invocation
 

@@ -105,7 +105,44 @@ one test image uploads to Blob, is served and is deleted. Server-side order tota
 **not** tested live (checkout is off); they are covered by CI: the `e2e` job (golden-path order against a
 seeded database), `npm run test:idempotency`, `npm run test:turnstile` and `npm run test:users-guard`.
 
+## Verified state (2026-11-03)
+
+Read through the authorised Vercel and Neon connectors (read-only calls; no value of any secret was
+requested or printed). Re-check before relying on it; anything not in this list is not verified.
+
+| Item | Observed |
+|---|---|
+| Vercel project | `gocart-test`, Hobby scope, Node 22.x, not Git-connected. Domains: `gocart-test-inky.vercel.app` (the `NEXT_PUBLIC_SITE_URL`) and two `*.vercel.app` aliases. Deployment protection reported as `ssoProtection: all_except_custom_domains` (which URLs that leaves public was not checked) |
+| Deployed code | Two READY production deployments: 2026-10-30 (no Git metadata, `M100`) and 2026-11-01 from `main` at **`a6aedc1`** (`M102`), the current one. Everything merged after it (`M103`–`M108` tooling, PR #60) is **not deployed** |
+| Environment variables (Production) | `DATABASE_URI` and `PAYLOAD_SECRET` (type *sensitive*), `NEXT_PUBLIC_SITE_URL` (plain), `BLOB_READ_WRITE_TOKEN` (type *encrypted*, all three targets; Vercel flags it `readable-secret`). **No** `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`: real-key Turnstile is not configured, so checkout and lookup stay off |
+| Neon | Project `gocart-test`, AWS us-east-1, Postgres 17, 0.25 CU, scale-to-zero; branches `main` (default) and `backup-before-m101-m102-2026-11-01` |
+| Schema | `payload_migrations` holds all 8 committed migrations (6 in batch 1, `mirza_store_name` and `flat_categories` in batch 2), the same 8 as `/migrations` on `main`. Roles `neondb_owner` and `gocart_app` exist; `gocart_app` has `SELECT, INSERT, UPDATE, DELETE` on `media` |
+| Data | 24 products, 10 categories, 63 media rows (all `.webp`, all created 2026-10-30, generated art), 48 product image links, 1 admin user, 0 orders |
+| Blob store | `gocart-test-media`, iad1, public access, connected to `gocart-test` only, 63 objects, 726,320 bytes (matches the 63 media rows), quota not exceeded, token not expired |
+| CI on `main` | The `CI` workflow succeeded on the last five pushes to `main`, including PR #59 (`8a6ccdf`) and PR #60 (`4ae9dfe`) |
+
+Not verified: an HTTP check of the live pages (the cloud session's network policy denies `*.vercel.app`);
+the Hobby/Blob plan limits (not exposed by the connector); real Neon/Blob behaviour of the `M108` tool.
+
+**Recommended owner actions (not done by the team):**
+- Redeploy `main` to `gocart-test` when you want `M107` and PR #60 live there. There are no new
+  migrations since `a6aedc1`, so no migrate step is needed first. The `M108` spec says the team does
+  not deploy unless you ask.
+- Mark `BLOB_READ_WRITE_TOKEN` *Sensitive* in Vercel (Settings, Environment Variables), which needs
+  the value re-entered; rotating the token at the same time is the clean way to do it.
+
 ## Demo photo rollout (`M108`, ADR-049 item 6)
+
+**Status (2026-11-03): not run.** Expected result from a read-only pre-flight on Neon: all 24 demo
+products and 10 demo categories exist, so a run should report **58 to upload, 34 to relink, 0 to
+create** and no skipped targets. A different dry-run count means the database changed: stop and look.
+
+How the upload path works (read from the installed adapter source, `@payloadcms/plugin-cloud-storage`
+`hooks/afterChange.js`): a server-side `payload.create` file has no `clientUploadContext`, so the Blob
+adapter uploads it itself with `put(..., { allowOverwrite: true, addRandomSuffix: false })`. A name
+clash is avoided because Payload renames a filename that a media row already uses (`a.webp` becomes
+`a-1.webp`). Residual risk: a Blob object with no media row would be overwritten silently; today every
+one of the 63 objects has a row.
 
 Puts the licensed demo photos on this test site. Test only; never production. Run it from a machine that
 has the processed photos (`npm run process:demo-images`, git-ignored `demo-assets/_processed/`) and a route
