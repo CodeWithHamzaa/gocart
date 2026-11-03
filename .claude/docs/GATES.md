@@ -159,7 +159,9 @@ is deny, then ask, then allow):
   `main` (for example `main-fix`); name branches otherwise.
 - **ask**: every other `git push` (including feature-branch pushes), `git merge`, `git rebase`,
   `npm install`/`uninstall`, seeds, `payload migrate`/`deploy:migrate`, the M108 rollout and its
-  DB test, `docker compose up/down`, `rm -rf`, and reading `.env.*` files such as `.env.example`.
+  DB test, `docker compose up/down`, `rm -rf`, and reading `.env.*` files such as `.env.example`
+  with the Read tool (`cat`/`head`/`tail .env.example` in Bash is denied by the `.env` prefix rule;
+  use Read).
 - **allow**: read-only commands, `git fetch`, `git checkout main`, `npm ci`, type-check, lint,
   build and the network-free script tests, `docker build`.
 
@@ -284,7 +286,7 @@ On any conflict with `CLAUDE.md`, `docs/MIGRATION_PLAN.md`, or an Accepted ADR: 
 - Routine technical decisions; the Engineering Manager decides after the specialists' reviews and records the reasoning in the PR body (and in an ADR when the decision is non-obvious).
 - Corrections to governance files, agent definitions, commands and documentation, including `.claude/settings.json`, as long as no absolute stop above is weakened. A change to `.claude/settings.json` or to this file needs an independent Security/Performance (G6) review recorded in the PR before merge.
 - ADR status reconciliation: accepting a **Proposed** ADR; adding a status annotation to an Accepted ADR that points to a later Accepted ADR which already supersedes or amends it. Changing what an Accepted ADR decides still needs a new ADR approved by the owner.
-- Security improvements that do not change authentication, payment, order-total or rate-limiting logic.
+- Security improvements that do not change authentication, authorization or collection access control, payment, order-total or rate-limiting logic.
 - Opening PRs for the above and merging them to the default branch when CI is green and branch protection is satisfied.
 - Read-only inspection of the test environment through the authorised connectors (Vercel, Neon), and test-environment operations the 2026-10-30 and 2026-11-03 delegations already cover. A milestone's own spec can be narrower (for example `M108`: "no deploy by the AI team unless the owner asks"); the narrower rule wins.
 
