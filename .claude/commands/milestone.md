@@ -60,7 +60,8 @@ Apply `.claude/docs/GATES.md` literally. Report each gate's real result:
 
 ## Absolute stops
 
-- **Do not open, approve, or merge a PR.** A human does that (Gate G8).
+- **Do not merge a PR unless a standing owner delegation covers it** (GATES.md, "Standing owner delegations"); otherwise a human does (Gate G8). Opening a PR for review is part of G7.
+- **Never touch `M109` or anything production** until the owner gives the client's go-ahead.
 - **Do not perform any human-approval action** listed in `.claude/docs/GATES.md`.
 - **Do not silently override** `PROJECT_SPEC.md`, `ARCHITECTURE.md`, an Accepted ADR,
   a hard constraint, or a human decision.

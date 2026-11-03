@@ -1,7 +1,7 @@
 # Mirza AI Engineering Team
 
 A **development-time** engineering system for Mirza (formerly the GoCart Pakistan migration).
-Eight roles, one orchestrator, human approval before anything merges (one recorded exception: see "Owner delegation" in [docs/GATES.md](./docs/GATES.md)).
+Eight roles, one orchestrator, human approval before anything merges, except where a standing owner delegation covers it (see "Standing owner delegations" in [docs/GATES.md](./docs/GATES.md)).
 
 > **The application never depends on this.** Delete `.claude/` and Mirza still
 > builds, runs, and deploys. See [docs/NO_PRODUCTION_AI.md](./docs/NO_PRODUCTION_AI.md).
@@ -28,7 +28,7 @@ Eight roles, one orchestrator, human approval before anything merges (one record
 ```
 HUMAN → Engineering Manager → { Product · Architecture · UI/UX · Full-Stack
                                 · QA · Security/Performance · DevOps/Release }
-      → GitHub PR → HUMAN APPROVAL → merge → production
+      → GitHub PR → HUMAN APPROVAL (or a standing delegation, GATES.md) → merge → (production only with the owner's go-ahead)
 ```
 
 | Role | One-line charter |
@@ -60,4 +60,4 @@ that system — it does not replace it.
 ## Two rules that override everything else
 
 1. **Surface the conflict rather than guessing.** Stopping to escalate is a success.
-2. **A human approves before anything merges or deploys.** No role has that authority, with one recorded exception: the owner's 2026-10-30 delegation for a free, non-commercial test deployment on Vercel Hobby + Neon Free + Vercel Blob. Its exact scope, and the list of things that stay human-owned (existing Accepted ADRs, force push and history rewrite, deleting resources the session did not create, paid actions, auth/payment/order-total/rate-limiting changes, printing or committing secrets), is "Owner delegation: free test deployment (2026-10-30)" in [docs/GATES.md](./docs/GATES.md). It is not a production deployment.
+2. **A human approves before anything merges or deploys, unless a standing owner delegation covers it.** The owner has delegated the test environment (Vercel Hobby + Neon Free + Vercel Blob), ADR-049 work and routine technical, governance and documentation decisions; the list, each scope, and the absolute stops none of them lifts (`M109` and all production work until the client's go-ahead, paid actions, changing an Accepted ADR's decision, force push and history rewrite, deleting resources outside the test scope, auth/payment/order-total/rate-limiting changes, secrets) are in "Standing owner delegations" in [docs/GATES.md](./docs/GATES.md).

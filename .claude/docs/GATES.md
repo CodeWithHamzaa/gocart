@@ -23,7 +23,7 @@ Every milestone passes through these. A gate that was not run is reported as
 
 ## G2 — Architecture  ·  Software Architect
 
-- No Accepted ADR (ADR-001 … ADR-040; check `docs/DECISIONS.md` for the current range) is contradicted.
+- No Accepted ADR is contradicted (the record starts at ADR-001; `grep -n '^## ADR-' docs/DECISIONS.md | tail -3` gives the current range, ADR-049 on 2026-11-03).
 - No hard constraint from `CLAUDE.md` is weakened.
 - Server/client data-access boundary respected (`lib/payload/*` is server-only).
 - Any new non-obvious decision is written as an ADR.
@@ -63,8 +63,8 @@ npm run build          # MUST pass
 | `npm run type-check` | ✅ Available |
 | `npm run build` | ✅ Available |
 | `npm run lint` | ✅ Available since 2026-10-09 (`eslint.config.mjs`, `next/core-web-vitals`). Report its real output |
-| Automated tests | ◐ One Playwright golden-path test (+ an out-of-stock check) in `e2e/` (`M56a`): `npm run test:e2e` against a production build and a seeded throwaway PostgreSQL. It is deliberately minimal — **no unit tests, and no coverage of admin, lookup edge cases, validation rules or copy**; `e2e/seo.spec.ts` (`M40`–`M43`) also checks what a crawler receives (initial HTML, metadata, sitemap, robots, JSON-LD), and `e2e/mobile.spec.ts` (`M44`) guards 320px layout, 44px header targets and mobile cart/address flows |
-| CI | ✅ `.github/workflows/ci.yml`: `checks` (type-check, lint) and `e2e` (PostgreSQL service, seed, **`build`**, golden-path test) on every PR and push to `main` |
+| Automated tests | ◐ Script tests run in CI on every PR: `test:env`, `test:turnstile`, `test:category-filters`, `test:demo-images`, `test:seo`, `test:rollout-demo-photos` (job `checks`) and `test:idempotency`, `test:users-guard` (job `e2e`); `test:rollout-demo-photos:db` is manual. Plus one Playwright golden-path test (+ an out-of-stock check) in `e2e/` (`M56a`): `npm run test:e2e` against a production build and a seeded throwaway PostgreSQL. It is deliberately minimal — **no unit tests, and no coverage of admin, lookup edge cases, validation rules or copy**; `e2e/seo.spec.ts` (`M40`–`M43`) also checks what a crawler receives (initial HTML, metadata, sitemap, robots, JSON-LD), and `e2e/mobile.spec.ts` (`M44`) guards 320px layout, 44px header targets and mobile cart/address flows |
+| CI | ✅ `.github/workflows/ci.yml`: `checks` (type-check, lint, script tests), `turnstile-contract` (real Cloudflare test keys), `e2e` (PostgreSQL service, seed, **`build`**, golden-path test), the migration job, `prod-stack` and the production-image build, on every PR and push to `main` |
 
 Until those are repaired, **manual verification is the only regression net.** Treat it
 accordingly.
@@ -119,19 +119,19 @@ Skipped checks are reported as **skipped by the owner's rule**, never as passed.
   found-but-not-fixed items, rollback step.
 - No secrets anywhere in the diff or the PR body.
 
-## G8 — Human approval  ·  **HUMAN — non-delegable**
+## G8 — Human approval  ·  **HUMAN, or a standing owner delegation below**
 
-The team stops here. Every time — **except** for the one narrowly scoped, owner-recorded
-delegation in "Owner delegation: free test deployment (2026-10-30)" below. Outside that
-delegation, nothing in this file is relaxed.
+The team stops here. Every time — **except** where a standing owner delegation listed in
+"Standing owner delegations" below covers the action. Outside those delegations, nothing in
+this file is relaxed. Each delegation's own scope and its absolute stops apply.
 
 ---
 
 ## Actions requiring explicit human approval
 
-No role may perform any of these on its own initiative (the only exception is the steps
-delegated in "Owner delegation: free test deployment (2026-10-30)" below, and only for
-that test deployment):
+No role may perform any of these on its own initiative, except where a standing owner
+delegation below covers that exact action (each delegation lists what it covers and what it
+does not):
 
 - Changing, superseding, or reversing an **Accepted ADR**
 - Major **architectural** changes
@@ -147,9 +147,61 @@ that test deployment):
 - Installing or removing a package (`CLAUDE.md` working agreement)
 - Running a migration against any non-local database
 
-`.claude/settings.json` enforces the mechanical subset: destructive Git and Docker
-operations are **denied**, and pushes, merges, installs, seeds, and migrations are
-**ask**. The rest is enforced by these instructions and by the human at G8.
+`.claude/settings.json` enforces a mechanical subset (reconciled 2026-11-03; rule precedence
+is deny, then ask, then allow):
+
+- **deny**: force push (`--force`, `-f`, `--force-with-lease`, `+refspec`, `--mirror`), pushing
+  to or deleting a remote branch by name (`git push origin main`, `HEAD:main`, `:branch`,
+  `--delete`, `--prune`), `git reset --hard`, `git clean -fd/-fdx`, `git branch -D/-f/--force`,
+  `git checkout -f`, `git tag -d`, history rewrite (`filter-branch`, `filter-repo`), Docker
+  volume removal and prune, `dropdb`, `npm publish`, and reading `.env` (`Read`, `cat`, `head`,
+  `tail`). The `main` rules are prefixes, so they also block branches whose names start with
+  `main` (for example `main-fix`); name branches otherwise.
+- **ask**: every other `git push` (including feature-branch pushes), `git merge`, `git rebase`,
+  `npm install`/`uninstall`, seeds, `payload migrate`/`deploy:migrate`, the M108 rollout and its
+  DB test, `docker compose up/down`, `rm -rf`, and reading `.env.*` files such as `.env.example`
+  with the Read tool (`cat`/`head`/`tail .env.example` in Bash is denied by the `.env` prefix rule;
+  use Read).
+- **allow**: read-only commands, `git fetch`, `git checkout main`, `npm ci`, type-check, lint,
+  build and the network-free script tests, `docker build`.
+
+These rules match command prefixes only: reordered flags (`git push -u origin feat --force`) or
+an unusual refspec (`feat:main`) can slip past them. They are a backstop; **branch protection on
+`main` (no force push, no deletion, required CI) is the real control** for the remote, and these
+instructions for everything else. Connector tools (GitHub, Vercel, Neon MCP) are not covered by them at
+all: for those, these instructions, the delegations below and branch protection are the control.
+The rest is enforced by these instructions and by the human at G8.
+
+## Standing owner delegations (read this first)
+
+The owner (Abdul) has recorded four delegations. They are cumulative; where they differ, the
+narrower stop wins. Every one of them keeps the absolute stops listed after the table.
+
+| Date | Section below | What it delegates |
+|---|---|---|
+| 2026-10-09 | "Smart Execution & Scope-Based QA" (above) | Scoped QA for scoped changes; merging such PRs once the named checks and CI pass |
+| 2026-10-30 | "Owner delegation: free test deployment" | Everything needed to run the Vercel Hobby + Neon Free + Vercel Blob test environment |
+| 2026-11-03 | "Owner delegation: technical decisions and approvals for the test environment" | Accepting Proposed ADRs, resolving blockers, accepting milestones, merging to the default branch for ADR-046/ADR-049 work (`M103`-`M108`) |
+| 2026-11-03 (later) | "Owner delegation: governance and documentation remediation, standing technical autonomy" | Routine technical decisions, governance, agent-instruction and documentation corrections, ADR status reconciliation, and merging such PRs, without asking the owner each time |
+
+**Absolute stops under every delegation** (only the owner, in words, lifts one):
+
+- `M109` and **any production work** (the VPS, the client's production database, domain,
+  Cloudflare production setup, production deployment) until the owner gives the client's
+  go-ahead. Preparing `M109` counts.
+- Purchasing, provisioning or modifying a VPS; any paid action.
+- Changing or superseding the *decision* of an Accepted ADR (a status annotation that points to a
+  later ADR which already supersedes or amends it is allowed, see the 2026-11-03 (later) section).
+- Force push, history rewrite, remote branch deletion, `git reset` on shared branches; bypassing
+  branch protection, required CI checks or required reviews.
+- Deleting resources or data outside the authorised test scope, or resources the session did not create.
+- Changes to authentication, authorization or collection access control (including any widening of
+  `Orders` read, ADR-024), payment, order-total validation or rate-limiting logic.
+- Printing, logging, committing or requesting in chat any token, connection string,
+  `PAYLOAD_SECRET` or Blob token. A task that needs credentials the session lacks is reported
+  as blocked on access, never worked around.
+- The test environment (Vercel `gocart-test`, Neon `gocart-test`, Blob `gocart-test-media`) and the
+  future production VPS stay strictly separate: no shared database, Blob store, secret or data.
 
 ## Owner delegation: free test deployment (2026-10-30)
 
@@ -217,6 +269,28 @@ the scope above.
 - Credentials and access the session does not have. A task that needs them is reported as blocked on access, never worked around.
 
 On any conflict with `CLAUDE.md`, `docs/MIGRATION_PLAN.md`, or an Accepted ADR: **STOP and report.**
+
+## Owner delegation: governance and documentation remediation, standing technical autonomy (2026-11-03, later)
+
+**Authority:** the project owner instructed this in the session of 2026-11-03 (the owner's own chat message, after the project knowledge audit); recorded here by the governance commit that carries this section. Verbatim extracts:
+
+> The AI Engineering Team has authority to independently: Research and investigate all identified issues. [...] Determine which ADRs are current, amended, superseded or obsolete. Make technical decisions and resolve conflicting instructions. Update governance policies, agent instructions and documentation. Implement safe technical corrections. Run tests, builds, lint, security checks and independent reviews. Create PRs and merge them when all required checks and safeguards pass.
+> Engineering Manager is responsible for coordinating specialists and making final technical decisions after considering their reviews.
+> Do not repeatedly ask me to approve routine technical decisions, documentation changes, ADR updates or security improvements.
+> M109 MUST remain on hold until I explicitly communicate the client's go-ahead. All production work MUST remain on hold until explicit client authorization. Do not purchase, provision or modify a VPS. [...] Do not bypass branch protection, CI, security controls or required reviews. Do not expose secrets or credentials. Do not delete resources or data outside the explicitly authorized scope.
+> The current Vercel deployment is the test environment. Future client production will be a separate VPS deployment. Keep these environments strictly isolated.
+> Future AI Engineering Team sessions should be able to continue independently without unnecessary owner approvals.
+
+**Standing until the owner revokes or narrows it.** It covers, with G8 satisfied by this record once every other applicable gate has passed and CI is green:
+
+- Routine technical decisions; the Engineering Manager decides after the specialists' reviews and records the reasoning in the PR body (and in an ADR when the decision is non-obvious).
+- Corrections to governance files, agent definitions, commands and documentation, including `.claude/settings.json`, as long as no absolute stop above is weakened. A change to `.claude/settings.json` or to this file needs an independent Security/Performance (G6) review recorded in the PR before merge.
+- ADR status reconciliation: accepting a **Proposed** ADR; adding a status annotation to an Accepted ADR that points to a later Accepted ADR which already supersedes or amends it. Changing what an Accepted ADR decides still needs a new ADR approved by the owner.
+- Security improvements that do not change authentication, authorization or collection access control, payment, order-total or rate-limiting logic.
+- Opening PRs for the above and merging them to the default branch when CI is green and branch protection is satisfied.
+- Read-only inspection of the test environment through the authorised connectors (Vercel, Neon), and test-environment operations the 2026-10-30 and 2026-11-03 delegations already cover. A milestone's own spec can be narrower (for example `M108`: "no deploy by the AI team unless the owner asks"); the narrower rule wins.
+
+**Not covered:** every absolute stop in "Standing owner delegations" above; major architectural or schema changes, installing or removing packages, and migrations against any non-local database, unless an earlier delegation names that exact action for the test environment; non-routine product or business decisions (scope, pricing, catalogue, client commitments), which go to the owner with a recommendation.
 
 ## Conflict escalation
 

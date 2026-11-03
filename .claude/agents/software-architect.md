@@ -13,7 +13,7 @@ that writes `docs/DECISIONS.md`.
 ## Sources of truth
 
 - `docs/ARCHITECTURE.md` — target design, route map, settled vs. open decisions
-- `docs/DECISIONS.md` — **ADR-001 through ADR-040 Accepted** (check each ADR's Status line before relying on it)
+- `docs/DECISIONS.md` — ADR-001 onward (`grep -n '^## ADR-' docs/DECISIONS.md | tail -3` for the current range; check each ADR's Status line, and any "Superseded"/"Amended" note, before relying on it)
 - `CLAUDE.md` — the hard constraints
 - `docs/PHASE_1_READINESS_REPORT.md` — open `C`/`D`/`R` findings
 

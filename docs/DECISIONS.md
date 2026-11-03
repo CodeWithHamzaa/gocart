@@ -1,6 +1,6 @@
 # Decisions — Mirza (formerly GoCart Pakistan)
 
-Architecture Decision Record (ADR) log. Each entry: Context, Decision, Consequences. Newest at the bottom. Add a new entry rather than editing history — if a decision changes, record the change as a new ADR that supersedes the old one.
+Architecture Decision Record (ADR) log. Each entry: Context, Decision, Consequences. Newest at the bottom. Add a new entry rather than editing history — if a decision changes, record the change as a new ADR that supersedes the old one. A dated one-line status annotation on the older ADR that only points to the later ADR (no change to its decision text) is allowed and keeps readers from relying on a superseded decision.
 
 > **Referencing convention**: ADRs cite implementation work by **milestone ID** (`M1`–`M59`, see [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)) — never by phase number. Phase/group names are labels for reporting only and carry no execution order.
 
@@ -236,6 +236,8 @@ The decisive factors are performance on the SEO-critical path and the absence of
 ## ADR-013: Category browsing ships in Phase 1 as dedicated slug routes with a two-level hierarchy
 
 **Status**: **Accepted (2026-08-16)** — stakeholder-confirmed. Closes readiness finding **C8**.
+
+> **Superseded in part (annotation added 2026-11-03):** the two-level hierarchy below is superseded by [ADR-048](#adr-048-categories-are-flat-one-level-no-sub-categories-m102) (flat categories, `M102`). Dedicated slug routes, server rendering and the rejection of `/shop?category=` stand; the faceted-filtering deferral was later narrowed by [ADR-042](#adr-042-category-sort-and-filter-and-cart-undo-m92) (category sort, price and discount filters). Text below is unchanged history.
 
 **Context**: The target product is a multi-category, multi-product storefront, but customer-facing category browsing exists neither in the codebase nor in the plan. Verified read-only:
 
@@ -1197,6 +1199,8 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 ## ADR-037: Next.js 16.3.8 — closing the framework advisories (`M52c`)
 
 **Status**: **Accepted (2026-10-11)** — the owner approved the upgrade as its own branch and PR after the M52b security batch (ADR-036 decision 7 and `docs/DEPLOYMENT.md` "Launch blockers" item 1). Amends [ADR-011](#adr-011-payload-v3-dependency-set--exact-pins-a-raised-nextjs-floor-and-patched-sharp) (the Next pin) and closes the open consequence ADR-011 recorded ("Next 15.3.9 is not advisory-free … must be decided before production"). Reverses no Accepted ADR. Adds one npm `overrides` entry and no new dependency.
+
+> **Version pin amended (annotation added 2026-11-03):** [ADR-040](#adr-040-nextjs-1642--closing-the-advisories-published-after-m52c-m79) moves the `next`/`eslint-config-next` pin to 16.4.2 and the `undici` override to 7.30.1 (`M79`). Text below is unchanged history.
 
 **Context**:
 

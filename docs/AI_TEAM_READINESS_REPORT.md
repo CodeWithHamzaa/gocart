@@ -76,7 +76,7 @@ only the Architect writes ADRs; **only a human approves and merges.**
 | **G5** Verification | QA | Every criterion checked on a live server, with evidence |
 | **G6** Security / Performance | Sec/Perf | No access-control, PII, validation, or cost regression |
 | **G7** Release | DevOps | Correct branch, one commit, PR body prepared |
-| **G8** **Human approval** | **HUMAN** | **A person approved. Non-delegable** |
+| **G8** **Human approval** | **HUMAN** | **A person approved. Non-delegable** (historical; since 2026-10-30 standing owner delegations apply, see `.claude/docs/GATES.md`, "Standing owner delegations") |
 
 A skipped gate is a failed gate. A gate not run is reported as *not run* — never as
 passed. Role assignment is a deliberate decision per milestone, and skipped roles must

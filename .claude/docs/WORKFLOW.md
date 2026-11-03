@@ -23,9 +23,9 @@ DevOps / Release       (branch, commit, PR preparation)
   ↓
 GitHub PR
   ↓
-HUMAN APPROVAL   ←  the team stops here, every time (sole exception: GATES.md, "Owner delegation")
+HUMAN APPROVAL   ←  the team stops here, unless a standing owner delegation covers it (GATES.md, "Standing owner delegations")
   ↓
-Merge → Production
+Merge → (production only after the owner's go-ahead; never under a delegation)
 ```
 
 ## Gate sequence
@@ -42,7 +42,7 @@ Each gate is described in full in [GATES.md](./GATES.md).
 | **G5 Verification** | QA Engineer | Every acceptance criterion checked against a live server, with evidence |
 | **G6 Security / Performance** | Security / Performance Engineer | No access-control, PII, validation, or cost regression |
 | **G7 Release** | DevOps / Release Engineer | Correct branch, one commit, PR body prepared |
-| **G8 Human approval** | **HUMAN** | A person reviewed and approved. Non-delegable, except the owner's 2026-10-30 delegation for the free, non-commercial test deployment (Vercel Hobby + Neon Free + Vercel Blob), scoped in [GATES.md](./GATES.md), "Owner delegation" |
+| **G8 Human approval** | **HUMAN**, or a standing owner delegation | A person reviewed and approved, or a standing owner delegation in [GATES.md](./GATES.md) ("Standing owner delegations") covers the action and every other gate passed with CI green |
 
 A skipped gate is a failed gate. A gate that was not run is reported as *not run* —
 never as passed.
