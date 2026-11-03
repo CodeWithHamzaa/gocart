@@ -73,6 +73,11 @@ export default buildConfig({
   // M52a: migrations are committed files in /migrations and run by the production
   // `migrate` service (ADR-032). prodMigrations is deliberately not set.
   db: postgresAdapter({
+    // M108 hardening: by default the adapter answers a "database does not exist" error by trying to
+    // CREATE DATABASE through the `postgres` maintenance database. A mistyped DATABASE_URI must fail
+    // loudly instead. Every supported target creates its database itself (POSTGRES_DB in
+    // docker-compose*.yml, the CI service, Neon).
+    disableCreateDatabase: true,
     migrationDir: path.resolve(dirname, 'migrations'),
     pool: {
       connectionString: process.env.DATABASE_URI,
