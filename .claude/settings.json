@@ -15,7 +15,6 @@
       "Bash(git ls-files:*)",
       "Bash(git fetch:*)",
       "Bash(git checkout main:*)",
-      "Bash(git push -u origin:*)",
       "Bash(npm ci:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm run lint:*)",
@@ -56,9 +55,7 @@
       "Bash(docker compose up:*)",
       "Bash(docker compose down:*)",
       "Bash(rm -rf:*)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Bash(cat .env:*)"
+      "Read(./.env.*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -85,7 +82,23 @@
       "Bash(docker volume prune:*)",
       "Bash(docker system prune:*)",
       "Bash(dropdb:*)",
-      "Bash(npm publish:*)"
+      "Bash(npm publish:*)",
+      "Bash(git push origin +:*)",
+      "Bash(git push origin ::*)",
+      "Bash(git push -u origin +:*)",
+      "Bash(git push -u origin ::*)",
+      "Bash(git push -u origin HEAD:main:*)",
+      "Bash(git push --mirror:*)",
+      "Bash(git push --prune:*)",
+      "Bash(git branch -f:*)",
+      "Bash(git branch --force:*)",
+      "Bash(git checkout -f:*)",
+      "Read(./.env)",
+      "Bash(cat .env:*)",
+      "Bash(cat ./.env:*)",
+      "Bash(head .env:*)",
+      "Bash(tail .env:*)",
+      "Bash(grep -r . .env:*)"
     ]
   }
 }

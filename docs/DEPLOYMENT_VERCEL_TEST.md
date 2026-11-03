@@ -119,6 +119,7 @@ requested or printed). Re-check before relying on it; anything not in this list 
 | Schema | `payload_migrations` holds all 8 committed migrations (6 in batch 1, `mirza_store_name` and `flat_categories` in batch 2), the same 8 as `/migrations` on `main`. Roles `neondb_owner` and `gocart_app` exist; `gocart_app` has `SELECT, INSERT, UPDATE, DELETE` on `media` |
 | Data | 24 products, 10 categories, 63 media rows (all `.webp`, all created 2026-10-30, generated art), 48 product image links, 1 admin user, 0 orders |
 | Blob store | `gocart-test-media`, iad1, public access, connected to `gocart-test` only, 63 objects, 726,320 bytes (matches the 63 media rows), quota not exceeded, token not expired |
+| Code (repo, not a connector) | `collections/Orders.ts:44`: `delete` is allowed for any logged-in user, and only admins can log in (ADR-006), so admins can delete orders, which ADR-049 had listed as unverified for `M109` |
 | CI on `main` | The `CI` workflow succeeded on the last five pushes to `main`, including PR #59 (`8a6ccdf`) and PR #60 (`4ae9dfe`) |
 
 Not verified: an HTTP check of the live pages (the cloud session's network policy denies `*.vercel.app`);
@@ -138,7 +139,7 @@ products and 10 demo categories exist, so a run should report **58 to upload, 34
 create** and no skipped targets. A different dry-run count means the database changed: stop and look.
 
 How the upload path works (read from the installed adapter source, `@payloadcms/plugin-cloud-storage`
-`hooks/afterChange.js`): a server-side `payload.create` file has no `clientUploadContext`, so the Blob
+`dist/hooks/afterChange.js` and `@payloadcms/storage-vercel-blob` `dist/uploadFile.js`, version 3.90.2): a server-side `payload.create` file has no `clientUploadContext`, so the Blob
 adapter uploads it itself with `put(..., { allowOverwrite: true, addRandomSuffix: false })`. A name
 clash is avoided because Payload renames a filename that a media row already uses (`a.webp` becomes
 `a-1.webp`). Residual risk: a Blob object with no media row would be overwritten silently; today every

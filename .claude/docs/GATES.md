@@ -64,7 +64,7 @@ npm run build          # MUST pass
 | `npm run build` | ✅ Available |
 | `npm run lint` | ✅ Available since 2026-10-09 (`eslint.config.mjs`, `next/core-web-vitals`). Report its real output |
 | Automated tests | ◐ Script tests run in CI on every PR: `test:env`, `test:turnstile`, `test:category-filters`, `test:demo-images`, `test:seo`, `test:rollout-demo-photos` (job `checks`) and `test:idempotency`, `test:users-guard` (job `e2e`); `test:rollout-demo-photos:db` is manual. Plus one Playwright golden-path test (+ an out-of-stock check) in `e2e/` (`M56a`): `npm run test:e2e` against a production build and a seeded throwaway PostgreSQL. It is deliberately minimal — **no unit tests, and no coverage of admin, lookup edge cases, validation rules or copy**; `e2e/seo.spec.ts` (`M40`–`M43`) also checks what a crawler receives (initial HTML, metadata, sitemap, robots, JSON-LD), and `e2e/mobile.spec.ts` (`M44`) guards 320px layout, 44px header targets and mobile cart/address flows |
-| CI | ✅ `.github/workflows/ci.yml`: `checks` (type-check, lint, script tests), `e2e` (PostgreSQL service, seed, **`build`**, golden-path test), migration and production-image jobs, on every PR and push to `main` |
+| CI | ✅ `.github/workflows/ci.yml`: `checks` (type-check, lint, script tests), `turnstile-contract` (real Cloudflare test keys), `e2e` (PostgreSQL service, seed, **`build`**, golden-path test), the migration job, `prod-stack` and the production-image build, on every PR and push to `main` |
 
 Until those are repaired, **manual verification is the only regression net.** Treat it
 accordingly.
@@ -150,19 +150,23 @@ does not):
 `.claude/settings.json` enforces a mechanical subset (reconciled 2026-11-03; rule precedence
 is deny, then ask, then allow):
 
-- **deny**: force push (`--force`, `-f`, `--force-with-lease`), pushing to or deleting a remote
-  branch by name (`git push origin main`, `HEAD:main`, `--delete`), `git reset --hard`,
-  `git clean -fd/-fdx`, `git branch -D`, `git tag -d`, history rewrite (`filter-branch`,
-  `filter-repo`), Docker volume removal and prune, `dropdb`, `npm publish`.
-- **ask**: any other `git push`, `git merge`, `git rebase`, `npm install`/`uninstall`, seeds,
-  `payload migrate`/`deploy:migrate`, the M108 rollout and its DB test, `docker compose up/down`,
-  `rm -rf`, and reading `.env` files.
-- **allow**: read-only commands, `git fetch`, `git checkout main`, `git push -u origin <feature
-  branch>` (pushing `main` this way stays denied), `npm ci`, type-check, lint, build and the
-  network-free script tests, `docker build`.
+- **deny**: force push (`--force`, `-f`, `--force-with-lease`, `+refspec`, `--mirror`), pushing
+  to or deleting a remote branch by name (`git push origin main`, `HEAD:main`, `:branch`,
+  `--delete`, `--prune`), `git reset --hard`, `git clean -fd/-fdx`, `git branch -D/-f/--force`,
+  `git checkout -f`, `git tag -d`, history rewrite (`filter-branch`, `filter-repo`), Docker
+  volume removal and prune, `dropdb`, `npm publish`, and reading `.env` (`Read`, `cat`, `head`,
+  `tail`). The `main` rules are prefixes, so they also block branches whose names start with
+  `main` (for example `main-fix`); name branches otherwise.
+- **ask**: every other `git push` (including feature-branch pushes), `git merge`, `git rebase`,
+  `npm install`/`uninstall`, seeds, `payload migrate`/`deploy:migrate`, the M108 rollout and its
+  DB test, `docker compose up/down`, `rm -rf`, and reading `.env.*` files such as `.env.example`.
+- **allow**: read-only commands, `git fetch`, `git checkout main`, `npm ci`, type-check, lint,
+  build and the network-free script tests, `docker build`.
 
-These rules match command prefixes only, so a reordered command can slip past them; they are a
-backstop, not the control. Connector tools (GitHub, Vercel, Neon MCP) are not covered by them at
+These rules match command prefixes only: reordered flags (`git push -u origin feat --force`) or
+an unusual refspec (`feat:main`) can slip past them. They are a backstop; **branch protection on
+`main` (no force push, no deletion, required CI) is the real control** for the remote, and these
+instructions for everything else. Connector tools (GitHub, Vercel, Neon MCP) are not covered by them at
 all: for those, these instructions, the delegations below and branch protection are the control.
 The rest is enforced by these instructions and by the human at G8.
 
@@ -189,7 +193,8 @@ narrower stop wins. Every one of them keeps the absolute stops listed after the 
 - Force push, history rewrite, remote branch deletion, `git reset` on shared branches; bypassing
   branch protection, required CI checks or required reviews.
 - Deleting resources or data outside the authorised test scope, or resources the session did not create.
-- Changes to authentication, payment, order-total validation or rate-limiting logic.
+- Changes to authentication, authorization or collection access control (including any widening of
+  `Orders` read, ADR-024), payment, order-total validation or rate-limiting logic.
 - Printing, logging, committing or requesting in chat any token, connection string,
   `PAYLOAD_SECRET` or Blob token. A task that needs credentials the session lacks is reported
   as blocked on access, never worked around.
@@ -277,13 +282,13 @@ On any conflict with `CLAUDE.md`, `docs/MIGRATION_PLAN.md`, or an Accepted ADR: 
 **Standing until the owner revokes or narrows it.** It covers, with G8 satisfied by this record once every other applicable gate has passed and CI is green:
 
 - Routine technical decisions; the Engineering Manager decides after the specialists' reviews and records the reasoning in the PR body (and in an ADR when the decision is non-obvious).
-- Corrections to governance files, agent definitions, commands and documentation, including `.claude/settings.json`, as long as no absolute stop above is weakened.
+- Corrections to governance files, agent definitions, commands and documentation, including `.claude/settings.json`, as long as no absolute stop above is weakened. A change to `.claude/settings.json` or to this file needs an independent Security/Performance (G6) review recorded in the PR before merge.
 - ADR status reconciliation: accepting a **Proposed** ADR; adding a status annotation to an Accepted ADR that points to a later Accepted ADR which already supersedes or amends it. Changing what an Accepted ADR decides still needs a new ADR approved by the owner.
 - Security improvements that do not change authentication, payment, order-total or rate-limiting logic.
 - Opening PRs for the above and merging them to the default branch when CI is green and branch protection is satisfied.
 - Read-only inspection of the test environment through the authorised connectors (Vercel, Neon), and test-environment operations the 2026-10-30 and 2026-11-03 delegations already cover. A milestone's own spec can be narrower (for example `M108`: "no deploy by the AI team unless the owner asks"); the narrower rule wins.
 
-**Not covered:** every absolute stop in "Standing owner delegations" above; non-routine product or business decisions (scope, pricing, catalogue, client commitments), which go to the owner with a recommendation.
+**Not covered:** every absolute stop in "Standing owner delegations" above; major architectural or schema changes, installing or removing packages, and migrations against any non-local database, unless an earlier delegation names that exact action for the test environment; non-routine product or business decisions (scope, pricing, catalogue, client commitments), which go to the owner with a recommendation.
 
 ## Conflict escalation
 
