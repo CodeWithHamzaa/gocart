@@ -38,6 +38,8 @@ export function uriShapeProblems(uri: string, allowed: readonly string[]): strin
   if (uri !== uri.trim() || /[\s\u0000-\u001f\u007f]/.test(uri)) problems.push('DATABASE_URI contains whitespace or control characters')
   try {
     const url = new URL(uri)
+    // `pg` treats a `socket:` URI as a unix-socket directory taken from the path and ignores the hostname.
+    if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') problems.push('DATABASE_URI must start with postgres:// or postgresql://')
     const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '')
     if (!/^[a-z0-9.-]+$/.test(host)) problems.push('DATABASE_URI host has characters other than letters, digits, dots and hyphens')
     const keys = [...url.searchParams.keys()]

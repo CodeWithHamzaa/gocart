@@ -73,6 +73,10 @@ const GOOD = {
   refuse(withQuery('sslmode=require&sslmode=disable'), 'test', /repeats/)
   refuse(withQuery('sslmode=disable&sslmode=require'), 'test', /repeats/)
   refuse({ ...GOOD, DATABASE_URI: 'postgres://u:p@ep-x%2e.neon.tech/db?sslmode=require', DEMO_ROLLOUT_DB_HOST: 'ep-x%2e.neon.tech' }, 'test', /characters other than/)
+  // `pg` reads a socket: URI as a unix-socket path and ignores the hostname (third review).
+  refuse({ ...GOOD, DATABASE_URI: 'socket://u:p@ep-test-123-pooler.us-east-1.aws.neon.tech/var/run/postgresql?sslmode=require' }, 'test', /postgres:\/\//)
+  refuse({ ...GOOD, DATABASE_URI: 'http://u:p@ep-test-123-pooler.us-east-1.aws.neon.tech/db?sslmode=require' }, 'test', /postgres:\/\//)
+  assert.equal(checkTarget({ ...GOOD, DATABASE_URI: GOOD.DATABASE_URI.replace('postgres://', 'postgresql://') }, 'test').ok, true)
   // Payload must not push a dev schema to the test database on connect.
   const pushEnv: Record<string, string | undefined> = {}
   applyPayloadSafety(pushEnv)
@@ -101,6 +105,7 @@ const GOOD = {
   refuse({ ...LOCAL, NODE_ENV: 'production' }, /NODE_ENV/)
   refuse({ ...LOCAL, TUNNEL_TOKEN: 'x' }, /TUNNEL_TOKEN/)
   refuse({ ...LOCAL, PAYLOAD_DROP_DATABASE: 'true' }, /PAYLOAD_DROP_DATABASE/)
+  refuse({ ...LOCAL, DATABASE_URI: 'socket://u:pw@localhost/var/run/postgresql_throwaway' }, /postgres:\/\//)
   refuse({ ...LOCAL, DATABASE_URI: undefined }, /not set/)
   refuse({ ...LOCAL, DATABASE_URI: ' ' + LOCAL.DATABASE_URI }, /whitespace/)
 }
