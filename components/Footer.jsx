@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 import { getSettings } from "@/lib/payload/settings";
+import { getStorefrontContent } from "@/lib/payload/storefront-content";
 import { getCategoriesCached } from "@/lib/payload/categories";
 
 // M55a: server component. The contact block is read from the Settings global (M13a)
@@ -16,7 +17,7 @@ const SAFE_EMAIL = /^[^\s@?&#]+@[^\s@?&#]+$/
 
 const Footer = async () => {
 
-    const [settings, categories] = await Promise.all([getSettings(), getCategoriesCached().catch(() => [])])
+    const [settings, categories, content] = await Promise.all([getSettings(), getCategoriesCached().catch(() => []), getStorefrontContent()])
 
     const linkSections = [
         {
@@ -53,7 +54,7 @@ const Footer = async () => {
                         <Link href="/" className="text-2xl text-ink">
                             <BrandLogo name={settings.storeName} mark={false} />
                         </Link>
-                        <p className="max-w-[280px]">Electronics, fashion, home and beauty, delivered across Pakistan. Pay in cash when your order arrives.</p>
+                        <p className="max-w-[280px]">{content.footerTagline}</p>
                     </div>
                     {linkSections.map((section) => (
                         <div key={section.title} className={section.title === "Contact" ? "col-span-2 lg:col-span-1" : undefined}>

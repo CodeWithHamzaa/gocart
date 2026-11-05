@@ -286,3 +286,13 @@ any `NEXT_PUBLIC_*` variable, redeploy so the value is rebuilt in. After adding 
 3. Blob: Vercel dashboard -> Storage -> `gocart-test-media` -> rotate the read/write token, or delete the store.
 4. To shut the environment down, delete the `gocart-test` Vercel project, the `gocart-test` Neon project and
    the `gocart-test-media` store. Nothing in production depends on them.
+
+## Deploying `M110` (admin-editable content) to the test site
+
+`M110` is built but **not deployed** to the test site until the owner asks (and, once merged, the code on `main` is not live until someone deploys it). Order matters because the test site is not Git-connected and its Neon database is migrated by hand:
+
+1. Apply the migration `20261105_121934_storefront_content` to the Neon test database as the owner role (the same way as the 2026-11-01 `M101`/`M102` migrations: run its `up` SQL, then add its `payload_migrations` row), and check the four new tables exist (`hero_slides`, `hero_slides_rels`, `storefront_content`, `storefront_content_announcement_messages`).
+2. Deploy `main` through the Vercel API or CLI (the dashboard's "Redeploy" rebuilds the old source).
+3. In `/admin` open **Storefront content** (global), **Banner slides** (collection) and **Media** (fill in each picture's alt text). Until something is saved, the site shows the same wording as before and the automatic banner slides.
+
+Before step 1 the public pages already work (they fall back to the old wording); only the new admin screens need the tables. `M109` and production are not part of this.

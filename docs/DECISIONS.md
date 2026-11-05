@@ -1535,3 +1535,25 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - Single-file budgets mean cards download the same file as the product page; the cost is bounded by the budget, not removed.
 - Photos of real products are not stock photos: this ADR covers temporary demo items only. The owner's original catalogue uses the owner's own images.
 - Open points for the owner are listed in [VISUAL_ASSETS_PLAN.md](./VISUAL_ASSETS_PLAN.md), section 11 (D1–D8).
+
+
+## ADR-050: Admin-editable storefront content: a `storefrontContent` global and a `heroSlides` collection (`M110`)
+
+**Status**: **Accepted (2026-11-05)** on the owner's explicit request in the session of 2026-11-05 (the owner asked for the announcement text, banner images and text, section headings and footer text to be editable in `/admin`, and chose the options below). It adds a global, a collection and one additive migration; it does not touch ADR-006 (single store), ADR-009 (embedded Payload), ADR-026 (orders) or any access rule of an existing collection.
+
+**Context**: The strip above the menu was hard-coded in `components/AnnouncementBar.tsx` (plus the delivery sentence built from Settings), the home banner's slides were built in code from product data (`lib/hero-slides.ts`), and the section headings and the footer sentence were literals. Changing any of them needed a code change and a deploy. M101 had also made the bar static (a long moving line was cut mid-word on a phone); the owner asked for the sliding behaviour back.
+
+**Decision**:
+
+1. **A `storefrontContent` global** (read public, update admin-only, like Settings) holds: up to six announcement messages, two checkboxes (the automatic delivery message; the "Track order" link), the Featured and New arrivals heading, description and link label, and the footer sentence. Every field is optional: an empty field falls back to the wording the storefront had before (`lib/storefront-content.ts`), so a fresh database and a half-filled form render a complete page. Links are not editable here; only words.
+2. **A `heroSlides` collection** (same pattern and access as promo cards, ADR-039: public readers see only active slides; admin sees all) holds the banner slides: title, text, badge and tone, button text, an internal-path-only link (the same validator as promo cards, checked again when read), up to two Media pictures, order and active. **While at least one slide is active only the admin's slides show; with none active the automatic slides (deals, new arrivals, delivery) remain**, so the banner is never empty (the owner's choice over "always replace" and "add to").
+3. **The delivery sentence stays automatic**: it is built from Settings (ADR-018) so it cannot disagree with checkout; an admin can switch it off, not rewrite it.
+4. **The announcement bar** shows one message at a time, crossing the bar from left to right (M93's behaviour, 12 s per message); it stops while hovered or focused, after a tap or Enter/Space (WCAG 2.2.2) and for anyone who asked their device to reduce motion (the first message then stands still). The first message is in the server-rendered HTML.
+5. **Featured** is a plain grid of up to twelve products (4 columns = 3 rows on a wide screen, 3 = 4 rows on a tablet, 2 = 6 rows on a phone) with the existing category tabs, a "View all" link in the heading and a button under the grid; the slider is removed from this section only.
+6. **Readers never throw**: a failed read (for example before the migration is applied) returns the previous wording and the automatic slides, so no public page breaks because of this change. The admin screens for the new collection and global need the migration.
+
+**Consequences**:
+- One additive migration (`20261105_121934_storefront_content`: four new tables, two enums and one column on `payload_locked_documents_rels`; no existing data is changed). The test and any production database need it applied (owner role) **before** the new code is deployed to serve the admin screens; the public pages degrade safely without it.
+- Banner pictures are Media uploads; their alt text comes from the Media record, so an admin must fill it in.
+- The bar's messages are plain text (no HTML, no links). A phone shows the same moving line as a desktop; very long messages take longer to cross (12 s each, fixed).
+- Out of scope: editing links of the section headings, the three delivery steps, the category shortcuts or the promo cards' layout (promo cards were already editable).

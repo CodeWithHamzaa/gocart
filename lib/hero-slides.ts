@@ -10,7 +10,7 @@ import type { Category } from './payload/categories'
 // - new arrivals: the two newest in-stock products;
 // - delivery: the Settings free-delivery threshold and the store's lowest price.
 export type HeroSlide = {
-  id: 'deals' | 'new' | 'delivery'
+  id: string // 'deals' | 'new' | 'delivery' for the automatic slides; 'admin-<id>' for slides from /admin (M110)
   badge: string
   badgeTone: 'sale' | 'ink'
   tone: 'green' | 'blue' | 'grey'
@@ -112,6 +112,54 @@ export function buildHeroSlides({ latest, featured, categories, shipping, starti
       text: `Pay in cash when your order arrives.${pricesFrom}`,
       cta: { href: '/shop', label: 'Start shopping' },
       images: picks.map((p) => imageOf(p)!),
+    })
+  }
+  return slides
+}
+
+// M110 (ADR-050): a slide an admin created in /admin (collection heroSlides), as Payload returns it at depth 1.
+export type AdminSlideDoc = {
+  id: number | string
+  title?: unknown
+  text?: unknown
+  badge?: unknown
+  badgeTone?: unknown
+  tone?: unknown
+  ctaText?: unknown
+  link?: unknown
+  images?: unknown
+}
+
+const str = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+// Same rule as the admin field (collections/PromoCards.ts validatePromoLink), checked again at read time:
+// one leading "/", no "//", no "/\", no ":" and no whitespace or control characters.
+const safePath = (value: string) =>
+  value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\') && !value.includes(':') && !/[\s\u0000-\u001f\u007f]/.test(value)
+
+/** Maps admin slides to HeroSlide. A slide missing a required word or with an unsafe link is skipped, never patched up. */
+export function adminSlidesToHero(docs: AdminSlideDoc[]): HeroSlide[] {
+  const slides: HeroSlide[] = []
+  for (const doc of docs) {
+    const title = str(doc.title)
+    const text = str(doc.text)
+    const badge = str(doc.badge)
+    const label = str(doc.ctaText)
+    const href = str(doc.link)
+    if (!title || !text || !badge || !label || !safePath(href)) continue
+    const images = (Array.isArray(doc.images) ? doc.images : [])
+      .map((item) => (item && typeof item === 'object' ? (item as { url?: unknown; alt?: unknown }) : null))
+      .filter((item): item is { url: string; alt?: unknown } => item !== null && typeof item.url === 'string' && item.url.length > 0)
+      .slice(0, 2)
+      .map((item) => ({ url: item.url, alt: str(item.alt) }))
+    slides.push({
+      id: `admin-${doc.id}`,
+      badge,
+      badgeTone: doc.badgeTone === 'sale' ? 'sale' : 'ink',
+      tone: doc.tone === 'blue' || doc.tone === 'grey' ? doc.tone : 'green',
+      title,
+      text,
+      cta: { href, label },
+      images,
     })
   }
   return slides

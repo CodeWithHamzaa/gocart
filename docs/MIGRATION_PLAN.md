@@ -1684,3 +1684,14 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: dry run reviewed against the inventory; on a restored copy, cleanup then import leaves no demo rows or demo media and no broken image; a restore from backup is rehearsed; lint, type-check, build, `test:*` and Playwright pass.
 - **Rollback**: Restore the database dump and re-upload the backed-up media files.
 - **Commit message**: `Add demo catalogue cleanup runbook and tool (M109)`
+
+
+### M110 — Admin-editable storefront content, sliding announcement bar, Featured grid
+- **Status (2026-11-05)**: **Built and verified locally; not yet deployed to the test site** (the test deploy and the migration on Neon need the owner's go: see the deploy note in DEPLOYMENT_VERCEL_TEST.md). Requested by the owner on 2026-11-05; decisions in [ADR-050](./DECISIONS.md) (Accepted 2026-11-05).
+- **Goal**: (1) the announcement bar slides again; (2) the owner edits the bar text, the home banner slides (images and text), the Featured and New arrivals wording and the footer sentence in `/admin`; (3) the Featured section is a grid of up to 12 products with "View all", not a slider.
+- **Files**: `globals/StorefrontContent.ts`, `collections/HeroSlides.ts`, `payload.config.ts`, migration `20261105_121934_storefront_content`, `lib/storefront-content.ts`, `lib/payload/storefront-content.ts`, `lib/payload/hero-slides.ts`, `lib/hero-slides.ts` (admin mapping), `components/AnnouncementBar.tsx`, `components/AnnouncementTicker.tsx`, `app/globals.css`, `components/BestSelling.jsx`, `components/RailCard.tsx` (`fluid`), `components/ProductRail.tsx`, `components/LatestProducts.jsx`, `components/Footer.jsx`, `app/(public)/page.jsx`, `scripts/storefront-content.test.ts`, CI.
+- **Spec**: see ADR-050. No change to checkout, orders, access control of existing collections, Settings fields or the delivery rule.
+- **Dependencies**: none (no new package).
+- **Testing**: `npm run test:storefront-content` (defaults, caps, checkboxes, unsafe links), type-check, lint, `npm run build`; migrations from an empty database and no schema drift (the CI steps); verified on a throwaway local PostgreSQL with the demo seed: an admin message, slide, headings and footer sentence render; Featured shows 12 cards as 4x3 (desktop), 3x4 (tablet), 2x6 (phone) with no horizontal overflow; the bar's message moves right, the next message follows after 12 s, hover pauses it.
+- **Rollback**: revert the PR; the migration is additive (`down` drops the four tables) and nothing else reads them.
+- **Commit message**: `Admin-editable storefront content, sliding announcement bar, Featured grid (M110)`
