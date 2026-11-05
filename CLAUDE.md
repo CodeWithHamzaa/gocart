@@ -17,6 +17,7 @@ Environments (keep them strictly separate; facts below verified through the Verc
 Code facts that save a search:
 - Server-side data: `lib/payload/products.ts`, `lib/payload/categories.ts` (Local API, **server components only**; client components use Payload's public-read REST API). Their types are hand-written; switching to `payload-types.ts` is open.
 - Checkout is a server action that derives prices, shipping, totals and status server-side. `Orders.create` is admin-only; guests order through the action ([ADR-026](./docs/DECISIONS.md)). A verified Turnstile token is required to order or look up an order ([ADR-035/036](./docs/DECISIONS.md)).
+- Admin-editable storefront text (`M110`, [ADR-050](./docs/DECISIONS.md)): the `storefrontContent` global (announcement bar messages, Featured and New arrivals wording, footer sentence) and the `heroSlides` collection (home banner; while one is active only these show). Empty means the previous wording and the automatic slides.
 - `/orders` is a guest lookup by order number + phone ([ADR-024](./docs/DECISIONS.md)). "Best Selling" is an admin-curated `isFeatured` flag ([ADR-022](./docs/DECISIONS.md)).
 - Payload `/admin` is the only authenticated surface; no middleware, no customer or vendor login.
 - Gotcha: a `loading.tsx` on `/category/[slug]` makes `notFound()` return HTTP 200 (Next App Router limitation), so that route deliberately has none ([MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md), `M27a`).

@@ -81,7 +81,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               </div>
               <div className="grid grid-cols-[1.2fr_1fr] items-end gap-3 sm:gap-4">
                 {slide.images.slice(0, 2).map((image, n) => (
-                  <span key={image.url} className={`block aspect-square overflow-hidden rounded-[20px] bg-white shadow-float-sm ${n === 1 ? 'w-[86%]' : ''}`}>
+                  <span key={`${image.url}-${n}`} className={`block aspect-square overflow-hidden rounded-[20px] bg-white shadow-float-sm ${n === 1 ? 'w-[86%]' : ''}`}>
                     <Image
                       src={image.url}
                       alt={image.alt}

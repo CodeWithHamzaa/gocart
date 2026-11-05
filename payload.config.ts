@@ -10,7 +10,9 @@ import { Categories } from './collections/Categories'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
 import { PromoCards } from './collections/PromoCards'
+import { HeroSlides } from './collections/HeroSlides'
 import { Settings } from './globals/Settings'
+import { StorefrontContent } from './globals/StorefrontContent'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -48,8 +50,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Products, Orders, PromoCards],
-  globals: [Settings],
+  collections: [Users, Media, Categories, Products, Orders, PromoCards, HeroSlides],
+  globals: [Settings, StorefrontContent],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
