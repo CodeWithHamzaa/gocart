@@ -35,38 +35,41 @@ const ProductCard = ({ product, priority = false }) => {
     const outOfStock = product.inStock !== true
     const categoryTitle = typeof product.category === 'object' && product.category ? product.category.title : null
 
-    // M101 (owner-approved home style): the listing card now matches the home page's RailCard, sized for
-    // a grid cell: a lavender card with the category, the name as a semibold line, the price with the
-    // struck MRP and a pink "N% off" pill, and the photo on a white tile at the bottom (pushed down with
-    // mt-auto, so photos line up across a row). Heart top-right of the card, quick-add on the photo.
-    // The name is never clamped or hidden (e2e finds it by text at every width).
+    // M111 (owner request): image-first hierarchy, in the Mirza palette. Top to bottom: a square photo
+    // tile (badges float top-left, the heart top-right), the category as a small uppercase label, the name
+    // clamped to two lines (the full name stays in the DOM and in the link's text, so e2e still finds it),
+    // then the price row pushed to the bottom with mt-auto so rows of cards line up. The card is still ONE
+    // link (category, name and price; e2e reads the price from it), stretched over the card; the heart and
+    // the round quick-add button are siblings above it. The quick-add sits at the right of the price row,
+    // absolutely placed because a button cannot live inside the link; the row reserves its width.
     return (
-        <article className='group relative flex h-full min-w-0 flex-col rounded-card bg-lavender p-3 sm:p-4'>
-            <WishlistButton productId={product.id} name={product.name} className='absolute right-0.5 top-0.5 z-10 sm:right-1.5 sm:top-1.5' />
-            {/* ONE link wraps the category, the name and the price (e2e reads the price from the card's link),
-                stretched over the card. M44: a long unbroken name wraps instead of widening the column. */}
-            <Link href={`/product/${product.id}`} className='flex flex-col outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary'>
-                {categoryTitle && <span className='truncate pr-8 text-xs text-muted sm:text-[13px]'>{categoryTitle}</span>}
-                <span className={`${categoryTitle ? 'mt-0.5 pr-6' : 'pr-8'} text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink [overflow-wrap:anywhere] group-hover:underline group-hover:underline-offset-4 sm:text-[17px] sm:tracking-[-0.02em]`}>{product.name}</span>
-                <span className='mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1'>
-                    <span className='whitespace-nowrap text-[15px] font-semibold text-ink'>{formatPKR(product.price)}</span>
-                    {discount > 0 && (
-                        <>
-                            <s className='whitespace-nowrap text-xs text-strike sm:text-[13px]'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
-                            <Badge tone='off' className='self-center'>{discount}% off</Badge>
-                        </>
-                    )}
+        <article className='group relative flex h-full min-w-0 flex-col rounded-card bg-lavender p-3 lg:p-4'>
+            <div className='relative aspect-square overflow-hidden rounded-lg bg-white'>
+                {imageUrl && (
+                    <Image width={600} height={600} className={`h-full w-full object-cover transition duration-500 group-hover:scale-[1.03] ${outOfStock ? 'opacity-60 grayscale' : ''}`} sizes='(min-width: 1280px) 300px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 45vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
+                )}
+                {(status || discount > 0) && (
+                    <span className='pointer-events-none absolute left-2 right-11 top-2 z-10 flex flex-col items-start gap-1'>
+                        {status && <Badge tone={status.tone} shape='tag'>{status.text}</Badge>}
+                        {discount > 0 && <Badge tone='off' shape='tag'>{discount}% off</Badge>}
+                    </span>
+                )}
+            </div>
+            <WishlistButton productId={product.id} name={product.name} className='absolute right-3.5 top-3.5 z-10 lg:right-4.5 lg:top-4.5' />
+            {/* M44: a long unbroken name wraps instead of widening the column. */}
+            <Link href={`/product/${product.id}`} className='flex flex-1 flex-col pt-3 outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary'>
+                {categoryTitle && <span className='truncate text-[11px] font-medium uppercase tracking-wider text-muted'>{categoryTitle}</span>}
+                <span title={product.name} className={`${categoryTitle ? 'mt-1' : ''} line-clamp-2 text-sm font-semibold leading-snug text-ink [overflow-wrap:anywhere] group-hover:underline group-hover:underline-offset-4 sm:text-[15px]`}>{product.name}</span>
+                <span className='mt-auto pt-3'>
+                    <span className='flex min-h-11 flex-col justify-center pr-12'>
+                        <span className='whitespace-nowrap text-xs font-semibold text-ink min-[360px]:text-sm sm:text-[15px]'>{formatPKR(product.price)}</span>
+                        {discount > 0 && (
+                            <s className='whitespace-nowrap text-[11px] text-strike sm:text-xs'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
+                        )}
+                    </span>
                 </span>
             </Link>
-            <div className='relative mt-auto pt-3 sm:pt-4'>
-                <span className='block aspect-square overflow-hidden rounded-tile bg-white'>
-                    {imageUrl && (
-                        <Image width={600} height={600} className={`size-full object-cover transition duration-500 group-hover:scale-[1.03] ${outOfStock ? 'opacity-60 grayscale' : ''}`} sizes='(min-width: 1280px) 220px, (min-width: 1024px) 20vw, (min-width: 640px) 28vw, 42vw' priority={priority} fetchPriority={priority ? 'high' : undefined} src={imageUrl} alt={(typeof firstImage === 'object' && firstImage?.alt) || ''} />
-                    )}
-                </span>
-                {status && <Badge tone={status.tone} className='absolute left-2 top-5 sm:left-2.5 sm:top-6.5'>{status.text}</Badge>}
-                <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} className='absolute bottom-2 right-2 z-10' />
-            </div>
+            <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} variant='solid' className='absolute bottom-3 right-3 z-10 lg:bottom-4 lg:right-4' />
         </article>
     )
 }

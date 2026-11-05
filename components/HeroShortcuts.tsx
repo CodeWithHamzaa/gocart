@@ -17,8 +17,10 @@ const imageOf = (category: Category) => (category.image && typeof category.image
 // Phone: a 68px column (56px circle, name below), so 4 fit across at 320-375px and 5 from 390px. From `md`: the pill (44px circle, name beside it).
 const CHIP =
   'flex w-[68px] flex-col items-center gap-1.5 rounded-tile text-center text-xs font-medium text-ink md:min-h-14 md:w-auto md:flex-row md:gap-2.5 md:rounded-full md:bg-lavender md:py-1.5 md:pl-1.5 md:pr-5 md:text-left md:text-[15px] md:transition md:hover:bg-lavender-2'
-const CIRCLE = 'flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full md:size-11'
-const LABEL = 'line-clamp-2 leading-tight [overflow-wrap:break-word] md:line-clamp-none md:leading-normal'
+// M111: the circle keeps one size per breakpoint (aspect-square + shrink-0, so a long name can never
+// squash it) and its image is centre-cropped; on a phone the name is centred under it.
+const CIRCLE = 'flex aspect-square size-14 shrink-0 items-center justify-center overflow-hidden rounded-full md:size-11'
+const LABEL = 'line-clamp-2 w-full text-center leading-tight [overflow-wrap:break-word] md:line-clamp-none md:w-auto md:text-left md:leading-normal'
 
 function deliveryPromise({ flatRate, freeShippingThreshold }: DeliverySettings) {
   if (typeof flatRate !== 'number') return { title: 'Delivery across Pakistan', text: 'Charges are shown at checkout' }
@@ -52,7 +54,7 @@ export default function HeroShortcuts({ categories = [], shipping = {} }: { cate
                 <li key={category.id} className={`shrink-0 ${index >= DESKTOP_CHIPS ? 'lg:hidden' : ''}`}>
                   <Link href={`/category/${category.slug}`} className={CHIP}>
                     <span className={`${CIRCLE} bg-lavender text-ink-3 md:bg-white`}>
-                      {image ? <Image src={image} alt="" width={128} height={128} sizes="(min-width: 768px) 44px, 56px" className="size-full object-cover" /> : <CategoryIcon category={category} size={24} strokeWidth={1.6} aria-hidden="true" />}
+                      {image ? <Image src={image} alt="" width={128} height={128} sizes="(min-width: 768px) 44px, 56px" className="size-full object-cover object-center" /> : <CategoryIcon category={category} size={24} strokeWidth={1.6} aria-hidden="true" />}
                     </span>
                     <span className={LABEL}>{category.title}</span>
                   </Link>

@@ -8,14 +8,30 @@ import { addToCart } from '@/lib/features/cart/cartSlice'
 // product page uses. It is a sibling of the card's link, never inside it. The label is "Add {name}
 // to cart" so it never matches the product page's single "Add to Cart" button (e2e). An
 // out-of-stock product gets a disabled button that says so, the same fail-closed rule as checkout.
-export default function QuickAddButton({ productId, name, disabled = false, className = '' }: { productId: number | string; name: string; disabled?: boolean; className?: string }) {
-  const dispatch = useDispatch()
+// M111: `variant="solid"` is the listing card's filled brand-colour circle in its price row (dimmed
+// when out of stock); the default `outline` stays the white chip floated on the home rail's photos.
+const VARIANTS = {
+  outline: {
+    base: 'bg-white shadow-chip ring-1 ring-line',
+    enabled: 'text-primary hover:bg-primary hover:text-white',
+    disabled: 'bg-white text-disabled',
+  },
+  solid: {
+    base: 'bg-primary text-white',
+    enabled: 'hover:bg-primary-dark',
+    disabled: 'opacity-40',
+  },
+}
 
-  const base = `flex size-11 items-center justify-center rounded-full bg-white shadow-chip ring-1 ring-line transition ${className}`
+export default function QuickAddButton({ productId, name, disabled = false, variant = 'outline', className = '' }: { productId: number | string; name: string; disabled?: boolean; variant?: keyof typeof VARIANTS; className?: string }) {
+  const dispatch = useDispatch()
+  const look = VARIANTS[variant]
+
+  const base = `flex size-11 shrink-0 items-center justify-center rounded-full transition ${look.base} ${className}`
 
   if (disabled) {
     return (
-      <button type="button" disabled aria-label={`${name} is out of stock`} className={`${base} cursor-not-allowed bg-white text-disabled`}>
+      <button type="button" disabled aria-label={`${name} is out of stock`} className={`${base} cursor-not-allowed ${look.disabled}`}>
         <ShoppingCartIcon size={20} aria-hidden="true" />
       </button>
     )
@@ -29,7 +45,7 @@ export default function QuickAddButton({ productId, name, disabled = false, clas
         dispatch(addToCart({ productId }))
         toast.success('Added to cart')
       }}
-      className={`${base} text-primary hover:bg-primary hover:text-white active:scale-95`}
+      className={`${base} ${look.enabled} active:scale-95`}
     >
       <ShoppingCartIcon size={20} aria-hidden="true" />
     </button>

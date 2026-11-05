@@ -57,8 +57,8 @@ export default async function Shop({ searchParams }) {
                             Showing <strong className="text-ink">{products.length}</strong> product{products.length === 1 ? '' : 's'}
                             {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline hover:underline-offset-4">Clear search</Link></>}
                         </p>
-                        {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. */}
-                        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
+                        {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. M111: 2 / 3 / 4 columns. */}
+                        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
                             {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                         </div>
                     </>
