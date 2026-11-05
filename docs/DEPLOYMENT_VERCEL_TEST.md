@@ -105,7 +105,7 @@ one test image uploads to Blob, is served and is deleted. Server-side order tota
 **not** tested live (checkout is off); they are covered by CI: the `e2e` job (golden-path order against a
 seeded database), `npm run test:idempotency`, `npm run test:turnstile` and `npm run test:users-guard`.
 
-## Verified state (2026-11-03, updated after the redeploy)
+## Verified state (2026-11-03, updated after the redeploy; the Data and Blob store rows updated 2026-11-05 after the `M108` rollout)
 
 Read through the authorised Vercel and Neon connectors; no value of any secret was requested or
 printed. Re-check before relying on it; anything not in this list is not verified.
@@ -118,8 +118,8 @@ printed. Re-check before relying on it; anything not in this list is not verifie
 | Environment variables (Production) | `DATABASE_URI` and `PAYLOAD_SECRET` (type *sensitive*), `NEXT_PUBLIC_SITE_URL` (plain), `BLOB_READ_WRITE_TOKEN` (all three targets; was type *encrypted*, which Vercel flags `readable-secret`; **changed to *sensitive* in place on 2026-11-03**, see below; no variable now has a security issue). **No** `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`: real-key Turnstile is not configured, so checkout and lookup stay off |
 | Neon | Project `gocart-test`, AWS us-east-1, Postgres 17, 0.25 CU, scale-to-zero; branches `main` (default) and `backup-before-m101-m102-2026-11-01` |
 | Schema | `payload_migrations` holds all 8 committed migrations (6 in batch 1, `mirza_store_name` and `flat_categories` in batch 2), the same 8 as `/migrations` on `main`. Roles `neondb_owner` and `gocart_app` exist; `gocart_app` has `SELECT, INSERT, UPDATE, DELETE` on `media` |
-| Data | 24 products, 10 categories, 63 media rows (all `.webp`, all created 2026-10-30, generated art), 48 product image links, 1 admin user, 0 orders |
-| Blob store | `gocart-test-media`, iad1, public access, connected to `gocart-test` only, 63 objects, 726,320 bytes (matches the 63 media rows), quota not exceeded, token not expired |
+| Data | 2026-11-05, after `M108`: 24 products, 10 categories, **121 media rows** (the 63 generated-art rows of 2026-10-30 are kept, unreferenced; 58 new photo rows, ids 66-123), 48 product image links all on the new media, every category image on new media, 8 migrations, 1 admin user, 0 orders (admin user and orders not re-checked on 2026-11-05) |
+| Blob store | `gocart-test-media`, iad1, public access, connected to `gocart-test` only. 2026-11-05, after `M108`: **121 objects, 3,429,002 bytes** (matches the 121 media rows; was 63 objects, 726,320 bytes), quota not exceeded, token not expired |
 | Code (repo, not a connector) | `collections/Orders.ts:44`: `delete` is allowed for any logged-in user, and only admins can log in (ADR-006), so admins can delete orders, which ADR-049 had listed as unverified for `M109` |
 | CI on `main` | The `CI` workflow succeeded on every push to `main` checked, including PR #59 (`8a6ccdf`), PR #60 (`4ae9dfe`) and PR #61 (`9183777`, the deployed commit) |
 | Runtime log | One recurring warning, pre-existing since 2026-10-30: `pg` says `sslmode=require` is treated as `verify-full` and will change meaning in pg v9. Not an error; found, not fixed (switching the string to `sslmode=verify-full` is an owner edit of the sensitive `DATABASE_URI`) |
@@ -149,7 +149,20 @@ link, which expires after 23 hours); the cloud session itself cannot reach `*.ve
 
 ## Demo photo rollout (`M108`, ADR-049 item 6)
 
-**Status (2026-11-03): live rollout NOT run; everything up to it is done and verified.**
+**Status (2026-11-05): DONE on the test site.** The rollout ran through the GitHub Actions workflow, every run approved by the owner: dry run [42019925812](https://github.com/CodeWithHamzaa/gocart/actions/runs/42019925812), apply [42020705613](https://github.com/CodeWithHamzaa/gocart/actions/runs/42020705613), rerun dry run [42021938362](https://github.com/CodeWithHamzaa/gocart/actions/runs/42021938362).
+
+- **Dry run:** target host masked and labelled `(test)`; `media: 0 already on the test site, 58 to upload; rows: 34 to relink, 0 already correct, 0 to create`; the Security and QA roles reviewed the log (no secret-like text; counts as expected; no skipped-targets line, so no missing product or category).
+- **Apply:** `media: 0 already on the test site, 58 uploaded; rows: 34 relinked, 0 already correct, 0 created`; the manifest recorded 58 rows with `media_env=test`.
+- **Rerun dry run:** `media: 58 already on the test site, 0 to upload; rows: 0 to relink, 34 already correct, 0 to create`; media count (121) and max id (123) unchanged afterwards.
+- **Neon after apply (read-only SQL):** 58 new media rows with ids 66-123; 63 rows with ids up to 65 still present; all 24 products have two image links on new media (48 of 48); all 10 categories have `image_id` on new media; `payload_migrations` unchanged at 8; counts of products (24) and categories (10) unchanged.
+- **Blob after apply:** 121 objects, 3,429,002 bytes (was 63 and 726,320).
+- **Storefront after apply** (`gocart-test-inky.vercel.app`, through the Vercel connector): `/`, `/shop`, `/categories`, `/category/headphones`, `/product/3` and `/cart` return 200; the `/api/media/file/` image sources on those pages are the new files only; `category-headphones-1.webp` (11,316 bytes), `category-skincare-1.webp` (4,856) and `cylinder-mini-speaker-3.webp` (68,396) return 200 `image/webp` with the byte size of their media row. The new files carry Payload's collision suffix (`-3` and `-4` for products, `-1` for categories) because the old art held the plain names.
+- **Manifest:** `docs/assets/MANIFEST.csv` (from the apply run's artifact) records `media_id` 66-123 and `media_env=test` on the 58 media rows; no other column changed, and its 58 id/size pairs equal the Neon rows. The OG image and the two promo rows are not media-collection items and stay blank. The rollback log was not committed (it is git-ignored and expires with the artifact after 30 days); the new media ids are 66-123.
+- **Still to do (owner):** delete the three `gocart-test` environment secrets (`TEST_DATABASE_URI`, `TEST_DATABASE_HOST`, `TEST_BLOB_READ_WRITE_TOKEN`); the team cannot. Rotate the Blob token if you like. `M109` and production were not touched.
+
+Record of the state before the run (2026-11-03):
+
+*(Historical: the status that follows is the pre-run state.)*
 
 - **Photos: ready.** `npm run fetch:demo-originals` re-downloads the 24 licence-checked originals and keeps
   each one only if its SHA-256 equals the `original_sha256` recorded in `MANIFEST.csv` (24 of 24 matched
@@ -218,7 +231,7 @@ How the upload path works (read from the installed adapter source, `@payloadcms/
 adapter uploads it itself with `put(..., { allowOverwrite: true, addRandomSuffix: false })`. A name
 clash is avoided because Payload renames a filename that a media row already uses (`a.webp` becomes
 `a-1.webp`). Residual risk: a Blob object with no media row would be overwritten silently; today every
-one of the 63 objects has a row.
+one of the 63 objects had a row (before the 2026-11-05 rollout; it now holds 121 objects and 121 rows).
 
 Puts the licensed demo photos on this test site. Test only; never production. Run it from a machine that
 has the processed photos (`npm run process:demo-images`, git-ignored `demo-assets/_processed/`) and a route
