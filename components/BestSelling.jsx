@@ -1,5 +1,5 @@
 import Title from './Title'
-import RailCard from './RailCard'
+import ProductCard from './ProductCard'
 import Link from 'next/link'
 import { DEFAULT_CONTENT } from '@/lib/storefront-content'
 import FeaturedTabs from './ui/FeaturedTabs'
@@ -22,8 +22,9 @@ import FeaturedTabs from './ui/FeaturedTabs'
 // M102 (ADR-048): categories are flat, so each product's tab is simply its own category.
 // M110: a plain grid of up to twelve products instead of a slider (4 columns on a wide screen = 3 rows, 3 on a
 // tablet = 4 rows, 2 on a phone = 6 rows), with a "View all" link in the heading and a button under the grid.
+// M111: the grid uses the listing ProductCard (the same card and 2/3/4 grid as shop, category and wishlist).
 // The heading, description and link words come from the admin's Storefront content.
-const FEATURED_GRID = 'mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4'
+const FEATURED_GRID = 'mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6'
 
 const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT }) => {
 
@@ -38,7 +39,7 @@ const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT
     const items = products.map((product) => ({
         key: product.id,
         categoryId: topLevelOf(product),
-        node: <RailCard product={product} fluid />,
+        node: <ProductCard product={product} />,
     }))
     const present = new Set(items.map((item) => item.categoryId).filter(Boolean))
     const tabs = categories

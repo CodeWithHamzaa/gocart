@@ -25,7 +25,7 @@ export default function DealsOfTheDay({ products = [] }: { products?: Product[] 
             View all <ArrowRightIcon size={15} aria-hidden="true" />
           </Link>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

@@ -156,7 +156,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             <p className="mt-6 text-sm text-muted">
               Showing <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
             </p>
-            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
+            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
               {products.map((product, index) => (
                 <ProductCard key={product.id} product={product} priority={index < 4} />
               ))}

@@ -46,7 +46,7 @@ export default function WishlistPage() {
             <EmptyState icon={<HeartIcon size={28} />} title="Nothing saved yet" text="Tap the heart on a product to keep it here." action={{ href: '/shop', label: 'Browse products' }} />
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
             {shown.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
