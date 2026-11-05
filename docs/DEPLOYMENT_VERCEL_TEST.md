@@ -231,7 +231,7 @@ How the upload path works (read from the installed adapter source, `@payloadcms/
 adapter uploads it itself with `put(..., { allowOverwrite: true, addRandomSuffix: false })`. A name
 clash is avoided because Payload renames a filename that a media row already uses (`a.webp` becomes
 `a-1.webp`). Residual risk: a Blob object with no media row would be overwritten silently; today every
-one of the 63 objects has a row.
+one of the 63 objects had a row (before the 2026-11-05 rollout; it now holds 121 objects and 121 rows).
 
 Puts the licensed demo photos on this test site. Test only; never production. Run it from a machine that
 has the processed photos (`npm run process:demo-images`, git-ignored `demo-assets/_processed/`) and a route
