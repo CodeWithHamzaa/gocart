@@ -111,13 +111,13 @@ const bad: Array<[string, Env, string]> = [
   ['app db password equals superuser', { APP_DB_PASSWORD: 'Kd82-hQ.x9_Lm4~Zt7Pw' }, 'APP_DB_PASSWORD'],
   ['first-register flag 1', { PAYLOAD_ALLOW_FIRST_REGISTER: '1' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
   ['first-register flag 0', { PAYLOAD_ALLOW_FIRST_REGISTER: '0' }, 'PAYLOAD_ALLOW_FIRST_REGISTER'],
-  ['bootstrap email without password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
-  ['bootstrap password without email', { ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
-  ['bootstrap bad email', { ADMIN_BOOTSTRAP_EMAIL: 'not-an-email', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_EMAIL'],
-  ['bootstrap short password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_E' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
-  ['bootstrap whitespace password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_ Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
-  ['bootstrap placeholder password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'ChangeMe-Vx93-pLq.m7' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
-  ['bootstrap low variety password', { ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'abababababababab' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap username without password', { ADMIN_BOOTSTRAP_USERNAME: 'owner' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap password without username', { ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_USERNAME'],
+  ['bootstrap bad username', { ADMIN_BOOTSTRAP_USERNAME: 'a b', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_USERNAME'],
+  ['bootstrap short password', { ADMIN_BOOTSTRAP_USERNAME: 'owner', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_E' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap whitespace password', { ADMIN_BOOTSTRAP_USERNAME: 'owner', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_ Ez4~Hs2Kd' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap placeholder password', { ADMIN_BOOTSTRAP_USERNAME: 'owner', ADMIN_BOOTSTRAP_PASSWORD: 'ChangeMe-Vx93-pLq.m7' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
+  ['bootstrap low variety password', { ADMIN_BOOTSTRAP_USERNAME: 'owner', ADMIN_BOOTSTRAP_PASSWORD: 'abababababababab' }, 'ADMIN_BOOTSTRAP_PASSWORD'],
 ]
 
 for (const [name, patch, variable] of bad) {
@@ -135,7 +135,7 @@ for (const [name, patch, variable] of bad) {
 // Boundaries that must pass.
 assert.deepEqual(validateEnv(withEnv({ PAYLOAD_ALLOW_FIRST_REGISTER: '' })), [], 'empty first-register flag accepted')
 assert.deepEqual(
-  validateEnv(withEnv({ ADMIN_BOOTSTRAP_EMAIL: 'owner@mystore.pk', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' })),
+  validateEnv(withEnv({ ADMIN_BOOTSTRAP_USERNAME: 'owner', ADMIN_BOOTSTRAP_PASSWORD: 'Vx93-pLq.m7_Ez4~Hs2Kd' })),
   [],
   'valid bootstrap credentials accepted',
 )

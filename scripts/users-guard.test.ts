@@ -9,7 +9,7 @@ import { ADMIN_BOOTSTRAP_CONTEXT } from '../collections/Users'
 
 const payload = await getPayload({ config })
 const email = (tag: string) => `guard-${tag}-${Date.now().toString(36)}@example.com`
-const data = (tag: string) => ({ email: email(tag), password: 'Guard-Test-Pass-12345!' })
+const data = (tag: string) => ({ email: email(tag), username: `guard-${tag}-${Date.now().toString(36)}`, password: 'Guard-Test-Pass-12345!' })
 const saved = process.env.PAYLOAD_ALLOW_FIRST_REGISTER
 const created: Array<string | number> = []
 const remember = (r: { id: string | number }) => void created.push(r.id)

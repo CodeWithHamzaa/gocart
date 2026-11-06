@@ -14,7 +14,7 @@
 # Start order: postgres (healthy) -> migrate (one-shot) -> app -> cloudflared. `migrate` runs
 # env validation (M52), `payload migrate` and a verifier (npm run deploy:migrate) from the
 # Dockerfile's `migrate` target, bounded to 5 minutes. An EMPTY database is bootstrapped by the committed migrations in
-# /migrations; the first admin is created by the same step from ADMIN_BOOTSTRAP_EMAIL/PASSWORD
+# /migrations; the first admin is created by the same step from ADMIN_BOOTSTRAP_USERNAME/PASSWORD
 # (ADR-036); the open /admin create-first-user flow is closed. Production never pushes the schema.
 #   - FIRST deploy: a failed migrate means `app` (and so `cloudflared`) is never started (it stays
 #     "Created"). An invalid environment (check-env) fails `migrate` the same way.
@@ -165,7 +165,7 @@ services:
       # M52b/ADR-036: the first admin is created here from a secret (scripts/bootstrap-admin.ts),
       # because the open create-first-user flow is closed. Required only while no user exists;
       # remove both from the env file afterwards. They reach this one-shot container only.
-      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME:-}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set the public origin, e.g. https://shop.example.com}
       # M52b: validated by check-env only; migrate never calls Turnstile (it is on `backend` only).

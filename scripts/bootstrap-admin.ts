@@ -14,7 +14,7 @@ import { validateBootstrapCredentials } from './check-env'
 //     administer it (and with the open flow closed, nobody else can create the first admin).
 
 async function main(): Promise<number> {
-  const email = process.env.ADMIN_BOOTSTRAP_EMAIL
+  const username = process.env.ADMIN_BOOTSTRAP_USERNAME
   const password = process.env.ADMIN_BOOTSTRAP_PASSWORD
 
   const payload = await getPayload({ config })
@@ -22,12 +22,12 @@ async function main(): Promise<number> {
   if (existing.totalDocs > 0) {
     console.log(
       `bootstrap-admin: ${existing.totalDocs} user(s) exist, nothing to do` +
-        (email || password ? ' (ADMIN_BOOTSTRAP_* are set but unused: remove them from the env file)' : ''),
+        (username || password ? ' (ADMIN_BOOTSTRAP_* are set but unused: remove them from the env file)' : ''),
     )
     return 0
   }
 
-  const problems = validateBootstrapCredentials(email, password, true)
+  const problems = validateBootstrapCredentials(username, password, true)
   if (problems.length > 0) {
     console.error('bootstrap-admin: FAILED - no admin exists and the bootstrap credentials are not usable:')
     for (const p of problems) console.error(`  - ${p}`)
@@ -36,11 +36,11 @@ async function main(): Promise<number> {
 
   await payload.create({
     collection: 'users',
-    data: { email: email as string, password: password as string },
+    data: { username: username as string, password: password as string },
     overrideAccess: true,
     context: { [ADMIN_BOOTSTRAP_CONTEXT]: true },
   })
-  console.log('bootstrap-admin: OK - first admin created; remove ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD from the env file')
+  console.log('bootstrap-admin: OK - first admin created; remove ADMIN_BOOTSTRAP_USERNAME and ADMIN_BOOTSTRAP_PASSWORD from the env file')
   return 0
 }
 

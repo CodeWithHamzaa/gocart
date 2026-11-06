@@ -82,10 +82,10 @@ pass "re-running migrate recreated the admin from the bootstrap secret (idempote
 PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 AVIF='AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZg=='
 run_upload() {
-  "${PROD[@]}" exec -T -e E="$ADMIN_BOOTSTRAP_EMAIL" -e P="$ADMIN_BOOTSTRAP_PASSWORD" app node -e "
+  "${PROD[@]}" exec -T -e E="$ADMIN_BOOTSTRAP_USERNAME" -e P="$ADMIN_BOOTSTRAP_PASSWORD" app node -e "
     (async () => {
       const base = 'http://127.0.0.1:3000';
-      const login = await (await fetch(base + '/api/users/login', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({email: process.env.E, password: process.env.P})})).json();
+      const login = await (await fetch(base + '/api/users/login', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({username: process.env.E, password: process.env.P})})).json();
       const fd = new FormData();
       fd.append('file', new Blob([Buffer.from('$3', 'base64')], {type: '$2'}), '$1');
       fd.append('_payload', JSON.stringify({alt: 'ci'}));
