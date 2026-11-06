@@ -44,7 +44,7 @@ only when the step has been seen to work on the real VPS. **Nothing below has be
   public hostname yet**: [Cloudflare: one-time steps](#cloudflare-one-time-steps).
 - [ ] 6. **Owner.** Create the Turnstile widget (Managed) with **real keys for the real hostname** and put both
   keys in the env file: [Cloudflare Turnstile: one-time setup](#cloudflare-turnstile-one-time-setup).
-- [ ] 7. **Owner.** Set `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
+- [ ] 7. **Owner.** Set `ADMIN_BOOTSTRAP_USERNAME` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
   [The first admin comes from a secret](#the-first-admin-comes-from-a-secret).
 - [ ] 8. **Stack, started by the owner.** The gated deploy: `$PROD build`, `$PROD run --rm migrate` (stop on a
   non-zero exit), `$PROD up -d`: [Default: gated on the migration](#default-gated-on-the-migration). The stack
@@ -125,7 +125,7 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
   The same limit can kill a legitimately slow migration (large backfill); raise the `timeout` value
   in the Dockerfile `migrate` CMD before shipping such a migration.
 - An **empty database needs no seeding**: the committed migrations create the whole schema, and the
-  first admin is created by the migrate step from `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`
+  first admin is created by the migrate step from `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD`
   (see [The first admin comes from a secret](#the-first-admin-comes-from-a-secret)). The catalog starts
   empty. The `/admin` create-first-user flow is closed for visitors (ADR-036).
 
@@ -363,7 +363,7 @@ deploy with the variable name and the rule, never the value):
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (`M52b`) the same widget's **public** site key (it is shipped to every browser; not a secret). 10-100 characters, no whitespace, no forbidden word, not a test key. **Build-time** for `app` (changing it needs `build`/`--build`); also passed to `migrate` at runtime so `check-env` can validate it. |
 | `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and CI only; `docker-compose.prod.yml` never passes it. |
 | `APP_DB_PASSWORD` | (ADR-036) the password of the restricted `gocart_app` database role the running app connects as. Same rules as `POSTGRES_PASSWORD` (16+ characters, `A-Z a-z 0-9 - . _ ~`, 10+ distinct, no forbidden word) and it **must differ from `POSTGRES_PASSWORD`**. Given to `migrate` (which creates the role) and used by compose to build `app`'s `DATABASE_URI`; `app` never sees `POSTGRES_PASSWORD`. Unlike `POSTGRES_PASSWORD` it is re-applied on every deploy, so it can be rotated (change the env file, then run the deploy gate). |
-| `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` | (ADR-036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
+| `ADMIN_BOOTSTRAP_USERNAME`, `ADMIN_BOOTSTRAP_PASSWORD` | (ADR-036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
 | `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails if it reaches the `migrate` container; compose never passes it to any service, which is the real control and is asserted by the `prod-stack` CI job): it re-opens the first-admin window. Development and CI only. |
 
 (The word list and host rules above follow the fix being made to `scripts/check-env.ts` at the time of
@@ -394,7 +394,7 @@ TUNNEL_TOKEN=REPLACE-ME-paste-the-token-from-the-cloudflare-dashboard
 TURNSTILE_SECRET_KEY=REPLACE-ME-secret-key-of-the-turnstile-widget
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=REPLACE-ME-site-key-of-the-turnstile-widget
 # Only until the first admin exists, then delete these two lines:
-ADMIN_BOOTSTRAP_EMAIL=owner@your-domain.example
+ADMIN_BOOTSTRAP_USERNAME=owner
 ADMIN_BOOTSTRAP_PASSWORD=REPLACE-ME-a-long-random-password-for-the-first-admin
 ```
 
@@ -561,7 +561,7 @@ server-side bootstrap script or the process was started with `PAYLOAD_ALLOW_FIRS
 and CI; `check-env` rejects it in production and the production compose never passes it).
 
 The production admin is created by the migrate step (`scripts/bootstrap-admin.ts`, the last step of
-`npm run deploy:migrate`), from `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
+`npm run deploy:migrate`), from `ADMIN_BOOTSTRAP_USERNAME` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
 
 1. Choose the email and a long random password (14+ characters, no whitespace, 10+ distinct characters,
    no forbidden word) and put both in the env file with the other secrets.

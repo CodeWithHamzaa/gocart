@@ -18,9 +18,17 @@ export const ADMIN_BOOTSTRAP_CONTEXT = 'gocartAdminBootstrap'
 
 export const Users: CollectionConfig = {
   slug: 'users',
-  auth: true,
+  // Owner request 2026-11-06 (no milestone ID yet): admins sign in with a username or, as before, an email. The email is optional so the first
+  // admin can be created from ADMIN_BOOTSTRAP_USERNAME + ADMIN_BOOTSTRAP_PASSWORD alone.
+  auth: {
+    loginWithUsername: {
+      allowEmailLogin: true,
+      requireEmail: false,
+      requireUsername: true,
+    },
+  },
   admin: {
-    useAsTitle: 'email',
+    useAsTitle: 'username',
   },
   access: {
     create: ({ req: { user } }) => Boolean(user),

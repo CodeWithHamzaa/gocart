@@ -18,7 +18,7 @@ async function obtain(request: APIRequestContext): Promise<Headers | null> {
   const password = process.env.E2E_ADMIN_PASSWORD ?? 'E2e-Pass-12345!'
   let res = process.env.E2E_ADMIN_EMAIL
     ? await request.post('/api/users/login', { data: { email, password } })
-    : await request.post('/api/users/first-register', { data: { email, password } })
+    : await request.post('/api/users/first-register', { data: { email, username: 'e2e-admin', password } })
   // Playwright restarts its worker after a failed test, which empties the cache below; the admin this
   // run registered earlier then exists, so log in as it instead of failing a second, unrelated test.
   if (!res.ok() && !process.env.E2E_ADMIN_EMAIL) res = await request.post('/api/users/login', { data: { email, password } })
