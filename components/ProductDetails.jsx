@@ -1,7 +1,9 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { TruckIcon, BanknoteIcon, ShoppingBagIcon, ShoppingCartIcon } from "lucide-react";
+import { ArrowRightIcon, TruckIcon, BanknoteIcon, ShoppingBagIcon, ShoppingCartIcon } from "lucide-react";
+import Link from "next/link";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
@@ -32,7 +34,9 @@ import { discountPercent, statusBadge } from "@/lib/product-badges";
 // `lg`, a strip below it on a phone), then category, name, a price card, stock, actions and info rows.
 // M101 (owner-approved home style): semibold title with tight tracking, the discount as the pink
 // "N% off" pill (as on the cards), pill buttons, and the delivery list on a lavender panel with no border.
-const ProductDetails = ({ product, shipping }) => {
+// `children` is the description (server-rendered by the page), placed in the right column under the
+// buttons and the delivery promises, so the desktop layout has no empty column under the actions.
+const ProductDetails = ({ product, shipping, children = null }) => {
 
     const productId = product.id;
 
@@ -62,6 +66,8 @@ const ProductDetails = ({ product, shipping }) => {
     const addToCartHandler = () => {
         if (outOfStock) return;
         dispatch(addToCart({ productId }))
+        // The same confirmation the cards' quick-add button gives.
+        toast.success('Added to cart')
     }
 
     const buyNowHandler = () => {
@@ -99,19 +105,19 @@ const ProductDetails = ({ product, shipping }) => {
             </div>
 
             <div className="min-w-0 lg:pt-2">
-                {category && <p className="text-sm text-muted">{category.title}</p>}
+                {category && <Link href={`/category/${category.slug}`} className="inline-flex min-h-6 items-center text-sm font-medium text-muted hover:text-primary">{category.title}</Link>}
                 {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
-                <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl lg:text-4xl [overflow-wrap:anywhere]">{product.name}</h1>
+                <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter [overflow-wrap:anywhere]">{product.name}</h1>
 
                 {/* M101: the price is not boxed. Price in ink, the MRP and the discount as text beside it, then
                     one stock line (a dot and a word); the delivery note is said once, below the buttons (M98). */}
                 <div className="mt-4 border-b border-line pb-5">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <p className="text-3xl font-semibold leading-none tracking-tight text-ink sm:text-4xl">{formatPKR(product.price)}</p>
+                        <p className="text-3xl font-semibold leading-none tracking-tight text-ink">{formatPKR(product.price)}</p>
                         {discount > 0 && (
                             <>
                                 <p className="text-base text-muted line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
-                                <Badge tone="off" className="self-center">{discount}% off</Badge>
+                                <span className="self-center text-base font-semibold text-sale"><span aria-hidden="true">&minus;{discount}%</span><span className="sr-only">{discount}% off</span></span>
                             </>
                         )}
                     </div>
@@ -125,24 +131,38 @@ const ProductDetails = ({ product, shipping }) => {
                 <MobileActionBar label="Add to cart" inline>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
-                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-full bg-surface-muted px-6 text-sm font-semibold text-muted">
-                                Out of Stock
-                            </button>
+                            <>
+                                {/* Sold out is a state, not the main action: a quiet disabled button and a way on. */}
+                                <button disabled aria-disabled="true" className="min-h-12 shrink-0 cursor-not-allowed rounded-full border border-line-2 bg-surface px-5 text-sm font-semibold text-muted">
+                                    Out of stock
+                                </button>
+                                {category ? (
+                                    <Link href={`/category/${category.slug}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                                        More in {category.title}
+                                        <ArrowRightIcon size={16} aria-hidden="true" />
+                                    </Link>
+                                ) : (
+                                    <Link href="/shop" className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                                        Keep shopping
+                                        <ArrowRightIcon size={16} aria-hidden="true" />
+                                    </Link>
+                                )}
+                            </>
                         ) : inCart ? (
                             <>
-                                <Counter productId={productId} />
+                                <Counter productId={productId} name={product.name} />
                                 <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
-                                    View Cart
+                                    View cart
                                 </button>
                             </>
                         ) : (
                             <>
                                 <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
                                     <ShoppingCartIcon size={18} aria-hidden="true" />
-                                    Add to Cart
+                                    Add to cart
                                 </button>
                                 <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-accent-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-accent active:scale-[0.98]">
-                                    Buy Now
+                                    Buy now
                                 </button>
                             </>
                         )}
@@ -150,7 +170,7 @@ const ProductDetails = ({ product, shipping }) => {
                 </MobileActionBar>
 
                 {/* M101: one quiet list instead of two boxed cards with tinted circles. */}
-                <ul className="mt-6 divide-y divide-line-2 rounded-card bg-surface-muted px-1 text-sm text-ink-2 lg:mt-8">
+                <ul className="mt-6 divide-y divide-line rounded-card border border-line bg-surface px-1 text-sm text-ink-2 lg:mt-8">
                     <li className="flex items-center gap-3 px-4 py-3.5">
                         <TruckIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
                         {deliveryNote(shipping)}
@@ -164,6 +184,8 @@ const ProductDetails = ({ product, shipping }) => {
                         No account needed to order
                     </li>
                 </ul>
+
+                {children}
             </div>
         </div>
     )

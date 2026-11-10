@@ -39,8 +39,8 @@ export default async function Shop({ searchParams }) {
     // M98: the same frame as a category page (breadcrumb, a plain heading, a product count), and a
     // search with no match says so and offers the way back instead of showing an empty page.
     const crumbs = query
-        ? [{ label: 'Home', href: '/' }, { label: 'Products', href: '/shop' }, { label: 'Search results' }]
-        : [{ label: 'Home', href: '/' }, { label: 'Products' }]
+        ? [{ label: 'Home', href: '/' }, { label: 'Shop', href: '/shop' }, { label: 'Search results' }]
+        : [{ label: 'Home', href: '/' }, { label: 'Shop' }]
 
     return (
         <div className="min-h-[70vh] mx-4 sm:mx-6">
@@ -58,6 +58,7 @@ export default async function Shop({ searchParams }) {
                             {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline hover:underline-offset-4">Clear search</Link></>}
                         </p>
                         {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. M111: 2 / 3 / 4 columns. */}
+                        <h2 className="sr-only">Products</h2>
                         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
                             {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                         </div>

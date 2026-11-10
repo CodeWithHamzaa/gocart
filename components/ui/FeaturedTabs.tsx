@@ -44,7 +44,7 @@ export default function FeaturedTabs({ tabs, items, gridClassName }: { tabs: Fea
           role="tablist"
           aria-label="Filter featured products by category"
           onKeyDown={onKeyDown}
-          className="no-scrollbar mt-4 flex max-w-full gap-1.5 self-start overflow-x-auto rounded-[14px] border border-line bg-white p-1"
+          className="no-scrollbar mt-4 flex max-w-full gap-1.5 self-start overflow-x-auto rounded-tile border border-line bg-surface p-1"
         >
           {all.map((tab) => {
             const selected = tab.id === active

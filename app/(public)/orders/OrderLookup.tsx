@@ -15,7 +15,7 @@ import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidg
 
 // M66: the redesign's field style (tokens, visible focus).
 // M101 (owner-approved home style): a lavender panel with pill fields and a pill button, no shadow.
-const inputClass = 'w-full min-h-12 rounded-full border border-line-2 bg-white px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
+const inputClass = 'w-full min-h-12 rounded-full border border-line-input bg-surface px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
 
 export function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState('')

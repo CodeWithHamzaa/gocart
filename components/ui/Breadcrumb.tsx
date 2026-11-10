@@ -4,12 +4,14 @@ import { ChevronRightIcon } from 'lucide-react'
 // M61: "Home / Categories / Name". The last crumb is the current page (aria-current), not a link.
 export type Crumb = { label: string; href?: string }
 
-export default function Breadcrumb({ items }: { items: Crumb[] }) {
+// `hideCurrentOnMobile`: below `sm` the last crumb (the page's own name, which its h1 already says) is left
+// out, so a long product name never wraps the trail onto a second line.
+export default function Breadcrumb({ items, hideCurrentOnMobile = false }: { items: Crumb[]; hideCurrentOnMobile?: boolean }) {
   return (
     <nav aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
         {items.map((item, index) => (
-          <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1">
+          <li key={`${item.label}-${index}`} className={`min-w-0 items-center gap-1 ${hideCurrentOnMobile && index === items.length - 1 ? 'hidden sm:flex' : 'flex'}`}>
             {index > 0 && <ChevronRightIcon size={14} aria-hidden="true" className="shrink-0" />}
             {item.href ? (
               <Link href={item.href} className="inline-flex min-h-11 items-center font-medium text-ink-2 hover:text-primary">{item.label}</Link>

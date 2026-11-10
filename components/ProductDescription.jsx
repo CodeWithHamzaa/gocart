@@ -1,4 +1,3 @@
-import { deliveryNote } from '@/lib/delivery'
 
 // M26: the multi-vendor "Product by {store}" attribution block is removed —
 // products aren't vendor-owned, and its link pointed at /shop/[username],
@@ -21,21 +20,18 @@ const Section = ({ title, open = false, children }) => (
     </details>
 )
 
-const ProductDescription = ({ product, shipping = null }) => {
+// The page places this in the right column, under the buttons and the three delivery promises, so the
+// "Delivery & payment" section that repeated those promises word for word was dropped; the one fact it
+// added (tracking) joins the description section's foot. Nothing renders without a description.
+const ProductDescription = ({ product }) => {
+
+    if (!product.description) return null
 
     return (
-        <section className="my-8 max-w-3xl border-t border-line sm:my-12">
-            {product.description && (
-                <Section title="Description" open>
-                    <p className="whitespace-pre-line">{product.description}</p>
-                </Section>
-            )}
-            <Section title="Delivery & payment" open={!product.description}>
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>{deliveryNote(shipping)}.</li>
-                    <li>Cash on delivery: pay when your order arrives. No account is needed to order.</li>
-                    <li>Track your order any time with your order number and phone number.</li>
-                </ul>
+        <section className="mt-8 border-t border-line">
+            <Section title="Description" open>
+                <p className="whitespace-pre-line">{product.description}</p>
+                <p className="mt-4 text-sm text-muted">Track your order any time with your order number and phone number.</p>
             </Section>
         </section>
     )

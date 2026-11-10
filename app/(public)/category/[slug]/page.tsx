@@ -111,8 +111,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     { label: category.title },
   ]
   // M101: pill pagination in the home page's style (lavender pills, the current page in violet).
-  const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-surface-muted text-ink font-semibold hover:bg-accent-soft hover:text-primary-dark transition'
-  const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-surface-muted text-muted'
+  const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full border border-line-2 bg-surface text-ink font-semibold hover:bg-accent-soft hover:text-primary-dark transition'
+  const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full border border-line bg-surface text-muted'
 
   // M63: the redesign. A tinted heading panel (title and description; M102 removed the sub-category
   // pills, ADR-048), the product count, a full-width grid and link-based pagination (a
@@ -129,10 +129,10 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <Breadcrumb items={crumbs} />
         </div>
 
-        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-surface-muted px-5 py-7 sm:px-10 sm:py-10">
+        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel border border-line bg-linear-to-br from-accent-soft via-accent-soft/50 to-surface px-5 py-7 sm:px-10 sm:py-10">
           {/* M101: the home banner's look: a lavender panel and a large semibold title. */}
           {/* M107: the category's photo fills the circle when an admin uploaded one (as on the tiles and shortcuts); the icon stands in otherwise. */}
-          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white text-ink-3 sm:flex lg:right-14">
+          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-surface text-ink-3 shadow-float-sm sm:flex lg:right-14">
             {bannerImage ? (
               <Image src={bannerImage} alt="" width={320} height={320} sizes="160px" className="size-full object-cover" />
             ) : (
@@ -140,7 +140,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             )}
           </span>
           <div className="relative flex max-w-2xl flex-col gap-3">
-            <h1 id="category-title" className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-5xl">{category.title}</h1>
+            <h1 id="category-title" className="text-3xl font-semibold tracking-tight text-ink sm:text-5xl sm:tracking-tighter">{category.title}</h1>
             {category.description && <p className="text-base text-ink-3">{category.description}</p>}
           </div>
         </section>
@@ -156,6 +156,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             <p className="mt-6 text-sm text-muted">
               Showing <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
             </p>
+            <h2 className="sr-only">Products</h2>
             <div className="mt-4 mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
               {products.map((product, index) => (
                 <ProductCard key={product.id} product={product} priority={index < 4} />
@@ -196,7 +197,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-surface-muted text-ink hover:bg-accent-soft'}`}
+                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'border border-line-2 bg-surface text-ink hover:bg-accent-soft'}`}
                 >
                   {n}
                 </Link>
@@ -210,9 +211,11 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           </div>
         )}
 
-        <p className="text-center text-xs text-muted">
-          Page {page} of {Math.max(totalPages, 1)} — {totalDocs} product{totalDocs === 1 ? '' : 's'}
-        </p>
+        {totalPages > 1 && (
+          <p className="text-center text-xs text-muted">
+            Page {page} of {totalPages} — {totalDocs} product{totalDocs === 1 ? '' : 's'}
+          </p>
+        )}
       </div>
     </div>
   )

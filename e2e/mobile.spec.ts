@@ -54,7 +54,8 @@ test('no storefront page scrolls sideways at 320px', async ({ page, request }) =
 
 test('the mobile header offers shop, search and cart, each at least 44px', async ({ page }) => {
   await page.goto('/')
-  const header = page.locator('nav')
+  // The header's own nav: the phone tab bar also has Shop and Cart links.
+  const header = page.getByRole('navigation', { name: 'Primary' })
   for (const target of [
     header.getByRole('link', { name: 'Shop' }),
     header.getByRole('button', { name: 'Search' }),

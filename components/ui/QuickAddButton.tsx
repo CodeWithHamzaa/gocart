@@ -12,9 +12,9 @@ import { addToCart } from '@/lib/features/cart/cartSlice'
 // when out of stock); the default `outline` stays the white chip floated on the home rail's photos.
 const VARIANTS = {
   outline: {
-    base: 'bg-white shadow-chip ring-1 ring-line',
+    base: 'bg-surface shadow-chip ring-1 ring-line',
     enabled: 'text-primary hover:bg-primary hover:text-white',
-    disabled: 'bg-white text-disabled',
+    disabled: 'bg-surface text-disabled',
   },
   solid: {
     base: 'bg-primary text-white',

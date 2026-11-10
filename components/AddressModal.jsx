@@ -73,14 +73,14 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
         setShowAddressModal(false)
     }
 
-    const field = 'h-12 w-full min-w-0 rounded-full border border-line-2 bg-white px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
+    const field = 'h-12 w-full min-w-0 rounded-full border border-line-input bg-surface px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
 
     return (
         <form onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-label="Add new address" className="fixed inset-0 z-50 overflow-y-auto bg-page/80 backdrop-blur">
             {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen.
                 M101: the fields sit on a lavender card (pill fields, a pill button), like the order summary. */}
             <div className="mx-auto flex min-h-dvh w-full max-w-md items-center px-4 py-10">
-            <div className="relative flex w-full flex-col gap-5 rounded-panel bg-surface-muted px-5 pb-6 pt-7 text-ink shadow-float sm:px-7">
+            <div className="relative flex w-full flex-col gap-5 rounded-panel bg-surface px-5 pb-6 pt-7 text-ink shadow-float sm:px-7">
                 <h2 className="pr-10 text-2xl font-semibold tracking-tighter">Add new address</h2>
                 <input name="name" onChange={handleAddressChange} value={address.name} className={field} type="text" placeholder="Full name" autoComplete="name" required />
                 {errors.name && <p role="alert" className="-mt-3 text-xs text-sale">{errors.name}</p>}
