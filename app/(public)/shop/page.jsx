@@ -39,8 +39,8 @@ export default async function Shop({ searchParams }) {
     // M98: the same frame as a category page (breadcrumb, a plain heading, a product count), and a
     // search with no match says so and offers the way back instead of showing an empty page.
     const crumbs = query
-        ? [{ label: 'Home', href: '/' }, { label: 'Products', href: '/shop' }, { label: 'Search results' }]
-        : [{ label: 'Home', href: '/' }, { label: 'Products' }]
+        ? [{ label: 'Home', href: '/' }, { label: 'Shop', href: '/shop' }, { label: 'Search results' }]
+        : [{ label: 'Home', href: '/' }, { label: 'Shop' }]
 
     return (
         <div className="min-h-[70vh] mx-4 sm:mx-6">
@@ -48,7 +48,7 @@ export default async function Shop({ searchParams }) {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={crumbs} />
                 </div>
-                <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl [overflow-wrap:anywhere]">
+                <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl [overflow-wrap:anywhere]">
                     {query ? <>Results for &ldquo;{query}&rdquo;</> : 'All products'}
                 </h1>
                 {products.length > 0 ? (
@@ -58,6 +58,7 @@ export default async function Shop({ searchParams }) {
                             {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline hover:underline-offset-4">Clear search</Link></>}
                         </p>
                         {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. M111: 2 / 3 / 4 columns. */}
+                        <h2 className="sr-only">Products</h2>
                         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
                             {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                         </div>

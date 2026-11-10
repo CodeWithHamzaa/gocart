@@ -11,7 +11,6 @@ import { formatPKR } from '@/lib/currency'
 import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
 import { newIdempotencyKey } from '@/lib/idempotency'
 import { deliveryNote } from '@/lib/delivery'
-import RadioCard from '@/components/ui/RadioCard'
 import MobileActionBar from '@/components/ui/MobileActionBar'
 
 // M65: the redesigned panel (design: Cart summary + Checkout steps, on /cart). Markup and classes only:
@@ -164,26 +163,26 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     // M101 (owner-approved home style): a lavender panel with white inner surfaces, pill buttons, semibold
     // headings and no shadow. Behaviour, totals and the Turnstile check are unchanged.
-    const step = 'mb-3 flex items-center gap-2.5 text-[15px] font-semibold text-ink'
+    const step = 'mb-3 flex items-center gap-2.5 text-base font-semibold text-ink'
     const stepNo = 'flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white'
 
     return (
-        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-card bg-lavender p-5 text-sm sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
-            <h2 className='text-[22px] font-semibold tracking-[-0.02em] text-ink'>Order summary</h2>
+        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-card border border-line bg-surface p-5 text-sm sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
+            <h2 className='text-xl font-semibold tracking-tight text-ink'>Order summary</h2>
 
             <section aria-labelledby='step-address'>
                 <h3 id='step-address' className={step}><span className={stepNo} aria-hidden='true'>1</span>Delivery address</h3>
                 {
                     selectedAddress ? (
-                        <div className='flex items-center gap-2 rounded-tile bg-white p-3 pl-4'>
+                        <div className='flex items-center gap-2 rounded-tile bg-surface-muted p-3 pl-4'>
                             <p className='min-w-0 flex-1 text-ink-2 [overflow-wrap:anywhere]'>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
-                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
                         </div>
                     ) : (
                         <div>
                             {
                                 addressList.length > 0 && (
-                                    <select aria-label='Delivery address' className='mb-2 min-h-11 w-full rounded-full border border-line-2 bg-white px-4 text-ink' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
+                                    <select aria-label='Delivery address' className='mb-2 min-h-11 w-full rounded-full border border-line-input bg-surface px-4 text-ink' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
                                         <option value="">Select Address</option>
                                         {
                                             addressList.map((address, index) => (
@@ -193,27 +192,29 @@ const OrderSummary = ({ totalPrice, items }) => {
                                     </select>
                                 )
                             }
-                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-5 font-semibold text-primary-dark transition hover:bg-primary-soft' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent-soft px-5 font-semibold text-primary-dark transition hover:bg-accent' onClick={() => setShowAddressModal(true)} >Add address <PlusIcon size={18} aria-hidden='true' /></button>
                         </div>
                     )
                 }
             </section>
 
+            {/* One delivery option and one payment method, so they are stated, not offered as choices
+                (the old radio cards were read-only and outside any form; checkout reads neither). */}
             <section aria-labelledby='step-delivery'>
-                <h3 id='step-delivery' className={step}><span className={stepNo} aria-hidden='true'>2</span>Delivery</h3>
-                <RadioCard
-                    name='delivery'
-                    value='standard'
-                    checked
-                    title='Standard delivery'
-                    description={shippingSettings ? deliveryNote({ flatRate: shippingSettings.shippingFlatRate, freeShippingThreshold: shippingSettings.freeShippingThreshold }) : undefined}
-                    trailing={shipping === null ? '...' : (shipping === 0 ? 'Free' : formatPKR(shipping))}
-                />
-            </section>
-
-            <section aria-labelledby='step-payment'>
-                <h3 id='step-payment' className={step}><span className={stepNo} aria-hidden='true'>3</span>Payment</h3>
-                <RadioCard name='payment' value='cod' checked title='Cash on Delivery (COD)' description='Pay in cash when your order arrives' />
+                <h3 id='step-delivery' className={step}><span className={stepNo} aria-hidden='true'>2</span>Delivery and payment</h3>
+                <div className='divide-y divide-line rounded-tile border border-line bg-surface'>
+                    <div className='flex items-start justify-between gap-3 p-4'>
+                        <div className='min-w-0'>
+                            <p className='font-semibold text-ink'>Standard delivery</p>
+                            {shippingSettings && <p className='mt-0.5 text-muted'>{deliveryNote({ flatRate: shippingSettings.shippingFlatRate, freeShippingThreshold: shippingSettings.freeShippingThreshold })}</p>}
+                        </div>
+                        <p className='shrink-0 font-semibold text-ink'>{shipping === null ? '...' : (shipping === 0 ? 'Free' : formatPKR(shipping))}</p>
+                    </div>
+                    <div className='p-4'>
+                        <p className='font-semibold text-ink'>Cash on delivery</p>
+                        <p className='mt-0.5 text-muted'>Pay in cash when your order arrives</p>
+                    </div>
+                </div>
             </section>
 
             <dl className='grid grid-cols-[1fr_auto] gap-2.5 border-t border-line-2 pt-4'>
@@ -223,7 +224,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             </dl>
             <div className='flex items-baseline justify-between border-t border-line-2 pt-4'>
                 <p className='font-semibold text-ink'>Total</p>
-                <p className='text-[28px] font-semibold leading-none tracking-[-0.03em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                <p className='text-3xl font-semibold leading-none tracking-tighter text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-muted'>
@@ -237,7 +238,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                         <p className='text-xs text-muted'>Total</p>
                         <p className='text-lg font-semibold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
                     </div>
-                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-full bg-primary px-4 text-base font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place Order'}</button>
+                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-full bg-primary px-4 text-base font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place order'}</button>
                 </div>
             </MobileActionBar>
             <p className='flex items-center justify-center gap-2 text-xs text-muted'><LockIcon size={14} aria-hidden='true' />Cash on delivery &middot; no online payment</p>

@@ -1,97 +1,85 @@
 @import "tailwindcss";
 
-/* M101 (ADR-047): the Mirza palette, "lavender wash" (owner's choice, 2026-10-31, from three lighter-violet
-   options on the real home page; earlier warm-neutral, bright-coral and minimal-green passes were
-   replaced at the owner's request). M60 built every storefront colour, radius and shadow as a Tailwind
-   theme variable, so components use native utilities (bg-primary, text-muted, rounded-card, shadow-card)
-   and never a one-off hex value. A faintly violet page, lavender wells and strips, one bright violet
-   (`primary`) for actions, hot pink (`pink`) for real discounts and sale labels, amber for "Limited
-   edition". Text stays near-black. The names are kept so no component had to be rewritten; read
-   `lavender*` as "the lavender surface" and `pink*` as "the sale pink".
+/* Storefront design tokens. Every colour, type step, radius and shadow a storefront component uses is a
+   Tailwind theme variable, so components use native utilities (bg-surface, text-muted, rounded-card) and
+   never a one-off value.
 
-   Contrast (WCAG 2.1, computed 2026-10-31; AA needs 4.5:1 for normal text): see the table in
-   docs/MIRZA_UX_REVIEW.md, section 2. Every text/background pair a component uses is 4.5:1 or more. */
+   Surfaces are neutral so product photography reads true: an off-white page, white cards separated by a
+   hairline, a muted grey well behind images. Violet (`primary`) is the one action colour; its soft tint
+   (`accent-soft`) is kept for the hero, the announcement bar and selected states. `sale` is for real
+   discounts only; `amber` for "Limited edition".
+
+   Contrast (WCAG 2.2, sRGB relative luminance): white on primary 6.04:1, primary on white 6.04:1, ink-2 on
+   accent-soft 9.3:1, muted on surface-muted 5.47:1, sale on sale-soft 6.12:1, white on sale-strong 5.39:1,
+   line-input on white 3.55:1 (WCAG 1.4.11, form-field boundaries). */
 @theme {
     /* Brand and text. */
     --color-primary: #5F42EC;
     --color-primary-dark: #4A2FD0;
-    --color-primary-deep: #5F42EC;
-    --color-primary-soft: #E9E2FF;
-    --color-lavender: #F1ECFF;
-    --color-lavender-2: #E5DCFF;
-    --color-lavender-tile: #F1ECFF;
+    --color-accent-soft: #EEE9FF;
+    --color-accent: #E2DAFF;
     --color-ink: #1D1D1F;
     --color-ink-2: #424245;
     --color-ink-3: #515154;
     --color-muted: #636368;
-    --color-strike: #636368;
     --color-disabled: #A1A1A6;
-    --color-line: #E9E3FB;
-    --color-line-2: #DED5F8;
-    --color-line-3: #CFC3F2;
-    --color-page: #FCFAFF;
-    --color-on-deep: #E9E2FF;
-    /* The home banner's "new arrivals" slide (a cool tint beside the green deals slide). */
-    --color-slide-blue: #FFE6F1;
+
+    /* Surfaces and lines. */
+    --color-page: #FAFAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-muted: #F5F4F8;
+    --color-line: #ECE9F2;
+    --color-line-2: #E2DFEA;
+    --color-line-3: #CBC6D8;
+    --color-line-input: #8A84A3;
 
     /* Accents and status. */
-    --color-pink: #CC1966;
-    --color-pink-dark: #A8144F;
-    --color-pink-soft: #FFE4F0;
-    /* "Limited edition" labels (dark text on it). */
+    --color-sale: #A8144F;
+    --color-sale-soft: #FFE4F0;
+    --color-sale-strong: #CC1966;
     --color-amber: #FFC247;
-    --color-sale-blue: #1D1D1F;
     --color-success: #0B6E4F;
     --color-success-soft: #E6F2EE;
 
-    /* Category tints: one neutral surface and ink, so categories read as one family. */
-    --color-tint-pink: #F1ECFF;
-    --color-tint-pink-ink: #1D1D1F;
-    --color-tint-pink-link: #4A2FD0;
-    --color-tint-blue: #F1ECFF;
-    --color-tint-blue-ink: #1D1D1F;
-    --color-tint-blue-link: #4A2FD0;
-    --color-tint-mint: #F1ECFF;
-    --color-tint-mint-ink: #1D1D1F;
-    --color-tint-mint-link: #4A2FD0;
-    --color-tint-yellow: #F1ECFF;
-    --color-tint-yellow-ink: #1D1D1F;
-    --color-tint-yellow-icon: #1D1D1F;
-    --color-tint-yellow-link: #4A2FD0;
-    --color-tint-lavender: #F1ECFF;
-    --color-tint-lavender-ink: #1D1D1F;
-    --color-tint-lavender-link: #4A2FD0;
-    --color-tint-peach: #F1ECFF;
-    --color-tint-peach-ink: #1D1D1F;
-    --color-tint-peach-link: #4A2FD0;
-    /* The deeper ring behind the category hero, and its body text. */
-    --color-sky-ring: #E5DCFF;
-    --color-sky-ink: #3F2D99;
+    /* Type: nine steps, 12px floor (size / line height). */
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.25rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.625rem;
+    --text-xl: 1.25rem;
+    --text-xl--line-height: 1.75rem;
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: 1.875rem;
+    --text-3xl: 1.75rem;
+    --text-3xl--line-height: 2.125rem;
+    --text-4xl: 2.25rem;
+    --text-4xl--line-height: 2.5rem;
+    --text-5xl: 3rem;
+    --text-5xl--line-height: 3.25rem;
 
-    /* Product-image wells: the same light grey for every product. */
-    --color-tile-lavender: #F1ECFF;
-    --color-tile-blue: #F1ECFF;
-    --color-tile-pink: #F1ECFF;
-    --color-tile-mint: #F1ECFF;
-    --color-tile-peach: #F1ECFF;
-    --color-tile-yellow: #F1ECFF;
+    /* Heading tracking: tight from 24px, tighter from 36px. */
+    --tracking-tight: -0.02em;
+    --tracking-tighter: -0.03em;
+    /* Small uppercase eyebrow labels. */
+    --tracking-eyebrow: 0.12em;
 
-    /* Shape: soft, generous rounding on large surfaces; buttons are pills where they stand alone. */
+    /* Shape: 12 controls, 16 cards and tiles, 24 panels and the hero; buttons are pills. */
     --radius-control: 12px;
-    --radius-tile: 18px;
     --radius-field: 12px;
-    --radius-card: 22px;
-    --radius-panel: 26px;
-    --radius-hero: 28px;
+    --radius-tile: 16px;
+    --radius-card: 16px;
+    --radius-panel: 24px;
+    --radius-hero: 24px;
 
-    /* Elevation: almost none; surfaces are separated by tone, not shadow. */
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-card-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-chip: 0 1px 4px rgba(0, 0, 0, 0.1);
-    --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.1);
-    --shadow-float-sm: 0 8px 20px rgba(0, 0, 0, 0.08);
-    --shadow-bar: 0 -1px 0 rgba(0, 0, 0, 0.06);
-    --shadow-pink: 0 8px 18px rgba(0, 0, 0, 0.1);
+    /* Elevation: cards use a hairline, not a shadow; shadows are for floating controls and bars. */
+    --shadow-chip: 0 1px 4px rgba(16, 12, 40, 0.1);
+    --shadow-float: 0 12px 32px rgba(16, 12, 40, 0.1);
+    --shadow-float-sm: 0 8px 20px rgba(16, 12, 40, 0.08);
+    --shadow-bar: 0 -1px 0 rgba(16, 12, 40, 0.06);
 }
 
 /* M60: Plus Jakarta Sans is loaded by next/font in app/(public)/layout.jsx as the CSS variable
@@ -119,37 +107,4 @@
 
 .no-scrollbar {
     scrollbar-width: none;
-}
-
-/* M110: the announcement bar. One message crosses the bar from just off the left edge (its own width,
-   -100%) to just off the right edge (the bar's width, 100cqw), then the next message follows
-   (components/AnnouncementTicker.tsx). It stops while a mouse rests on it or keyboard focus is on it, and
-   after a tap (all through data-paused, set by the component so it can always be resumed), and for anyone
-   who asked their device to reduce motion: then the first message simply stands still. */
-.ticker {
-    container-type: inline-size;
-}
-
-@keyframes ticker-right {
-    from {
-        transform: translateX(-100%);
-    }
-    to {
-        transform: translateX(100cqw);
-    }
-}
-
-.ticker-message {
-    animation: ticker-right 12s linear 1;
-}
-
-.ticker[data-paused='true'] .ticker-message {
-    animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ticker-message {
-        animation: none;
-        transform: none;
-    }
 }

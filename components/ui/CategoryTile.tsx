@@ -17,14 +17,14 @@ export default function CategoryTile({ category, className = '' }: { category: T
   const href = `/category/${category.slug}`
 
   return (
-    <div className={`group relative flex h-full flex-col overflow-hidden rounded-card bg-lavender px-4 pt-4 focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-primary sm:px-6 sm:pt-6 ${className}`}>
-      <Link href={href} className="text-[17px] font-semibold leading-tight tracking-[-0.02em] text-ink outline-none after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-4 sm:text-[22px]">
+    <div className={`group relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface px-4 pt-4 transition-colors hover:border-line-3 focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-primary sm:px-6 sm:pt-6 ${className}`}>
+      <Link href={href} className="text-base font-semibold leading-tight text-ink outline-none after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-4 sm:text-xl sm:tracking-tight">
         {category.title}
       </Link>
       <span aria-hidden="true" className="mt-auto block pt-4 sm:pt-5">
-        <span className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-t-tile bg-white text-ink-3">
+        <span className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-t-tile bg-surface-muted text-ink-3">
           {image ? (
-            <Image src={image} alt="" width={480} height={360} sizes="(min-width: 1280px) 220px, (min-width: 1024px) 20vw, (min-width: 640px) 45vw, 45vw" className="size-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+            <Image src={image} alt="" width={480} height={360} sizes="(min-width: 1280px) 220px, (min-width: 1024px) 20vw, (min-width: 640px) 45vw, 45vw" className="size-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
           ) : (
             <CategoryIcon category={category} size={44} strokeWidth={1.4} />
           )}

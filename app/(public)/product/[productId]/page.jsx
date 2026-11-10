@@ -54,7 +54,7 @@ export default async function Product({ params }) {
     const shipping = { flatRate: settings.shippingFlatRate, freeShippingThreshold: settings.freeShippingThreshold }
     const crumbs = [
         { label: 'Home', href: '/' },
-        { label: 'Products', href: '/shop' },
+        { label: 'Shop', href: '/shop' },
         ...(category ? [{ label: category.title, href: `/category/${category.slug}` }] : []),
         { label: product.name },
     ]
@@ -71,14 +71,13 @@ export default async function Product({ params }) {
 
                 {/* Breadcrumb: M27a made the category segment a real link to /category/[slug]. */}
                 <div className="mt-2 mb-3 sm:mt-4 sm:mb-4">
-                    <Breadcrumb items={crumbs} />
+                    <Breadcrumb items={crumbs} hideCurrentOnMobile />
                 </div>
 
-                {/* Product Details */}
-                <ProductDetails product={product} shipping={shipping} />
-
-                {/* Description and delivery */}
-                <ProductDescription product={product} shipping={shipping} />
+                {/* Product details; the description sits in its right column, under the buttons. */}
+                <ProductDetails product={product} shipping={shipping}>
+                    <ProductDescription product={product} />
+                </ProductDetails>
 
                 {/* M67: up to four in-stock products from the same category. */}
                 <RelatedProducts category={category} currentId={product.id} />

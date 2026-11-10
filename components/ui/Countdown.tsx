@@ -29,11 +29,11 @@ export default function Countdown({ endsAt }: { endsAt: string }) {
   const parts = [Math.floor(left / 3600), Math.floor((left % 3600) / 60), left % 60]
   return (
     <div role="timer" aria-label={`Ends in ${parts[0]} hours ${parts[1]} minutes ${parts[2]} seconds`} className="flex items-center gap-1.5">
-      <span className="mr-1 text-[13px] font-medium text-muted">Ends in</span>
+      <span className="mr-1 text-sm font-medium text-muted">Ends in</span>
       {parts.map((n, i) => (
         <span key={i} className="flex items-center gap-1.5" aria-hidden="true">
-          {i > 0 && <span className="font-bold text-pink-dark">:</span>}
-          <span className="min-w-[38px] rounded-lg bg-pink-soft px-1 py-1.5 text-center text-[15px] font-bold tabular-nums text-pink-dark">{pad(n)}</span>
+          {i > 0 && <span className="font-bold text-sale">:</span>}
+          <span className="min-w-[38px] rounded-tile bg-sale-soft px-1 py-1.5 text-center text-base font-bold tabular-nums text-sale">{pad(n)}</span>
         </span>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import RailCard from '@/components/RailCard'
+import ProductCard from '@/components/ProductCard'
 import Title from '@/components/Title'
 import { RAIL_ROW } from '@/components/ProductRail'
 import ScrollRail from '@/components/ui/ScrollRail'
@@ -30,7 +30,8 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
     return null
   }
 
-  if (related.length === 0) return null
+  // One lone card reads as unfinished, so the section shows only with two or more.
+  if (related.length < 2) return null
 
   // M101: the home page's rail (Title, ScrollRail, RailCard), so "You may also like" looks like "New arrivals".
   return (
@@ -41,7 +42,7 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
           <ul className={RAIL_ROW}>
             {related.map((product) => (
               <li key={product.id}>
-                <RailCard product={product} />
+                <ProductCard product={product} rail />
               </li>
             ))}
           </ul>
@@ -54,10 +55,10 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
 function RelatedSkeleton() {
   return (
     <div aria-hidden="true" className="my-12 sm:my-16">
-      <div className="h-9 w-56 animate-pulse rounded-full bg-lavender" />
-      <div className="no-scrollbar -mx-4 mt-6 flex gap-4 overflow-hidden px-4 sm:-mx-6 sm:gap-5 sm:px-6 xl:mx-0 xl:px-0">
+      <div className="h-9 w-56 animate-pulse rounded-full bg-surface-muted" />
+      <div className="no-scrollbar -mx-4 mt-6 flex gap-3 overflow-hidden px-4 sm:-mx-6 sm:gap-5 sm:px-6 xl:mx-0 xl:px-0">
         {Array.from({ length: SHOWN }, (_, i) => (
-          <div key={i} className="h-[420px] w-[248px] shrink-0 animate-pulse rounded-card bg-lavender sm:h-[480px] sm:w-[300px]" />
+          <div key={i} className="h-[300px] w-[46vw] max-w-[260px] shrink-0 animate-pulse rounded-card bg-surface-muted sm:h-[340px] sm:w-[240px] lg:w-[260px]" />
         ))}
       </div>
     </div>

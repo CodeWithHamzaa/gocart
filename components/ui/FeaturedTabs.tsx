@@ -44,7 +44,7 @@ export default function FeaturedTabs({ tabs, items, gridClassName }: { tabs: Fea
           role="tablist"
           aria-label="Filter featured products by category"
           onKeyDown={onKeyDown}
-          className="no-scrollbar mt-4 flex max-w-full gap-1.5 self-start overflow-x-auto rounded-[14px] border border-line bg-white p-1"
+          className="no-scrollbar mt-4 flex max-w-full gap-1.5 self-start overflow-x-auto rounded-tile border border-line bg-surface p-1"
         >
           {all.map((tab) => {
             const selected = tab.id === active
@@ -61,7 +61,7 @@ export default function FeaturedTabs({ tabs, items, gridClassName }: { tabs: Fea
                 aria-controls={panelId}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => select(tab.id)}
-                className={`min-h-11 shrink-0 whitespace-nowrap rounded-control px-4 text-sm font-semibold transition ${selected ? 'bg-primary text-white' : 'text-ink-2 hover:bg-primary-soft'}`}
+                className={`min-h-11 shrink-0 whitespace-nowrap rounded-control px-4 text-sm font-semibold transition ${selected ? 'bg-primary text-white' : 'text-ink-2 hover:bg-accent-soft'}`}
               >
                 {tab.label}
               </button>

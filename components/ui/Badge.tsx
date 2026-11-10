@@ -10,28 +10,28 @@ import type { BadgeTone } from '@/lib/product-badges'
 // M111: colour and shape are split so the listing card can float the same tones as square-cornered
 // tags on its photo (`shape="tag"`); every other caller keeps the M101 pill.
 const COLORS: Record<BadgeTone, string> = {
-  off: 'bg-pink-soft text-pink-dark',
-  neutral: 'bg-white text-ink-2 ring-1 ring-line-2',
+  off: 'bg-sale-soft text-sale',
+  neutral: 'bg-surface text-ink-2 ring-1 ring-line-2',
   primary: 'bg-primary text-white',
   success: 'bg-success-soft text-success',
   limited: 'bg-amber text-ink',
-  sale: 'bg-pink text-white',
+  sale: 'bg-sale-strong text-white',
 }
 
 const PILL: Record<BadgeTone, string> = {
-  off: 'rounded-full px-2 py-1 text-[11px] font-bold',
-  neutral: 'rounded-full px-2.5 py-1.5 text-[11px] font-bold',
-  primary: 'rounded-full px-2.5 py-1.5 text-[11px] font-bold',
-  success: 'rounded-full px-2.5 py-1.5 text-[11px] font-bold',
-  limited: 'rounded-full px-2.5 py-1.5 text-[11px] font-bold',
-  sale: 'rounded-full px-2.5 py-1.5 text-[11px] font-bold',
+  off: 'rounded-full px-2 py-1 text-xs font-semibold',
+  neutral: 'rounded-full px-2.5 py-1.5 text-xs font-semibold',
+  primary: 'rounded-full px-2.5 py-1.5 text-xs font-semibold',
+  success: 'rounded-full px-2.5 py-1.5 text-xs font-semibold',
+  limited: 'rounded-full px-2.5 py-1.5 text-xs font-semibold',
+  sale: 'rounded-full px-2.5 py-1.5 text-xs font-semibold',
 }
 
-const TAG = 'rounded-md px-2 py-1 text-[11px] font-semibold leading-tight sm:px-2.5 sm:text-xs'
+const TAG = 'rounded-full px-2.5 py-1 text-xs font-semibold leading-tight'
 
 export type { BadgeTone }
 
 export default function Badge({ tone, shape = 'pill', className = '', children }: { tone: BadgeTone; shape?: 'pill' | 'tag'; className?: string; children: ReactNode }) {
   const form = shape === 'tag' ? TAG : `leading-none ${PILL[tone]}`
-  return <span className={`inline-flex items-center tracking-[0.01em] ${COLORS[tone]} ${form} ${className}`}>{children}</span>
+  return <span className={`inline-flex items-center ${COLORS[tone]} ${form} ${className}`}>{children}</span>
 }

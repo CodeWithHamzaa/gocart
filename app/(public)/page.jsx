@@ -82,12 +82,15 @@ export default async function Home() {
     // three cash-on-delivery steps in place of the trust row. Deals and promo cards stay as they were.
     return (
         <div>
-            <Hero slides={slides} categories={categories} shipping={shipping} />
+            {/* Merchandising first: the curated Featured grid straight under the banner, then promotions and
+                new arrivals; how cash on delivery works closes the page (it is also in the announcement bar
+                and the banner copy). */}
+            <Hero slides={slides} categories={categories} />
             <DealsOfTheDay products={deals} />
-            <LatestProducts products={newArrivals} content={content} />
-            <CodSteps shipping={shipping} />
             <BestSelling products={featured.docs} categories={categories} content={content} />
             <PromoCards cards={promoCards} />
+            <LatestProducts products={newArrivals} content={content} />
+            <CodSteps shipping={shipping} />
         </div>
     );
 }
