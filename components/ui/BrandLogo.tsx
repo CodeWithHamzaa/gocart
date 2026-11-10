@@ -12,11 +12,11 @@ export function BrandMark({ size = 28, className = '' }: { size?: number; classN
   )
 }
 
-export default function BrandLogo({ name, mark = true }: { name: string; mark?: boolean }) {
+export default function BrandLogo({ name, mark = true, inverse = false }: { name: string; mark?: boolean; inverse?: boolean }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       {mark && <BrandMark />}
-      <span className="truncate font-bold tracking-tight text-ink">{name}</span>
+      <span className={`truncate font-bold tracking-tight ${inverse ? 'text-white' : 'text-ink'}`}>{name}</span>
     </span>
   )
 }

@@ -14,11 +14,11 @@ export default function DealsOfTheDay({ products = [] }: { products?: Product[] 
   if (!endsAt) return null
 
   return (
-    <section aria-labelledby="deals-heading" className="mx-4 mt-12 sm:mx-6 sm:mt-14">
+    <section aria-labelledby="deals-heading" className="mx-4 mt-16 sm:mx-6 lg:mt-24">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <h2 id="deals-heading" className="text-xl font-bold tracking-tight text-ink sm:text-3xl">Deals of the day</h2>
+            <h2 id="deals-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter">Deals of the day</h2>
             <Countdown endsAt={endsAt} />
           </div>
           <Link href="/shop" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark">

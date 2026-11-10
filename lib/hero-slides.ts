@@ -71,7 +71,7 @@ export function buildHeroSlides({ latest, featured, categories, shipping, starti
       badgeTone: 'sale',
       tone: 'green',
       title: names.length > 0 ? `Deals on ${joinNames(names)}` : 'Deals worth a look',
-      text: 'Real discounts on prices you can check against the original. Pay in cash when it arrives.',
+      text: `Up to ${deals[0].off}% off. Pay cash on delivery.`,
       cta: { href: target ? `/category/${target}?sort=disc` : '/shop', label: 'Shop deals' },
       images: deals.map((d) => imageOf(d.product)!),
     })
@@ -86,7 +86,7 @@ export function buildHeroSlides({ latest, featured, categories, shipping, starti
       badgeTone: 'ink',
       tone: 'blue',
       title: names.length > 0 ? `New arrivals in ${joinNames(names)}` : 'New arrivals',
-      text: 'Just added to the store. Order without an account and pay when it arrives.',
+      text: 'Just added. No account needed, and you pay cash on delivery.',
       cta: { href: '/shop', label: "See what's new" },
       images: newest.map((p) => imageOf(p)!),
     })
@@ -109,7 +109,7 @@ export function buildHeroSlides({ latest, featured, categories, shipping, starti
           : free
             ? `Free delivery on orders of ${formatPKR(freeShippingThreshold as number)} or more`
             : `Delivery across Pakistan for ${formatPKR(flatRate)}`,
-      text: `Pay in cash when your order arrives.${pricesFrom}`,
+      text: `Pay cash on delivery.${pricesFrom}`,
       cta: { href: '/shop', label: 'Start shopping' },
       images: picks.map((p) => imageOf(p)!),
     })

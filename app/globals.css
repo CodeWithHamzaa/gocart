@@ -64,6 +64,8 @@
     /* Heading tracking: tight from 24px, tighter from 36px. */
     --tracking-tight: -0.02em;
     --tracking-tighter: -0.03em;
+    /* Small uppercase eyebrow labels. */
+    --tracking-eyebrow: 0.12em;
 
     /* Shape: 12 controls, 16 cards and tiles, 24 panels and the hero; buttons are pills. */
     --radius-control: 12px;
@@ -105,37 +107,4 @@
 
 .no-scrollbar {
     scrollbar-width: none;
-}
-
-/* M110: the announcement bar. One message crosses the bar from just off the left edge (its own width,
-   -100%) to just off the right edge (the bar's width, 100cqw), then the next message follows
-   (components/AnnouncementTicker.tsx). It stops while a mouse rests on it or keyboard focus is on it, and
-   after a tap (all through data-paused, set by the component so it can always be resumed), and for anyone
-   who asked their device to reduce motion: then the first message simply stands still. */
-.ticker {
-    container-type: inline-size;
-}
-
-@keyframes ticker-right {
-    from {
-        transform: translateX(-100%);
-    }
-    to {
-        transform: translateX(100cqw);
-    }
-}
-
-.ticker-message {
-    animation: ticker-right 12s linear 1;
-}
-
-.ticker[data-paused='true'] .ticker-message {
-    animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ticker-message {
-        animation: none;
-        transform: none;
-    }
 }
