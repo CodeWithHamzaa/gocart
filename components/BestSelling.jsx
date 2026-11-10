@@ -1,6 +1,5 @@
 import Title from './Title'
 import ProductCard from './ProductCard'
-import Link from 'next/link'
 import { DEFAULT_CONTENT } from '@/lib/storefront-content'
 import FeaturedTabs from './ui/FeaturedTabs'
 
@@ -21,10 +20,12 @@ import FeaturedTabs from './ui/FeaturedTabs'
 // M101: the description says what the section is, not a listing count.
 // M102 (ADR-048): categories are flat, so each product's tab is simply its own category.
 // M110: a plain grid of up to twelve products instead of a slider (4 columns on a wide screen = 3 rows, 3 on a
-// tablet = 4 rows, 2 on a phone = 6 rows), with a "View all" link in the heading and a button under the grid.
+// tablet = 4 rows, 2 on a phone = 6 rows), with a "View all" link in the heading (the duplicate button under the grid was removed).
 // M111: the grid uses the listing ProductCard (the same card and 2/3/4 grid as shop, category and wishlist).
 // The heading, description and link words come from the admin's Storefront content.
-const FEATURED_GRID = 'mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6'
+// Two columns on a phone, four from `md`, so the full rows below (multiples of four) never leave a gap.
+const FEATURED_GRID = 'mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 lg:gap-6'
+const ROW = 4
 
 const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT }) => {
 
@@ -36,7 +37,9 @@ const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT
         return String(category.id)
     }
 
-    const items = products.map((product) => ({
+    // Display only: show complete rows (all of them when there are fewer than one row).
+    const shown = products.length > ROW ? products.slice(0, products.length - (products.length % ROW)) : products
+    const items = shown.map((product) => ({
         key: product.id,
         categoryId: topLevelOf(product),
         node: <ProductCard product={product} />,
@@ -47,15 +50,10 @@ const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT
         .map((category) => ({ id: String(category.id), label: category.title }))
 
     return (
-        <section className='mx-4 mt-16 sm:mx-6 sm:mt-24'>
+        <section className='mx-4 mt-16 sm:mx-6 lg:mt-24'>
             <div className='mx-auto max-w-7xl'>
                 <Title title={content.featuredTitle} description={content.featuredDescription} href='/shop' linkLabel={content.featuredLinkLabel} />
                 <FeaturedTabs tabs={tabs} items={items} gridClassName={FEATURED_GRID} />
-                <div className='mt-8 flex justify-center'>
-                    <Link href='/shop' className='inline-flex min-h-12 items-center rounded-full border border-line-2 bg-white px-8 text-[15px] font-semibold text-ink transition hover:bg-lavender'>
-                        {content.featuredLinkLabel}
-                    </Link>
-                </div>
             </div>
         </section>
     )

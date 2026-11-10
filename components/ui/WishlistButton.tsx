@@ -12,13 +12,13 @@ export default function WishlistButton({ productId, name, className = '' }: { pr
   return (
     <button
       type="button"
-      aria-label={`Wishlist: ${name}`}
+      aria-label={`Save ${name} to wishlist`}
       aria-pressed={saved}
       onClick={() => dispatch(toggleWishlist({ productId }))}
       className={`flex size-11 items-center justify-center rounded-full ${className}`}
     >
-      <span className="flex size-8 items-center justify-center rounded-full bg-white shadow-chip transition active:scale-95">
-        <HeartIcon size={17} strokeWidth={2} aria-hidden="true" className={saved ? 'fill-pink text-pink' : 'text-ink'} />
+      <span className="flex size-8 items-center justify-center rounded-full bg-surface shadow-chip transition active:scale-95 motion-reduce:transition-none">
+        <HeartIcon size={17} strokeWidth={2} aria-hidden="true" className={saved ? 'fill-sale-strong text-sale-strong' : 'text-ink'} />
       </span>
     </button>
   )

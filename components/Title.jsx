@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ArrowRightIcon } from 'lucide-react'
 import React from 'react'
 
 // M44: the description is plain text and "View more" is its own link. It used to be one
@@ -16,8 +17,8 @@ const Title = ({ title, description = '', visibleButton = true, href = '', cente
     if (centered) {
         return (
             <div className='flex flex-col items-center text-center'>
-                <h2 id={id || undefined} className='text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-4xl'>{title}</h2>
-                {description && <p className='mt-2 max-w-lg text-[15px] text-muted'>{description}</p>}
+                <h2 id={id || undefined} className='text-2xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter'>{title}</h2>
+                {description && <p className='mt-2 max-w-lg text-base text-muted'>{description}</p>}
             </div>
         )
     }
@@ -25,11 +26,11 @@ const Title = ({ title, description = '', visibleButton = true, href = '', cente
     return (
         <div className='flex items-end justify-between gap-4'>
             <div className='min-w-0'>
-                <h2 id={id || undefined} className='text-[26px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl'>{title}</h2>
-                {description && <p className='mt-1 text-[15px] text-muted'>{description}</p>}
+                <h2 id={id || undefined} className='text-2xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter'>{title}</h2>
+                {description && <p className='mt-1 text-sm text-muted sm:text-base'>{description}</p>}
             </div>
             {visibleButton && href && (
-                <Link href={href} className='inline-flex min-h-11 shrink-0 items-center text-[15px] font-semibold text-primary hover:underline hover:underline-offset-4'>{linkLabel}</Link>
+                <Link href={href} className='inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline hover:underline-offset-4 sm:text-base'>{linkLabel}<span className='sr-only'>: {title}</span><ArrowRightIcon size={16} aria-hidden='true' /></Link>
             )}
         </div>
     )
