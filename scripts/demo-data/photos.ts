@@ -29,9 +29,11 @@ export type Source = {
   cdn: string
   /** Honest note on what the photo is and any visible-branding review. */
   note: string
+  /** Date the licence line and author were read from the photo page, when later than LICENCE.checkedOn (photos added after M104). */
+  checked?: string
 }
 
-const S = (id: string, slug: string, author: string, handle: string, published: string, cdn: string, note: string): Source => ({
+const S = (id: string, slug: string, author: string, handle: string, published: string, cdn: string, note: string, checked?: string): Source => ({
   id,
   pageUrl: `https://unsplash.com/photos/${slug}${id}`,
   author,
@@ -39,6 +41,7 @@ const S = (id: string, slug: string, author: string, handle: string, published: 
   published,
   cdn,
   note,
+  checked,
 })
 
 export const SOURCES: Record<string, Source> = {
@@ -46,7 +49,7 @@ export const SOURCES: Record<string, Source> = {
   headphonesBlack: S('pHqt1DsHCx0', 'black-headphones-on-white-table-', 'Milena Trifonova', 'milenatrifonova', '2020-09-14', 'photo-1600086827875-a63b01f1335c', 'Black on-ear headphones from above on white. The page description names a manufacturer; no logo or lettering is visible in the image.'),
   speakerBlack: S('VSYq9nS-fY0', 'selective-focus-photography-of-black-and-gray-portable-speaker-', 'Jonas Jacobsson', 'jonasjacobsson', '2017-10-13', 'photo-1507878566509-a0dbe19677a5', 'Black and grey portable speaker by a window. No logo visible.'),
   smartwatchRect: S('FPEBZJLD8Rs', 'a-watch-with-a-black-face-', 'pratik prasad', 'pratik19', '2022-08-18', 'photo-1660844817855-3ecc7ef21f12', 'Rectangular smart watch with a white silicone strap showing 07:20. Generic watch face, no brand.'),
-  smartwatchRound: S('jRM_bQIb_80', 'a-close-up-of-a-smart-watch-on-a-table-', 'Al Amin Mir', 'alaminip', '2021-09-28', 'photo-1632794716789-42d9995fb5b6', 'Round smart watch on an office desk showing 06:42. Generic watch face, no brand.'),
+  smartwatchRound: S('jRM_bQIb_80', 'a-close-up-of-a-smart-watch-on-a-table-', 'Al Amin Mir', 'alaminip', '2021-09-28', 'photo-1632794716789-42d9995fb5b6', 'Round smart watch on an office desk showing 06:42. Generic watch face, no brand. Checksum re-pinned 2026-11-10: the CDN re-encoded this rendition (same photograph, compared by eye); earlier sha256 1b8d24f8e951.'),
   powerbankSlim: S('UP_RojtnvTU', 'white-and-blue-coated-wires-', 'Markus Winkler', 'markuswinkler', '2020-04-04', 'photo-1585995603413-eb35b5f4a50b', 'Slim silver power bank with a blue braided three-way cable on white. No logo visible.'),
   watchMinimal: S('xfNeB1stZ_0', 'person-holding-analog-watch-', 'Jaelynn Castillo', 'jaelynnalexis', '2018-04-24', 'photo-1524592094714-0f0654e20314', 'Minimal round watch with a plain white dial and taupe leather strap, held in a hand (no face or identifiable person).'),
   backpackCanvas: S('hPYnW6kql20', 'green-canvas-backpack-with-leather-straps-on-a-yellow-chair-', 'YF Chen', 'sangeren', '2026-08-06', 'photo-1786025083224-220e39cb1e22', 'Green canvas backpack with leather straps and buckles on a yellow chair. No logo visible.'),
@@ -55,7 +58,7 @@ export const SOURCES: Record<string, Source> = {
   sunglassesGold: S('MivM1hirbUI', 'silver-framed-aviator-style-sunglasses-', 'Habib Dadkhah', 'habibdadkhah', '2020-05-16', 'photo-1589642380614-4a8c2147b857', 'Gold-tone pilot-style sunglasses with brown gradient lenses on a pale yellow backdrop. The page description names a luxury maker; no mark is visible at full size.'),
   sunglassesRound: S('1-nx1QR5dTE', 'gold-colored-framed-hippie-sunglasses-on-white-surface-', 'charlesdeluvio', 'charlesdeluvio', '2017-11-24', 'photo-1511499767150-a48a237f0083', 'Round gold-frame sunglasses with dark green lenses on white marble. The page names an eyewear label; no mark is visible at full size.'),
   lampCopper: S('VDPauwJ_sHo', 'gold-table-almp-', 'Sincerely Media', 'sincerelymedia', '2018-11-20', 'photo-1542728928-1413d1894ed1', 'Copper-finish lamp with a curved stem and a metal shade beside a white bed. No logo visible.'),
-  lampCream: S('mNXTZu7AeGA', 'white-table-lamp-', 'Brina Blum', 'brina_blum', '2019-10-13', 'photo-1570974802254-4b0ad1a755f5', 'Cream vintage desk lamp with a flexible neck and a bell-shaped shade on a wooden desk. No logo visible.'),
+  lampCream: S('mNXTZu7AeGA', 'white-table-lamp-', 'Brina Blum', 'brina_blum', '2019-10-13', 'photo-1570974802254-4b0ad1a755f5', 'Cream vintage desk lamp with a flexible neck and a bell-shaped shade on a wooden desk. No logo visible. Checksum re-pinned 2026-11-10: the CDN re-encoded this rendition (same photograph, compared by eye); earlier sha256 26af86a4667e.'),
   panBlack: S('Mv3JygH8eXQ', 'black-frying-pan-on-white-surface-', 'Cooker King', 'cookerking', '2020-06-14', 'photo-1592156328697-079f6ee0cfa5', 'Dark nonstick frying pan with a wooden-look handle on white. No logo visible.'),
   jarGlass: S('SHSSaB4BLgc', 'clear-glass-jar-with-white-lid-', 'Darío Méndez', 'dariomen', '2020-07-15', 'photo-1594813591867-02e797aa4581', 'A single clear glass jar with a metal lid. Shows one jar, not a set.'),
   tubesPeach: S('Xp0bTCLD07k', 'a-tube-of-cream-sitting-on-top-of-a-table-', 'Point Normal', 'normals', '2024-04-03', 'photo-1712168044214-f5a272c23a5b', 'Two unbranded white cosmetic tubes on a peach block. No aloe cue in the image.'),
@@ -91,7 +94,7 @@ export type Asset = {
   note?: string
 }
 
-type P = { n: number; name: string; slug: string; src: string; c1: Crop; c2: Crop; alt1: string; alt2: string; mode1?: 'crop' | 'contain'; mismatch?: string }
+type P = { n: number; name: string; slug: string; src: string; /** Different photograph for gallery image 2 (same item, same shoot); omitted = a detail crop of src. */ src2?: string; c1: Crop; c2: Crop; alt1: string; alt2: string; mode1?: 'crop' | 'contain'; mismatch?: string }
 
 const products: P[] = [
   { n: 1, name: 'Aero Wave Wireless Headphones', slug: 'aero-wave-wireless-headphones', src: 'headphonesBlack', c1: { cx: 0.5, cy: 0.47, zoom: 0.9 }, c2: { cx: 0.47, cy: 0.72, zoom: 0.5 }, alt1: 'Black wireless headphones with a padded headband, seen from above on a white surface', alt2: 'Close-up of the black leather-look ear cushions of the headphones', mismatch: 'On-ear, all black, no coloured inner ring (copy changed)' },
@@ -124,7 +127,7 @@ const pid = (n: number) => `A-P${String(n).padStart(2, '0')}`
 
 const productAssets: Asset[] = products.flatMap((p) => [
   { id: `${pid(p.n)}-1`, kind: 'product' as const, out: `${p.slug}-1.webp`, src: p.src, crop: p.c1, mode: p.mode1, alt: p.alt1, mismatch: p.mismatch },
-  { id: `${pid(p.n)}-2`, kind: 'product' as const, out: `${p.slug}-2.webp`, src: p.src, crop: p.c2, alt: p.alt2, mismatch: p.mismatch },
+  { id: `${pid(p.n)}-2`, kind: 'product' as const, out: `${p.slug}-2.webp`, src: p.src2 ?? p.src, crop: p.c2, alt: p.alt2, mismatch: p.mismatch },
 ])
 
 const categories: Array<{ n: number; slug: string; src: string; crop: Crop; alt: string }> = [

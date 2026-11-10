@@ -127,7 +127,11 @@ async function main() {
       `Downloaded from images.unsplash.com/${source.cdn} as a JPEG rendition (w=5000 max, q=90), not the untouched upload. Author, date and licence line were read from the photo page through the WebFetch tool (the page itself shows scripts a browser check).`,
       asset.mismatch ? `CLOSE MATCH ONLY (D3): ${asset.mismatch}.` : '',
       asset.note ?? '',
-      asset.kind === 'product' && asset.id.endsWith('-2') ? 'Gallery image 2 is a detail crop of the same photograph.' : '',
+      asset.kind === 'product' && asset.id.endsWith('-2')
+        ? asset.src === ASSETS.find((a) => a.id === asset.id.replace(/-2$/, '-1'))?.src
+          ? 'Gallery image 2 is a detail crop of the same photograph.'
+          : 'Gallery image 2 is a different photograph of the same item (same shoot as image 1).'
+        : '',
     ]
       .filter(Boolean)
       .join(' ')
@@ -138,10 +142,10 @@ async function main() {
       author_url: source.authorUrl,
       licence: LICENCE.name,
       licence_url: LICENCE.url,
-      licence_checked_on: LICENCE.checkedOn,
+      licence_checked_on: source.checked ?? LICENCE.checkedOn,
       attribution_required: 'no',
       attribution_text: `Photo by ${source.author} on Unsplash`,
-      retrieved_on: LICENCE.retrievedOn,
+      retrieved_on: source.checked ?? LICENCE.retrievedOn,
       original_filename: info.file,
       original_sha256: info.sha,
       archive_path: `demo-assets/_archive/originals/${info.file}`,
@@ -154,7 +158,7 @@ async function main() {
       alt_text: asset.alt,
       status: 'validated',
       approved_by: APPROVER,
-      approved_on: LICENCE.checkedOn,
+      approved_on: source.checked ?? LICENCE.checkedOn,
       notes,
     })
   }
