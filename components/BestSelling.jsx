@@ -23,9 +23,8 @@ import FeaturedTabs from './ui/FeaturedTabs'
 // tablet = 4 rows, 2 on a phone = 6 rows), with a "View all" link in the heading (the duplicate button under the grid was removed).
 // M111: the grid uses the listing ProductCard (the same card and 2/3/4 grid as shop, category and wishlist).
 // The heading, description and link words come from the admin's Storefront content.
-// Two columns on a phone, four from `md`, so the full rows below (multiples of four) never leave a gap.
+// Two columns on a phone, four from `md`: the rows the home page fills (multiples of four) leave no gap.
 const FEATURED_GRID = 'mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 lg:gap-6'
-const ROW = 4
 
 const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT }) => {
 
@@ -37,9 +36,9 @@ const BestSelling = ({ products = [], categories = [], content = DEFAULT_CONTENT
         return String(category.id)
     }
 
-    // Display only: show complete rows (all of them when there are fewer than one row).
-    const shown = products.length > ROW ? products.slice(0, products.length - (products.length % ROW)) : products
-    const items = shown.map((product) => ({
+    // The home page passes complete rows (flagged products topped up with the newest, app/(public)/page.jsx),
+    // so every product given is shown.
+    const items = products.map((product) => ({
         key: product.id,
         categoryId: topLevelOf(product),
         node: <ProductCard product={product} />,

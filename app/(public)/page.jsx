@@ -49,8 +49,9 @@ export async function generateMetadata() {
 export default async function Home() {
 
     const [latest, featured, cheapest, settings, categories, promoCards, deals, adminSlides, content] = await Promise.all([
-        // M101: ten newest, so up to five remain after the featured ones are taken out (below).
-        getProducts({ sort: '-createdAt', limit: 10 }),
+        // M101: the newest products, for New arrivals and to top up Featured (below); 24 leaves enough of
+        // both after the featured ones are taken out.
+        getProducts({ sort: '-createdAt', limit: 24 }),
         getFeaturedProducts({ limit: 12 }),
         getProducts({ sort: 'price', limit: 1 }),
         getSettings(),
@@ -67,7 +68,17 @@ export default async function Home() {
 
     // M101: "New arrivals" and "Featured" had the same products side by side. New arrivals now leave
     // out anything already featured; if that leaves nothing (a tiny catalogue), the newest are shown.
-    const featuredIds = new Set(featured.docs.map((product) => product.id));
+    // Featured shows at least two full rows of four (and three when there are enough): every product the
+    // admin flagged comes first, then the newest in-stock products fill the last row. Flagged products are
+    // never dropped; only the top-up is cut to the row. New arrivals then leave out everything shown here.
+    const ROW = 4;
+    const flagged = featured.docs;
+    const target = Math.min(12, Math.max(2 * ROW, Math.ceil(flagged.length / ROW) * ROW));
+    const flaggedIds = new Set(flagged.map((product) => product.id));
+    // Nothing flagged: no top-up, so the section stays hidden instead of calling the newest products featured.
+    const topUp = flagged.length === 0 ? [] : latest.docs.filter((product) => !flaggedIds.has(product.id) && product.inStock === true).slice(0, Math.max(0, target - flagged.length));
+    const featuredShown = [...flagged, ...topUp];
+    const featuredIds = new Set(featuredShown.map((product) => product.id));
     const notFeatured = latest.docs.filter((product) => !featuredIds.has(product.id));
     const newArrivals = (notFeatured.length > 0 ? notFeatured : latest.docs).slice(0, 8);
 
@@ -87,7 +98,7 @@ export default async function Home() {
                 and the banner copy). */}
             <Hero slides={slides} categories={categories} />
             <DealsOfTheDay products={deals} />
-            <BestSelling products={featured.docs} categories={categories} content={content} />
+            <BestSelling products={featuredShown} categories={categories} content={content} />
             <PromoCards cards={promoCards} />
             <LatestProducts products={newArrivals} content={content} />
             <CodSteps shipping={shipping} />
