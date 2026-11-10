@@ -3,6 +3,7 @@ import ProductCard from "@/components/ProductCard"
 import { SearchXIcon } from "lucide-react"
 import Breadcrumb from "@/components/ui/Breadcrumb"
 import EmptyState from "@/components/ui/EmptyState"
+import LoadMoreLink from "@/components/ui/LoadMoreLink"
 import { getProducts } from "@/lib/payload/products"
 import { getSettings } from "@/lib/payload/settings"
 import { pageMetadata, shareImages } from "@/lib/seo"
@@ -29,12 +30,26 @@ export async function generateMetadata({ searchParams }) {
     })
 }
 
+// 12 per step (three rows of four). "Load more" is a real link to ?page=N+1, and page N renders the first
+// N x 12 products, so it works without JavaScript, a crawler can follow it, and a reload or a shared
+// link shows the same list. The link keeps the scroll position, so new cards appear under the old ones.
+// The page number only ever widens the list; the canonical stays /shop (see generateMetadata).
+const PAGE_SIZE = 12
+
+function parsePage(raw) {
+    const page = Number(raw)
+    return Number.isInteger(page) && page >= 1 ? Math.min(page, 100) : 1
+}
+
 export default async function Shop({ searchParams }) {
 
-    const { search } = await searchParams
+    const { search, page: pageParam } = await searchParams
     const query = search?.trim()
+    const page = parsePage(pageParam)
 
-    const { docs: products } = await getProducts({ search })
+    const { docs: products, totalDocs } = await getProducts({ search, limit: PAGE_SIZE * page })
+    const hasMore = products.length < totalDocs
+    const nextHref = `/shop?${new URLSearchParams({ ...(query ? { search: query } : {}), page: String(page + 1) })}`
 
     // M98: the same frame as a category page (breadcrumb, a plain heading, a product count), and a
     // search with no match says so and offers the way back instead of showing an empty page.
@@ -54,7 +69,7 @@ export default async function Shop({ searchParams }) {
                 {products.length > 0 ? (
                     <>
                         <p className="mt-2 text-sm text-muted">
-                            Showing <strong className="text-ink">{products.length}</strong> product{products.length === 1 ? '' : 's'}
+                            Showing <strong className="text-ink">{products.length}</strong> of <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
                             {query && <> &middot; <Link href="/shop" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline hover:underline-offset-4">Clear search</Link></>}
                         </p>
                         {/* M45a: a real grid instead of a wrapping row of fixed-width cards. M66: the redesign's auto-fill grid. M111: 2 / 3 / 4 columns. */}
@@ -62,6 +77,15 @@ export default async function Shop({ searchParams }) {
                         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
                             {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
                         </div>
+                        {hasMore && (
+                            <div className="mt-10 flex flex-col items-center gap-3">
+                                <p className="text-sm text-muted">You&rsquo;ve seen {products.length} of {totalDocs}</p>
+                                <div aria-hidden="true" className="h-1 w-48 overflow-hidden rounded-full bg-line">
+                                    <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((products.length / totalDocs) * 100)}%` }} />
+                                </div>
+                                <LoadMoreLink href={nextHref} />
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="mt-8">
