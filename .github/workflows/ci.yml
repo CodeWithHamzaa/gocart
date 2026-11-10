@@ -108,7 +108,7 @@ jobs:
   # M56a: production build + the golden-path E2E test against a freshly seeded PostgreSQL.
   # The credentials below belong to a throwaway database that exists only for this job.
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
