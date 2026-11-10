@@ -17,7 +17,7 @@ const Section = ({ title, open = false, children }) => (
             {title}
             <span aria-hidden="true" className="text-xl leading-none text-ink-3 transition group-open:rotate-45">+</span>
         </summary>
-        <div className="pb-5 text-[15px] leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{children}</div>
+        <div className="pb-5 text-base leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{children}</div>
     </details>
 )
 

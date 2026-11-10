@@ -11,8 +11,8 @@ import type { HeroSlide } from '@/lib/hero-slides'
 // or for anyone who asked their device to reduce motion (WCAG 2.2.2: a pause control is always there).
 // Every slide is in the HTML; the first slide's heading is the page's <h1>. Product images only (alt
 // text from the media), no product names, so nothing here duplicates a product name hidden off-screen.
-const TONES: Record<HeroSlide['tone'], string> = { green: 'bg-primary-soft', blue: 'bg-slide-blue', grey: 'bg-lavender' }
-const BADGES: Record<HeroSlide['badgeTone'], string> = { sale: 'bg-pink text-white', ink: 'bg-ink text-white' }
+const TONES: Record<HeroSlide['tone'], string> = { green: 'bg-accent-soft', blue: 'bg-accent-soft', grey: 'bg-surface-muted' }
+const BADGES: Record<HeroSlide['badgeTone'], string> = { sale: 'bg-sale-strong text-white', ink: 'bg-ink text-white' }
 const INTERVAL_MS = 6000
 
 export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
@@ -72,10 +72,10 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               className={`grid w-full shrink-0 snap-start items-center gap-6 px-6 pb-20 pt-7 sm:px-12 sm:pt-12 lg:min-h-[440px] lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:px-16 lg:pb-16 ${TONES[slide.tone]}`}
             >
               <div>
-                <span className={`inline-block rounded-full px-3 py-1.5 text-[13px] font-semibold ${BADGES[slide.badgeTone]}`}>{slide.badge}</span>
-                <Heading className="mt-4 max-w-[560px] text-[32px] font-semibold leading-[1.06] tracking-[-0.04em] text-ink sm:text-5xl lg:text-[56px]">{slide.title}</Heading>
+                <span className={`inline-block rounded-full px-3 py-1.5 text-sm font-semibold ${BADGES[slide.badgeTone]}`}>{slide.badge}</span>
+                <Heading className="mt-4 max-w-[560px] text-4xl font-semibold leading-tight tracking-tighter text-ink sm:text-5xl lg:text-5xl">{slide.title}</Heading>
                 <p className="mt-3 max-w-[460px] text-base leading-relaxed text-ink-2 sm:mt-4 sm:text-lg">{slide.text}</p>
-                <Link href={slide.cta.href} tabIndex={i === index ? 0 : -1} className="mt-6 inline-flex min-h-12 items-center rounded-full bg-primary px-6 text-[15px] font-semibold text-white transition hover:bg-primary-dark">
+                <Link href={slide.cta.href} tabIndex={i === index ? 0 : -1} className="mt-6 inline-flex min-h-12 items-center rounded-full bg-primary px-6 text-base font-semibold text-white transition hover:bg-primary-dark">
                   {slide.cta.label}
                 </Link>
               </div>
@@ -125,10 +125,10 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             </button>
           </div>
           <div className="absolute bottom-4 right-6 hidden gap-2.5 md:flex lg:bottom-6 lg:right-8">
-            <button type="button" onClick={() => go(index - 1)} aria-label="Previous slide" className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-chip transition hover:bg-lavender">
+            <button type="button" onClick={() => go(index - 1)} aria-label="Previous slide" className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-chip transition hover:bg-surface-muted">
               <ChevronLeftIcon size={20} aria-hidden="true" />
             </button>
-            <button type="button" onClick={() => go(index + 1)} aria-label="Next slide" className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-chip transition hover:bg-lavender">
+            <button type="button" onClick={() => go(index + 1)} aria-label="Next slide" className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-chip transition hover:bg-surface-muted">
               <ChevronRightIcon size={20} aria-hidden="true" />
             </button>
           </div>

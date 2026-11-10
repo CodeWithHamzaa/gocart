@@ -16,7 +16,7 @@ export default function BrandLogo({ name, mark = true }: { name: string; mark?: 
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       {mark && <BrandMark />}
-      <span className="truncate font-bold tracking-[-0.02em] text-ink">{name}</span>
+      <span className="truncate font-bold tracking-tight text-ink">{name}</span>
     </span>
   )
 }

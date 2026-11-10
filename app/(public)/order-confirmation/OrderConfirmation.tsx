@@ -15,7 +15,7 @@ import { formatPKR } from '@/lib/currency'
 const linkButton =
   'inline-flex min-h-12 items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold transition active:scale-95'
 const primaryButton = `${linkButton} bg-primary text-white hover:bg-primary-dark`
-const secondaryButton = `${linkButton} bg-primary-soft text-primary-dark hover:bg-lavender-2`
+const secondaryButton = `${linkButton} bg-accent-soft text-primary-dark hover:bg-accent`
 
 export function OrderConfirmation() {
   const [state, setState] = useState<'loading' | 'found' | 'missing'>('loading')
@@ -41,9 +41,9 @@ export function OrderConfirmation() {
     return (
       <div className="mx-6 my-16 min-h-[60vh]" aria-busy="true">
         <div className="mx-auto max-w-2xl animate-pulse space-y-4">
-          <div className="h-9 w-56 rounded-full bg-lavender" />
-          <div className="h-12 w-full rounded-full bg-lavender" />
-          <div className="h-40 w-full rounded-card bg-lavender" />
+          <div className="h-9 w-56 rounded-full bg-surface-muted" />
+          <div className="h-12 w-full rounded-full bg-surface-muted" />
+          <div className="h-40 w-full rounded-card bg-surface-muted" />
         </div>
       </div>
     )
@@ -53,7 +53,7 @@ export function OrderConfirmation() {
     return (
       <div className="mx-6 my-16 min-h-[60vh]">
         <div className="mx-auto max-w-2xl text-muted">
-          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">
+          <h1 className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">
             We couldn&apos;t find a recent order in this browser
           </h1>
           <p className="mt-4">
@@ -82,14 +82,14 @@ export function OrderConfirmation() {
           <span className="flex size-16 items-center justify-center rounded-full bg-success-soft text-success">
             <CheckCircle2 size={36} aria-hidden="true" />
           </span>
-          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Order placed!</h1>
+          <h1 className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">Order placed!</h1>
           <p className="max-w-md text-sm text-muted">
             Pay in cash when your order is delivered. Keep your order number and phone number to
             check your order status on the Orders page.
           </p>
         </div>
 
-        <div className="mt-6 rounded-card bg-lavender p-5 sm:p-6">
+        <div className="mt-6 rounded-card bg-surface-muted p-5 sm:p-6">
           <p className="text-xs font-semibold text-muted">Your order number</p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <p className="break-all font-mono text-xl font-semibold text-ink sm:text-2xl">
@@ -98,7 +98,7 @@ export function OrderConfirmation() {
             <button
               type="button"
               onClick={copyOrderNumber}
-              className="inline-flex min-h-11 items-center rounded-full bg-white px-5 text-xs font-semibold text-primary-dark transition hover:bg-primary-soft active:scale-95"
+              className="inline-flex min-h-11 items-center rounded-full bg-white px-5 text-xs font-semibold text-primary-dark transition hover:bg-accent-soft active:scale-95"
             >
               Copy
             </button>
@@ -119,7 +119,7 @@ export function OrderConfirmation() {
           </dl>
         </div>
 
-        <h2 className="mt-8 text-xl font-semibold tracking-[-0.02em] text-ink">Items</h2>
+        <h2 className="mt-8 text-xl font-semibold tracking-tight text-ink">Items</h2>
         <ul className="mt-2 divide-y divide-line border-y border-line">
           {order.items.map((item, index) => (
             <li key={index} className="flex justify-between gap-4 py-3 text-sm">
@@ -159,7 +159,7 @@ export function OrderConfirmation() {
           </div>
         </dl>
 
-        <h2 className="mt-8 text-xl font-semibold tracking-[-0.02em] text-ink">Delivery details</h2>
+        <h2 className="mt-8 text-xl font-semibold tracking-tight text-ink">Delivery details</h2>
         <div className="mt-2 space-y-1 text-sm">
           <p className="font-semibold text-ink">{delivery.name}</p>
           <p>{delivery.phone}</p>
@@ -168,7 +168,7 @@ export function OrderConfirmation() {
           <p>{delivery.city}</p>
         </div>
 
-        <h2 className="mt-8 text-xl font-semibold tracking-[-0.02em] text-ink">Payment method</h2>
+        <h2 className="mt-8 text-xl font-semibold tracking-tight text-ink">Payment method</h2>
         <p className="mt-2 text-sm">Cash on Delivery (COD)</p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">

@@ -37,7 +37,7 @@ export default function WishlistPage() {
         <div className="mt-2 sm:mt-4">
           <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Wishlist' }]} />
         </div>
-        <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Your wishlist</h1>
+        <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">Your wishlist</h1>
         <p className="mt-1 text-sm text-muted">Saved in this browser only. There are no accounts, so it does not follow you to another device.</p>
         {key && products === null ? (
           <p role="status" className="mt-8 text-sm text-muted">Loading…</p>

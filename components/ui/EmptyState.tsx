@@ -8,9 +8,9 @@ import type { ReactNode } from 'react'
 export default function EmptyState({ icon, title, text, action, headingLevel = 2 }: { icon: ReactNode; title: string; text?: string; action?: { href: string; label: string }; headingLevel?: 1 | 2 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2'
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-panel bg-lavender px-6 py-14 text-center">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-panel bg-surface-muted px-6 py-14 text-center">
       <span className="flex size-16 items-center justify-center rounded-full bg-white text-primary" aria-hidden="true">{icon}</span>
-      <Heading className="text-[22px] font-semibold tracking-[-0.02em] text-ink">{title}</Heading>
+      <Heading className="text-xl font-semibold tracking-tight text-ink">{title}</Heading>
       {text && <p className="text-sm text-muted">{text}</p>}
       {action && (
         <Link href={action.href} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark">

@@ -111,8 +111,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     { label: category.title },
   ]
   // M101: pill pagination in the home page's style (lavender pills, the current page in violet).
-  const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-ink font-semibold hover:bg-primary-soft hover:text-primary-dark transition'
-  const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-lavender text-muted'
+  const pageLink = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-surface-muted text-ink font-semibold hover:bg-accent-soft hover:text-primary-dark transition'
+  const pageOff = 'inline-flex items-center justify-center min-h-11 px-5 rounded-full bg-surface-muted text-muted'
 
   // M63: the redesign. A tinted heading panel (title and description; M102 removed the sub-category
   // pills, ADR-048), the product count, a full-width grid and link-based pagination (a
@@ -129,7 +129,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <Breadcrumb items={crumbs} />
         </div>
 
-        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-lavender px-5 py-7 sm:px-10 sm:py-10">
+        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel bg-surface-muted px-5 py-7 sm:px-10 sm:py-10">
           {/* M101: the home banner's look: a lavender panel and a large semibold title. */}
           {/* M107: the category's photo fills the circle when an admin uploaded one (as on the tiles and shortcuts); the icon stands in otherwise. */}
           <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white text-ink-3 sm:flex lg:right-14">
@@ -140,8 +140,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             )}
           </span>
           <div className="relative flex max-w-2xl flex-col gap-3">
-            <h1 id="category-title" className="text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] text-ink sm:text-5xl">{category.title}</h1>
-            {category.description && <p className="text-[15px] text-ink-3">{category.description}</p>}
+            <h1 id="category-title" className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-5xl">{category.title}</h1>
+            {category.description && <p className="text-base text-ink-3">{category.description}</p>}
           </div>
         </section>
 
@@ -196,7 +196,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   key={n}
                   href={pageHref(n)}
                   aria-current={n === page ? 'page' : undefined}
-                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-lavender text-ink hover:bg-primary-soft'}`}
+                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === page ? 'bg-primary text-white' : 'bg-surface-muted text-ink hover:bg-accent-soft'}`}
                 >
                   {n}
                 </Link>

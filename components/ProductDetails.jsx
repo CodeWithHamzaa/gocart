@@ -99,18 +99,18 @@ const ProductDetails = ({ product, shipping }) => {
             </div>
 
             <div className="min-w-0 lg:pt-2">
-                {category && <p className="text-[13px] text-muted">{category.title}</p>}
+                {category && <p className="text-sm text-muted">{category.title}</p>}
                 {/* M44: an unbroken name (a SKU-style "ABC-123456789-XYZ") wraps instead of scrolling the page. */}
-                <h1 className="mt-2 text-[28px] font-semibold leading-[1.1] tracking-[-0.03em] text-ink sm:text-4xl lg:text-[40px] [overflow-wrap:anywhere]">{product.name}</h1>
+                <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl lg:text-4xl [overflow-wrap:anywhere]">{product.name}</h1>
 
                 {/* M101: the price is not boxed. Price in ink, the MRP and the discount as text beside it, then
                     one stock line (a dot and a word); the delivery note is said once, below the buttons (M98). */}
                 <div className="mt-4 border-b border-line pb-5">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <p className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-ink sm:text-[32px]">{formatPKR(product.price)}</p>
+                        <p className="text-3xl font-semibold leading-none tracking-tight text-ink sm:text-4xl">{formatPKR(product.price)}</p>
                         {discount > 0 && (
                             <>
-                                <p className="text-base text-strike line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
+                                <p className="text-base text-muted line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
                                 <Badge tone="off" className="self-center">{discount}% off</Badge>
                             </>
                         )}
@@ -125,7 +125,7 @@ const ProductDetails = ({ product, shipping }) => {
                 <MobileActionBar label="Add to cart" inline>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
-                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-full bg-lavender px-6 text-sm font-semibold text-muted">
+                            <button disabled aria-disabled="true" className="min-h-12 flex-1 cursor-not-allowed rounded-full bg-surface-muted px-6 text-sm font-semibold text-muted">
                                 Out of Stock
                             </button>
                         ) : inCart ? (
@@ -141,7 +141,7 @@ const ProductDetails = ({ product, shipping }) => {
                                     <ShoppingCartIcon size={18} aria-hidden="true" />
                                     Add to Cart
                                 </button>
-                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-primary-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-lavender-2 active:scale-[0.98]">
+                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-accent-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-accent active:scale-[0.98]">
                                     Buy Now
                                 </button>
                             </>
@@ -150,7 +150,7 @@ const ProductDetails = ({ product, shipping }) => {
                 </MobileActionBar>
 
                 {/* M101: one quiet list instead of two boxed cards with tinted circles. */}
-                <ul className="mt-6 divide-y divide-line-2 rounded-card bg-lavender px-1 text-sm text-ink-2 lg:mt-8">
+                <ul className="mt-6 divide-y divide-line-2 rounded-card bg-surface-muted px-1 text-sm text-ink-2 lg:mt-8">
                     <li className="flex items-center gap-3 px-4 py-3.5">
                         <TruckIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
                         {deliveryNote(shipping)}

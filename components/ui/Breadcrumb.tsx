@@ -7,7 +7,7 @@ export type Crumb = { label: string; href?: string }
 export default function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
     <nav aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-x-1 text-[13px] text-muted">
+      <ol className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
         {items.map((item, index) => (
           <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1">
             {index > 0 && <ChevronRightIcon size={14} aria-hidden="true" className="shrink-0" />}

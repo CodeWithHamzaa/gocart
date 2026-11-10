@@ -164,12 +164,12 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     // M101 (owner-approved home style): a lavender panel with white inner surfaces, pill buttons, semibold
     // headings and no shadow. Behaviour, totals and the Turnstile check are unchanged.
-    const step = 'mb-3 flex items-center gap-2.5 text-[15px] font-semibold text-ink'
+    const step = 'mb-3 flex items-center gap-2.5 text-base font-semibold text-ink'
     const stepNo = 'flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white'
 
     return (
-        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-card bg-lavender p-5 text-sm sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
-            <h2 className='text-[22px] font-semibold tracking-[-0.02em] text-ink'>Order summary</h2>
+        <aside aria-label='Order summary' className='flex w-full min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-card bg-surface-muted p-5 text-sm sm:p-6 lg:sticky lg:top-4 lg:max-w-[420px]'>
+            <h2 className='text-xl font-semibold tracking-tight text-ink'>Order summary</h2>
 
             <section aria-labelledby='step-address'>
                 <h3 id='step-address' className={step}><span className={stepNo} aria-hidden='true'>1</span>Delivery address</h3>
@@ -177,7 +177,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                     selectedAddress ? (
                         <div className='flex items-center gap-2 rounded-tile bg-white p-3 pl-4'>
                             <p className='min-w-0 flex-1 text-ink-2 [overflow-wrap:anywhere]'>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
-                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
                         </div>
                     ) : (
                         <div>
@@ -193,7 +193,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                                     </select>
                                 )
                             }
-                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-5 font-semibold text-primary-dark transition hover:bg-primary-soft' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
+                            <button type='button' className='inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-5 font-semibold text-primary-dark transition hover:bg-accent-soft' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} aria-hidden='true' /></button>
                         </div>
                     )
                 }
@@ -223,7 +223,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             </dl>
             <div className='flex items-baseline justify-between border-t border-line-2 pt-4'>
                 <p className='font-semibold text-ink'>Total</p>
-                <p className='text-[28px] font-semibold leading-none tracking-[-0.03em] text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
+                <p className='text-3xl font-semibold leading-none tracking-tighter text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
             </div>
             {shippingSettings === null && (
                 <p className='text-xs text-muted'>

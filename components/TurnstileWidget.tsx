@@ -199,7 +199,7 @@ export function TurnstileWidget({
       <div ref={containerRef} className="max-w-full" />
       <p
         aria-live="polite"
-        className={blocking ? 'rounded-tile bg-white px-4 py-3 text-[13px] leading-snug text-ink-2 ring-1 ring-line-2' : 'text-xs text-muted'}
+        className={blocking ? 'rounded-tile bg-white px-4 py-3 text-sm leading-snug text-ink-2 ring-1 ring-line-2' : 'text-xs text-muted'}
       >
         {message}
       </p>

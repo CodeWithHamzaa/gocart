@@ -11,12 +11,12 @@ export default function CodSteps({ shipping = null }: { shipping?: DeliverySetti
   ]
   return (
     <section aria-labelledby="cod-steps" className="mx-4 mt-16 sm:mx-6 sm:mt-24">
-      <div className="mx-auto max-w-7xl rounded-hero bg-lavender px-6 py-8 sm:px-11 sm:py-11">
-        <h2 id="cod-steps" className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Order now, pay when it arrives</h2>
+      <div className="mx-auto max-w-7xl rounded-hero bg-surface-muted px-6 py-8 sm:px-11 sm:py-11">
+        <h2 id="cod-steps" className="text-2xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">Order now, pay when it arrives</h2>
         <ol className="mt-6 grid gap-7 sm:mt-8 sm:grid-cols-3 sm:gap-8">
           {steps.map((step, index) => (
-            <li key={step.title} className="text-[15px] leading-relaxed text-ink-2">
-              <span aria-hidden="true" className="block text-[44px] font-semibold leading-none tracking-[-0.04em] text-primary">{index + 1}</span>
+            <li key={step.title} className="text-base leading-relaxed text-ink-2">
+              <span aria-hidden="true" className="block text-5xl font-semibold leading-none tracking-tighter text-primary">{index + 1}</span>
               <strong className="mt-3 block text-lg font-semibold text-ink">{step.title}</strong>
               {step.text}
             </li>

@@ -18,7 +18,7 @@ export default async function AnnouncementBar() {
   const messages = announcementList(content, delivery)
 
   return (
-    <div className="bg-primary-soft text-xs font-medium text-sky-ink sm:text-[13px]">
+    <div className="bg-accent-soft text-xs font-medium text-ink-2 sm:text-sm">
       <div className="mx-auto flex min-h-9 max-w-[83rem] items-center gap-x-6 px-4 py-2 sm:px-6">
         <AnnouncementTicker messages={messages} />
         {content.showTrackOrderLink && (

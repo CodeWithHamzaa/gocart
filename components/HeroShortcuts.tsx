@@ -16,7 +16,7 @@ const imageOf = (category: Category) => (category.image && typeof category.image
 
 // Phone: a 68px column (56px circle, name below), so 4 fit across at 320-375px and 5 from 390px. From `md`: the pill (44px circle, name beside it).
 const CHIP =
-  'flex w-[68px] flex-col items-center gap-1.5 rounded-tile text-center text-xs font-medium text-ink md:min-h-14 md:w-auto md:flex-row md:gap-2.5 md:rounded-full md:bg-lavender md:py-1.5 md:pl-1.5 md:pr-5 md:text-left md:text-[15px] md:transition md:hover:bg-lavender-2'
+  'flex w-[68px] flex-col items-center gap-1.5 rounded-tile text-center text-xs font-medium text-ink md:min-h-14 md:w-auto md:flex-row md:gap-2.5 md:rounded-full md:bg-surface-muted md:py-1.5 md:pl-1.5 md:pr-5 md:text-left md:text-base md:transition md:hover:bg-accent'
 // M111: the circle keeps one size per breakpoint (aspect-square + shrink-0, so a long name can never
 // squash it) and its image is centre-cropped; on a phone the name is centred under it.
 const CIRCLE = 'flex aspect-square size-14 shrink-0 items-center justify-center overflow-hidden rounded-full md:size-11'
@@ -53,7 +53,7 @@ export default function HeroShortcuts({ categories = [], shipping = {} }: { cate
               return (
                 <li key={category.id} className={`shrink-0 ${index >= DESKTOP_CHIPS ? 'lg:hidden' : ''}`}>
                   <Link href={`/category/${category.slug}`} className={CHIP}>
-                    <span className={`${CIRCLE} bg-lavender text-ink-3 md:bg-white`}>
+                    <span className={`${CIRCLE} bg-surface-muted text-ink-3 md:bg-white`}>
                       {image ? <Image src={image} alt="" width={128} height={128} sizes="(min-width: 768px) 44px, 56px" className="size-full object-cover object-center" /> : <CategoryIcon category={category} size={24} strokeWidth={1.6} aria-hidden="true" />}
                     </span>
                     <span className={LABEL}>{category.title}</span>
@@ -62,8 +62,8 @@ export default function HeroShortcuts({ categories = [], shipping = {} }: { cate
               )
             })}
             <li className="shrink-0">
-              <Link href="/categories" className={`${CHIP} md:bg-primary-soft md:font-semibold md:text-primary-dark`}>
-                <span className={`${CIRCLE} bg-primary-soft text-primary-dark md:bg-white`}><LayoutGridIcon size={22} strokeWidth={1.7} aria-hidden="true" /></span>
+              <Link href="/categories" className={`${CHIP} md:bg-accent-soft md:font-semibold md:text-primary-dark`}>
+                <span className={`${CIRCLE} bg-accent-soft text-primary-dark md:bg-white`}><LayoutGridIcon size={22} strokeWidth={1.7} aria-hidden="true" /></span>
                 <span className={`${LABEL} font-semibold text-primary-dark`}>View all</span>
               </Link>
             </li>
@@ -71,14 +71,14 @@ export default function HeroShortcuts({ categories = [], shipping = {} }: { cate
         </nav>
       )}
 
-      <ul className="mt-6 grid gap-3 rounded-panel bg-lavender p-4 sm:mt-8 sm:grid-cols-3 sm:gap-4 sm:px-7 sm:py-5">
+      <ul className="mt-6 grid gap-3 rounded-panel bg-surface-muted p-4 sm:mt-8 sm:grid-cols-3 sm:gap-4 sm:px-7 sm:py-5">
         {promises.map((item) => (
           <li key={item.title} className="flex items-center gap-3 text-sm text-ink-2">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-primary">
               <item.icon size={20} strokeWidth={1.8} aria-hidden="true" />
             </span>
             <span>
-              <strong className="block text-[15px] font-semibold text-ink">{item.title}</strong>
+              <strong className="block text-base font-semibold text-ink">{item.title}</strong>
               {item.text}
             </span>
           </li>

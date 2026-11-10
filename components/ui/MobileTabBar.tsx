@@ -31,8 +31,8 @@ export default function MobileTabBar() {
           {TABS.map(({ href, label, Icon, match }) => {
             const active = match(path)
             return (
-              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-tile text-[11px] ${active ? 'bg-lavender font-semibold text-primary' : 'font-medium text-muted'}`}>
-                <Icon size={22} strokeWidth={1.8} aria-hidden="true" className={active ? 'fill-primary-soft' : ''} />
+              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-tile text-xs ${active ? 'bg-surface-muted font-semibold text-primary' : 'font-medium text-muted'}`}>
+                <Icon size={22} strokeWidth={1.8} aria-hidden="true" className={active ? 'fill-accent-soft' : ''} />
                 {label}
               </Link>
             )

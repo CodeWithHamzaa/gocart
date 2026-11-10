@@ -80,20 +80,20 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
             {/* M44: the form scrolls (small phones, on-screen keyboard) instead of clipping at h-screen.
                 M101: the fields sit on a lavender card (pill fields, a pill button), like the order summary. */}
             <div className="mx-auto flex min-h-dvh w-full max-w-md items-center px-4 py-10">
-            <div className="relative flex w-full flex-col gap-5 rounded-panel bg-lavender px-5 pb-6 pt-7 text-ink shadow-float sm:px-7">
-                <h2 className="pr-10 text-[26px] font-semibold tracking-[-0.03em]">Add new address</h2>
+            <div className="relative flex w-full flex-col gap-5 rounded-panel bg-surface-muted px-5 pb-6 pt-7 text-ink shadow-float sm:px-7">
+                <h2 className="pr-10 text-2xl font-semibold tracking-tighter">Add new address</h2>
                 <input name="name" onChange={handleAddressChange} value={address.name} className={field} type="text" placeholder="Full name" autoComplete="name" required />
-                {errors.name && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.name}</p>}
+                {errors.name && <p role="alert" className="-mt-3 text-xs text-sale">{errors.name}</p>}
                 <input name="phone" onChange={handleAddressChange} value={address.phone} className={field} type="tel" placeholder="03XXXXXXXXX" inputMode="numeric" autoComplete="tel" required />
-                {errors.phone && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.phone}</p>}
+                {errors.phone && <p role="alert" className="-mt-3 text-xs text-sale">{errors.phone}</p>}
                 <input name="email" onChange={handleAddressChange} value={address.email} className={field} type="email" placeholder="Email address" required />
                 <input name="address" onChange={handleAddressChange} value={address.address} className={field} type="text" placeholder="House #, street, locality" autoComplete="street-address" required />
-                {errors.address && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.address}</p>}
+                {errors.address && <p role="alert" className="-mt-3 text-xs text-sale">{errors.address}</p>}
                 <div className="flex gap-3">
                     <input name="city" onChange={handleAddressChange} value={address.city} className={field} type="text" placeholder="City" required />
                     <input name="area" onChange={handleAddressChange} value={address.area} className={field} type="text" placeholder="Area" required />
                 </div>
-                {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-pink-dark">{errors.city || errors.area}</p>}
+                {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-sale">{errors.city || errors.area}</p>}
                 <button className="min-h-12 rounded-full bg-primary py-3 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-95">SAVE ADDRESS</button>
                 <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute right-2.5 top-3 inline-flex size-11 items-center justify-center rounded-full text-ink-2 hover:bg-white hover:text-ink">
                     <XIcon size={24} aria-hidden="true" />

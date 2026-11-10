@@ -42,7 +42,7 @@ export default function ScrollRail({ label, children }: { label: string; childre
   }
 
   const button =
-    'absolute top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-float-sm ring-1 ring-line transition hover:bg-lavender disabled:pointer-events-none disabled:opacity-0 md:flex'
+    'absolute top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-float-sm ring-1 ring-line transition hover:bg-surface-muted disabled:pointer-events-none disabled:opacity-0 md:flex'
 
   return (
     <div ref={box} className="relative">

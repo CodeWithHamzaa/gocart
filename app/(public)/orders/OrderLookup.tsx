@@ -64,8 +64,8 @@ export function OrderLookup() {
   return (
     <div className="mx-4 my-8 min-h-[60vh] text-ink-2 sm:mx-6 sm:my-12">
       <div className="mx-auto max-w-2xl">
-        <div className="rounded-panel bg-lavender p-5 sm:p-8">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">Check your order</h1>
+        <div className="rounded-panel bg-surface-muted p-5 sm:p-8">
+        <h1 className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">Check your order</h1>
         <p className="mt-2 text-muted">Enter your order number and the phone number you used when ordering.</p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
@@ -111,7 +111,7 @@ export function OrderLookup() {
 
         <div aria-live="polite" className="mt-6">
           {result && !result.ok && (
-            <p className="rounded-tile bg-primary-soft px-5 py-4 text-sm text-ink">
+            <p className="rounded-tile bg-accent-soft px-5 py-4 text-sm text-ink">
               {result.message}
             </p>
           )}

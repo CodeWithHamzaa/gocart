@@ -63,7 +63,7 @@ export default function Cart() {
     }
 
     const undoNotice = removed && (
-        <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-full bg-primary-soft py-1 pl-5 pr-2 text-sm text-ink">
+        <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-full bg-accent-soft py-1 pl-5 pr-2 text-sm text-ink">
             <span className="min-w-0 [overflow-wrap:anywhere]">Removed {removed.name}.</span>
             <button type="button" onClick={handleUndo} className="inline-flex min-h-11 items-center rounded-full px-4 font-semibold text-primary-dark hover:bg-white">Undo</button>
         </p>
@@ -101,7 +101,7 @@ export default function Cart() {
                 <div className="mt-2 sm:mt-4">
                     <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Cart' }]} />
                 </div>
-                <h1 className="mb-5 mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-ink sm:text-4xl">My Cart <span className="text-base font-medium tracking-normal text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
+                <h1 className="mb-5 mt-2 text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">My Cart <span className="text-base font-medium tracking-normal text-muted">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span></h1>
 
                 {undoNotice && <div className="mb-4">{undoNotice}</div>}
 
@@ -115,18 +115,18 @@ export default function Cart() {
                                 const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
 
                                 return (
-                                    <article key={item.id} className="flex items-center gap-3 rounded-card bg-lavender p-3 sm:gap-5 sm:p-4">
+                                    <article key={item.id} className="flex items-center gap-3 rounded-card bg-surface-muted p-3 sm:gap-5 sm:p-4">
                                         <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-tile bg-white sm:size-32">
                                             {imageUrl && <Image src={imageUrl} className="size-full object-cover" alt="" width={256} height={256} sizes="(min-width: 640px) 128px, 96px" />}
                                         </div>
                                         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
-                                                    {categoryTitle && <p className="text-[13px] text-muted">{categoryTitle}</p>}
-                                                    <Link href={`/product/${item.id}`} className="text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink [overflow-wrap:anywhere] hover:underline hover:underline-offset-4 sm:text-lg sm:tracking-[-0.02em]">{item.name}</Link>
+                                                    {categoryTitle && <p className="text-sm text-muted">{categoryTitle}</p>}
+                                                    <Link href={`/product/${item.id}`} className="text-base font-semibold leading-snug tracking-tight text-ink [overflow-wrap:anywhere] hover:underline hover:underline-offset-4 sm:text-lg sm:tracking-tight">{item.name}</Link>
                                                 </div>
                                                 {/* M44 made removal reachable on a phone; M65 keeps one 44px button at every width. */}
-                                                <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-1.5 -mt-1.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-3 transition hover:bg-white hover:text-pink-dark active:scale-95">
+                                                <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-1.5 -mt-1.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-3 transition hover:bg-white hover:text-sale active:scale-95">
                                                     <Trash2Icon size={18} aria-hidden="true" />
                                                 </button>
                                             </div>

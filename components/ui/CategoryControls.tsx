@@ -12,7 +12,7 @@ const field = 'min-h-11 w-full rounded-full border border-line-2 bg-white px-4 t
 export default function CategoryControls({ basePath, filters }: { basePath: string; filters: CategoryFilters }) {
   const active = isRefined(filters)
   return (
-    <details open={active} className="group rounded-card bg-lavender">
+    <details open={active} className="group rounded-card bg-surface-muted">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
         <span>Sort &amp; filter{active ? ' (applied)' : ''}</span>
         <span aria-hidden="true" className="text-lg text-primary group-open:hidden">+</span>

@@ -25,15 +25,15 @@ export default function PromoCards({ cards = [] }: { cards?: PromoCard[] }) {
             <Link
               key={card.id}
               href={card.link}
-              className={`relative flex min-h-[180px] sm:min-h-[220px] flex-col justify-center gap-2 overflow-hidden rounded-3xl p-6 sm:p-8 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${imageUrl ? 'sm:pr-48' : ''} ${tone.card}`}
+              className={`relative flex min-h-[180px] sm:min-h-[220px] flex-col justify-center gap-2 overflow-hidden rounded-panel p-6 sm:p-8 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${imageUrl ? 'sm:pr-48' : ''} ${tone.card}`}
             >
               {imageUrl && (
                 <div aria-hidden="true" className="absolute right-6 top-1/2 hidden size-32 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white sm:flex sm:size-40">
                   <Image src={imageUrl} alt="" width={160} height={160} className="size-full object-contain" sizes="160px" />
                 </div>
               )}
-              {card.eyebrow && <span className={`relative text-[13px] font-bold ${tone.text}`}>{card.eyebrow}</span>}
-              <span className={`relative ${imageUrl ? 'max-w-[280px] break-words' : 'max-w-[28rem]'} text-[26px] sm:text-3xl font-bold leading-tight tracking-tight`}>{card.title}</span>
+              {card.eyebrow && <span className={`relative text-sm font-bold ${tone.text}`}>{card.eyebrow}</span>}
+              <span className={`relative ${imageUrl ? 'max-w-[280px] break-words' : 'max-w-[28rem]'} text-2xl sm:text-3xl font-bold leading-tight tracking-tight`}>{card.title}</span>
               <span className={`relative inline-flex min-h-11 items-center gap-1 text-sm font-bold ${tone.text}`}>
                 {card.ctaText}
                 <ArrowRightIcon size={16} aria-hidden="true" />

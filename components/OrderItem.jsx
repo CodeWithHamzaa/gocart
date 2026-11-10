@@ -4,22 +4,22 @@ import { formatPKR } from '@/lib/currency'
 // a single responsive card. Replaces the dummy-data table row. Product images are not
 // part of the lookup result, so lines are text-only. React escaping only.
 const STATUS_STYLES = {
-    PLACED: { label: 'Placed', className: 'bg-primary-soft text-primary-dark' },
-    CONFIRMED: { label: 'Confirmed', className: 'bg-tint-yellow text-tint-yellow-link' },
-    PROCESSING: { label: 'Processing', className: 'bg-tint-blue text-tint-blue-link' },
-    SHIPPED: { label: 'Shipped', className: 'bg-tint-lavender text-tint-lavender-link' },
+    PLACED: { label: 'Placed', className: 'bg-accent-soft text-primary-dark' },
+    CONFIRMED: { label: 'Confirmed', className: 'bg-accent-soft text-primary-dark' },
+    PROCESSING: { label: 'Processing', className: 'bg-accent-soft text-primary-dark' },
+    SHIPPED: { label: 'Shipped', className: 'bg-accent-soft text-primary-dark' },
     DELIVERED: { label: 'Delivered', className: 'bg-success-soft text-success' },
-    CANCELLED: { label: 'Cancelled', className: 'bg-pink-soft text-pink-dark' },
-    RETURNED: { label: 'Returned', className: 'bg-tint-peach text-tint-peach-link' },
+    CANCELLED: { label: 'Cancelled', className: 'bg-sale-soft text-sale' },
+    RETURNED: { label: 'Returned', className: 'bg-accent-soft text-primary-dark' },
 }
 
 const OrderItem = ({ order }) => {
 
-    const status = STATUS_STYLES[order.status] || { label: String(order.status), className: 'bg-primary-soft text-primary-dark' };
+    const status = STATUS_STYLES[order.status] || { label: String(order.status), className: 'bg-accent-soft text-primary-dark' };
     const placedOn = new Date(order.createdAt);
 
     return (
-        <div className="rounded-card bg-lavender p-5 text-sm text-ink-2 sm:p-6">
+        <div className="rounded-card bg-surface-muted p-5 text-sm text-ink-2 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p className="text-xs text-muted">Order number</p>

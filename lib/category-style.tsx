@@ -51,26 +51,21 @@ export function CategoryIcon({ category, ...props }: { category: { slug: string;
   return createElement(categoryIcon(category), props)
 }
 
-// The design's six pastels. `tile` is the background, `ink` the icon colour and `link` the text
+// One neutral tint (the pastels were retired with the neutral surface tokens). `tile` is the background, `ink` the icon colour and `link` the text
 // colour that keeps 4.5:1 on that background. Class names are written out in full so Tailwind
 // finds them.
 export type Tint = { tile: string; ink: string; link: string }
 
 export const TINTS: Tint[] = [
-  { tile: 'bg-tint-lavender', ink: 'text-tint-lavender-ink', link: 'text-tint-lavender-link' },
-  { tile: 'bg-tint-pink', ink: 'text-tint-pink-ink', link: 'text-tint-pink-link' },
-  { tile: 'bg-tint-blue', ink: 'text-tint-blue-ink', link: 'text-tint-blue-link' },
-  { tile: 'bg-tint-mint', ink: 'text-tint-mint-ink', link: 'text-tint-mint-link' },
-  { tile: 'bg-tint-yellow', ink: 'text-tint-yellow-icon', link: 'text-tint-yellow-link' },
-  { tile: 'bg-tint-peach', ink: 'text-tint-peach-ink', link: 'text-tint-peach-link' },
+  { tile: 'bg-surface-muted', ink: 'text-ink-3', link: 'text-primary-dark' },
 ]
 
 export function tintFor(index: number): Tint {
   return TINTS[((index % TINTS.length) + TINTS.length) % TINTS.length]
 }
 
-// Product image tiles use the paler sibling of each pastel so a photo reads against it.
-const TILES = ['bg-tile-lavender', 'bg-tile-blue', 'bg-tile-pink', 'bg-tile-mint', 'bg-tile-peach', 'bg-tile-yellow']
+// Product image tiles: the same neutral well for every product, so photos read true.
+const TILES = ['bg-surface-muted']
 
 // A stable tile for a product, so a card keeps its colour on every page and every render.
 export function tileFor(id: number | string): string {
