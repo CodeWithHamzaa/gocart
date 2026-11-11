@@ -37,7 +37,7 @@ Every screenshot is a real capture of `https://gocart-test-inky.vercel.app`; non
 
 ## Accuracy notes and limitations
 
-- **Older card design in the screenshots.** The test site runs `main` at `12d9454` (`M110`). The `M111` listing-card change (merged, not deployed) is therefore **not** in these screenshots, which show the card design that is live on the test site. Re-run the capture after the next test deploy to refresh them.
+- **Current card design.** The screenshots show the current product card: a white card with a hairline border, photo first, then category, name, price with the struck-through old price and discount, and a round add-to-cart button. It comes from "One product card for grids and rails" (`0257271`, 2026-11-10), which replaced the earlier `M111` card. Checked on 2026-11-11: the card markup the test site serves is identical to `components/ProductCard.jsx` on `main`. Note: the deployment record in `docs/DEPLOYMENT_VERCEL_TEST.md` still says the site serves `12d9454`; that record is out of date.
 - **Photos are current.** The `M112` photography is live on the test site and appears throughout.
 - **Redaction.** The footer "Contact" column (phone number, email address, city) and every `tel:`/`mailto:` link are hidden before each capture, so no personal contact details appear in the kit. Nothing else on the page is changed.
 - **Cart and wishlist contents** were set through the store's own browser storage (`gocart:cart`, `gocart:wishlist`), the same state a shopper creates with "Add to cart" and the heart button. No order was placed.
