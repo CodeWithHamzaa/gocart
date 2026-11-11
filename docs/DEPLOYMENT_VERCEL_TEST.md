@@ -300,6 +300,15 @@ any `NEXT_PUBLIC_*` variable, redeploy so the value is rebuilt in. After adding 
 4. To shut the environment down, delete the `gocart-test` Vercel project, the `gocart-test` Neon project and
    the `gocart-test-media` store. Nothing in production depends on them.
 
+## Deploying `M114` (admin sign-in by username) to the test site
+
+**Step 1 done 2026-11-11, before merge** (owner's request, to avoid an automatic deploy running the new code before the migration): Neon backup branch `backup-before-m114-2026-11-11` created from `main` (no compute), then migration `20261106_093227_username_login` applied to the test Neon as the owner role in one transaction (its `up` statements plus its `payload_migrations` row, batch 4). Checked afterwards: 10 migrations; the one admin was backfilled with a username (`<email before the @>-<id>`) and kept its email; `username` is NOT NULL with `users_username_idx`, the email index is gone; `gocart_app` can read and update `username`; products, categories and media unchanged (24, 10, 134). The live site (still `27384ef`) answered 200 on `/api/health`, `/`, `/shop` and `/admin/login`. Not checked: an admin sign-in between the migration and the deploy (the old code signs in by email, which is still stored).
+
+1. ~~Apply the migration to the test Neon as the owner role, then check `users.username` exists.~~ Done (above).
+2. After PR #79 is merged: deploy `main` through the Vercel API or CLI if the merge did not deploy it, and confirm the deployment's commit.
+3. Sign in at `/admin` with the admin's **username** and password; check that the email no longer signs in.
+4. Rollback: promote the previous deployment (`dpl_4Ctt5vjL…`, `27384ef`). The migration can stay (the old code signs in by email, still stored); to undo it, run its `down` (refuses while an admin has no email) or restore from the backup branch.
+
 ## Deploying `M110` (admin-editable content) to the test site
 
 **Done 2026-11-05** (owner's request): migration applied to the test Neon as the owner role in one transaction (the 20 statements of the migration file plus its `payload_migrations` row, batch 3); afterwards 9 migrations, the 4 new tables and the new column exist, `gocart_app` can read and write them, and the product, category, media and image-link counts were unchanged (24, 10, 121, 48). `main` at `12d9454` was then deployed as `dpl_67jEB5hJ…`. Checked live: `/`, `/shop`, `/admin/login` and `/api/health` return 200, the home page carries the new bar and Featured grid, and `/api/heroSlides` answers with an empty list (nothing created yet). Not checked: the logged-in admin screens (no login used). The steps below are the record of what was done and the way to repeat it. Order matters because the test site is not Git-connected and its Neon database is migrated by hand:
