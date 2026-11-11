@@ -99,7 +99,8 @@ export async function edgeColour(data: Buffer, width: number, height: number): P
   let g = 0
   let b = 0
   for (const corner of corners) {
-    const stats = await sharp(data, SHARP_INPUT).extract(corner).stats()
+    // extract() alone is ignored by stats() (it would measure the whole image), so render the patch first.
+    const stats = await sharp(await sharp(data, SHARP_INPUT).extract(corner).toBuffer()).stats()
     r += stats.channels[0].mean
     g += stats.channels[1].mean
     b += stats.channels[2].mean
@@ -114,6 +115,7 @@ export async function renderAsset(
   crop: Crop,
   mode: 'crop' | 'contain',
   label: string,
+  pad: 'colour' | 'copy' = 'colour',
 ): Promise<Encoded & { width: number; height: number }> {
   const budget = BUDGETS[kind]
   const meta = await sharp(original, SHARP_INPUT).metadata()
@@ -126,11 +128,26 @@ export async function renderAsset(
   let build: () => Sharp
   if (mode === 'contain') {
     if (Math.max(width, height) < Math.max(budget.width, budget.height)) throw new Error(`${label}: source too small for ${budget.width}x${budget.height}`)
-    const colour = await edgeColour(original, width, height)
-    build = () =>
-      sharp(original, SHARP_INPUT)
-        .rotate()
-        .resize({ width: budget.width, height: budget.height, fit: 'contain', background: { ...colour, alpha: 1 }, withoutEnlargement: false })
+    if (pad === 'copy') {
+      // Fit inside the target, then continue the photo's own edge pixels outwards. For a backdrop that is a
+      // gradient (not one flat colour) this leaves no seam; the subject must sit clear of the padded edges.
+      const scale = Math.min(budget.width / width, budget.height / height)
+      const w = Math.round(width * scale)
+      const h = Math.round(height * scale)
+      const left = Math.floor((budget.width - w) / 2)
+      const top = Math.floor((budget.height - h) / 2)
+      build = () =>
+        sharp(original, SHARP_INPUT)
+          .rotate()
+          .resize(w, h)
+          .extend({ left, right: budget.width - w - left, top, bottom: budget.height - h - top, extendWith: 'copy' })
+    } else {
+      const colour = await edgeColour(original, width, height)
+      build = () =>
+        sharp(original, SHARP_INPUT)
+          .rotate()
+          .resize({ width: budget.width, height: budget.height, fit: 'contain', background: { ...colour, alpha: 1 }, withoutEnlargement: false })
+    }
   } else {
     const box = cropBox(width, height, aspect, crop)
     assertNoUpscale(box, budget, label)

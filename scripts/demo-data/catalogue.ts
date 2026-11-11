@@ -73,7 +73,7 @@ const RAW_PRODUCTS: RawProduct[] = [
   { name: 'Minimal Leather Strap Watch', category: 'watches', price: 3999, mrp: 5499, label: 'sale', description: 'A minimal round watch on a leather-look strap. Plain dial, easy to read, and light enough for everyday wear.' },
   { name: 'Chrono Sport Wrist Watch', category: 'watches', price: 4799, mrp: 4799, description: 'A sporty analog wrist watch with a bold dial and a sturdy strap. Made for daily use.' },
   // Bags
-  { name: 'Metro Canvas Backpack', category: 'bags', price: 2999, mrp: 3999, isFeatured: true, description: 'A canvas backpack with leather straps and buckles and a roomy main compartment. A practical everyday bag for college, work or short trips.' },
+  { name: 'Metro Canvas Backpack', category: 'bags', price: 2999, mrp: 3999, isFeatured: true, description: 'A structured backpack in a soft leather finish with a front pocket, side pockets and a roomy main compartment. A practical everyday bag for college, work or short trips.' },
   { name: 'Everyday Faux Leather Tote', category: 'bags', price: 3499, mrp: 4999, label: 'new', description: 'A roomy tote in a tan leather-look finish with two handles. A simple shape for daily errands and work days.' },
   { name: 'Weekender Duffle Bag', category: 'bags', price: 4299, mrp: 5999, description: 'A soft-sided duffle bag in a rounded shape for weekend trips. A casual bag with two carry handles.' },
   // Sunglasses
