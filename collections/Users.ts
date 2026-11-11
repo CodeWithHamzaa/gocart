@@ -18,9 +18,18 @@ export const ADMIN_BOOTSTRAP_CONTEXT = 'gocartAdminBootstrap'
 
 export const Users: CollectionConfig = {
   slug: 'users',
-  auth: true,
+  // M114 (ADR-051, owner request): admins sign in with a username and password only; an email does not sign in.
+  // The email stays as an optional field (for a future password-reset or notification email). The first admin
+  // is created from ADMIN_BOOTSTRAP_USERNAME + ADMIN_BOOTSTRAP_PASSWORD.
+  auth: {
+    loginWithUsername: {
+      allowEmailLogin: false,
+      requireEmail: false,
+      requireUsername: true,
+    },
+  },
   admin: {
-    useAsTitle: 'email',
+    useAsTitle: 'username',
   },
   access: {
     create: ({ req: { user } }) => Boolean(user),

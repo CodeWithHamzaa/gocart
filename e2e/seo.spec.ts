@@ -110,7 +110,7 @@ test('private and transactional pages are noindex (M41)', async ({ request }) =>
 // that existed at build time worked — so only a category created after deploy exposes it.
 test('a category created after the build renders on demand, and paginates', async ({ request }) => {
   const headers = await adminHeaders(request)
-  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
+  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD')
   const slug = `e2e-on-demand-${Date.now()}`
   const created = await request.post('/api/categories', {
     headers: headers!,

@@ -2,7 +2,8 @@ import type { APIRequestContext } from '@playwright/test'
 
 // Admin access for the tests that have to create records (a product, a category) through the
 // API. On a fresh database (CI) the first admin is registered the first time this is called;
-// against a database that already has users, set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD.
+// against a database that already has users, set E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD (M114: admins
+// sign in with a username, not an email).
 //
 // The result is cached for the whole run: registration only works once (the second attempt is
 // refused because a user now exists), so without the cache the second test to ask would find no
@@ -14,14 +15,14 @@ type Headers = { Authorization: string }
 let cached: Promise<Headers | null> | undefined
 
 async function obtain(request: APIRequestContext): Promise<Headers | null> {
-  const email = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.com'
+  const username = process.env.E2E_ADMIN_USERNAME ?? 'e2e-admin'
   const password = process.env.E2E_ADMIN_PASSWORD ?? 'E2e-Pass-12345!'
-  let res = process.env.E2E_ADMIN_EMAIL
-    ? await request.post('/api/users/login', { data: { email, password } })
-    : await request.post('/api/users/first-register', { data: { email, password } })
+  let res = process.env.E2E_ADMIN_USERNAME
+    ? await request.post('/api/users/login', { data: { username, password } })
+    : await request.post('/api/users/first-register', { data: { username, password } })
   // Playwright restarts its worker after a failed test, which empties the cache below; the admin this
   // run registered earlier then exists, so log in as it instead of failing a second, unrelated test.
-  if (!res.ok() && !process.env.E2E_ADMIN_EMAIL) res = await request.post('/api/users/login', { data: { email, password } })
+  if (!res.ok() && !process.env.E2E_ADMIN_USERNAME) res = await request.post('/api/users/login', { data: { username, password } })
   if (!res.ok()) return null
   return { Authorization: `JWT ${(await res.json()).token}` }
 }

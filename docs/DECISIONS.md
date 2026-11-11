@@ -1557,3 +1557,25 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - Banner pictures are Media uploads; their alt text comes from the Media record, so an admin must fill it in.
 - The bar's messages are plain text (no HTML, no links). A phone shows the same moving line as a desktop; very long messages take longer to cross (12 s each, fixed).
 - Out of scope: editing links of the section headings, the three delivery steps, the category shortcuts or the promo cards' layout (promo cards were already editable).
+
+
+## ADR-051: Admin sign-in by username and password; the first admin from a username (`M114`)
+
+**Status**: **Accepted (2026-11-11)** on the owner's explicit request in the session of 2026-11-11 ("I want admin sign-in by username and password instead of email"). The owner chose: username only (an email does not sign in), the email kept as an optional field, and a deploy to the test site after merge. It amends **ADR-036** point 5 only in the name of the first-admin secret (`ADMIN_BOOTSTRAP_EMAIL` becomes `ADMIN_BOOTSTRAP_USERNAME`); the closed first-admin window, the `beforeOperation` guard and every other ADR-036 decision are unchanged.
+
+**Context**: `/admin` signed in with an email and password (Payload's default `auth: true`), and the first admin was created from `ADMIN_BOOTSTRAP_EMAIL` + `ADMIN_BOOTSTRAP_PASSWORD` (ADR-036). The owner wants admins to use a username. PR #70 (2026-11-06) had built username-or-email sign-in without a milestone or ADR; `M114` takes it over and narrows it to username only.
+
+**Decision**:
+
+1. `collections/Users.ts` uses Payload `loginWithUsername` with `allowEmailLogin: false`, `requireUsername: true`, `requireEmail: false`. The login form, the REST and GraphQL login, first-register, forgot-password and unlock all take a username. Usernames are matched case-insensitively (checked locally: `OWNER-1` signs in as `owner-1`).
+2. The email stays on the account as an **optional** field, for a future password-reset or notification email (ADR-015's Resend). It never signs in.
+3. Migration `20261106_093227_username_login`: adds a unique `users.username`, makes `email` nullable, drops the unique index on `email` (Payload's schema no longer has it once the email is not a login identifier; two admins could share an email) and **backfills existing admins** with `<part of the email before the @, cleaned to A-Z a-z 0-9 . _ - and lower-cased>-<id>` (for example `Owner@example.com` with id 1 becomes `owner-1`), so nobody is locked out; they sign in with that username and their unchanged password. Lower case matters: Payload lower-cases a username at sign-in and compares it exactly. Its `down` refuses, with a clear error and no change, while any admin has no email.
+4. The first admin is created from `ADMIN_BOOTSTRAP_USERNAME` (3 to 40 characters of `A-Z a-z 0-9 . _ -`) and `ADMIN_BOOTSTRAP_PASSWORD` (the ADR-036 password rules, unchanged). `check-env`, `bootstrap-admin`, Compose, CI, `prod-stack-check` and the e2e helper (`E2E_ADMIN_USERNAME`) follow.
+
+**Consequences**:
+- The migration must be applied to a database (owner role) **before** code with this change serves it: this code reads and writes `users.username`, so admin sign-in fails until the column exists. On the test site, apply it first, then deploy.
+- Existing admins must be told their new username (it is derived as above, and visible in `/admin` > Users).
+- An admin without an email cannot get a password-reset email. Today no email adapter is configured (Payload writes email to the console), so reset by email does not work for anyone yet; another admin, or the owner with database access, resets a password.
+- A username is easier to guess than a private email address. Payload's per-account lockout (defaults: 5 failed attempts, 10 minutes; not changed here) and the strong-password rule for the bootstrap admin remain the protections, but the lockout lets anyone who guesses a username keep that admin locked out and confirm the username exists. A per-IP rate limit on the admin sign-in endpoints is therefore **launch blocker 6** in `docs/DEPLOYMENT.md`. The admin panel stays the only authenticated surface.
+- Forgot-password now takes a username (confirmed in Payload's code): an unknown username answers the same as a known one, the reset token is never returned or logged (the console email adapter logs only recipient and subject), and no email is sent to an admin without one.
+- Out of scope: two-factor sign-in, username rules for admins created later in `/admin` (Payload's own validation applies), and renaming existing usernames (an admin can edit theirs in `/admin`).

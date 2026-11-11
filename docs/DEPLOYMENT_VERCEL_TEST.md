@@ -55,7 +55,7 @@ It is not weakened, and no test keys or bypass flag are used. For reference, it 
 | `POSTGRES_PASSWORD` | superuser password; must match the `DATABASE_URI` password in the Docker `migrate` step | Docker only; not used on Vercel |
 | `APP_DB_PASSWORD` | password of the `gocart_app` role | generated, used by `scripts/db-roles.ts`, embedded in Vercel's `DATABASE_URI` |
 | `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile keys | **needs a Cloudflare account; not created (owner decision)** |
-| `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` | first admin, used by `scripts/bootstrap-admin.ts` | supplied only to the one-off bootstrap run, never stored on Vercel |
+| `ADMIN_BOOTSTRAP_USERNAME`, `ADMIN_BOOTSTRAP_PASSWORD` | first admin, used by `scripts/bootstrap-admin.ts` | supplied only to the one-off bootstrap run, never stored on Vercel |
 
 ## Database
 
@@ -68,7 +68,7 @@ Neon **owner** role, the same order as `deploy:migrate` minus the Docker-only `c
 npx payload migrate
 npx tsx scripts/verify-migrations.ts
 APP_DB_PASSWORD=... npx tsx scripts/db-roles.ts     # creates/updates the restricted gocart_app role
-ADMIN_BOOTSTRAP_EMAIL=... ADMIN_BOOTSTRAP_PASSWORD=... npx tsx scripts/bootstrap-admin.ts
+ADMIN_BOOTSTRAP_USERNAME=... ADMIN_BOOTSTRAP_PASSWORD=... npx tsx scripts/bootstrap-admin.ts
 ```
 
 If Neon is not reachable from the deploying machine on port 5432, a throwaway script outside the repo may run
@@ -299,6 +299,15 @@ any `NEXT_PUBLIC_*` variable, redeploy so the value is rebuilt in. After adding 
 3. Blob: Vercel dashboard -> Storage -> `gocart-test-media` -> rotate the read/write token, or delete the store.
 4. To shut the environment down, delete the `gocart-test` Vercel project, the `gocart-test` Neon project and
    the `gocart-test-media` store. Nothing in production depends on them.
+
+## Deploying `M114` (admin sign-in by username) to the test site
+
+**Step 1 done 2026-11-11, before merge** (owner's request, to avoid an automatic deploy running the new code before the migration): Neon backup branch `backup-before-m114-2026-11-11` created from `main` (no compute), then migration `20261106_093227_username_login` applied to the test Neon as the owner role in one transaction (its `up` statements plus its `payload_migrations` row, batch 4). Checked afterwards: 10 migrations; the one admin was backfilled with a username (`<email before the @>-<id>`) and kept its email; `username` is NOT NULL with `users_username_idx`, the email index is gone; `gocart_app` can read and update `username`; products, categories and media unchanged (24, 10, 134). The live site (still `27384ef`) answered 200 on `/api/health`, `/`, `/shop` and `/admin/login`. Not checked: an admin sign-in between the migration and the deploy (the old code signs in by email, which is still stored).
+
+1. ~~Apply the migration to the test Neon as the owner role, then check `users.username` exists.~~ Done (above).
+2. After PR #79 is merged: deploy `main` through the Vercel API or CLI if the merge did not deploy it, and confirm the deployment's commit.
+3. Sign in at `/admin` with the admin's **username** and password; check that the email no longer signs in.
+4. Rollback: promote the previous deployment (`dpl_4Ctt5vjL…`, `27384ef`). The migration can stay (the old code signs in by email, still stored); to undo it, run its `down` (refuses while an admin has no email) or restore from the backup branch.
 
 ## Deploying `M110` (admin-editable content) to the test site
 

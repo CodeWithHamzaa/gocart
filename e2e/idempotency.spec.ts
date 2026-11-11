@@ -9,7 +9,7 @@ import { TEST_CLIENT_IP } from './fixtures'
 
 test('a lost response and a retry create one order, and the retry shows it', async ({ page, request }) => {
   const admin = await adminHeaders(request)
-  test.skip(!admin, 'needs an admin to count orders (set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD)')
+  test.skip(!admin, 'needs an admin to count orders (set E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD)')
 
   const lamp = (
     await (await request.get('/api/products?where[name][equals]=Modern%20Table%20Lamp&limit=1&depth=0')).json()
