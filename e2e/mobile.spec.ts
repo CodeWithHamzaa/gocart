@@ -113,10 +113,10 @@ test('the saved address is selected for the order without a dropdown step', asyn
 // A long, unbroken product name and a seven-digit price are the realistic worst cases for a
 // two-column grid and a three-column cart table at 320px. This one needs an admin to create the
 // product: on a fresh database (CI) it registers the first admin; against a database that already
-// has users, set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD — otherwise it is skipped, not faked.
+// has users, set E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD — otherwise it is skipped, not faked.
 test('a long product name and a large price do not break the 320px layout', async ({ page, request }) => {
   const headers = await adminHeaders(request)
-  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
+  test.skip(!headers, 'needs a fresh database or E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD')
 
   const base = (await (await request.get('/api/products?limit=1&depth=0')).json()).docs[0]
   const created = await request.post('/api/products', {
