@@ -1715,3 +1715,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: no application QA (owner instruction). Deliverable integrity only: the PDF opens with 26 pages; 26 PNGs at 2880 x 1620; the PPTX opens in python-pptx and renders in LibreOffice with 26 slides; each board reviewed visually; contact redaction verified; security review of the folder for personal or deployment data.
 - **Rollback**: revert the PR (deletes `docs/brand-kit/`).
 - **Commit message**: `Mirza brand identity kit and ecommerce showcase (M113)`
+
+### M114 — Admin sign-in by username and password
+- **Status (2026-11-11)**: **Implemented, in review** (not deployed). Owner request 2026-11-11; takes over PR #70 (2026-11-06, username or email, no milestone) and narrows it to username only, as the owner chose. ADR-051 (amends the first-admin secret's name in ADR-036 point 5). The owner asked for a test deploy after merge (migration first).
+- **Goal**: admins sign in to `/admin` with a username and password; an email no longer signs in.
+- **Files**: `collections/Users.ts` (`loginWithUsername`, `allowEmailLogin: false`, `requireEmail: false`), `migrations/20261106_093227_username_login.{ts,json}` + `migrations/index.ts`, `payload-types.ts`, `scripts/bootstrap-admin.ts`, `scripts/check-env.ts` (+ test), `scripts/users-guard.test.ts`, `scripts/prod-stack-check.sh`, `.github/workflows/ci.yml`, `docker-compose.prod.yml`, `.env.example`, `e2e/admin.ts` and three specs (`E2E_ADMIN_USERNAME`), `docs/DEPLOYMENT.md`, `docs/DEPLOYMENT_VERCEL_TEST.md`.
+- **Spec**: ADR-051. Existing admins are backfilled with `<email before the @>-<id>` and keep their password. The first admin comes from `ADMIN_BOOTSTRAP_USERNAME` (3-40 of `A-Z a-z 0-9 . _ -`) + `ADMIN_BOOTSTRAP_PASSWORD`. No storefront, checkout or order change.
+- **Dependencies**: none (`M52b` bootstrap guard unchanged).
+- **Testing**: `test:env`, `test:users-guard`, type-check, lint (0 errors); on a throwaway local PostgreSQL built from `main` in production mode with an email-created admin: the migration applies (10 migrations, `verify-migrations` OK), the admin becomes `owner-1`, signs in by username (case-insensitive), a wrong password and the email are refused; a fresh database bootstraps an admin from a username with no email. CI on the PR. Test deploy: migration on the test Neon first, then the code, then a live sign-in check.
+- **Rollback**: redeploy the previous test deployment, then run the migration's `down` (drops `username`, makes `email` required again; only safe while every admin still has an email).
+- **Commit message**: `Admin sign-in by username only (M114)`
