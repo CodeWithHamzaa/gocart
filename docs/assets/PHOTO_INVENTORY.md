@@ -27,7 +27,7 @@ Honest limits of this set:
 - Two originals (Orbit Slim watch, Dome lamp) were re-encoded by the Unsplash CDN; the same photographs were re-pinned in the manifest (old checksums are in `photos.ts`).
 - Pipeline: `pad: 'copy'` (edge-pixel padding) for portrait photos in `contain` mode, and a fix to `edgeColour` (sharp's `stats()` ignores `extract()`, so the "corner colour" had been the whole-image mean; the tote's padding colour is corrected as a side effect).
 
-`media_id` and `media_env` were cleared on the 13 manifest rows whose file changed (the test site holds the old file for them); the next rollout apply re-stamps them. Nothing was uploaded to the test site or any database. The test site still serves the M108 photos; a new rollout (`rollout:demo-photos`, owner-approved workflow) is needed to show these.
+Rolled out to the test site on 2026-11-11 (owner-approved `M108` workflow, apply run 42933845361: 13 files uploaded under the new media ids 124-136, 9 rows relinked, 0 created, older rows kept); `media_id` and `media_env` in the manifest are now stamped from that run. The two home promo cards on the test site still show the old cartoon art, because the rollout does not handle promo cards: replace them in `/admin` with `demo-promo-1.webp` and `demo-promo-2.webp`. Production was not touched.
 
 ## 1. Owner decisions that shaped this set (2026-11-02)
 
