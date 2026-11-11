@@ -1,8 +1,8 @@
 // Mirza brand kit: renders .build/book.html to the PDF and one PNG per page.
-//   node docs/brand-kit/tools/render.cjs <book.html> <out.pdf> <pngDir> <scale>
-const { chromium } = require('playwright')
-const fs = require('fs')
-const path = require('path')
+//   node docs/brand-kit/tools/render.js <book.html> <out.pdf> <pngDir> <scale>
+import { chromium } from 'playwright'
+import fs from 'node:fs'
+import path from 'node:path'
 
 ;(async () => {
   const [html, pdf, pngDir, scale = '1.5'] = process.argv.slice(2)

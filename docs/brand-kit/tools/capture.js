@@ -1,14 +1,17 @@
 // Mirza brand kit: screenshot capture (development-time tooling, not part of the app).
 // Captures the live TEST storefront at desktop, tablet and phone viewports with Playwright.
 //
-//   node docs/brand-kit/tools/capture.cjs [baseUrl]
+//   node docs/brand-kit/tools/capture.js [baseUrl]
 //
 // Output: docs/brand-kit/source-assets/screenshots/{desktop,tablet,mobile}/*.png
 // Redaction: the footer "Contact" column (phone, email, city) is hidden before every capture
 // so personal contact details never end up in client-facing material. Nothing else is altered.
-const { chromium } = require('playwright')
-const path = require('path')
-const fs = require('fs')
+import { chromium } from 'playwright'
+import path from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const BASE = process.argv[2] || 'https://gocart-test-inky.vercel.app'
 const OUT = path.resolve(__dirname, '../source-assets/screenshots')

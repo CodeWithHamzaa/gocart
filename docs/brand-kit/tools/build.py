@@ -4,7 +4,7 @@
     python3 docs/brand-kit/tools/build.py --pptx     # PowerPoint only
 
 Needs: Python 3 with Pillow and python-pptx; Node with Playwright (Chromium).
-Screenshots must exist first: node docs/brand-kit/tools/capture.cjs && node docs/brand-kit/tools/capture-elements.cjs
+Screenshots must exist first: node docs/brand-kit/tools/capture.js && node docs/brand-kit/tools/capture-elements.js
 """
 import os
 import shutil
@@ -31,7 +31,7 @@ def main():
         boards = os.path.join(EXPORTS, 'boards')
         if os.path.isdir(boards):
             shutil.rmtree(boards)
-        subprocess.run(['node', os.path.join(os.path.dirname(__file__), 'render.cjs'), html_path,
+        subprocess.run(['node', os.path.join(os.path.dirname(__file__), 'render.js'), html_path,
                         os.path.join(EXPORTS, 'mirza-brand-kit.pdf'), boards, '1.5'], check=True)
         # Lossless recompression of the boards (about 5% smaller).
         from PIL import Image

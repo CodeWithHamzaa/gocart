@@ -1,10 +1,13 @@
 // Mirza brand kit: element-level captures of real storefront UI (product cards, header, hero,
-// category shortcuts, promo card) for the brand-guideline pages. Same rules as capture.cjs.
+// category shortcuts, promo card) for the brand-guideline pages. Same rules as capture.js.
 //
-//   node docs/brand-kit/tools/capture-elements.cjs [baseUrl]
-const { chromium } = require('playwright')
-const path = require('path')
-const fs = require('fs')
+//   node docs/brand-kit/tools/capture-elements.js [baseUrl]
+import { chromium } from 'playwright'
+import path from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const BASE = process.argv[2] || 'https://gocart-test-inky.vercel.app'
 const OUT = path.resolve(__dirname, '../source-assets/screenshots/elements')

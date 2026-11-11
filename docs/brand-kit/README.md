@@ -53,8 +53,8 @@ Development machine only. You need Node with Playwright's Chromium (already in t
 
 ```bash
 # 1. Screenshots from the test site (about 3 minutes)
-node docs/brand-kit/tools/capture.cjs
-node docs/brand-kit/tools/capture-elements.cjs
+node docs/brand-kit/tools/capture.js
+node docs/brand-kit/tools/capture-elements.js
 
 # 2. PDF, PNG boards and PPTX from one layout source (about 20 seconds)
 python3 docs/brand-kit/tools/build.py          # or --pptx for the deck only
@@ -62,10 +62,10 @@ python3 docs/brand-kit/tools/build.py          # or --pptx for the deck only
 
 | Tool | Role |
 |---|---|
-| `tools/capture.cjs`, `tools/capture-elements.cjs` | Playwright captures (with the contact redaction) |
+| `tools/capture.js`, `tools/capture-elements.js` | Playwright captures (with the contact redaction) |
 | `tools/kit.py` | Layout primitives, design tokens and device frames, written out as HTML and as native PowerPoint shapes |
 | `tools/pages.py` | The 26 pages: content and layout |
-| `tools/render.cjs` | Chromium renders the HTML to the PDF and to one PNG per page |
+| `tools/render.js` | Chromium renders the HTML to the PDF and to one PNG per page |
 | `tools/build.py` | Runs the steps above |
 
 Intermediate files go to `.build/` (git-ignored).
