@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import sharp from 'sharp'
-import { assertNoUpscale, cropBox, encodeToBudget, parseCsv, renderAsset, serializeCsv, validateOutput } from './demo-images-core'
+import { assertNoUpscale, cropBox, edgeColour, encodeToBudget, parseCsv, renderAsset, serializeCsv, validateOutput } from './demo-images-core'
 import { ASSETS, BUDGETS, SOURCES, UNSOURCED_PRODUCTS, altForFilename } from './demo-data/photos'
 import { PRODUCTS, CATEGORIES } from './demo-data/catalogue'
 
@@ -66,6 +66,26 @@ async function main() {
   const tall = await sharp({ create: { width: 800, height: 1600, channels: 3, background: '#e9dfd2' } }).jpeg().toBuffer()
   const contained = await renderAsset(tall, 'product', { cx: 0.5, cy: 0.5, zoom: 1 }, 'contain', 'tall')
   assert.equal((await validateOutput(contained.data, 'everyday-faux-leather-tote-1.webp', 'product', 'A tall bag on a door')).ok, true)
+
+  // edgeColour measures the corners, not the whole image: a white backdrop with a big red subject reads as white.
+  const redOnWhite = await sharp({ create: { width: 1000, height: 1000, channels: 3, background: '#ffffff' } })
+    .composite([{ input: await sharp({ create: { width: 800, height: 800, channels: 3, background: '#cc0000' } }).png().toBuffer(), left: 100, top: 100 }])
+    .png()
+    .toBuffer()
+  const corner = await edgeColour(redOnWhite, 1000, 1000)
+  assert.ok(corner.r > 245 && corner.g > 245 && corner.b > 245, `corner colour is the backdrop, got ${JSON.stringify(corner)}`)
+
+  // contain with pad 'copy' continues the photo's own edge pixels, so a gradient backdrop shows no seam.
+  const gradient = Buffer.alloc(800 * 1600 * 3)
+  for (let y = 0; y < 1600; y++) for (let x = 0; x < 800; x++) gradient.fill(Math.round(240 - y * 0.1), (y * 800 + x) * 3, (y * 800 + x) * 3 + 3)
+  const gradientPhoto = await sharp(gradient, { raw: { width: 800, height: 1600, channels: 3 } }).png().toBuffer()
+  const copied = await renderAsset(gradientPhoto, 'product', { cx: 0.5, cy: 0.5, zoom: 1 }, 'contain', 'gradient', 'copy')
+  const copiedRaw = await sharp(copied.data).raw().toBuffer({ resolveWithObject: true })
+  assert.equal(copiedRaw.info.width, 1000)
+  assert.equal(copiedRaw.info.height, 1000)
+  const red = (x: number, y: number) => copiedRaw.data[(y * 1000 + x) * copiedRaw.info.channels]
+  assert.ok(red(5, 100) - red(5, 900) > 50, 'the gradient continues into the padded side (a flat fill would be equal)')
+  assert.ok(Math.abs(red(5, 500) - red(400, 500)) < 8, 'the padded side meets the photo without a seam')
 
   // Bad inputs are rejected, not degraded.
   const small = await sharp({ create: { width: 900, height: 900, channels: 3, background: '#888' } }).jpeg().toBuffer()
@@ -136,6 +156,12 @@ async function main() {
     assert.match(row.processed_sha256, /^[0-9a-f]{64}$/)
     assert.equal(row.processed_filename, a.out)
   }
+
+  // Every source in the spec is used by an asset (an unused one has no manifest row and breaks fetch:demo-originals).
+  for (const key of Object.keys(SOURCES)) assert.ok(ASSETS.some((a) => a.src === key), `source ${key} is unused`)
+  // Gallery image 2 may come from another photograph (src2); the two images then differ in source.
+  const other = ASSETS.filter((a) => a.kind === 'product' && a.id.endsWith('-2') && a.src !== ASSETS.find((b) => b.id === a.id.replace(/-2$/, '-1'))?.src)
+  assert.ok(other.length >= 1, 'at least one product uses a different photograph for gallery image 2')
 
   console.log('demo-images: all checks passed')
 }
