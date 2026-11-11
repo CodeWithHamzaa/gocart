@@ -1705,3 +1705,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: type-check, lint (0 errors), `npm run build`; on a throwaway local PostgreSQL with the dev seed: 2/3/4 columns at 320/390, 820 and 1280px, no horizontal overflow, quick-add 44x44, a Rs. 125,000 price clears the button at 320px; e2e `mobile.spec.ts` and `seo.spec.ts` pass, and `golden-path.spec.ts` passes every card step (it stops later at Turnstile, whose script this sandbox cannot load; CI covers it).
 - **Rollback**: revert the PR.
 - **Commit message**: `Listing card hierarchy, 2/3/4 product grids, shorter header category row (M111)`
+
+### M113 — Mirza brand identity kit and ecommerce showcase
+- **Status (2026-11-11)**: **Done, in review**. Requested by the owner on 2026-11-11 (portfolio, client, Fiverr and Upwork material); scope confirmed in chat: screenshots from the live test site, no personal credit line, all exports committed. No application code, schema, dependency or deployment change.
+- **Goal**: a client-ready brand book (logo, colour, type, imagery, interface language, do's and don'ts) plus desktop, mobile and responsive showcase boards built from real screenshots of the storefront.
+- **Files**: `docs/brand-kit/` only: `README.md`, `tools/` (Playwright capture scripts, a Python layout source that writes both the HTML book and a native PowerPoint, a Chromium renderer), `source-assets/` (screenshots, monogram SVG, font with its OFL licence), `exports/` (`mirza-brand-kit.pdf`, `mirza-brand-showcase.pptx`, 26 PNG boards in `boards/{brand,desktop,mobile,responsive}`).
+- **Spec**: 26 landscape pages (1920 x 1080; PNG at 2880 x 1620). Colours, type sizes, radii, shadows and badges are copied from `app/globals.css`, `components/ui/*` and computed styles on the test site; guidance (clear space, minimum size, personality, do's and don'ts) is worded as recommendations. The footer contact column and `tel:`/`mailto:` links are hidden before every capture. Mobile boards follow the owner's two reference compositions (floating phone row; screen wall); the references are not stored.
+- **Dependencies**: none. Uses tools already present (Playwright Chromium, Pillow, python-pptx); nothing added to `package.json`.
+- **Testing**: no application QA (owner instruction). Deliverable integrity only: the PDF opens with 26 pages; 26 PNGs at 2880 x 1620; the PPTX opens in python-pptx and renders in LibreOffice with 26 slides; each board reviewed visually; contact redaction verified; security review of the folder for personal or deployment data.
+- **Rollback**: revert the PR (deletes `docs/brand-kit/`).
+- **Commit message**: `Mirza brand identity kit and ecommerce showcase (M113)`
