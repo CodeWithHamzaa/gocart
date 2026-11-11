@@ -51,7 +51,26 @@ async function scrollToText(page, text, offset = 90, last = false) {
   await page.waitForTimeout(700)
 }
 
+// Guard: refuse to save a capture if any contact detail is still visible (e.g. the footer markup
+// changed and the redaction above no longer matches). Visibility is inherited, so the computed
+// style of the element holding the text is enough.
+async function assertRedacted(page) {
+  const leaks = await page.evaluate(() => {
+    const visible = (el) => getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).display !== 'none'
+    const out = []
+    for (const a of document.querySelectorAll('a[href^="tel:"], a[href^="mailto:"]')) if (visible(a)) out.push(a.getAttribute('href'))
+    const pattern = /[\w.+-]+@[\w-]+\.[\w.]+|\b0\d{3}[-\s]?\d{7}\b|\+92/
+    for (const el of document.querySelectorAll('footer *')) {
+      const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ')
+      if (pattern.test(own) && visible(el)) out.push(own.trim())
+    }
+    return out
+  })
+  if (leaks.length) throw new Error(`Contact details still visible, capture aborted: ${leaks.length} element(s)`)
+}
+
 async function shot(page, kind, name, opts = {}) {
+  await assertRedacted(page)
   const file = path.join(OUT, kind, `${name}.png`)
   await page.screenshot({ path: file, ...opts })
   console.log('saved', path.relative(process.cwd(), file))

@@ -429,6 +429,11 @@ def build_pptx(pages: list[Page], out: str):
     cp.subject = 'Brand guidelines and storefront showcase'
     cp.keywords = ''
     cp.comments = ''
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
+    cp.created = now
+    cp.modified = now
+    cp.revision = 1
     prs.save(out)
 
 
