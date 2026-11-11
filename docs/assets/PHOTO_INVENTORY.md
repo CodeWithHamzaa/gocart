@@ -18,16 +18,16 @@ Six new Unsplash photos (all "Free to use under the Unsplash License", none Unsp
 
 Honest limits of this set:
 
-- **Mismatches, accepted and recorded.** The backpack is leather, but the product name and slug (`metro-canvas-backpack`) are identifiers (the demo seed and the test-site rollout find products by exact name) and were not renamed; only the description in `catalogue.ts` was changed to match the photo. The cylinder speaker is white and smart-speaker shaped, not beige, and its "easy to pair" copy is only a close match. Rename the backpack in a later milestone if the owner wants it.
+- **Mismatches, accepted and recorded.** The backpack is leather, but the product name and slug (`metro-canvas-backpack`) are identifiers (the demo seed and the test-site rollout find products by exact name) and were not renamed; only the description in `catalogue.ts` was changed to match the photo. The cylinder speaker is white, not beige, and no mark is visible, but its mesh and rounded shape strongly resemble a well-known branded smart speaker (Apple HomePod); the Unsplash licence covers copyright, not trademark or trade dress, so reconsider it before any use beyond this demo. A smart speaker does not pair over Bluetooth, so the "easy to pair" copy is only a close match. Rename the backpack in a later milestone if the owner wants it.
 - **Brands still visible** (owner accepted these on 2026-11-02; no clean alternative was found): BAISHENG on the Classic Steel watch dial, an "Mi" mark on the Volt Max power bank, and small dial text on the Chrono watch (image 1, tiny at card size).
 - **Galleries that are still detail crops** of image 1: 20 of 24 products. Free stock almost never offers two photos of one invented product; the agents found same-shoot partners for only 4. No candidate was forced.
 - **Weak primaries with no better free photo found:** Glass Storage Jar Set (one jar, not a set), Everyday Faux Leather Tote (hanging on a door), Volt Compact power bank (a corner), Weekender Duffle. Candidates were rejected for brands, clutter, AI-render look or a different-looking item.
 - **Not one photographer.** Backdrops still range from white to peach, yellow, wood and grey; the Featured grid reads as clean but not as one studio shoot.
 - **Pexels and Pixabay** are unreachable from this environment (Cloudflare challenge, not bypassed); every photo is from Unsplash.
 - Two originals (Orbit Slim watch, Dome lamp) were re-encoded by the Unsplash CDN; the same photographs were re-pinned in the manifest (old checksums are in `photos.ts`).
-- Pipeline: `padFrom`/`pad: 'copy'` (edge-pixel padding) for portrait photos in `contain` mode, and a fix to `edgeColour` (sharp's `stats()` ignores `extract()`, so the "corner colour" had been the whole-image mean; the tote's padding colour is corrected as a side effect).
+- Pipeline: `pad: 'copy'` (edge-pixel padding) for portrait photos in `contain` mode, and a fix to `edgeColour` (sharp's `stats()` ignores `extract()`, so the "corner colour" had been the whole-image mean; the tote's padding colour is corrected as a side effect).
 
-Nothing was uploaded to the test site or any database. The test site still serves the M108 photos; a new rollout (`rollout:demo-photos`, owner-approved workflow) is needed to show these.
+`media_id` and `media_env` were cleared on the 13 manifest rows whose file changed (the test site holds the old file for them); the next rollout apply re-stamps them. Nothing was uploaded to the test site or any database. The test site still serves the M108 photos; a new rollout (`rollout:demo-photos`, owner-approved workflow) is needed to show these.
 
 ## 1. Owner decisions that shaped this set (2026-11-02)
 

@@ -22,6 +22,8 @@ const OUT = path.join(root, 'demo-assets', '_processed')
 const MANIFEST = path.join(root, 'docs', 'assets', 'MANIFEST.csv')
 const CHECK_ONLY = process.argv.includes('--check')
 const APPROVER = 'owner-delegated (autonomous M104-M106 authorisation, 2026-11-01)'
+/** Photos added after M104 (they carry their own check date) were approved under the ADR-049 delegation for the M112 owner request. */
+const APPROVER_M112 = 'owner-delegated (ADR-049 standing delegation 2026-11-03; M112 owner request 2026-11-10)'
 
 const originalName = (id: string) => `unsplash-${id}.jpg`
 const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`
@@ -120,7 +122,12 @@ async function main() {
     const r = results.find((x) => x.id === asset.id)!
     const info = originalInfo.get(asset.src)!
     const source = SOURCES[asset.src]
-    const crop = asset.mode === 'contain' ? 'whole photo padded with its own backdrop colour' : `crop centre ${asset.crop.cx}/${asset.crop.cy}, zoom ${asset.crop.zoom}`
+    const crop =
+      asset.mode === 'contain'
+        ? asset.pad === 'copy'
+          ? 'whole photo, its edge pixels continued as the backdrop'
+          : 'whole photo padded with its own backdrop colour'
+        : `crop centre ${asset.crop.cx}/${asset.crop.cy}, zoom ${asset.crop.zoom}`
     const notes = [
       source.note,
       `Framing: ${crop}.`,
@@ -157,7 +164,7 @@ async function main() {
       format: BUDGETS[asset.kind].format === 'jpeg' ? 'jpeg' : 'webp',
       alt_text: asset.alt,
       status: 'validated',
-      approved_by: APPROVER,
+      approved_by: source.checked ? APPROVER_M112 : APPROVER,
       approved_on: source.checked ?? LICENCE.checkedOn,
       notes,
     })
