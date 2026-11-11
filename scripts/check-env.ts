@@ -70,20 +70,20 @@ function checkPassword(name: string, value: string | undefined, failures: string
   }
 }
 
-/** Both set or both unset; when set, an email-shaped address and a strong password. Pure; never returns a value. */
+/** Both set or both unset; when set, a username (3-40 letters, digits, . _ -) and a strong password. Pure; never returns a value. */
 export function validateBootstrapCredentials(
-  email: string | undefined,
+  username: string | undefined,
   password: string | undefined,
   required: boolean,
 ): string[] {
   const failures: string[] = []
-  if (!email && !password) {
-    if (required) failures.push('ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD: required to create the first admin (missing or empty)')
+  if (!username && !password) {
+    if (required) failures.push('ADMIN_BOOTSTRAP_USERNAME and ADMIN_BOOTSTRAP_PASSWORD: required to create the first admin (missing or empty)')
     return failures
   }
-  if (!email) failures.push('ADMIN_BOOTSTRAP_EMAIL: required when ADMIN_BOOTSTRAP_PASSWORD is set')
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) failures.push('ADMIN_BOOTSTRAP_EMAIL: must be a valid email address')
-  if (!password) failures.push('ADMIN_BOOTSTRAP_PASSWORD: required when ADMIN_BOOTSTRAP_EMAIL is set')
+  if (!username) failures.push('ADMIN_BOOTSTRAP_USERNAME: required when ADMIN_BOOTSTRAP_PASSWORD is set')
+  else if (!/^[A-Za-z0-9._-]{3,40}$/.test(username)) failures.push('ADMIN_BOOTSTRAP_USERNAME: must be 3-40 characters of A-Z a-z 0-9 . _ -')
+  if (!password) failures.push('ADMIN_BOOTSTRAP_PASSWORD: required when ADMIN_BOOTSTRAP_USERNAME is set')
   else {
     if (password.length < 14) failures.push('ADMIN_BOOTSTRAP_PASSWORD: must be at least 14 characters')
     if (/\s/.test(password)) failures.push('ADMIN_BOOTSTRAP_PASSWORD: must not contain whitespace')
@@ -170,7 +170,7 @@ export function validateEnv(env: Env): string[] {
   checkDatabaseUri(env.DATABASE_URI, env.POSTGRES_PASSWORD, failures)
   checkSiteUrl(env.NEXT_PUBLIC_SITE_URL, failures)
   checkTurnstile(env, failures)
-  failures.push(...validateBootstrapCredentials(env.ADMIN_BOOTSTRAP_EMAIL, env.ADMIN_BOOTSTRAP_PASSWORD, false))
+  failures.push(...validateBootstrapCredentials(env.ADMIN_BOOTSTRAP_USERNAME, env.ADMIN_BOOTSTRAP_PASSWORD, false))
   if (env.PAYLOAD_ALLOW_FIRST_REGISTER) {
     failures.push('PAYLOAD_ALLOW_FIRST_REGISTER: must be unset or empty in production (it lets any visitor create the first admin; development and CI only)')
   }

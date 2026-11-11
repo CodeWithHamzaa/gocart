@@ -211,7 +211,7 @@ jobs:
       TURNSTILE_SECRET_KEY: Qm7vTz2KpW9xRb4NcY6hJd3LfG8sAu5E
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: Hs4kVn8QwZ2tPy6R
       # ADR-036: the first admin is created from these during the deploy step (throwaway values).
-      ADMIN_BOOTSTRAP_EMAIL: ci-owner@example.com
+      ADMIN_BOOTSTRAP_USERNAME: ci-owner
       ADMIN_BOOTSTRAP_PASSWORD: Vx93-pLq.m7_Ez4~Hs2Kd
     steps:
       - uses: actions/checkout@v4
@@ -264,7 +264,7 @@ jobs:
           PGPASSWORD: ci-throwaway-pw-0123456789
           NODE_ENV: production
           DATABASE_URI: postgresql://gocart:ci-throwaway-pw-0123456789@localhost:5432/gocart_nocreds
-          ADMIN_BOOTSTRAP_EMAIL: ''
+          ADMIN_BOOTSTRAP_USERNAME: ''
           ADMIN_BOOTSTRAP_PASSWORD: ''
         run: |
           createdb -h localhost -U gocart gocart_nocreds
@@ -305,7 +305,7 @@ jobs:
           TURNSTILE_SECRET_KEY=0x4AAAAAAAq9Zk3pQw8LmT5vXr2NbY7cHd4J
           NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAAh7Gm2Lk9Zp4V
           TUNNEL_TOKEN=dummy-not-a-real-token
-          ADMIN_BOOTSTRAP_EMAIL=ci-owner@mystore.pk
+          ADMIN_BOOTSTRAP_USERNAME=ci-owner
           ADMIN_BOOTSTRAP_PASSWORD=Vx93-pLq.m7_Ez4~Hs2Kd
           EOF
       - name: Build and start postgres, migrate and app

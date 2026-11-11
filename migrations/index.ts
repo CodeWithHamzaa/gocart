@@ -7,6 +7,7 @@ import * as migration_20261030_172753_media_storage_fields from './20261030_1727
 import * as migration_20261031_160131_mirza_store_name from './20261031_160131_mirza_store_name';
 import * as migration_20261101_205147_flat_categories from './20261101_205147_flat_categories';
 import * as migration_20261105_121934_storefront_content from './20261105_121934_storefront_content';
+import * as migration_20261106_093227_username_login from './20261106_093227_username_login';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20261105_121934_storefront_content.up,
     down: migration_20261105_121934_storefront_content.down,
-    name: '20261105_121934_storefront_content'
+    name: '20261105_121934_storefront_content',
+  },
+  {
+    up: migration_20261106_093227_username_login.up,
+    down: migration_20261106_093227_username_login.down,
+    name: '20261106_093227_username_login'
   },
 ];
