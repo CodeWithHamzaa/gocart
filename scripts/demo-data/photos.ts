@@ -52,7 +52,6 @@ export const SOURCES: Record<string, Source> = {
   smartwatchRound: S('jRM_bQIb_80', 'a-close-up-of-a-smart-watch-on-a-table-', 'Al Amin Mir', 'alaminip', '2021-09-28', 'photo-1632794716789-42d9995fb5b6', 'Round smart watch on an office desk showing 06:42. Generic watch face, no brand. Checksum re-pinned 2026-11-10: the CDN re-encoded this rendition (same photograph, compared by eye); earlier sha256 1b8d24f8e951.'),
   powerbankSlim: S('UP_RojtnvTU', 'white-and-blue-coated-wires-', 'Markus Winkler', 'markuswinkler', '2020-04-04', 'photo-1585995603413-eb35b5f4a50b', 'Slim silver power bank with a blue braided three-way cable on white. No logo visible.'),
   watchMinimal: S('xfNeB1stZ_0', 'person-holding-analog-watch-', 'Jaelynn Castillo', 'jaelynnalexis', '2018-04-24', 'photo-1524592094714-0f0654e20314', 'Minimal round watch with a plain white dial and taupe leather strap, held in a hand (no face or identifiable person).'),
-  backpackCanvas: S('hPYnW6kql20', 'green-canvas-backpack-with-leather-straps-on-a-yellow-chair-', 'YF Chen', 'sangeren', '2026-08-06', 'photo-1786025083224-220e39cb1e22', 'Green canvas backpack with leather straps and buckles on a yellow chair. No logo visible.'),
   toteLeather: S('XwjrPFW7xw0', 'brown-leather-handbag-on-white-table-', 'Ugluk Potroshitel', 'uglug', '2021-06-26', 'photo-1624687943971-e86af76d57de', 'Tan leather shopper tote hanging on a cupboard door. The page says it is handmade leather. No logo visible.'),
   duffleSand: S('9XiN0r2NWSM', 'brown-duffel-bag-beside-white-and-brown-wooden-chair-', 'Erol Ahmed', 'erol', '2015-11-27', 'photo-1448582649076-3981753123b5', 'Sand-coloured leather-and-canvas duffel on a wooden floor beside a white chair. No logo visible.'),
   sunglassesGold: S('MivM1hirbUI', 'silver-framed-aviator-style-sunglasses-', 'Habib Dadkhah', 'habibdadkhah', '2020-05-16', 'photo-1589642380614-4a8c2147b857', 'Gold-tone pilot-style sunglasses with brown gradient lenses on a pale yellow backdrop. The page description names a luxury maker; no mark is visible at full size.'),
@@ -64,7 +63,6 @@ export const SOURCES: Record<string, Source> = {
   tubesPeach: S('Xp0bTCLD07k', 'a-tube-of-cream-sitting-on-top-of-a-table-', 'Point Normal', 'normals', '2024-04-03', 'photo-1712168044214-f5a272c23a5b', 'Two unbranded white cosmetic tubes on a peach block. No aloe cue in the image.'),
   tubeWet: S('GdsFTnarsog', 'white-tube-on-glass-table-', 'Birgith Roosipuu', 'msbirgith', '2021-03-26', 'photo-1616750819456-5cdee9b85d22', 'Unbranded white tube on a wet glass surface with water droplets. No foam shown.'),
   perfumeAmber: S('nka_sIQpKEU', 'perfume-bottle-and-cosmetic-jars-', 'Birgith Roosipuu', 'msbirgith', '2021-06-02', 'photo-1622618991746-fe6004db3a47', 'Glass perfume bottle in warm amber light with two small cosmetic jars. No label or logo visible.'),
-  speakerBeige: S('EXiDx2JcFdE', 'a-close-up-of-a-speaker-on-a-white-surface-', 'Berke Can', 'berkaroon', '2022-04-13', 'photo-1649875951986-917ce191719f', 'Beige cylindrical portable speaker with a honeycomb grille on white. A maker name is printed on the speaker (acceptable for demo content, owner decision 2026-11-02).'),
   powerbankWhite: S('7JbgHNq4h4k', 'white-power-bank-with-three-charging-cables-', 'Andrey Matveev', 'zelebb', '2025-10-17', 'photo-1760708825913-65a50b3dc39b', 'Large white power bank with a black three-way charging cable on grey concrete. A small maker mark is embossed on the bank (acceptable for demo content, owner decision 2026-11-02).'),
   watchSteel: S('QQ_nm-OFlBs', 'a-watch-sitting-on-top-of-a-white-table-', 'Tareq Hasan', 'tareq_hasan', '2023-09-13', 'photo-1694598152256-a346298ae0b5', 'Steel-bracelet analog watch with a white dial and black bezel on white. A maker name is printed on the dial (acceptable for demo content, owner decision 2026-11-02).'),
   watchChrono: S('3XbFQkhWKIA', 'a-close-up-of-a-luxury-chronograph-wristwatch-', 'Ryan Chan', 'runie', '2026-03-17', 'photo-1773755060442-6d128b70dd20', 'Steel-bracelet chronograph with a blue dial and rose-gold bezel on white. A maker name is printed on the dial (acceptable for demo content, owner decision 2026-11-02).'),
@@ -94,8 +92,8 @@ export type Asset = {
   crop: Crop
   /** `contain` keeps the whole photo and pads with the photo's own edge colour (tall subjects). */
   mode?: 'crop' | 'contain'
-  /** For `contain`: take the padding colour from the two top corners only (the backdrop), not all four. */
-  padFrom?: 'top'
+  /** For `contain`: `colour` (default) pads with the mean corner colour; `copy` extends the edge pixels (use when the backdrop is a gradient). */
+  pad?: 'colour' | 'copy'
   alt: string
   /** Why this image is only a close match (D3), shown in the manifest. */
   mismatch?: string
@@ -103,7 +101,7 @@ export type Asset = {
   note?: string
 }
 
-type P = { n: number; name: string; slug: string; src: string; /** Different photograph for gallery image 2 (same item, same shoot); omitted = a detail crop of src. */ src2?: string; c1: Crop; c2: Crop; alt1: string; alt2: string; mode1?: 'crop' | 'contain'; mode2?: 'crop' | 'contain'; padFrom?: 'top'; mismatch?: string }
+type P = { n: number; name: string; slug: string; src: string; /** Different photograph for gallery image 2 (same item, same shoot); omitted = a detail crop of src. */ src2?: string; c1: Crop; c2: Crop; alt1: string; alt2: string; mode1?: 'crop' | 'contain'; mode2?: 'crop' | 'contain'; pad?: 'colour' | 'copy'; mismatch?: string }
 
 const products: P[] = [
   { n: 1, name: 'Aero Wave Wireless Headphones', slug: 'aero-wave-wireless-headphones', src: 'headphonesBlack', c1: { cx: 0.5, cy: 0.47, zoom: 0.9 }, c2: { cx: 0.47, cy: 0.72, zoom: 0.5 }, alt1: 'Black wireless headphones with a padded headband, seen from above on a white surface', alt2: 'Close-up of the black leather-look ear cushions of the headphones', mismatch: 'On-ear, all black, no coloured inner ring (copy changed)' },
@@ -113,7 +111,7 @@ const products: P[] = [
   { n: 6, name: 'Orbit Slim Smart Watch', slug: 'orbit-slim-smart-watch', src: 'smartwatchRound', c1: { cx: 0.57, cy: 0.6, zoom: 0.65 }, c2: { cx: 0.57, cy: 0.55, zoom: 0.33 }, alt1: 'Round smart watch with a dark strap resting on a desk and showing the time', alt2: 'Close-up of the round smart watch face', mismatch: 'Not a slim case; copy no longer says slim' },
   { n: 7, name: 'Volt Compact Power Bank', slug: 'volt-compact-power-bank', src: 'powerbankSlim', c1: { cx: 0.35, cy: 0.5, zoom: 1 }, c2: { cx: 0.58, cy: 0.3, zoom: 0.5 }, alt1: 'Slim silver power bank with a blue braided charging cable plugged in, on a white surface', alt2: 'Close-up of the blue braided cable with its three connector ends', mismatch: 'No charge-level indicator visible (copy changed)' },
   { n: 10, name: 'Minimal Leather Strap Watch', slug: 'minimal-leather-strap-watch', src: 'watchMinimal', c1: { cx: 0.5, cy: 0.5, zoom: 0.85 }, c2: { cx: 0.5, cy: 0.42, zoom: 0.4 }, alt1: 'Minimal round watch with a plain white dial and a taupe leather strap, held in a hand', alt2: 'Close-up of the plain white watch dial with thin hands and no numbers' },
-  { n: 12, name: 'Metro Canvas Backpack', slug: 'metro-canvas-backpack', src: 'backpackLeather', src2: 'backpackLeather2', c1: { cx: 0.5, cy: 0.5, zoom: 1 }, c2: { cx: 0.5, cy: 0.5, zoom: 1 }, mode1: 'contain', mode2: 'contain', padFrom: 'top', alt1: 'Brown leather backpack with a front pocket and side pockets on a light backdrop', alt2: 'Brown leather backpack in three-quarter view showing the side pocket and straps', mismatch: 'Leather finish instead of canvas; the product name and slug are identifiers and are kept (copy changed)' },
+  { n: 12, name: 'Metro Canvas Backpack', slug: 'metro-canvas-backpack', src: 'backpackLeather', src2: 'backpackLeather2', c1: { cx: 0.5, cy: 0.5, zoom: 1 }, c2: { cx: 0.5, cy: 0.65, zoom: 1 }, mode1: 'contain', pad: 'copy', alt1: 'Brown leather backpack with a front pocket and side pockets on a light backdrop', alt2: 'Brown leather backpack in three-quarter view showing the side pocket and straps', mismatch: 'Leather finish instead of canvas; the product name and slug are identifiers and are kept (copy changed)' },
   { n: 13, name: 'Everyday Faux Leather Tote', slug: 'everyday-faux-leather-tote', src: 'toteLeather', c1: { cx: 0.5, cy: 0.5, zoom: 1 }, c2: { cx: 0.5, cy: 0.2, zoom: 0.5 }, mode1: 'contain', alt1: 'Tan leather-look tote bag with two handles hanging on a cupboard door', alt2: 'Close-up of the stitched tote handles and rivets', mismatch: 'Photo shows a leather tote without a front flap (copy changed; the photographer describes real leather)' },
   { n: 14, name: 'Weekender Duffle Bag', slug: 'weekender-duffle-bag', src: 'duffleSand', c1: { cx: 0.35, cy: 0.62, zoom: 1 }, c2: { cx: 0.3, cy: 0.65, zoom: 0.5 }, alt1: 'Sand-coloured soft duffle bag on a wooden floor beside a white chair', alt2: 'Close-up of the duffle bag fabric and carry handles' },
   { n: 15, name: 'Pilot Frame Sunglasses', slug: 'pilot-frame-sunglasses', src: 'sunglassesGold', c1: { cx: 0.52, cy: 0.58, zoom: 0.95 }, c2: { cx: 0.36, cy: 0.6, zoom: 0.45 }, alt1: 'Pilot-style sunglasses with a thin gold-tone frame and brown gradient lenses', alt2: 'Close-up of the left lens, nose bridge and gold-tone frame', mismatch: 'Gold-tone frame with brown gradient lenses (copy changed)' },
@@ -135,8 +133,8 @@ const products: P[] = [
 const pid = (n: number) => `A-P${String(n).padStart(2, '0')}`
 
 const productAssets: Asset[] = products.flatMap((p) => [
-  { id: `${pid(p.n)}-1`, kind: 'product' as const, out: `${p.slug}-1.webp`, src: p.src, crop: p.c1, mode: p.mode1, padFrom: p.padFrom, alt: p.alt1, mismatch: p.mismatch },
-  { id: `${pid(p.n)}-2`, kind: 'product' as const, out: `${p.slug}-2.webp`, src: p.src2 ?? p.src, crop: p.c2, mode: p.mode2, padFrom: p.padFrom, alt: p.alt2, mismatch: p.mismatch },
+  { id: `${pid(p.n)}-1`, kind: 'product' as const, out: `${p.slug}-1.webp`, src: p.src, crop: p.c1, mode: p.mode1, pad: p.pad, alt: p.alt1, mismatch: p.mismatch },
+  { id: `${pid(p.n)}-2`, kind: 'product' as const, out: `${p.slug}-2.webp`, src: p.src2 ?? p.src, crop: p.c2, mode: p.mode2, pad: p.pad, alt: p.alt2, mismatch: p.mismatch },
 ])
 
 const categories: Array<{ n: number; slug: string; src: string; crop: Crop; alt: string }> = [

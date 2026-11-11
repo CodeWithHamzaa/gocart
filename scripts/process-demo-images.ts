@@ -69,7 +69,7 @@ async function main() {
       if (CHECK_ONLY) {
         data = fs.readFileSync(path.join(OUT, asset.out))
       } else {
-        const rendered = await renderAsset(info.data, asset.kind, asset.crop, asset.mode ?? 'crop', asset.out, asset.padFrom)
+        const rendered = await renderAsset(info.data, asset.kind, asset.crop, asset.mode ?? 'crop', asset.out, asset.pad)
         data = rendered.data
         quality = rendered.quality
         overTarget = rendered.overTarget

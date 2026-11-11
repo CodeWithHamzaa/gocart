@@ -4,6 +4,31 @@
 
 Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [PHOTO_BRIEF.md](./PHOTO_BRIEF.md), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). ADR-049 is still **Proposed**; `M107`–`M109` are not started.
 
+## Update 2026-11-10 (`M112`, visual upgrade): what changed and what is still limited
+
+Six new Unsplash photos (all "Free to use under the Unsplash License", none Unsplash+; author, date and licence line read from each photo page on 2026-11-10; no attribution required, credit recorded anyway in [MANIFEST.csv](./MANIFEST.csv)). Four sourcing agents searched all 24 products; a candidate was used only if it was clearly the same item (gallery image 2) or clearly better than what shipped (replacement).
+
+| Product | Change | Photo (author) |
+|---|---|---|
+| Cylinder Mini Speaker | **Primary replaced** (the old photo showed a large "SONY" mark) and a real second photo instead of a crop | [kDCIBGqU0_0](https://unsplash.com/photos/a-white-smart-speaker-on-a-white-surface-kDCIBGqU0_0) + [lVdcjB_ehWY](https://unsplash.com/photos/lVdcjB_ehWY) (Howard Bouchevereau) |
+| Metro Canvas Backpack | **Primary replaced** (old image was a cut-off close-up); whole-bag front and three-quarter views from one shoot | [3o-X8WJOP5E](https://unsplash.com/photos/3o-X8WJOP5E) + [OFHkPCkhYEY](https://unsplash.com/photos/OFHkPCkhYEY) (Wiser by the Mile) |
+| Pulse Active Smart Watch | Gallery image 2 is a different photo of the same watch (screen off, three-quarter view) | [wCceAAwXzz0](https://unsplash.com/photos/wCceAAwXzz0) (pratik prasad) |
+| Gentle Foaming Face Wash | Gallery image 2 is another photo of the same tube from the same shoot | [CJFG-GOAeVk](https://unsplash.com/photos/CJFG-GOAeVk) (Birgith Roosipuu) |
+| Chrono Sport Wrist Watch | Image 2 reframed on the crown, pushers and bezel (no dial lettering) | unchanged photo |
+
+Honest limits of this set:
+
+- **Mismatches, accepted and recorded.** The backpack is leather, but the product name and slug (`metro-canvas-backpack`) are identifiers (the demo seed and the test-site rollout find products by exact name) and were not renamed; only the description in `catalogue.ts` was changed to match the photo. The cylinder speaker is white and smart-speaker shaped, not beige, and its "easy to pair" copy is only a close match. Rename the backpack in a later milestone if the owner wants it.
+- **Brands still visible** (owner accepted these on 2026-11-02; no clean alternative was found): BAISHENG on the Classic Steel watch dial, an "Mi" mark on the Volt Max power bank, and small dial text on the Chrono watch (image 1, tiny at card size).
+- **Galleries that are still detail crops** of image 1: 20 of 24 products. Free stock almost never offers two photos of one invented product; the agents found same-shoot partners for only 4. No candidate was forced.
+- **Weak primaries with no better free photo found:** Glass Storage Jar Set (one jar, not a set), Everyday Faux Leather Tote (hanging on a door), Volt Compact power bank (a corner), Weekender Duffle. Candidates were rejected for brands, clutter, AI-render look or a different-looking item.
+- **Not one photographer.** Backdrops still range from white to peach, yellow, wood and grey; the Featured grid reads as clean but not as one studio shoot.
+- **Pexels and Pixabay** are unreachable from this environment (Cloudflare challenge, not bypassed); every photo is from Unsplash.
+- Two originals (Orbit Slim watch, Dome lamp) were re-encoded by the Unsplash CDN; the same photographs were re-pinned in the manifest (old checksums are in `photos.ts`).
+- Pipeline: `padFrom`/`pad: 'copy'` (edge-pixel padding) for portrait photos in `contain` mode, and a fix to `edgeColour` (sharp's `stats()` ignores `extract()`, so the "corner colour" had been the whole-image mean; the tote's padding colour is corrected as a side effect).
+
+Nothing was uploaded to the test site or any database. The test site still serves the M108 photos; a new rollout (`rollout:demo-photos`, owner-approved workflow) is needed to show these.
+
 ## 1. Owner decisions that shaped this set (2026-11-02)
 
 Everything in the catalogue is demo content. Names, descriptions and attributes are not corrected to fit photos; visible brand names and logos in photos are acceptable; consistent premium quality matters more than one identical photographic style; if no suitable free image exists the generated artwork stays (this was not needed). The first sourcing pass (2026-11-01) had applied a stricter no-visible-brand rule, which is why 4 products were left on generated art; the second pass sourced them under the relaxed rule. The temporary description edits made on 2026-11-01 (D3) are left as they are; no further copy changes were made.

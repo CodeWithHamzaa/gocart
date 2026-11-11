@@ -86,11 +86,8 @@ export async function validateOutput(data: Buffer, filename: string, kind: Kind,
   return { ok: problems.length === 0, problems, width: meta.width ?? 0, height: meta.height ?? 0, bytes: data.length, format }
 }
 
-/**
- * Mean colour of the four corners, for padding a `contain` image with its own backdrop. `top` uses a small patch at the
- * top centre instead, for photos whose corners are vignetted or show a floor or shadow rather than the backdrop.
- */
-export async function edgeColour(data: Buffer, width: number, height: number, from: 'all' | 'top' = 'all'): Promise<{ r: number; g: number; b: number }> {
+/** Mean colour of the four corners, for padding a `contain` image with its own backdrop. */
+export async function edgeColour(data: Buffer, width: number, height: number): Promise<{ r: number; g: number; b: number }> {
   const size = Math.max(4, Math.round(Math.min(width, height) * 0.01))
   const corners: Box[] = [
     { left: 0, top: 0, width: size, height: size },
@@ -98,19 +95,17 @@ export async function edgeColour(data: Buffer, width: number, height: number, fr
     { left: 0, top: height - size, width: size, height: size },
     { left: width - size, top: height - size, width: size, height: size },
   ]
-  const patch = Math.max(size, Math.round(width * 0.1))
-  const used: Box[] = from === 'top' ? [{ left: Math.round(width / 2 - patch / 2), top: 0, width: patch, height: size }] : corners
   let r = 0
   let g = 0
   let b = 0
-  for (const corner of used) {
+  for (const corner of corners) {
     // extract() alone is ignored by stats() (it would measure the whole image), so render the patch first.
     const stats = await sharp(await sharp(data, SHARP_INPUT).extract(corner).toBuffer()).stats()
     r += stats.channels[0].mean
     g += stats.channels[1].mean
     b += stats.channels[2].mean
   }
-  return { r: Math.round(r / used.length), g: Math.round(g / used.length), b: Math.round(b / used.length) }
+  return { r: Math.round(r / 4), g: Math.round(g / 4), b: Math.round(b / 4) }
 }
 
 /** Renders one asset from the (already oriented-readable) original bytes. */
@@ -120,7 +115,7 @@ export async function renderAsset(
   crop: Crop,
   mode: 'crop' | 'contain',
   label: string,
-  padFrom: 'all' | 'top' = 'all',
+  pad: 'colour' | 'copy' = 'colour',
 ): Promise<Encoded & { width: number; height: number }> {
   const budget = BUDGETS[kind]
   const meta = await sharp(original, SHARP_INPUT).metadata()
@@ -133,11 +128,26 @@ export async function renderAsset(
   let build: () => Sharp
   if (mode === 'contain') {
     if (Math.max(width, height) < Math.max(budget.width, budget.height)) throw new Error(`${label}: source too small for ${budget.width}x${budget.height}`)
-    const colour = await edgeColour(original, width, height, padFrom)
-    build = () =>
-      sharp(original, SHARP_INPUT)
-        .rotate()
-        .resize({ width: budget.width, height: budget.height, fit: 'contain', background: { ...colour, alpha: 1 }, withoutEnlargement: false })
+    if (pad === 'copy') {
+      // Fit inside the target, then continue the photo's own edge pixels outwards. For a backdrop that is a
+      // gradient (not one flat colour) this leaves no seam; the subject must sit clear of the padded edges.
+      const scale = Math.min(budget.width / width, budget.height / height)
+      const w = Math.round(width * scale)
+      const h = Math.round(height * scale)
+      const left = Math.floor((budget.width - w) / 2)
+      const top = Math.floor((budget.height - h) / 2)
+      build = () =>
+        sharp(original, SHARP_INPUT)
+          .rotate()
+          .resize(w, h)
+          .extend({ left, right: budget.width - w - left, top, bottom: budget.height - h - top, extendWith: 'copy' })
+    } else {
+      const colour = await edgeColour(original, width, height)
+      build = () =>
+        sharp(original, SHARP_INPUT)
+          .rotate()
+          .resize({ width: budget.width, height: budget.height, fit: 'contain', background: { ...colour, alpha: 1 }, withoutEnlargement: false })
+    }
   } else {
     const box = cropBox(width, height, aspect, crop)
     assertNoUpscale(box, budget, label)
