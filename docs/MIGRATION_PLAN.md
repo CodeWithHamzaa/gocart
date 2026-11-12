@@ -1755,3 +1755,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: type-check, lint (0 errors), build, CI unit scripts; local before/after captures at 390/820/1440 (`docs/redesign/phase1/`); `/admin/login` renders with `#5F42EC`.
 - **Rollback**: revert the commit (values only).
 - **Commit message**: `Hybrid palette values, aubergine footer, shared admin palette (M117)`
+
+### M118 — Homepage: editorial hero, Shop by category, honest deals, Why shop with Mirza
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 2 of the premium storefront redesign; authorized by the owner on 2026-11-12.
+- **Goal**: replace the run of near-identical grids with an editorial home page built only from existing data.
+- **Files**: `app/(public)/page.jsx` (order), `components/Hero.jsx`, `components/HeroSlider.tsx`, `components/CategoryShowcase.tsx` (new), `components/HeroShortcuts.tsx` (removed), `components/DealsOfTheDay.tsx`, `components/ui/Countdown.tsx`, `components/CodSteps.tsx`, `components/Footer.jsx` (all categories), `docs/redesign/phase2/`.
+- **Spec**: `docs/redesign/phase2/README.md`. No stored `tone`/`label` value added or renamed; "Featured" kept (ADR-022); promo cards unchanged (owner); only verified trust facts; `force-dynamic` kept on `/`.
+- **Dependencies**: `M115`–`M117`.
+- **Testing**: type-check, lint (0 errors), build, CI unit scripts; local before/after captures at 390/820/1440.
+- **Rollback**: revert the commit.
+- **Commit message**: `Homepage: editorial hero, Shop by category, honest deals, Why shop with Mirza (M118)`

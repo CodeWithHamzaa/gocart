@@ -24,7 +24,8 @@ const Footer = async () => {
         {
             title: "Shop",
             links: [
-                ...categories.slice(0, 6).map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
+                // M118: every category (it was the first six, so four were unreachable from the footer).
+                ...categories.map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
                 { text: "Shop all products", path: '/shop', icon: null },
             ]
         },
