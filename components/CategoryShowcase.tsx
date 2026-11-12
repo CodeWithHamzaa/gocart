@@ -16,7 +16,8 @@ import ScrollRail from '@/components/ui/ScrollRail'
 // identity (ADR-052): Plus Jakarta Sans only (no serif), violet for actions, warm wells and hairlines,
 // no shadows on cards. Every category in the admin's order (ADR-048), links in the server HTML (M40,
 // e2e/seo.spec.ts). Rows are swiped on touch and scrolled with ScrollRail's buttons from `md`.
-// A category without an image shows its icon.
+// A category without an image shows its icon. The circles have no white ring (owner review 2026-11-12:
+// compared with and without; without reads cleaner and shows more of the photo); hover adds a violet ring.
 const imageOf = (category: Category) => (category.image && typeof category.image === 'object' ? (category.image.url ?? null) : null)
 
 // The row bleeds to the screen edge below `lg` so the next circle peeks in; from `lg` it sits in its column.
@@ -59,7 +60,7 @@ function CategoryCircle({ category }: { category: Category }) {
   const image = imageOf(category)
   return (
     <Link href={`/category/${category.slug}`} className="group flex flex-col items-center gap-2 rounded-tile text-center">
-      <span className="block w-full rounded-full bg-surface p-1 ring-1 ring-line transition group-hover:ring-2 group-hover:ring-primary">
+      <span className="block w-full rounded-full transition group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-page">
         <span className="flex aspect-square items-center justify-center overflow-hidden rounded-full bg-surface-muted text-ink-3">
           {image ? (
             <Image src={image} alt="" width={200} height={200} sizes="(min-width: 640px) 96px, 76px" className="size-full object-cover" />
