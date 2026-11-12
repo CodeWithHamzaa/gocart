@@ -1,0 +1,39 @@
+/* M115: the raw Mirza palette, as plain CSS custom properties with no Tailwind syntax, so both the
+   storefront (app/globals.css maps the role tokens onto these) and the Payload admin can read one
+   source of truth. Components never use these names directly: they use the role utilities
+   (bg-page, text-ink, bg-primary, bg-inverse...). Change a colour here, not in a component.
+   Values are the ADR-047 storefront palette as of bc5a77a; M115 changes no value. */
+:root {
+    /* Violet: the one action colour, its hover/pressed state and its light tints. */
+    --palette-violet-600: #5F42EC;
+    --palette-violet-700: #4A2FD0;
+    --palette-violet-100: #EEE9FF;
+    --palette-violet-200: #E2DAFF;
+
+    /* Ink: text from headings to disabled. */
+    --palette-ink-900: #1D1D1F;
+    --palette-ink-700: #424245;
+    --palette-ink-600: #515154;
+    --palette-ink-500: #636368;
+    --palette-ink-300: #A1A1A6;
+
+    /* Neutral surfaces and lines. */
+    --palette-neutral-50: #FAFAFC;
+    --palette-white: #FFFFFF;
+    --palette-neutral-100: #F5F4F8;
+    --palette-line-100: #ECE9F2;
+    --palette-line-200: #E2DFEA;
+    --palette-line-300: #CBC6D8;
+    --palette-line-500: #8A84A3;
+
+    /* Dark surface (footer). M115 keeps it the current near-black. */
+    --palette-dark-900: #1D1D1F;
+
+    /* Status: sale is for real discounts only, amber for "Limited edition". */
+    --palette-sale-700: #A8144F;
+    --palette-sale-100: #FFE4F0;
+    --palette-sale-600: #CC1966;
+    --palette-amber-400: #FFC247;
+    --palette-success-700: #0B6E4F;
+    --palette-success-100: #E6F2EE;
+}

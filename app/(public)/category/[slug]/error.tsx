@@ -1,5 +1,6 @@
 'use client'
 
+import { buttonClasses } from '@/components/ui/Button'
 // M27a: a Payload/database query failure renders this boundary with a retry
 // affordance — never a silent empty category, which would misrepresent the
 // catalog as smaller than it is on a page whose whole purpose is being
@@ -16,7 +17,7 @@ export default function CategoryError({ reset }: { error: Error; reset: () => vo
         <button
           type="button"
           onClick={() => reset()}
-          className="inline-flex min-h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark"
+          className={buttonClasses()}
         >
           Try again
         </button>

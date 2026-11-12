@@ -1,6 +1,7 @@
 'use client'
 import Link, { useLinkStatus } from 'next/link'
 import { LoaderCircleIcon } from 'lucide-react'
+import { buttonClasses } from '@/components/ui/Button'
 
 // "Load more" for a listing: a real link to the next ?page=N (so it works without JavaScript and crawlers
 // can follow it) that keeps the scroll position, so the new cards appear under the ones already shown.
@@ -22,7 +23,7 @@ export default function LoadMoreLink({ href }: { href: string }) {
     <Link
       href={href}
       scroll={false}
-      className="mt-2 inline-flex min-h-12 items-center rounded-full border border-line-input bg-surface px-8 text-sm font-semibold text-ink transition hover:border-primary hover:text-primary-dark"
+      className={buttonClasses({ variant: 'outline', size: 'lg', className: 'mt-2' })}
     >
       <Label />
     </Link>

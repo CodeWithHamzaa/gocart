@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { buttonClasses } from '@/components/ui/Button'
 import { DISCOUNT_STEPS, SORTS, SORT_LABELS, hasActiveFilters, isRefined, type CategoryFilters } from '@/lib/category-filters'
 
 // M92: sort and filter for a category listing (design: Category / CategoryMobile). A plain GET
@@ -52,7 +53,7 @@ export default function CategoryControls({ basePath, filters }: { basePath: stri
           </fieldset>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" className="min-h-11 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-95">Apply</button>
+          <button type="submit" className={buttonClasses()}>Apply</button>
           {(active || hasActiveFilters(filters)) && (
             <Link href={basePath} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary-dark">Clear all</Link>
           )}

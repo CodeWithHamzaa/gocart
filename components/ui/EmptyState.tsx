@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { buttonClasses } from '@/components/ui/Button'
 
 // M60: the shared empty state (cart, wishlist, search, category). A white panel with a hairline; one
 // primary action and, optionally, a quieter second one. `wide` gives a page-level empty state (the cart)
@@ -14,12 +15,12 @@ export default function EmptyState({ icon, title, text, action, secondaryAction,
       {(action || secondaryAction) && (
         <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
           {action && (
-            <Link href={action.href} className="inline-flex min-h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark">
+            <Link href={action.href} className={buttonClasses()}>
               {action.label}
             </Link>
           )}
           {secondaryAction && (
-            <Link href={secondaryAction.href} className="inline-flex min-h-11 items-center rounded-full border border-line-2 px-6 text-sm font-semibold text-ink transition hover:bg-surface-muted">
+            <Link href={secondaryAction.href} className={buttonClasses({ variant: 'outline' })}>
               {secondaryAction.label}
             </Link>
           )}

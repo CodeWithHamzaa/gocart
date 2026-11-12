@@ -4,6 +4,7 @@ import { useState } from "react"
 import { toast } from "react-hot-toast"
 import { useDispatch } from "react-redux"
 import { addAddress } from "@/lib/features/address/addressSlice"
+import { buttonClasses } from '@/components/ui/Button'
 import {
     validateAddress,
     validateArea,
@@ -94,7 +95,7 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
                     <input name="area" onChange={handleAddressChange} value={address.area} className={field} type="text" placeholder="Area" required />
                 </div>
                 {(errors.city || errors.area) && <p role="alert" className="-mt-3 text-xs text-sale">{errors.city || errors.area}</p>}
-                <button className="min-h-12 rounded-full bg-primary py-3 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-95">SAVE ADDRESS</button>
+                <button type="submit" className={buttonClasses({ size: 'lg' })}>SAVE ADDRESS</button>
                 <button type="button" aria-label="Close" onClick={() => setShowAddressModal(false)} className="absolute right-2.5 top-3 inline-flex size-11 items-center justify-center rounded-full text-ink-2 hover:bg-white hover:text-ink">
                     <XIcon size={24} aria-hidden="true" />
                 </button>

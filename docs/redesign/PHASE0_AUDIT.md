@@ -84,7 +84,7 @@ Sources are screenshots in `baseline/{mobile-390,tablet-820,desktop-1440}/`. I c
 11. **The header is tall on a phone.** The bar, logo row and full-width search take about 170 px before any content.
 12. **Product pages can dead-end.** Related products hide when fewer than two in-stock products share the category (`RelatedProducts.tsx:34`). Amber Oud and other two-product categories therefore end at the footer.
 13. **"Please contact us" is a dead end.** That's the paused checkout and lookup notice (`TurnstileWidget.tsx:88-89`), and it has no phone or email link. The footer does have a Contact column. It's hidden in these screenshots for privacy, the same redaction the brand-kit tooling uses.
-14. **Containers don't line up.** The header, footer, bar and category nav use `max-w-[83rem]`, while page bodies use `max-w-7xl`, so the edges don't align at 1440.
+14. ~~Containers don't line up.~~ **Corrected in Phase 1:** the header, footer, bar and category nav use `max-w-[83rem]` with 24px padding inside, and page bodies use `max-w-7xl` inside 24px margins, so the content edges **do** align (1280px at 1440). It is two ways of writing the same width, not a visual defect. No `Container` component was added for it.
 15. **Cart lines have two delete controls.** There's one in the stepper when the quantity is 1 and one top-right, both small and close together.
 
 ### Low

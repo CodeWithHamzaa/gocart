@@ -1,8 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import { formatPKR } from '@/lib/currency'
 import Badge from './ui/Badge'
+import Price from './ui/Price'
 import { discountPercent, statusBadge } from '@/lib/product-badges'
 import QuickAddButton from './ui/QuickAddButton'
 import WishlistButton from './ui/WishlistButton'
@@ -44,14 +44,8 @@ const ProductCard = ({ product, priority = false, rail = false, headingLevel = 3
             <Link href={`/product/${product.id}`} className='flex flex-1 flex-col px-0.5 pt-3 outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary'>
                 {categoryTitle && <span className='truncate text-xs font-medium text-muted'>{categoryTitle}</span>}
                 <Heading title={product.name} className={`${categoryTitle ? 'mt-0.5' : ''} line-clamp-2 text-sm font-semibold text-ink [overflow-wrap:anywhere] group-hover:underline group-hover:underline-offset-4 sm:text-base`}>{product.name}</Heading>
-                <span className='mt-auto flex min-h-11 flex-wrap items-baseline gap-x-1.5 pr-12 pt-2'>
-                    <span className='whitespace-nowrap text-sm font-semibold text-ink sm:text-base'>{formatPKR(product.price)}</span>
-                    {discount > 0 && (
-                        <>
-                            <s className='whitespace-nowrap text-xs text-muted'><span className='sr-only'>Was </span>{formatPKR(product.mrp)}</s>
-                            <span className='whitespace-nowrap text-xs font-semibold text-sale'><span aria-hidden='true'>&minus;{discount}%</span><span className='sr-only'>{discount}% off</span></span>
-                        </>
-                    )}
+                <span className='mt-auto flex min-h-11 items-end pr-12 pt-2'>
+                    <Price price={product.price} mrp={product.mrp} />
                 </span>
             </Link>
             <QuickAddButton productId={product.id} name={product.name} disabled={outOfStock} variant='solid' className='absolute bottom-2.5 right-2.5 z-10 sm:bottom-3 sm:right-3' />

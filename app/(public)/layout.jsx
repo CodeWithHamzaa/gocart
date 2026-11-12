@@ -53,7 +53,7 @@ export default async function PublicLayout({ children }) {
                 <StoreProvider>
                     <Toaster />
                     {/* M44: keyboard and screen-reader users can jump past the header. */}
-                    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded focus:bg-white focus:px-4 focus:py-3 focus:text-slate-800 focus:shadow">
+                    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-control focus:bg-surface focus:px-4 focus:py-3 focus:text-ink focus:shadow-float-sm">
                         Skip to content
                     </a>
                     <AnnouncementBar />
