@@ -1,6 +1,5 @@
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-import CodSteps from "@/components/CodSteps";
 import CategoryShowcase from "@/components/CategoryShowcase";
 import LatestProducts from "@/components/LatestProducts";
 import DealsOfTheDay from "@/components/DealsOfTheDay";
@@ -92,10 +91,11 @@ export default async function Home() {
     // M101 (ADR-047): the owner's chosen layout: the "V1" banner, then categories (tiles from `md`, a
     // swipeable circle row on a phone), large-card rails for new arrivals and featured products, and the
     // three cash-on-delivery steps in place of the trust row. Deals and promo cards stay as they were.
-    // M118 (premium redesign, Phase 2): an editorial rhythm instead of grid after grid: the banner, every
-    // category as photo tiles, the curated Featured grid ("Featured", not "Best sellers": ADR-022), the
-    // admin's promotions, limited-time deals, the aubergine "Why shop with" band, then the New arrivals
-    // rail, so the dark band never sits against the dark footer. Sections with no data stay hidden.
+    // M118 (premium redesign, Phase 2): the banner, every category (intro column + a row of category cards),
+    // the curated Featured grid ("Featured", not "Best sellers": ADR-022), the admin's promotions,
+    // limited-time deals, then the New arrivals rail before the footer. The owner removed the "Why shop
+    // with" band on 2026-11-12 and asked for nothing in its place; the footer keeps the trust points.
+    // Sections with no data stay hidden, and every section keeps the same vertical rhythm.
     return (
         <div>
             <Hero slides={slides} />
@@ -103,7 +103,6 @@ export default async function Home() {
             <BestSelling products={featuredShown} categories={categories} content={content} />
             <PromoCards cards={promoCards} />
             <DealsOfTheDay products={deals} />
-            <CodSteps shipping={shipping} storeName={settings.storeName} />
             <LatestProducts products={newArrivals} content={content} />
         </div>
     );
