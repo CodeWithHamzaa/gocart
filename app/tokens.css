@@ -2,7 +2,8 @@
    storefront (app/globals.css maps the role tokens onto these) and the Payload admin can read one
    source of truth. Components never use these names directly: they use the role utilities
    (bg-page, text-ink, bg-primary, bg-inverse...). Change a colour here, not in a component.
-   Values are the ADR-047 storefront palette as of bc5a77a; M115 changes no value. */
+   M115 moved the values here unchanged; M117 applies ADR-052 (the hybrid palette): warm ivory
+   surfaces and lines, one violet for actions, an aubergine dark surface. */
 :root {
     /* Violet: the one action colour, its hover/pressed state and its light tints. */
     --palette-violet-600: #5F42EC;
@@ -17,17 +18,17 @@
     --palette-ink-500: #636368;
     --palette-ink-300: #A1A1A6;
 
-    /* Neutral surfaces and lines. */
-    --palette-neutral-50: #FAFAFC;
+    /* Warm neutral surfaces and lines (ADR-052): ivory page, white cards, warm wells. */
+    --palette-ivory-50: #F7F5F0;
     --palette-white: #FFFFFF;
-    --palette-neutral-100: #F5F4F8;
-    --palette-line-100: #ECE9F2;
-    --palette-line-200: #E2DFEA;
-    --palette-line-300: #CBC6D8;
-    --palette-line-500: #8A84A3;
+    --palette-ivory-100: #F1EEE8;
+    --palette-line-100: #E8E4DC;
+    --palette-line-200: #DDD8CE;
+    --palette-line-300: #C6BFB2;
+    --palette-line-500: #8A8275;
 
-    /* Dark surface (footer). M115 keeps it the current near-black. */
-    --palette-dark-900: #1D1D1F;
+    /* The one dark surface (ADR-052): footer and, from Phase 2, one editorial band. */
+    --palette-aubergine-900: #352746;
 
     /* Status: sale is for real discounts only, amber for "Limited edition". */
     --palette-sale-700: #A8144F;

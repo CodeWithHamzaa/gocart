@@ -461,6 +461,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M114` | Admin sign-in by username and password (email no longer signs in; email kept optional); first admin from `ADMIN_BOOTSTRAP_USERNAME`; one migration backfilling existing admins | **Done, deployed to test** (2026-11-11), owner request; ADR-051; PR #79 (took over #70). Migration applied to the test Neon before merge (backup branch `backup-before-m114-2026-11-11`), then `main` at `e1e9e5a` deployed as `dpl_4JCozo4v…`; live: username/password login form, email sign-in refused, pages 200 (a successful sign-in is for the owner to confirm). Launch blocker 6 (per-IP rate limit on admin sign-in) added for production |
 | `M115` | Design foundation: shared palette file (`app/tokens.css`), role tokens, shared `Button` and `Price` (no visible colour change) | **Done, in review** (2026-11-12). Phase 1a of the premium storefront redesign; owner authorized Phase 1 on 2026-11-12. Not deployed. |
 | `M116` | Palette decision record: ADR-052 hybrid palette (warm ivory surfaces, `#5F42EC` for actions, aubergine dark surface, no champagne); amends ADR-047 item 4 and records `bc5a77a` | **Done, in review** (2026-11-12). Owner decision 2026-11-12. Docs only. |
+| `M117` | Hybrid palette values (ADR-052): warm ivory surfaces, aubergine footer, violet saved-heart and wishlist badge; the admin's brand colours read the shared palette | **Done, in review** (2026-11-12). Not deployed. Before/after captures in `docs/redesign/phase1/`. |
 
 ---
 

@@ -56,7 +56,7 @@ const Footer = async () => {
     ]
 
     return (
-        <footer className="mt-24 bg-inverse text-sm text-on-inverse/75">
+        <footer className="surface-inverse mt-24 bg-inverse text-sm text-on-inverse/75">
             <div className="mx-auto max-w-[83rem] px-4 sm:px-6">
                 <ul className="grid gap-3 border-b border-on-inverse/10 py-6 sm:grid-cols-3">
                     {promises.map((item) => (

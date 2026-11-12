@@ -1745,3 +1745,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: docs only; contrast values computed with the WCAG 2.2 relative-luminance formula.
 - **Rollback**: revert the commit.
 - **Commit message**: `Palette decision record: hybrid palette, ADR-052 (M116)`
+
+### M117 — Hybrid palette values, aubergine footer, admin reads the shared palette
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 1c of the premium storefront redesign.
+- **Goal**: apply ADR-052 and stop the admin's brand colours drifting from the storefront's.
+- **Files**: `app/tokens.css`, `app/globals.css` (comment and contrast table, white focus ring on `.surface-inverse`), `components/Footer.jsx`, `components/ui/WishlistButton.tsx`, `components/Navbar.jsx` (wishlist count badge), `app/(payload)/layout.tsx` (imports `app/tokens.css`), `app/(payload)/custom.css` (brand variables read the palette), `docs/redesign/phase1/`.
+- **Spec**: ADR-052 values; admin surfaces, sidebar and Payload's grey ramp unchanged; no stored `tone` value added or renamed; no schema, data, checkout-logic or dependency change.
+- **Dependencies**: `M115`, `M116`.
+- **Testing**: type-check, lint (0 errors), build, CI unit scripts; local before/after captures at 390/820/1440 (`docs/redesign/phase1/`); `/admin/login` renders with `#5F42EC`.
+- **Rollback**: revert the commit (values only).
+- **Commit message**: `Hybrid palette values, aubergine footer, shared admin palette (M117)`
