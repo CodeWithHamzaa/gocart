@@ -6,17 +6,20 @@ import { CategoryIcon } from '@/lib/category-style'
 import { buttonClasses } from '@/components/ui/Button'
 import ScrollRail from '@/components/ui/ScrollRail'
 
-// M118: "Shop by category", the home page's category discovery, after the owner's reference (2026-11-12,
-// "Style 1, premium cards with images"): an intro column (heading, one line, "Explore all") beside a row of
-// photo cards: the category's 4:3 image with a round arrow, then its icon, name and "Shop now". A circular
-// style was also built and compared at 390/820/1440; the cards won (larger category photos, a clear
-// action, names on one line), so only they remain. Adapted to the Mirza identity (ADR-052): Plus Jakarta Sans only (no serif), violet for actions, warm
-// wells and hairlines, no shadows on cards. Every category, in the admin's order (ADR-048), one link
-// each, all in the server HTML (M40, e2e/seo.spec.ts). The row is swiped on a phone and scrolled with
-// the shared round buttons from `md` (ScrollRail); from `lg` five cards fill the row. A category without an image shows its icon.
+// M118: "Shop by category", the home page's category discovery, after the owner's two reference styles
+// (2026-11-12): an intro (heading, one line, "Explore all") beside a row of every category. The owner then
+// chose one style per screen size:
+//   below `lg` (phones and tablets)  round photos with the name under them: compact, 4-5 in view
+//   from `lg` (desktop)               photo cards: the 4:3 image with a round arrow, icon, name, "Shop now"
+// Both lists are in the server HTML; the one not shown is `display: none`, so it is out of the
+// accessibility tree and a screen reader or keyboard meets each category once. Adapted to the Mirza
+// identity (ADR-052): Plus Jakarta Sans only (no serif), violet for actions, warm wells and hairlines,
+// no shadows on cards. Every category in the admin's order (ADR-048), links in the server HTML (M40,
+// e2e/seo.spec.ts). Rows are swiped on touch and scrolled with ScrollRail's buttons from `md`.
+// A category without an image shows its icon.
 const imageOf = (category: Category) => (category.image && typeof category.image === 'object' ? (category.image.url ?? null) : null)
 
-// The row bleeds to the screen edge below `lg` so the next item peeks in; from `lg` it sits in its column.
+// The row bleeds to the screen edge below `lg` so the next circle peeks in; from `lg` it sits in its column.
 const ROW =
   'no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 py-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0 [&>li]:shrink-0 [&>li]:snap-start'
 
@@ -31,7 +34,7 @@ function CategoryCard({ category }: { category: Category }) {
             alt=""
             width={480}
             height={360}
-            sizes="(min-width: 1280px) 200px, (min-width: 1024px) 17vw, (min-width: 768px) 200px, 44vw"
+            sizes="(min-width: 1280px) 200px, 17vw"
             className="size-full object-cover transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         ) : (
@@ -48,6 +51,24 @@ function CategoryCard({ category }: { category: Category }) {
       <span className="inline-flex items-center gap-1 px-1.5 pb-1.5 pt-1 text-xs font-semibold text-primary sm:text-sm">
         Shop now <ArrowRightIcon size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
       </span>
+    </Link>
+  )
+}
+
+function CategoryCircle({ category }: { category: Category }) {
+  const image = imageOf(category)
+  return (
+    <Link href={`/category/${category.slug}`} className="group flex flex-col items-center gap-2 rounded-tile text-center">
+      <span className="block w-full rounded-full bg-surface p-1 ring-1 ring-line transition group-hover:ring-2 group-hover:ring-primary">
+        <span className="flex aspect-square items-center justify-center overflow-hidden rounded-full bg-surface-muted text-ink-3">
+          {image ? (
+            <Image src={image} alt="" width={200} height={200} sizes="(min-width: 640px) 96px, 76px" className="size-full object-cover" />
+          ) : (
+            <CategoryIcon category={category} size={26} strokeWidth={1.5} aria-hidden="true" />
+          )}
+        </span>
+      </span>
+      <span className="line-clamp-2 text-xs font-medium leading-tight text-ink transition-colors group-hover:text-primary-dark sm:text-sm">{category.title}</span>
     </Link>
   )
 }
@@ -81,11 +102,25 @@ export default function CategoryShowcase({ categories = [] }: { categories?: Cat
           </Link>
         </div>
 
-        <div className="mt-5 min-w-0 lg:mt-0">
+        {/* Phones and tablets: the circles. */}
+        <div className="mt-4 min-w-0 lg:hidden">
           <ScrollRail label="categories">
-            <ul className={`${ROW} gap-3 sm:gap-4`}>
+            <ul className={`${ROW} gap-3 sm:gap-5`}>
               {categories.map((category) => (
-                <li key={category.id} className="w-[44vw] max-w-[200px] md:w-[200px] lg:w-[calc((100%-4rem)/5)] lg:max-w-none">
+                <li key={category.id} className="w-[76px] sm:w-24">
+                  <CategoryCircle category={category} />
+                </li>
+              ))}
+            </ul>
+          </ScrollRail>
+        </div>
+
+        {/* Desktop: the cards, five in the row. */}
+        <div className="hidden min-w-0 lg:block">
+          <ScrollRail label="categories">
+            <ul className={`${ROW} gap-4`}>
+              {categories.map((category) => (
+                <li key={category.id} className="w-[calc((100%-4rem)/5)]">
                   <CategoryCard category={category} />
                 </li>
               ))}

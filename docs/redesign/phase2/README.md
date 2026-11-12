@@ -15,6 +15,8 @@ Owner-authorized 2026-11-12. Builds on Phase 1 (ADR-052 palette, shared `Button`
 ## Category style comparison
 Both reference styles were built in Mirza's identity and captured at 390, 820 and 1440 (`category-styles/`). **Chosen: cards.** They show each category's photo large (4:3, the shape of the category images, so the owner's coming photos are shown properly, where circles crop them small), carry a clear action (arrow and "Shop now") in step with the product cards below, and keep two-word names ("Power Banks") on one line, where the circles wrap them on a phone. The circles are more compact on a phone (about 220px against 310px tall), which was the one point in their favour. The circle code was removed after the choice.
 
+**Final (owner, 2026-11-12): both styles, by screen size.** Circles below `lg` (phones and tablets, under 1024px), the image cards with the intro column from `lg` (desktop). Both lists are in the server HTML; the hidden one is `display: none`, so keyboard and screen-reader users meet each category once. Captures: `category-styles/final-{mobile-390,tablet-820,desktop-1440}.png` (no overflow, no errors). The full-page `after/` set predates this split, so its phone and tablet home pages still show the cards.
+
 Also: the footer lists **all** categories (it showed the first six, leaving four unreachable from it).
 
 ## Deviation from the Phase 0 report
