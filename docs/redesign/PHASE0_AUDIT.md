@@ -300,7 +300,16 @@ Each is **Proposed** and becomes work only once the owner authorizes it. IDs con
 - deleting aliases in the same PR that adds them
 - renaming the `gocart:*` storage keys.
 
-### Decisions needed from the owner before Phase 1
+### Owner decisions (recorded 2026-11-12)
+1. **Palette:** the **hybrid**. Keep `#5F42EC` for actions; warm ivory `#F7F5F0` page; aubergine `#352746` dark surface; no champagne. Recorded as a new ADR in M116.
+2. **Promo cards:** keep the current cards as they are. They are admin content and stay unchanged.
+3. **"Best sellers":** accepted as **"Featured"** (ADR-022 unchanged).
+4. **Returns policy or delivery-time promise:** none. "Why shop with Mirza" shows only the verified facts: COD, delivery Rs. 200 / free from Rs. 1,500 from Settings, no account needed, and tracking by order number and phone.
+5. **Prices and MRPs:** demo data, no change.
+6. **Checkout address on phones:** keep the modal (M120 adds labels only).
+7. **Phase 1 (M115 to M117) authorized.** Phases 2 to 5 still need a separate go-ahead.
+
+### Decisions that were needed from the owner before Phase 1
 1. Palette: the **hybrid** (recommended), the kit as it is, or your proposal (champagne would fail contrast as text).
 2. Promo cards and "Deals of the day": keep, rewrite, or deactivate the current seasonal cards and the 48-day deals (admin content).
 3. "Best sellers": accept "Featured" or "Picked for you" as the honest label (ADR-022).
