@@ -1736,3 +1736,12 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: type-check, lint (0 errors; the same 8 warnings as `main`), `npm run build`; local before/after screenshots at 390/820/1440 on a throwaway PostgreSQL with `seed:demo` (`docs/redesign/phase1/`).
 - **Rollback**: revert the commit.
 - **Commit message**: `Design foundation: shared palette file, role tokens, Button and Price (M115)`
+
+### M116 — Palette decision record (ADR-052)
+- **Status (2026-11-12)**: **Done, in review**. Phase 1b of the premium storefront redesign; the owner chose the hybrid palette on 2026-11-12.
+- **Goal**: record the hybrid palette before any colour value changes, amend ADR-047 item 4, and record the unrecorded `bc5a77a` surface change.
+- **Files**: `docs/DECISIONS.md` (ADR-052), `docs/MIGRATION_PLAN.md`, `docs/TASKS.md`, `docs/CHANGELOG.md`.
+- **Dependencies**: `M115`.
+- **Testing**: docs only; contrast values computed with the WCAG 2.2 relative-luminance formula.
+- **Rollback**: revert the commit.
+- **Commit message**: `Palette decision record: hybrid palette, ADR-052 (M116)`
