@@ -6,7 +6,7 @@ import { announcementList } from '@/lib/storefront-content'
 import { formatPKR } from '@/lib/currency'
 import type { DeliverySettings } from '@/lib/delivery'
 
-// M61: the slim strip above the header. Milestone 122: it is a continuous right-to-left ticker again
+// M61: the slim strip above the header. Milestone 122: it is a moving ticker again, one message at a time from left to right
 // (components/ui/AnnouncementTicker.tsx), at the owner's request, and "Track your order" left it for the
 // header (components/Navbar.jsx), where it is a labelled button.
 // M110 (ADR-050): the admin's messages come first (/admin, Storefront content), then the delivery promise,

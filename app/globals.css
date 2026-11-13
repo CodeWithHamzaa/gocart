@@ -122,16 +122,28 @@
     }
 }
 
-/* Milestone 122: the announcement ticker. The track holds the message list twice and slides left by one copy,
-   so the loop is seamless. No motion at all when the visitor asks for reduced motion. */
+/* Milestone 122: the announcement ticker. One message crosses the strip from the left edge to the right:
+   it starts fully outside on the left and ends fully outside on the right (100vw is at least the strip's
+   width), so the next pass never overlaps it. Slower on wide screens so the reading speed feels the same.
+   No motion at all when the visitor asks for reduced motion. */
 @keyframes announcement-ticker {
+    from {
+        transform: translateX(-100%);
+    }
+
     to {
-        transform: translateX(-50%);
+        transform: translateX(100vw);
     }
 }
 
 .announcement-ticker {
-    animation: announcement-ticker 45s linear infinite;
+    animation: announcement-ticker 11s linear infinite;
+}
+
+@media (min-width: 64rem) {
+    .announcement-ticker {
+        animation-duration: 20s;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
