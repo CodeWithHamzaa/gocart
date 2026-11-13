@@ -1,45 +1,57 @@
 @import "tailwindcss";
+/* M115: the raw palette lives in tokens.css (plain CSS, shared with the admin); the colour tokens
+   below are role names that point at it. */
+@import "./tokens.css";
 
 /* Storefront design tokens. Every colour, type step, radius and shadow a storefront component uses is a
    Tailwind theme variable, so components use native utilities (bg-surface, text-muted, rounded-card) and
-   never a one-off value.
+   never a one-off value. Colour names are roles: `page`/`surface`/`surface-muted` (surfaces), `ink`..
+   `muted` (text), `line*` (borders), `primary*`/`accent*` (actions and selected states), `inverse*`
+   (the dark surface: footer), and the status colours.
 
-   Surfaces are neutral so product photography reads true: an off-white page, white cards separated by a
-   hairline, a muted grey well behind images. Violet (`primary`) is the one action colour; its soft tint
-   (`accent-soft`) is kept for the hero, the announcement bar and selected states. `sale` is for real
-   discounts only; `amber` for "Limited edition".
+   ADR-052 (hybrid palette): warm ivory page, white cards separated by a warm hairline, a warm well behind
+   images, so product photography reads true. Violet (`primary`) is the one action colour; its soft tint
+   (`accent-soft`) is kept for the hero, soft buttons and selected states. Aubergine (`inverse`) is the one
+   dark surface (footer). `sale` is for real discounts only; `amber` for "Limited edition". No second accent.
 
-   Contrast (WCAG 2.2, sRGB relative luminance): white on primary 6.04:1, primary on white 6.04:1, ink-2 on
-   accent-soft 9.3:1, muted on surface-muted 5.47:1, sale on sale-soft 6.12:1, white on sale-strong 5.39:1,
-   line-input on white 3.55:1 (WCAG 1.4.11, form-field boundaries). */
+   Contrast (WCAG 2.2, sRGB relative luminance): ink on page 15.45:1, muted on page 5.48:1, muted on
+   surface-muted 5.16:1, primary on page 5.54:1, white on primary 6.04:1, ink-2 on accent-soft 8.46:1,
+   sale on page 6.70:1, sale on sale-soft 6.12:1, white on sale-strong 5.39:1, white / 75% / 60% on inverse
+   13.73 / 8.39 / 5.98:1, line-input 3.80:1 on white and 3.48:1 on page (WCAG 1.4.11, field boundaries).
+   Violet on inverse is 2.27:1, so focus rings on the inverse surface are white (.surface-inverse). */
 @theme {
     /* Brand and text. */
-    --color-primary: #5F42EC;
-    --color-primary-dark: #4A2FD0;
-    --color-accent-soft: #EEE9FF;
-    --color-accent: #E2DAFF;
-    --color-ink: #1D1D1F;
-    --color-ink-2: #424245;
-    --color-ink-3: #515154;
-    --color-muted: #636368;
-    --color-disabled: #A1A1A6;
+    --color-primary: var(--palette-violet-600);
+    --color-primary-dark: var(--palette-violet-700);
+    --color-on-primary: var(--palette-white);
+    --color-accent-soft: var(--palette-violet-100);
+    --color-accent: var(--palette-violet-200);
+    --color-ink: var(--palette-ink-900);
+    --color-ink-2: var(--palette-ink-700);
+    --color-ink-3: var(--palette-ink-600);
+    --color-muted: var(--palette-ink-500);
+    --color-disabled: var(--palette-ink-300);
 
     /* Surfaces and lines. */
-    --color-page: #FAFAFC;
-    --color-surface: #FFFFFF;
-    --color-surface-muted: #F5F4F8;
-    --color-line: #ECE9F2;
-    --color-line-2: #E2DFEA;
-    --color-line-3: #CBC6D8;
-    --color-line-input: #8A84A3;
+    --color-page: var(--palette-ivory-50);
+    --color-surface: var(--palette-white);
+    --color-surface-muted: var(--palette-ivory-100);
+    --color-line: var(--palette-line-100);
+    --color-line-2: var(--palette-line-200);
+    --color-line-3: var(--palette-line-300);
+    --color-line-input: var(--palette-line-500);
+
+    /* M115: the dark surface (footer) and what sits on it. */
+    --color-inverse: var(--palette-aubergine-900);
+    --color-on-inverse: var(--palette-white);
 
     /* Accents and status. */
-    --color-sale: #A8144F;
-    --color-sale-soft: #FFE4F0;
-    --color-sale-strong: #CC1966;
-    --color-amber: #FFC247;
-    --color-success: #0B6E4F;
-    --color-success-soft: #E6F2EE;
+    --color-sale: var(--palette-sale-700);
+    --color-sale-soft: var(--palette-sale-100);
+    --color-sale-strong: var(--palette-sale-600);
+    --color-amber: var(--palette-amber-400);
+    --color-success: var(--palette-success-700);
+    --color-success-soft: var(--palette-success-100);
 
     /* Type: nine steps, 12px floor (size / line height). */
     --text-xs: 0.75rem;
@@ -60,6 +72,9 @@
     --text-4xl--line-height: 2.5rem;
     --text-5xl: 3rem;
     --text-5xl--line-height: 3.25rem;
+    /* M115: an editorial display step for the home hero (used from Phase 2). */
+    --text-6xl: 3.5rem;
+    --text-6xl--line-height: 3.75rem;
 
     /* Heading tracking: tight from 24px, tighter from 36px. */
     --tracking-tight: -0.02em;
@@ -98,6 +113,11 @@
     :focus-visible {
         outline: 2px solid var(--color-primary);
         outline-offset: 2px;
+    }
+
+    /* M117 (ADR-052): on the aubergine surface the violet ring is 2.27:1; white is 13.7:1. */
+    .surface-inverse :focus-visible {
+        outline-color: var(--color-on-inverse);
     }
 }
 

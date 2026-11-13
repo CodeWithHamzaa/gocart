@@ -1579,3 +1579,26 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - A username is easier to guess than a private email address. Payload's per-account lockout (defaults: 5 failed attempts, 10 minutes; not changed here) and the strong-password rule for the bootstrap admin remain the protections, but the lockout lets anyone who guesses a username keep that admin locked out and confirm the username exists. A per-IP rate limit on the admin sign-in endpoints is therefore **launch blocker 6** in `docs/DEPLOYMENT.md`. The admin panel stays the only authenticated surface.
 - Forgot-password now takes a username (confirmed in Payload's code): an unknown username answers the same as a known one, the reset token is never returned or logged (the console email adapter logs only recipient and subject), and no email is sent to an admin without one.
 - Out of scope: two-factor sign-in, username rules for admins created later in `/admin` (Payload's own validation applies), and renaming existing usernames (an admin can edit theirs in `/admin`).
+
+## ADR-052: Hybrid palette: warm ivory surfaces, one violet for actions, an aubergine dark surface (`M116`)
+
+**Status**: **Accepted (2026-11-12)** by the owner in the session of 2026-11-12, choosing the "hybrid" option of the premium storefront redesign audit (`docs/redesign/PHASE0_AUDIT.md` §4) over the unchanged kit and over the owner's own first proposal (aubergine `#352746`, violet `#5945A6`, ivory `#F7F5F0`, champagne `#B69A69`). It **amends ADR-047 item 4** (visual identity) in its surface and dark-surface colours only; the monogram, wordmark, one action violet and the status colours of ADR-047 stand. It also records a change ADR-047 never received: commit `bc5a77a` (2026-11-10) had already moved the storefront from the "lavender wash" page and wells (`#FCFAFF`, `#F1ECFF`) to neutral grey surfaces (`#FAFAFC`, `#F5F4F8`), renamed the tokens (`lavender`/`pink` to `accent-soft`/`sale`...) and changed the sale text colour to `#A8144F`, without an ADR, plan or changelog entry. ADR-039 (promo tones use existing tokens), ADR-043 (the admin uses the storefront's look) and ADR-050 (stored `tone` values) are unchanged.
+
+**Context**: the owner wants a premium, editorial feel instead of a template look. The brand kit (`M113`) documents the storefront after `bc5a77a`: cool grey surfaces, `#5F42EC` for every action, no second accent. The owner's first proposal added a warm ivory, an aubergine and a champagne accent and swapped the violet for a duller `#5945A6`. Measured (WCAG 2.2): champagne fails as text on white (2.69:1) and ivory (2.47:1) and would be a second accent the kit forbids; `#5945A6` would change the recognisable brand violet used in the kit, the admin and every screenshot.
+
+**Decision**:
+
+1. **Raw palette in `app/tokens.css`** (plain CSS custom properties, `M115`); Tailwind role tokens in `app/globals.css` point at it; the admin reads the same file (`M117`). A colour changes in `tokens.css` only.
+2. **Kept**: violet `#5F42EC` (actions, links, selected states, focus) and `#4A2FD0` (hover); violet tints `#EEE9FF`/`#E2DAFF` (selected states, soft buttons, the hero panel); ink `#1D1D1F`..`#636368`; sale `#A8144F`/`#CC1966`/`#FFE4F0` (real discounts only); amber `#FFC247` ("Limited edition" only); success `#0B6E4F`/`#E6F2EE`; disabled `#A1A1A6` (disabled controls only).
+3. **Warm neutral surfaces** replace the cool greys: page `#F7F5F0` (warm ivory), cards stay white `#FFFFFF`, photo wells and the announcement strip `#F1EEE8`, lines `#E8E4DC` / `#DDD8CE` / `#C6BFB2`, form-field boundary `#8A8275`.
+4. **One dark surface**, aubergine `#352746` (`inverse`), for the footer and, from Phase 2, at most one editorial band per page; text on it is white (`on-inverse`) at 100/75/60% opacity. On it the wordmark is the white wordmark only (brand kit: the near-black monogram is not used on dark), and the keyboard focus ring is white, because violet on aubergine is 2.27:1.
+5. **No champagne and no second accent colour.** No gradients on buttons. Plus Jakarta Sans stays the only typeface (ADR-043 unchanged).
+6. Stored select values (`heroSlides.tone`, `promoCards.tone`, product `label`) are not added or renamed; components map existing values onto the palette.
+
+**Contrast (WCAG 2.2, measured)**: ink on page 15.45:1; ink-2 on page 9.19:1; muted on page 5.48:1 and on wells 5.16:1; violet on page 5.54:1; white on violet 6.04:1; sale on page 6.70:1; success on page 5.74:1; field boundary 3.80:1 on white and 3.48:1 on page (WCAG 1.4.11); white / 75% / 60% on aubergine 13.73 / 8.39 / 5.98:1.
+
+**Consequences**:
+- The admin's hand-copied brand values (`--mirza-primary #5B3FD9`, ink `#1C1A2E`, pink `#E8336D`, success `#157544`) are replaced by the shared ones in `M117`; the admin violet visibly moves to `#5F42EC`. Admin surfaces (Payload's grey ramp, page, sidebar) are not changed by this ADR.
+- The brand kit (`docs/brand-kit/`, `M113`) and its contrast table describe the pre-ADR palette until it is regenerated (a follow-up, not part of `M115`–`M117`).
+- The comment and contrast table at the top of `app/globals.css` are updated with the values.
+- Rollback: revert `M117` (values only); `M115`'s structure keeps working with any values.

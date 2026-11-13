@@ -1,0 +1,40 @@
+/* M115: the raw Mirza palette, as plain CSS custom properties with no Tailwind syntax, so both the
+   storefront (app/globals.css maps the role tokens onto these) and the Payload admin can read one
+   source of truth. Components never use these names directly: they use the role utilities
+   (bg-page, text-ink, bg-primary, bg-inverse...). Change a colour here, not in a component.
+   M115 moved the values here unchanged; M117 applies ADR-052 (the hybrid palette): warm ivory
+   surfaces and lines, one violet for actions, an aubergine dark surface. */
+:root {
+    /* Violet: the one action colour, its hover/pressed state and its light tints. */
+    --palette-violet-600: #5F42EC;
+    --palette-violet-700: #4A2FD0;
+    --palette-violet-100: #EEE9FF;
+    --palette-violet-200: #E2DAFF;
+
+    /* Ink: text from headings to disabled. */
+    --palette-ink-900: #1D1D1F;
+    --palette-ink-700: #424245;
+    --palette-ink-600: #515154;
+    --palette-ink-500: #636368;
+    --palette-ink-300: #A1A1A6;
+
+    /* Warm neutral surfaces and lines (ADR-052): ivory page, white cards, warm wells. */
+    --palette-ivory-50: #F7F5F0;
+    --palette-white: #FFFFFF;
+    --palette-ivory-100: #F1EEE8;
+    --palette-line-100: #E8E4DC;
+    --palette-line-200: #DDD8CE;
+    --palette-line-300: #C6BFB2;
+    --palette-line-500: #8A8275;
+
+    /* The one dark surface (ADR-052): footer and, from Phase 2, one editorial band. */
+    --palette-aubergine-900: #352746;
+
+    /* Status: sale is for real discounts only, amber for "Limited edition". */
+    --palette-sale-700: #A8144F;
+    --palette-sale-100: #FFE4F0;
+    --palette-sale-600: #CC1966;
+    --palette-amber-400: #FFC247;
+    --palette-success-700: #0B6E4F;
+    --palette-success-100: #E6F2EE;
+}

@@ -1,7 +1,9 @@
 /* M95: the admin's look, matching the storefront (docs/DECISIONS.md, ADR-043). Payload ships its
    styles inside `@layer payload-default`, so these unlayered rules win without !important. Light
-   theme only (payload.config.ts sets admin.theme). The tokens are the storefront's (app/globals.css),
-   restated here because the admin has its own root layout and does not load that file. */
+   theme only (payload.config.ts sets admin.theme). M117 (ADR-052): the brand colours below read the
+   shared raw palette (app/tokens.css, imported before this file in app/(payload)/layout.tsx), so the
+   admin and the storefront can no longer drift. The admin's own surfaces (sidebar, page, tiles, lines,
+   Payload's grey ramp) stay as ADR-043 set them. */
 
 @font-face {
     font-family: 'Plus Jakarta Sans';
@@ -13,23 +15,23 @@
 :root {
     --font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
-    --mirza-primary: #5B3FD9;
-    --mirza-primary-dark: #3F27A8;
-    --mirza-primary-soft: #EFEBFF;
+    --mirza-primary: var(--palette-violet-600);
+    --mirza-primary-dark: var(--palette-violet-700);
+    --mirza-primary-soft: var(--palette-violet-100);
     --mirza-side: #2A1F6B;
     --mirza-side-2: #3A2D86;
     --mirza-on-side: #E3DCFF;
-    --mirza-ink: #1C1A2E;
-    --mirza-muted: #5F5B73;
+    --mirza-ink: var(--palette-ink-900);
+    --mirza-muted: var(--palette-ink-500);
     --mirza-line: #EEEAF6;
     --mirza-line-2: #E4DFF2;
     --mirza-page: #FAF9FE;
     --mirza-tile: #F4F1FD;
-    --mirza-pink: #E8336D;
-    --mirza-pink-dark: #C81E5B;
-    --mirza-pink-soft: #FFE4EA;
-    --mirza-success: #157544;
-    --mirza-success-soft: #E3F7EC;
+    --mirza-pink: var(--palette-sale-600);
+    --mirza-pink-dark: var(--palette-sale-700);
+    --mirza-pink-soft: var(--palette-sale-100);
+    --mirza-success: var(--palette-success-700);
+    --mirza-success-soft: var(--palette-success-100);
 
     /* Payload's grey ramp, tinted towards the brand violet. Payload derives its surfaces, borders
        and text from these. */

@@ -16,7 +16,7 @@ export default function BrandLogo({ name, mark = true, inverse = false }: { name
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       {mark && <BrandMark />}
-      <span className={`truncate font-bold tracking-tight ${inverse ? 'text-white' : 'text-ink'}`}>{name}</span>
+      <span className={`truncate font-bold tracking-tight ${inverse ? 'text-on-inverse' : 'text-ink'}`}>{name}</span>
     </span>
   )
 }

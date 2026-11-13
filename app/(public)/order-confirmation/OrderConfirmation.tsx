@@ -9,13 +9,13 @@ import toast from 'react-hot-toast'
 import { readLastOrder } from '@/lib/order-confirmation'
 import type { LastOrder } from '@/lib/order-confirmation'
 import { formatPKR } from '@/lib/currency'
+import { buttonClasses } from '@/components/ui/Button'
 
 // M66: the redesign's buttons (design: "Order placed"). The order number is never upper-cased by CSS:
 // e2e reads it back from the page text. M101: pill buttons and a lavender order-number card.
-const linkButton =
-  'inline-flex min-h-12 items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold transition active:scale-95'
-const primaryButton = `${linkButton} bg-primary text-white hover:bg-primary-dark`
-const secondaryButton = `${linkButton} bg-accent-soft text-primary-dark hover:bg-accent`
+// M115: the shared Button look (components/ui/Button.tsx).
+const primaryButton = buttonClasses({ size: 'lg' })
+const secondaryButton = buttonClasses({ variant: 'soft', size: 'lg' })
 
 export function OrderConfirmation() {
   const [state, setState] = useState<'loading' | 'found' | 'missing'>('loading')

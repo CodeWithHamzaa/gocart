@@ -54,7 +54,7 @@ const Navbar = ({ storeName = 'Mirza', children }) => {
                 <Link href="/wishlist" aria-label={`Wishlist, ${wishCount} items`} className="relative flex size-11 items-center justify-center rounded-full text-ink hover:bg-surface-muted">
                     <HeartIcon size={22} strokeWidth={1.8} aria-hidden="true" />
                     {wishCount > 0 && (
-                        <span aria-hidden="true" className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-sale px-1 text-xs font-bold leading-none text-white">{wishCount}</span>
+                        <span aria-hidden="true" className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-xs font-bold leading-none text-on-primary">{wishCount}</span>
                     )}
                 </Link>
 

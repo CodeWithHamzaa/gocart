@@ -1726,3 +1726,42 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: redeploy the previous test deployment, then run the migration's `down` (restores the unique email index, drops `username`, makes `email` required again). `down` refuses with a clear error and changes nothing while any admin has no email (checked locally).
 - **Security review (2026-11-11)**: no blockers. Fixed: backfilled usernames are lower-cased; `down` guards email-less admins. Recorded: launch blocker 6 (per-IP rate limit on admin sign-in), forgot-password behaviour (ADR-051). CI's schema-drift check also required dropping the unique email index, folded into the same migration (it has not been applied to any persistent database).
 - **Commit message**: `Admin sign-in by username only (M114)`
+
+### M115 — Design foundation: shared palette file, role tokens, Button and Price
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 1a of the owner's premium storefront redesign (`docs/redesign/PHASE0_AUDIT.md`); Phase 1 (`M115`–`M117`) authorized by the owner on 2026-11-12.
+- **Goal**: one source of truth for colour and one look for buttons and prices, with **no visible colour change**, so the palette change (`M117`) is a values-only edit.
+- **Files**: `app/tokens.css` (new: raw `--palette-*` values, plain CSS), `app/globals.css` (colour tokens point at the palette; new `on-primary`, `inverse`, `on-inverse` roles; `text-6xl` display step), `components/ui/Button.tsx` (new: `Button` and `buttonClasses`, variants primary/soft/outline, sizes md/lg/xl), `components/ui/Price.tsx` (new), adopted in `ProductCard.jsx`, `ProductDetails.jsx`, `EmptyState.tsx`, `CategoryControls.tsx`, `LoadMoreLink.tsx`, `AddressModal.jsx`, `OrderSummary.jsx`, `orders/OrderLookup.tsx`, `order-confirmation/OrderConfirmation.tsx`, `category/[slug]/error.tsx`; `Footer.jsx` and `BrandLogo.tsx` use the `inverse` roles; the skip link in `(public)/layout.jsx` uses tokens instead of `slate`.
+- **Spec**: existing token names are kept (they are the role names), so no other component changes. Only class names change at the adoption sites: elements, handlers, text, `disabled` logic and `type` stay as they were. Small normalisations: button side padding is 24px everywhere (was 16–32px on some full-width or `flex-1` buttons); the card's MRP and discount wrap together. No schema, data, checkout logic, access-control or dependency change.
+- **Dependencies**: none.
+- **Testing**: type-check, lint (0 errors; the same 8 warnings as `main`), `npm run build`; local before/after screenshots at 390/820/1440 on a throwaway PostgreSQL with `seed:demo` (`docs/redesign/phase1/`).
+- **Rollback**: revert the commit.
+- **Commit message**: `Design foundation: shared palette file, role tokens, Button and Price (M115)`
+
+### M116 — Palette decision record (ADR-052)
+- **Status (2026-11-12)**: **Done, in review**. Phase 1b of the premium storefront redesign; the owner chose the hybrid palette on 2026-11-12.
+- **Goal**: record the hybrid palette before any colour value changes, amend ADR-047 item 4, and record the unrecorded `bc5a77a` surface change.
+- **Files**: `docs/DECISIONS.md` (ADR-052), `docs/MIGRATION_PLAN.md`, `docs/TASKS.md`, `docs/CHANGELOG.md`.
+- **Dependencies**: `M115`.
+- **Testing**: docs only; contrast values computed with the WCAG 2.2 relative-luminance formula.
+- **Rollback**: revert the commit.
+- **Commit message**: `Palette decision record: hybrid palette, ADR-052 (M116)`
+
+### M117 — Hybrid palette values, aubergine footer, admin reads the shared palette
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 1c of the premium storefront redesign.
+- **Goal**: apply ADR-052 and stop the admin's brand colours drifting from the storefront's.
+- **Files**: `app/tokens.css`, `app/globals.css` (comment and contrast table, white focus ring on `.surface-inverse`), `components/Footer.jsx`, `components/ui/WishlistButton.tsx`, `components/Navbar.jsx` (wishlist count badge), `app/(payload)/layout.tsx` (imports `app/tokens.css`), `app/(payload)/custom.css` (brand variables read the palette), `docs/redesign/phase1/`.
+- **Spec**: ADR-052 values; admin surfaces, sidebar and Payload's grey ramp unchanged; no stored `tone` value added or renamed; no schema, data, checkout-logic or dependency change.
+- **Dependencies**: `M115`, `M116`.
+- **Testing**: type-check, lint (0 errors), build, CI unit scripts; local before/after captures at 390/820/1440 (`docs/redesign/phase1/`); `/admin/login` renders with `#5F42EC`.
+- **Rollback**: revert the commit (values only).
+- **Commit message**: `Hybrid palette values, aubergine footer, shared admin palette (M117)`
+
+### M118 — Homepage: editorial hero, Shop by category, honest deals
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 2 of the premium storefront redesign; authorized by the owner on 2026-11-12. Revised the same day on the owner's review: "Why shop with Mirza" removed with nothing in its place; "Shop by category" redesigned from the owner's reference styles: after side-by-side captures it ends as round category photos at every size (owner, 2026-11-13), without a white ring, sized per breakpoint.
+- **Goal**: replace the run of near-identical grids with an editorial home page built only from existing data.
+- **Files**: `app/(public)/page.jsx` (order), `components/Hero.jsx`, `components/HeroSlider.tsx`, `components/CategoryShowcase.tsx` (new), `components/HeroShortcuts.tsx` and `components/CodSteps.tsx` (removed), `components/DealsOfTheDay.tsx`, `components/ui/Countdown.tsx`, `components/Footer.jsx` (all categories), `docs/redesign/phase2/`.
+- **Spec**: `docs/redesign/phase2/README.md`. No stored `tone`/`label` value added or renamed; "Featured" kept (ADR-022); promo cards unchanged (owner); only verified trust facts; `force-dynamic` kept on `/`.
+- **Dependencies**: `M115`–`M117`.
+- **Testing**: type-check, lint (0 errors), build, CI unit scripts; local before/after captures at 390/820/1440.
+- **Rollback**: revert the commit.
+- **Commit message**: `Homepage: editorial hero, Shop by category, honest deals, Why shop with Mirza (M118)`

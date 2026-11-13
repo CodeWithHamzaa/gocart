@@ -10,6 +10,7 @@ import { readLastOrder } from '@/lib/order-confirmation'
 import { lookupOrderAction } from './actions'
 import type { LookupOrderActionResult } from './actions'
 import OrderItem from '@/components/OrderItem'
+import { buttonClasses } from '@/components/ui/Button'
 import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
 import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidget'
 
@@ -102,7 +103,7 @@ export function OrderLookup() {
           <button
             type="submit"
             disabled={pending || turnstile.status !== 'verified'}
-            className="min-h-12 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+            className={buttonClasses({ size: 'lg' })}
           >
             {pending ? 'Checking...' : 'Check order'}
           </button>

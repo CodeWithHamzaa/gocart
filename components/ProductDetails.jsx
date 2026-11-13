@@ -11,10 +11,11 @@ import Counter from "./Counter";
 import Badge from "./ui/Badge";
 import MobileActionBar from "./ui/MobileActionBar";
 import { useDispatch, useSelector } from "react-redux";
-import { formatPKR } from "@/lib/currency";
 import { deliveryNote } from "@/lib/delivery";
 import { tileFor } from "@/lib/category-style";
-import { discountPercent, statusBadge } from "@/lib/product-badges";
+import { statusBadge } from "@/lib/product-badges";
+import Price from "./ui/Price";
+import { buttonClasses } from "./ui/Button";
 
 // M25: adapted for real Payload data.
 // - `images` are Media relationships, resolved to `.url` the same way
@@ -55,7 +56,6 @@ const ProductDetails = ({ product, shipping, children = null }) => {
 
     const category = typeof product.category === 'object' && product.category ? product.category : null;
     // M69: the same badge rule as the product card (lib/product-badges.ts).
-    const discount = discountPercent(product.mrp, product.price);
     const status = statusBadge(product);
 
     // Fail closed, matching the server's stock check in createOrder: only an
@@ -112,15 +112,7 @@ const ProductDetails = ({ product, shipping, children = null }) => {
                 {/* M101: the price is not boxed. Price in ink, the MRP and the discount as text beside it, then
                     one stock line (a dot and a word); the delivery note is said once, below the buttons (M98). */}
                 <div className="mt-4 border-b border-line pb-5">
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <p className="text-3xl font-semibold leading-none tracking-tight text-ink">{formatPKR(product.price)}</p>
-                        {discount > 0 && (
-                            <>
-                                <p className="text-base text-muted line-through"><span className="sr-only">Was </span>{formatPKR(product.mrp)}</p>
-                                <span className="self-center text-base font-semibold text-sale"><span aria-hidden="true">&minus;{discount}%</span><span className="sr-only">{discount}% off</span></span>
-                            </>
-                        )}
-                    </div>
+                    <Price price={product.price} mrp={product.mrp} size="detail" />
                     <p className={`mt-3 flex items-center gap-2 text-sm font-medium ${outOfStock ? 'text-muted' : 'text-success'}`}>
                         <span aria-hidden="true" className={`size-2 rounded-full ${outOfStock ? 'bg-disabled' : 'bg-success'}`} />
                         {outOfStock ? 'Out of stock' : 'In stock'}
@@ -137,12 +129,12 @@ const ProductDetails = ({ product, shipping, children = null }) => {
                                     Out of stock
                                 </button>
                                 {category ? (
-                                    <Link href={`/category/${category.slug}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                                    <Link href={`/category/${category.slug}`} className={buttonClasses({ size: 'lg', className: 'flex-1' })}>
                                         More in {category.title}
                                         <ArrowRightIcon size={16} aria-hidden="true" />
                                     </Link>
                                 ) : (
-                                    <Link href="/shop" className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                                    <Link href="/shop" className={buttonClasses({ size: 'lg', className: 'flex-1' })}>
                                         Keep shopping
                                         <ArrowRightIcon size={16} aria-hidden="true" />
                                     </Link>
@@ -151,17 +143,17 @@ const ProductDetails = ({ product, shipping, children = null }) => {
                         ) : inCart ? (
                             <>
                                 <Counter productId={productId} name={product.name} />
-                                <button onClick={() => router.push('/cart')} className="min-h-12 flex-1 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={() => router.push('/cart')} className={buttonClasses({ size: 'lg', className: 'flex-1' })}>
                                     View cart
                                 </button>
                             </>
                         ) : (
                             <>
-                                <button onClick={addToCartHandler} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]">
+                                <button onClick={addToCartHandler} className={buttonClasses({ size: 'lg', className: 'flex-1' })}>
                                     <ShoppingCartIcon size={18} aria-hidden="true" />
                                     Add to cart
                                 </button>
-                                <button onClick={buyNowHandler} className="min-h-12 flex-1 rounded-full bg-accent-soft px-4 text-sm font-semibold text-primary-dark transition hover:bg-accent active:scale-[0.98]">
+                                <button onClick={buyNowHandler} className={buttonClasses({ variant: 'soft', size: 'lg', className: 'flex-1' })}>
                                     Buy now
                                 </button>
                             </>

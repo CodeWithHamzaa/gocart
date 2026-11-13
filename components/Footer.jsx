@@ -10,7 +10,7 @@ import { getCategoriesCached } from "@/lib/payload/categories";
 // value that is not configured is simply not shown — never replaced by a placeholder.
 // A mailto: link only for a plain address (no ?/&/# that could add headers); otherwise text.
 // A dark footer that bookends the dark announcement bar: the three COD promises, then brand, Shop,
-// Customer care and Contact columns (white/75 on ink: 10:1). Same data as before (M61). The
+// Customer care and Contact columns (on-inverse/75 on the inverse surface: 10:1; M115 role tokens). Same data as before (M61). The
 // design's "Sell on ...", "Careers", newsletter and card/wallet lines are left out: this is a
 // single COD store (ADR-004, ADR-006) with no such pages. The sections are plain lists, not <nav>
 // landmarks, so the header stays the only nav that holds Shop, Search and Cart (e2e/mobile.spec.ts).
@@ -24,7 +24,8 @@ const Footer = async () => {
         {
             title: "Shop",
             links: [
-                ...categories.slice(0, 6).map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
+                // M118: every category (it was the first six, so four were unreachable from the footer).
+                ...categories.map((category) => ({ text: category.title, path: `/category/${category.slug}`, icon: null })),
                 { text: "Shop all products", path: '/shop', icon: null },
             ]
         },
@@ -48,7 +49,7 @@ const Footer = async () => {
     ].filter((section) => section.links.length > 0);
 
     // Links keep a 44px target on touch screens and tighten to 36px where a mouse is the pointer.
-    const link = "inline-flex min-h-11 items-center text-white/75 transition-colors hover:text-white pointer-fine:min-h-9"
+    const link = "inline-flex min-h-11 items-center text-on-inverse/75 transition-colors hover:text-on-inverse pointer-fine:min-h-9"
     const promises = [
         { icon: BanknoteIcon, text: "Cash on delivery" },
         { icon: TruckIcon, text: "Delivery across Pakistan" },
@@ -56,12 +57,12 @@ const Footer = async () => {
     ]
 
     return (
-        <footer className="mt-24 bg-ink text-sm text-white/75">
+        <footer className="surface-inverse mt-24 bg-inverse text-sm text-on-inverse/75">
             <div className="mx-auto max-w-[83rem] px-4 sm:px-6">
-                <ul className="grid gap-3 border-b border-white/10 py-6 sm:grid-cols-3">
+                <ul className="grid gap-3 border-b border-on-inverse/10 py-6 sm:grid-cols-3">
                     {promises.map((item) => (
-                        <li key={item.text} className="flex items-center gap-3 text-white">
-                            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10">
+                        <li key={item.text} className="flex items-center gap-3 text-on-inverse">
+                            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-on-inverse/10">
                                 <item.icon size={18} strokeWidth={1.8} />
                             </span>
                             <span className="font-semibold">{item.text}</span>
@@ -77,11 +78,11 @@ const Footer = async () => {
                     </div>
                     {linkSections.map((section) => (
                         <div key={section.title} className={section.title === "Contact" ? "col-span-2 lg:col-span-1" : undefined}>
-                            <h2 className="mb-3 text-xs font-semibold uppercase tracking-eyebrow text-white">{section.title}</h2>
+                            <h2 className="mb-3 text-xs font-semibold uppercase tracking-eyebrow text-on-inverse">{section.title}</h2>
                             <ul>
                                 {section.links.map((link_, i) => (
                                     <li key={i} className="flex items-start gap-2.5">
-                                        {link_.icon && <link_.icon size={16} aria-hidden="true" className="mt-3 shrink-0 text-white/60 pointer-fine:mt-2.5" />}
+                                        {link_.icon && <link_.icon size={16} aria-hidden="true" className="mt-3 shrink-0 text-on-inverse/60 pointer-fine:mt-2.5" />}
                                         {link_.path === null
                                             ? <span className="max-w-60 whitespace-pre-line py-2.5 leading-relaxed">{link_.text}</span>
                                             : link_.path.startsWith('tel:') || link_.path.startsWith('mailto:')
@@ -93,7 +94,7 @@ const Footer = async () => {
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 py-6 text-white/60">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-on-inverse/10 py-6 text-on-inverse/60">
                     <p>© {new Date().getFullYear()} {settings.storeName}. All rights reserved.</p>
                     <p>Cash on delivery across Pakistan</p>
                 </div>

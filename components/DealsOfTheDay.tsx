@@ -8,6 +8,8 @@ import type { Product } from '@/lib/payload/products'
 // admin gave a future `dealEndsAt` that are also really discounted (lib/payload/products.ts
 // getDealProducts), soonest-ending first; the countdown runs to the earliest end. Hidden when there
 // are none, like the promo cards (M71). The cards show the real MRP, price and "% OFF" chip.
+// M118: titled "Limited-time deals" (the end dates are days or weeks away, not "of the day"), and the
+// countdown only ticks in the last 48 hours (components/ui/Countdown.tsx).
 export default function DealsOfTheDay({ products = [] }: { products?: Product[] }) {
   if (products.length === 0) return null
   const endsAt = products[0].dealEndsAt
@@ -18,7 +20,7 @@ export default function DealsOfTheDay({ products = [] }: { products?: Product[] 
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <h2 id="deals-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter">Deals of the day</h2>
+            <h2 id="deals-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-4xl sm:tracking-tighter">Limited-time deals</h2>
             <Countdown endsAt={endsAt} />
           </div>
           <Link href="/shop" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark">

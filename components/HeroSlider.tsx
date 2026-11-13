@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from 'lucide-react'
 import type { HeroSlide } from '@/lib/hero-slides'
+import { buttonClasses } from '@/components/ui/Button'
 
 // M101: the home banner the owner chose (the "C" mockup): up to three real slides (lib/hero-slides.ts) in a
 // row that is swiped on a phone, with dots, arrows from `md` and a pause button, grouped bottom-left so they
@@ -12,12 +13,14 @@ import type { HeroSlide } from '@/lib/hero-slides'
 // or for anyone who asked their device to reduce motion (WCAG 2.2.2: a pause control is always there).
 // Every slide is in the HTML; the first slide's heading is the page's <h1>. Product images only (alt
 // text from the media), no product names, so nothing here duplicates a product name hidden off-screen.
-// Premium banner: a soft violet wash fading into white, with a hairline. Each tone shifts the wash a little
-// so consecutive slides are distinguishable without leaving the neutral palette.
+// M118 (ADR-052): an editorial banner: a calm solid panel (no gradient wash), a large display headline on
+// the left and ONE large product photo on the right (a phone: below, as a wide crop), instead of two
+// overlapping tiles. The stored tones (ADR-050) are mapped, never renamed: green = the violet tint,
+// blue = white, grey = the warm well, so consecutive slides stay distinguishable.
 const TONES: Record<HeroSlide['tone'], string> = {
-  green: 'bg-linear-to-br from-accent-soft via-accent-soft/60 to-surface',
-  blue: 'bg-linear-to-bl from-accent-soft via-accent-soft/50 to-surface',
-  grey: 'bg-linear-to-br from-surface-muted via-surface-muted/70 to-surface',
+  green: 'bg-accent-soft',
+  blue: 'bg-surface',
+  grey: 'bg-surface-muted',
 }
 const BADGES: Record<HeroSlide['badgeTone'], string> = { sale: 'text-sale', ink: 'text-primary-dark' }
 const DOTS: Record<HeroSlide['badgeTone'], string> = { sale: 'bg-sale-strong', ink: 'bg-primary' }
@@ -77,17 +80,17 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               key={slide.id}
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slides.length}`}
-              className={`grid w-full shrink-0 snap-start items-center gap-5 px-5 pb-14 pt-5 sm:gap-8 sm:px-12 sm:pb-20 sm:pt-12 lg:min-h-[460px] lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:px-16 lg:pb-16 lg:pt-14 ${TONES[slide.tone]}`}
+              className={`grid w-full shrink-0 snap-start items-center gap-5 px-5 pb-14 pt-6 sm:gap-8 sm:px-10 sm:pb-20 sm:pt-10 md:grid-cols-[1.1fr_1fr] md:pb-16 lg:min-h-[480px] lg:gap-14 lg:px-16 lg:pb-16 lg:pt-14 ${TONES[slide.tone]}`}
             >
               <div className="min-w-0">
                 <span className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-eyebrow ${BADGES[slide.badgeTone]}`}>
                   <span aria-hidden="true" className={`size-1.5 rounded-full ${DOTS[slide.badgeTone]}`} />
                   {slide.badge}
                 </span>
-                <Heading className="mt-2.5 max-w-[560px] text-3xl font-semibold tracking-tight text-ink sm:mt-4 sm:text-5xl sm:tracking-tighter">{slide.title}</Heading>
-                <p className="mt-2 max-w-[460px] text-base text-ink-2 sm:mt-4 sm:text-lg">{slide.text}</p>
+                <Heading className="mt-3 max-w-[600px] text-3xl font-semibold tracking-tight text-ink sm:mt-4 sm:text-5xl sm:tracking-tighter lg:text-6xl">{slide.title}</Heading>
+                <p className="mt-3 max-w-[460px] text-base text-ink-2 sm:mt-5 sm:text-lg">{slide.text}</p>
                 <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-8">
-                  <Link href={slide.cta.href} tabIndex={i === index ? 0 : -1} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-white shadow-float-sm transition hover:bg-primary-dark sm:min-h-12 sm:px-7">
+                  <Link href={slide.cta.href} tabIndex={i === index ? 0 : -1} className={buttonClasses({ size: 'lg' })}>
                     {slide.cta.label}
                     <ArrowRightIcon size={18} aria-hidden="true" />
                   </Link>
@@ -98,27 +101,22 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                   )}
                 </div>
               </div>
-              {/* Phone: two squares capped at 112px so the slide stays short. From `lg`: a large product
-                  photo with a smaller one overlapping its lower-left corner. */}
-              <div className="relative flex h-28 items-end gap-3 sm:h-44 lg:block lg:h-auto lg:pb-6 lg:pl-10">
-                {slide.images.slice(0, 2).map((image, n) => (
-                  <span
-                    key={`${image.url}-${n}`}
-                    className={`block aspect-square h-full shrink-0 overflow-hidden rounded-tile bg-surface shadow-float-sm lg:h-auto lg:rounded-panel ${n === 0 ? 'lg:ml-auto lg:w-[78%] lg:shadow-float' : 'lg:absolute lg:bottom-0 lg:left-0 lg:w-[40%] lg:ring-8 lg:ring-surface'}`}
-                  >
-                    <Image
-                      src={image.url}
-                      alt={image.alt}
-                      width={560}
-                      height={560}
-                      sizes={n === 0 ? '(min-width: 1280px) 400px, (min-width: 1024px) 32vw, 176px' : '(min-width: 1280px) 210px, (min-width: 1024px) 16vw, 176px'}
-                      priority={i === 0}
-                      fetchPriority={i === 0 && n === 0 ? 'high' : undefined}
-                      className="size-full object-cover"
-                    />
-                  </span>
-                ))}
-              </div>
+              {/* M118: one photo. Phone: a wide 16:10 crop under the text, capped so the slide stays short;
+                  from `md`: a square in the right column, at most 440px. */}
+              {slide.images[0] && (
+                <span className="block aspect-[16/10] max-h-52 w-full overflow-hidden rounded-tile bg-surface md:ml-auto md:aspect-square md:max-h-none md:max-w-[440px] md:rounded-panel">
+                  <Image
+                    src={slide.images[0].url}
+                    alt={slide.images[0].alt}
+                    width={880}
+                    height={880}
+                    sizes="(min-width: 1280px) 440px, (min-width: 768px) 40vw, 100vw"
+                    priority={i === 0}
+                    fetchPriority={i === 0 ? 'high' : undefined}
+                    className="size-full object-cover"
+                  />
+                </span>
+              )}
             </li>
           )
         })}

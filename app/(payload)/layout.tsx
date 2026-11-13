@@ -2,6 +2,8 @@ import type { ServerFunctionClient } from 'payload'
 
 import config from '@payload-config'
 import '@payloadcms/next/css'
+// M117 (ADR-052): the shared raw palette first, so custom.css can map the admin's brand values onto it.
+import '../tokens.css'
 import './custom.css'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'

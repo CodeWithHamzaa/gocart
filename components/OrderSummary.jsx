@@ -12,6 +12,7 @@ import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWi
 import { newIdempotencyKey } from '@/lib/idempotency'
 import { deliveryNote } from '@/lib/delivery'
 import MobileActionBar from '@/components/ui/MobileActionBar'
+import { buttonClasses } from '@/components/ui/Button'
 
 // M65: the redesigned panel (design: Cart summary + Checkout steps, on /cart). Markup and classes only:
 // every handler, state, effect, the server action call and the Turnstile wiring are as before. The
@@ -238,7 +239,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                         <p className='text-xs text-muted'>Total</p>
                         <p className='text-lg font-semibold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
                     </div>
-                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className='min-h-[54px] flex-1 rounded-full bg-primary px-4 text-base font-semibold text-white transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'>{placing ? 'Placing order...' : 'Place order'}</button>
+                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className={buttonClasses({ size: 'xl', className: 'flex-1' })}>{placing ? 'Placing order...' : 'Place order'}</button>
                 </div>
             </MobileActionBar>
             <p className='flex items-center justify-center gap-2 text-xs text-muted'><LockIcon size={14} aria-hidden='true' />Cash on delivery &middot; no online payment</p>
