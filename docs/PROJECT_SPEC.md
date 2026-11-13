@@ -4,19 +4,19 @@
 
 Transform the open-source GoCart storefront into a **production-ready, single-store ecommerce platform for the Pakistani market**: one store (not a multi-vendor marketplace) where customers can browse and buy without creating an account, pay Cash on Delivery, and a store admin manages the catalog and orders through a proper CMS admin panel.
 
-> **Architecture decision (accepted 2026-08-07):** This is a single-store platform. No vendors, no seller dashboard, no seller registration, no vendor approval. Admin Users only. Guest checkout only. COD only. See [DECISIONS.md — ADR-006](./DECISIONS.md#adr-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope).
+> **Architecture decision (accepted 2026-08-07):** This is a single-store platform. No vendors, no seller dashboard, no seller registration, no vendor approval. Admin Users only. Guest checkout only. Cash on delivery only. See [DECISIONS.md — Architecture Decision Record 006](./DECISIONS.md#architecture-decision-record-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope).
 
 ## In scope (from stakeholder requirements)
 
 | Requirement | Meaning for this project |
 |---|---|
-| Payload CMS v3 | Backend, data layer, and admin UI for products, orders, categories, media, etc. |
+| Payload CMS v3 | Backend, data layer, and admin user interface for products, orders, categories, media, etc. |
 | PostgreSQL | The only datastore, accessed through Payload's Postgres adapter |
 | Cash on Delivery only | The only payment method available at checkout for launch |
 | Guest checkout | No account/login required for customers to place an order |
 | Admin Users only | The only authenticated role in the system is the store admin (Payload admin user); no customer or vendor accounts |
-| SEO first | Metadata, sitemaps, structured data, and crawlability are first-class, not bolted on |
-| Mobile first | UI is designed and tested for mobile viewports first, then scaled up |
+| Search engine optimization first | Metadata, sitemaps, structured data, and crawlability are first-class, not bolted on |
+| Mobile first | User interface is designed and tested for mobile viewports first, then scaled up |
 | Dockerized | The app, CMS, and database run in containers for both dev and prod |
 | Production ready | Proper env config, error handling, logging, security hardening, and deployability — not a demo |
 | Future support for online payments | Payment handling must be designed so a gateway (card, JazzCash, Easypaisa, etc.) can be added later without a checkout redesign |
@@ -25,29 +25,29 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 
 - Online payment gateways (Stripe, JazzCash, Easypaisa, etc.) — deferred, but must not be architecturally precluded
 - Customer accounts / customer login (guest checkout replaces this)
-- **Advanced/faceted product filtering** — price ranges, brand, rating, in-stock toggles, sort controls, multi-facet selection. **Category *browsing* is in scope and ships at launch** ([ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)); what is deferred is filter *UI* on top of it. See the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md). **Update (2026-10-29):** category sort and price/discount filters shipped in `M92` ([ADR-042](./DECISIONS.md)); brand, rating, size, colour and in-stock facets stay out of scope.
-- **Multi-vendor marketplace features are permanently out of scope, not deferred** — decided (see [ADR-006](./DECISIONS.md)): no vendors, no seller dashboard, no seller registration, no vendor approval, no per-store ownership of products/orders. This platform is single-store.
-- **Wishlist** (update 2026-10-27): no longer out of scope; a browser-only wishlist shipped in `M91` ([ADR-041](./DECISIONS.md)), with no account and no server state.
-- **Product reviews/ratings** — dropped for v1, not merely deferred implementation; no non-account identity model is built to support them. See [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1).
-- **Coupons/discount codes** — dropped for v1; the account-based targeting the original app assumed has no guest-checkout equivalent. See [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1).
+- **Advanced/faceted product filtering** — price ranges, brand, rating, in-stock toggles, sort controls, multi-facet selection. **Category *browsing* is in scope and ships at launch** ([Architecture Decision Record 013](./DECISIONS.md#architecture-decision-record-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)); what is deferred is filter *user interface* on top of it. See the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md). **Update (2026-10-29):** category sort and price/discount filters shipped in Milestone 92 ([Architecture Decision Record 042](./DECISIONS.md)); brand, rating, size, colour and in-stock facets stay out of scope.
+- **Multi-vendor marketplace features are permanently out of scope, not deferred** — decided (see [Architecture Decision Record 006](./DECISIONS.md)): no vendors, no seller dashboard, no seller registration, no vendor approval, no per-store ownership of products/orders. This platform is single-store.
+- **Wishlist** (update 2026-10-27): no longer out of scope; a browser-only wishlist shipped in Milestone 91 ([Architecture Decision Record 041](./DECISIONS.md)), with no account and no server state.
+- **Product reviews/ratings** — dropped for v1, not merely deferred implementation; no non-account identity model is built to support them. See [Architecture Decision Record 016](./DECISIONS.md#architecture-decision-record-016-reviews-are-out-of-scope-for-v1).
+- **Coupons/discount codes** — dropped for v1; the account-based targeting the original app assumed has no guest-checkout equivalent. See [Architecture Decision Record 017](./DECISIONS.md#architecture-decision-record-017-coupons-are-out-of-scope-for-v1).
 
 ## Roles
 
-- **Guest / Customer** — browses the storefront, adds to cart, checks out as a guest, pays COD. No login. This is the only way customers interact with the store — there is no customer account option.
+- **Guest / Customer** — browses the storefront, adds to cart, checks out as a guest, pays cash on delivery. No login. This is the only way customers interact with the store — there is no customer account option.
 - **Admin User** — the only authenticated role in the system. Logs into the Payload CMS admin panel to manage products, categories, orders, and coupons (if retained) for the one store.
 - ~~Vendor~~ — present in the inherited codebase (`app/store/*`, `Store` model) but **not part of the target product**. Decided out of scope; these routes/model are legacy to be removed in future implementation work, not a role in this platform.
 
 ## Core flows
 
-1. **Browse** — customer visits the storefront and browses the catalog by category (`/categories` for the full category index, `/category/[slug]` for a category's products) or searches products by name (`/shop?search=`). Category browsing supports a two-level parent/child hierarchy, requires no account, and is server-rendered for SEO — settled by [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy), specified in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md). **Update (2026-11-01):** categories are flat, one level with no sub-categories ([ADR-048](./DECISIONS.md), superseding the two-level hierarchy of ADR-013).
+1. **Browse** — customer visits the storefront and browses the catalog by category (`/categories` for the full category index, `/category/[slug]` for a category's products) or searches products by name (`/shop?search=`). Category browsing supports a two-level parent/child hierarchy, requires no account, and is server-rendered for search engine optimization — settled by [Architecture Decision Record 013](./DECISIONS.md#architecture-decision-record-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy), specified in [CATEGORY_REQUIREMENTS.md](./CATEGORY_REQUIREMENTS.md). **Update (2026-11-01):** categories are flat, one level with no sub-categories ([Architecture Decision Record 048](./DECISIONS.md), superseding the two-level hierarchy of Architecture Decision Record 013).
 2. **Cart** — customer adds items to a cart (works without an account).
 3. **Guest checkout** — customer provides contact details and a Pakistani delivery address (name, phone, address, city, area), reviews order, confirms.
-4. **Order placed (COD)** — order is created with `paymentMethod = COD`, `isPaid = false` until delivery/collection is confirmed by the admin.
+4. **Order placed (cash on delivery)** — order is created with `paymentMethod = COD`, `isPaid = false` until delivery/collection is confirmed by the admin.
 5. **Admin fulfillment** — admin sees new orders in the Payload admin panel, updates order status (e.g. Placed → Processing → Shipped → Delivered) and marks payment collected.
 
 ## Non-functional requirements
 
-- **SEO**: server-rendered product/category pages, per-page metadata, `sitemap.xml`, `robots.txt`, JSON-LD product structured data, optimized images.
+- **Search engine optimization**: server-rendered product/category pages, per-page metadata, `sitemap.xml`, `robots.txt`, JSON-LD product structured data, optimized images.
 - **Mobile-first**: layouts, tap targets, and performance budgets designed for mobile networks/devices common in Pakistan first.
 - **Performance**: fast first load on mid-tier mobile devices and slower connections.
 - **Security**: admin auth hardened, no secrets in client bundles, standard OWASP hygiene.
@@ -56,17 +56,17 @@ Transform the open-source GoCart storefront into a **production-ready, single-st
 
 ## Resolved decisions
 
-1. ~~**Multi-vendor fate**~~ — **Resolved 2026-08-07**: single store, no vendors, no seller dashboard, no seller registration, no vendor approval. See [ADR-006](./DECISIONS.md).
-2. ~~**Delivery/shipping model**~~ — **Resolved 2026-08-16**: flat delivery fee with a free-shipping threshold, both admin-configurable via a Settings global (`M13a`) and snapshotted onto each order at creation. See [ADR-018](./DECISIONS.md#adr-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
-3. ~~**Order status set**~~ — **Resolved 2026-08-16**: `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED` and `RETURNED`. `CONFIRMED` supports the common Pakistani-COD practice of phone-confirming an order before dispatch. See [ADR-019](./DECISIONS.md#adr-019-order-status-set-includes-confirmed-cancelled-and-returned).
-4. ~~**Ratings/reviews**~~ — **Resolved 2026-08-16**: dropped for v1 — no non-account identity model is built for it. `M46` removes `RatingModal` and its entry points. See [ADR-016](./DECISIONS.md#adr-016-reviews-are-out-of-scope-for-v1).
-5. ~~**Coupons**~~ — **Resolved 2026-08-16**: dropped for v1 — the account-based `forNewUser`/`forMember` targeting has no guest-checkout equivalent to rebuild against. `M47` removes the coupon-code input. See [ADR-017](./DECISIONS.md#adr-017-coupons-are-out-of-scope-for-v1).
-6. ~~**Guest `Orders` shape**~~ — **Resolved 2026-08-16**: embedded address fields on the order, not a `Customers` collection — formally records what `M11` already assumed. See [ADR-021](./DECISIONS.md#adr-021-guest-orders-use-embedded-address-fields-not-a-customers-collection).
-7. ~~**Media storage backend**~~ — **Resolved 2026-08-16**: local Docker volume for v1; Cloudflare R2 named as the designated successor. See [ADR-020](./DECISIONS.md#adr-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor).
+1. ~~**Multi-vendor fate**~~ — **Resolved 2026-08-07**: single store, no vendors, no seller dashboard, no seller registration, no vendor approval. See [Architecture Decision Record 006](./DECISIONS.md).
+2. ~~**Delivery/shipping model**~~ — **Resolved 2026-08-16**: flat delivery fee with a free-shipping threshold, both admin-configurable via a Settings global (Milestone 13a) and snapshotted onto each order at creation. See [Architecture Decision Record 018](./DECISIONS.md#architecture-decision-record-018-shipping-model--flat-rate-with-a-free-shipping-threshold-snapshotted-per-order).
+3. ~~**Order status set**~~ — **Resolved 2026-08-16**: `PLACED` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`, plus terminal `CANCELLED` and `RETURNED`. `CONFIRMED` supports the common Pakistani-COD practice of phone-confirming an order before dispatch. See [Architecture Decision Record 019](./DECISIONS.md#architecture-decision-record-019-order-status-set-includes-confirmed-cancelled-and-returned).
+4. ~~**Ratings/reviews**~~ — **Resolved 2026-08-16**: dropped for v1 — no non-account identity model is built for it. Milestone 46 removes `RatingModal` and its entry points. See [Architecture Decision Record 016](./DECISIONS.md#architecture-decision-record-016-reviews-are-out-of-scope-for-v1).
+5. ~~**Coupons**~~ — **Resolved 2026-08-16**: dropped for v1 — the account-based `forNewUser`/`forMember` targeting has no guest-checkout equivalent to rebuild against. Milestone 47 removes the coupon-code input. See [Architecture Decision Record 017](./DECISIONS.md#architecture-decision-record-017-coupons-are-out-of-scope-for-v1).
+6. ~~**Guest `Orders` shape**~~ — **Resolved 2026-08-16**: embedded address fields on the order, not a `Customers` collection — formally records what Milestone 11 already assumed. See [Architecture Decision Record 021](./DECISIONS.md#architecture-decision-record-021-guest-orders-use-embedded-address-fields-not-a-customers-collection).
+7. ~~**Media storage backend**~~ — **Resolved 2026-08-16**: local Docker volume for v1; Cloudflare R2 named as the designated successor. See [Architecture Decision Record 020](./DECISIONS.md#architecture-decision-record-020-media-storage-backend-is-a-local-docker-volume-for-v1-with-cloudflare-r2-as-the-designated-successor).
 
 ## Open questions / assumptions to confirm with stakeholder
 
 These materially affect scope and are flagged rather than silently decided:
 
-1. ~~**Currency**~~ — **Resolved**: PKR shown as `Rs. 1,500`, no decimals ([ADR-029](./DECISIONS.md), `M55`).
-2. **Notifications**: SMS is deferred to a future phase, and email infrastructure (Resend, free tier) is decided as part of the initial production baseline ([ADR-015](./DECISIONS.md#adr-015-initial-production-infrastructure-baseline)) — but which order-lifecycle emails, if any, are actually sent for v1, and whether WhatsApp is used, are still not specified.
+1. ~~**Currency**~~ — **Resolved**: PKR shown as `Rs. 1,500`, no decimals ([Architecture Decision Record 029](./DECISIONS.md), Milestone 55).
+2. **Notifications**: SMS is deferred to a future phase, and email infrastructure (Resend, free tier) is decided as part of the initial production baseline ([Architecture Decision Record 015](./DECISIONS.md#architecture-decision-record-015-initial-production-infrastructure-baseline)) — but which order-lifecycle emails, if any, are actually sent for v1, and whether WhatsApp is used, are still not specified.

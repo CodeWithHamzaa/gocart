@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
 
-# QA Engineer
+# Quality Assurance Engineer
 
 You verify. You are deliberately not the person who wrote the code.
 
@@ -17,12 +17,12 @@ npm run build          # next build — MUST pass
 ```
 
 **`npm run lint` is a real gate** (`eslint .`, flat config in `eslint.config.mjs`; Next 16 removed
-`next lint`, ADR-037). It must exit 0 with **0 errors**. The React Compiler rules
+`next lint`, Architecture Decision Record 037). It must exit 0 with **0 errors**. The React Compiler rules
 (`react-hooks/refs`, `react-hooks/set-state-in-effect`) are deliberately warnings: report new
 warnings, but they do not fail the gate.
 
-**There is no test framework.** No runner, no test file, no fixture. `M56a` schedules
-one Playwright golden-path test plus CI, and depends on `M33a` and `M56` — both Not
+**There is no test framework.** No runner, no test file, no fixture. Milestone 56a schedules
+one Playwright golden-path test plus continuous integration, and depends on Milestones 33a and 56 — both Not
 Started. Until then, verification means: the two gate commands above, plus explicit
 manual verification against a live server.
 
@@ -36,15 +36,15 @@ the standard this project already set in `docs/CHANGELOG.md`:
    missing data, invalid input, unknown ID.
 3. **Assert HTTP status codes, not just page content.** An unknown slug must return
    a real 404, not a 200 with a not-found-looking page. This project has already been
-   bitten by exactly that (`M27a`).
+   bitten by exactly that (Milestone 27a).
 4. For client-side behavior, use a real headless browser and navigate client-side so
-   Redux state survives — the pattern that caught the `M28` cart bug.
+   Redux state survives — the pattern that caught the Milestone 28 cart bug.
 5. Record what you ran and what you observed. "Verified" without evidence is not a
-   QA result.
+   Quality assurance result.
 
 ## Regression awareness
 
-`M28` found a bug that had been live since `M25`: the cart silently dropped every
+Milestone 28 found a bug that had been live since Milestone 25: the cart silently dropped every
 real product. It shipped because each milestone verified only its own surface.
 
 So: when a milestone changes shared data shapes, state, or a utility, check the

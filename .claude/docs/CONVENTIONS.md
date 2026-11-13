@@ -24,7 +24,7 @@ makes them explicit so every role applies the same ones.
 ## Comment headers
 
 Every non-inherited file opens with a milestone-ID header saying what it is and why,
-citing the relevant ADR:
+citing the relevant Architecture Decision Record:
 
 ```ts
 // M22: server-side data-fetching utility for Products. Uses Payload's Local API
@@ -46,16 +46,16 @@ Match the surrounding comment density. Do not over-comment.
 
 ## Referencing work
 
-- Cite work by **milestone ID** (`M29`), never by phase or group name. Group headings
+- Cite work by **milestone ID** (Milestone 29), never by phase or group name. Group headings
   are labels for navigation only and carry **no execution order**.
 - Execution order comes from each milestone's `Dependencies` line, not from ascending
-  ID. `M14`/`M16`/`M17`/`M19` run before `M3` (ADR-014).
+  ID. Milestones 14, 16, 17 and 19 run before Milestone 3 (Architecture Decision Record 014).
 
 ## Commits
 
 - One milestone, one reviewable commit.
-- Use the milestone's own `Commit message` line from `docs/MIGRATION_PLAN.md` verbatim.
-- Never include a model or AI-tool identifier in a commit message, PR title, PR body,
+- Write a brief, clear, professional one-line message in plain English (see `.claude/rules/documentation-style.md`). The milestone's stored `Commit message` line in `docs/MIGRATION_PLAN.md` is only a suggestion; use it only when it meets this standard. A milestone identifier belongs in a commit message only when it is needed to find the work, and then it is written in full ("Milestone 118").
+- Never include a model or AI-tool identifier, co-author line or session link in a commit message, pull request title, pull request body,
   or code comment.
 
 ---
@@ -70,38 +70,38 @@ decided, and recorded.
 A `loading.tsx` on that route wraps the segment in a `<Suspense>` boundary that
 flushes an HTTP 200 **before** the awaited page component can call `notFound()`.
 Unknown slugs and out-of-range pages then return 200 instead of 404, destroying the
-route's core SEO purpose.
+route's core search engine optimization purpose.
 
 Confirmed by isolation testing; `error.tsx`, `generateMetadata`, and the SSG/dynamic
 choice were all ruled out. `app/(public)/categories/` **does** have `loading.tsx` —
-it has no `notFound()` path, so no conflict. Full account: `M27a` in
+it has no `notFound()` path, so no conflict. Full account: Milestone 27a in
 `docs/MIGRATION_PLAN.md`.
 
 ### `/` , `/shop`, and `/product/[productId]` are `force-dynamic` — intentional
 
 Admin curation (`isFeatured`) must show without a redeploy, and the production build
-cannot assume a reachable database (`M23`).
+cannot assume a reachable database (Milestone 23).
 
 ### `/orders` is a guest lookup by order number + phone — intentional
 
-`M36` replaced the old dummy page (ADR-024). There is no account system and no order list.
-Exactly one `button[type=submit]` must exist on the page (the e2e suite relies on it). Do not
+Milestone 36 replaced the old dummy page (Architecture Decision Record 024). There is no account system and no order list.
+Exactly one `button[type=submit]` must exist on the page (the end-to-end suite relies on it). Do not
 turn it into an order list or relax `Orders` read access.
 
 ### `components/Loading.jsx` has no importer — verified 2026-10-24
 
-Left in place at `M15`/`M18` as a generic reusable component and restyled in `M66`. Still not
+Left in place at Milestones 15 and 18 as a generic reusable component and restyled in Milestone 66. Still not
 imported anywhere; keep it unless a milestone removes it.
 
 ### `"Best Selling"` is an `isFeatured` flag, not a ranking — intentional
 
-There is no sales or review data to rank by. ADR-022 chose admin curation over a
+There is no sales or review data to rank by. Architecture Decision Record 022 chose admin curation over a
 fabricated proxy metric. Do not invent a ranking.
 
 ### `npm run lint` works (repaired 2026-10-09)
 
 `eslint.config.mjs` extends `next/core-web-vitals`. Run it and report its real output; it is a
-style/correctness check, not a substitute for QA's live verification.
+style/correctness check, not a substitute for quality assurance's live verification.
 
 ---
 
@@ -109,6 +109,6 @@ style/correctness check, not a substitute for QA's live verification.
 
 | Gap | Owner |
 |---|---|
-| `images.unoptimized: true` (the optimizer is switched off on purpose) | ADR-034, suspended by ADR-036 |
+| `images.unoptimized: true` (the optimizer is switched off on purpose) | Architecture Decision Record 034, suspended by Architecture Decision Record 036 |
 | `tsx` is invoked by `npm run seed` and `deploy:migrate` but is not in `devDependencies` (it resolves from `node_modules/.bin` today) | **unowned** |
 | Order notifications (WhatsApp/email) | **no milestone exists** (`D8`) |

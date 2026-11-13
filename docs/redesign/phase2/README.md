@@ -1,11 +1,11 @@
-# Phase 2: homepage (`M118`)
+# Phase 2: homepage (Milestone 118)
 
-Owner-authorized 2026-11-12. Builds on Phase 1 (ADR-052 palette, shared `Button`).
+Owner-authorized 2026-11-12. Builds on Phase 1 (Architecture Decision Record 052 palette, shared `Button`).
 
 ## New page order
 1. **Hero** (`HeroSlider.tsx`): a solid calm panel instead of a gradient wash (stored tones mapped: green = violet tint, blue = white, grey = warm well; no value added or renamed), a larger display headline (`text-6xl` from `lg`), the shared primary button, and **one** product photo (16:10 under the text on a phone, a square in the right column from `md`) instead of two overlapping tiles. Two columns now start at `md` (768), so the 820 tablet gets a composed split instead of a stacked phone layout. Carousel behaviour, autoplay rules, pause control and accessibility are unchanged.
 2. **Shop by category** (new `CategoryShowcase.tsx`), redesigned on 2026-11-12 after the owner's reference ("Style 1, premium cards with images" and "Style 3, circular categories"): an intro column (heading, one line, a violet "Explore all" pill, a hairline divider) beside a row of photo cards: the category's 4:3 image with a round arrow (violet on hover), then its icon, name and "Shop now". Desktop: five cards in the row, the rest a click on the round scroll button away; tablet and phone: the intro is a header row ("View all categories") above a swipeable rail (2.2 cards on a phone). In Mirza's identity: Plus Jakarta Sans instead of the reference's serif, violet actions, warm wells, hairlines instead of shadows. Replaces the small shortcut row under the banner (`HeroShortcuts.tsx`, removed). Every category link stays in the server HTML.
-3. **Featured** (unchanged data and component): "Featured", not "Best sellers" (owner decision; ADR-022).
+3. **Featured** (unchanged data and component): "Featured", not "Best sellers" (owner decision; Architecture Decision Record 022).
 4. **Promotions** (`PromoCards.tsx`, unchanged): the owner keeps the current cards.
 5. **Limited-time deals** (`DealsOfTheDay.tsx`, `ui/Countdown.tsx`): renamed from "Deals of the day"; shows "Ends 2 Dec" until the last 48 hours, then the live clock; neutral chips (sale pink stays on the discount itself).
 6. **New arrivals** (unchanged), the last section before the footer.
@@ -29,17 +29,17 @@ The report suggested an aubergine band featuring two categories in place of "fea
 ## Before / after screenshots
 `before/` = Phase 1 (`31bfab8`), `after/` = this milestone; same local production build setup as Phase 1 (throwaway PostgreSQL, `seed:demo`, generated artwork, seed default free-delivery Rs. 3,000). For both sets two discounted products were given a deal ending in 20 days **in the local database only**, so the deals section is visible. Every page differs slightly because the footer now lists all ten categories.
 
-## QA results
+## Quality assurance results
 | Check | Result |
 |---|---|
 | `npm run type-check` | Pass |
 | `npm run lint` | 0 errors; the same 8 warnings as `main` |
 | `npm run build` | Pass |
-| CI unit scripts | Pass |
+| Continuous integration unit scripts | Pass |
 | Capture: 17 pages × 3 widths | HTTP 200 (404 page intended), horizontal overflow 0 px, no failing sub-resource |
 | Every category link in the home HTML (`e2e/seo.spec.ts`) | Kept: the category grid renders all of them server-side |
-| Playwright e2e | Not run locally (pinned browser not installed here); CI runs it |
+| Playwright end-to-end | Not run locally (pinned browser not installed here); continuous integration runs it |
 | Live countdown under 48 h | Logic reviewed, **not captured** (local deals end in 20 days) |
 
 ## Rollback
-Revert the `M118` commit. No schema, data or dependency change.
+Revert the Milestone 118 commit. No schema, data or dependency change.

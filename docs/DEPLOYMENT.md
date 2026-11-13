@@ -1,31 +1,31 @@
 # Deployment
 
-Production deployment of Mirza (formerly GoCart Pakistan; the `gocart` names of the Docker project, volumes and database are kept on purpose, ADR-047). **This file covers the Cloudflare Tunnel origin boundary,
-environment validation and secrets (`M52`, [ADR-033](./DECISIONS.md)), the database migration
-workflow (`M52a`, [ADR-032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
-limits (`M52b`, [ADR-035](./DECISIONS.md), amended by [ADR-036](./DECISIONS.md): a verified token is
+Production deployment of Mirza (formerly GoCart Pakistan; the `gocart` names of the Docker project, volumes and database are kept on purpose, Architecture Decision Record 047). **This file covers the Cloudflare Tunnel origin boundary,
+environment validation and secrets (Milestone 52, [Architecture Decision Record 033](./DECISIONS.md)), the database migration
+workflow (Milestone 52a, [Architecture Decision Record 032](./DECISIONS.md)) and Cloudflare Turnstile with the CGNAT-safe order rate
+limits (Milestone 52b, [Architecture Decision Record 035](./DECISIONS.md), amended by [Architecture Decision Record 036](./DECISIONS.md): a verified token is
 required, orders are idempotent, the first admin comes from a secret, the app uses a restricted database
-role). `M53` adds health checks; `M54` adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); `M59` adds the launch checklist, rollback, release and launch decisions.**
+role). Milestone 53 adds health checks; Milestone 54 adds backups (scripts and procedure: [Backups and recovery](#backups-and-recovery)); Milestone 59 adds the launch checklist, rollback, release and launch decisions.**
 
 > **Launch blockers (read first).** The stack is **not cleared for launch**. See
-> [Launch blockers](#launch-blockers) at the end of this file. The first one is closed in code: `M79` (merged,
-> Done 2026-10-29) upgraded `next` to 16.4.2, so `npm audit` no longer lists `next`; `M97` (ADR-045) pinned
+> [Launch blockers](#launch-blockers) at the end of this file. The first one is closed in code: Milestone 79 (merged,
+> Done 2026-10-29) upgraded `next` to 16.4.2, so `npm audit` no longer lists `next`; Milestone 97 (Architecture Decision Record 045) pinned
 > `dompurify` and cleared the critical. What is left of it is a re-run of `npm audit` on the release commit
 > and the deploy. The other items are the real-Cloudflare checks with real keys, the
 > Cloudflare WAF rule, the first-deploy checks, and the first real backup, restore drill and uptime monitor.
 
 ## Launch checklist
 
-Do these in order. "Owner" means a person with the Cloudflare account, the VPS and the password manager does
+Do these in order. "Owner" means a person with the Cloudflare account, the virtual private server and the password manager does
 it by hand; "Stack" means the compose stack or a script does it once you run the gated deploy. A box is ticked
-only when the step has been seen to work on the real VPS. **Nothing below has been run on a clean VPS yet**
-(`M59` wrote the runbook; see [Not covered yet](#not-covered-yet)).
+only when the step has been seen to work on the real virtual private server. **Nothing below has been run on a clean virtual private server yet**
+(Milestone 59 wrote the runbook; see [Not covered yet](#not-covered-yet)).
 
-- [ ] 1. **Owner.** Resolve the Next.js blocker: `M79` (`next` 16.4.2) merged to `main` (ADR-040 is Accepted, 2026-10-24) and deployed
+- [ ] 1. **Owner.** Resolve the Next.js blocker: Milestone 79 (`next` 16.4.2) merged to `main` (Architecture Decision Record 040 is Accepted, 2026-10-24) and deployed
   (or an explicit written owner acceptance ([Launch blockers](#launch-blockers), item 1)). Decide the open items in
   [Launch decisions](#launch-decisions).
-- [ ] 2. **Owner.** Take a backup first (ADR-032): [Taking a backup](#taking-a-backup). On a brand-new empty
-  VPS there is nothing to back up; for any later deploy this step is mandatory.
+- [ ] 2. **Owner.** Take a backup first (Architecture Decision Record 032): [Taking a backup](#taking-a-backup). On a brand-new empty
+  Virtual private server there is nothing to back up; for any later deploy this step is mandatory.
 - [ ] 3. **Owner.** Check the production database for a leftover development-push marker. This must return
   **no rows**; if it returns any, **stop the deploy** and do not run `migrate` (see
   [Never migrate a database populated by development](#never-migrate-a-database-populated-by-development)):
@@ -66,8 +66,8 @@ only when the step has been seen to work on the real VPS. **Nothing below has be
   `$PROD ps` shows `app` as `healthy`.
 - [ ] 14. **Owner.** Backups ([Backups and recovery](#backups-and-recovery)): schedule `scripts/backup.sh` daily
   while orders flow and before every schema-changing deploy (there is no scheduler in the stack); set
-  `BACKUP_PASSPHRASE_FILE` (the passphrase itself lives in the password manager, not on the VPS); keep the
-  `.gpg` copies **off the VPS**; run `scripts/backup-verify.sh` once
+  `BACKUP_PASSPHRASE_FILE` (the passphrase itself lives in the password manager, not on the virtual private server); keep the
+  `.gpg` copies **off the virtual private server**; run `scripts/backup-verify.sh` once
   ([Proving a backup restores](#proving-a-backup-restores-do-this-a-backup-never-restored-is-a-hope)); rehearse
   the manual restore once on a scratch machine ([Restoring for real](#restoring-for-real-after-a-disaster-or-a-bad-release)).
 - [ ] 15. **Owner.** Re-run `npm audit` on the release commit and compare it with
@@ -103,19 +103,19 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
 
 - `migrate` is built from the `migrate` target of the `Dockerfile` (full dependencies plus source;
   the minimal `production` image cannot run the Payload CLI). It runs `npm run deploy:migrate`, which
-  is `scripts/check-env.ts` (environment validation, `M52`), then `payload migrate`, then
+  is `scripts/check-env.ts` (environment validation, Milestone 52), then `payload migrate`, then
   `scripts/verify-migrations.ts` (right after, so a silent no-op migrate fails with a clear
-  "schema is incomplete" message instead of a misleading one from a later step; found in PR #32 run
-  40084395694 attempt 1, `M80`), then `scripts/db-roles.ts` (creates and grants the restricted
-  `gocart_app` role the running app uses, ADR-036), then `scripts/bootstrap-admin.ts` (creates the first
+  "schema is incomplete" message instead of a misleading one from a later step; found in pull request #32 run
+  40084395694 attempt 1, Milestone 80), then `scripts/db-roles.ts` (creates and grants the restricted
+  `gocart_app` role the running app uses, Architecture Decision Record 036), then `scripts/bootstrap-admin.ts` (creates the first
   admin from a secret, or does nothing if a user exists). An invalid environment fails `migrate` before
   the database is touched. `migrate` is the only container that holds the Postgres superuser password.
 - The verifier is a **smoke check, not a schema comparison**. It exits non-zero unless: at least one
   migration file exists, every migration file has a row in `payload_migrations`, no row has
   `batch = -1`, and every collection and the `Settings` global can be read. This closes the two cases
   where `payload migrate` alone exits 0 without a schema (no migration files; a dev-push marker met
-  without a terminal). It does not detect a schema that differs from the config: QA dropped
-  `orders_items` and `categories.slug` and it still passed. Schema drift is caught by the CI
+  without a terminal). It does not detect a schema that differs from the config: Quality assurance dropped
+  `orders_items` and `categories.slug` and it still passed. Schema drift is caught by the continuous integration
   `migrations` job, not at deploy time.
 - `app` has `depends_on: migrate: condition: service_completed_successfully`, so it never starts if
   `migrate` fails, and `cloudflared` starts after `app`, so a failed migrate (or an invalid
@@ -127,14 +127,14 @@ Start order is `postgres` (healthy) -> `migrate` (one-shot) -> `app` -> `cloudfl
 - An **empty database needs no seeding**: the committed migrations create the whole schema, and the
   first admin is created by the migrate step from `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD`
   (see [The first admin comes from a secret](#the-first-admin-comes-from-a-secret)). The catalog starts
-  empty. The `/admin` create-first-user flow is closed for visitors (ADR-036).
+  empty. The `/admin` create-first-user flow is closed for visitors (Architecture Decision Record 036).
 
 Requires **Docker Compose >= 2.17** (`service_completed_successfully`). Verified on Compose v5.6.0.
 
 ## Creating a migration
 
 Every change to a collection or to the `Settings` global needs a migration committed in the same
-change; CI (`migrations` job) fails when one is missing.
+change; continuous integration (`migrations` job) fails when one is missing.
 
 1. Change the collection/global.
 2. Generate the migration. It only diffs the config against the newest committed snapshot and never
@@ -175,7 +175,7 @@ $PROD up -d                 # migrate runs again as a no-op, then app is recreat
 ```
 
 Verified with a deliberately broken migration: `run --rm migrate` exited 1 and the old `app`
-container kept serving, unchanged. This is the documented default (ADR-032); the owner can change it.
+container kept serving, unchanged. This is the documented default (Architecture Decision Record 032); the owner can change it.
 The database is never left half-migrated within a file (each migration file is its own transaction;
 if several files are pending and a later one fails, the earlier ones stay applied).
 
@@ -209,7 +209,7 @@ Accepts downtime on every release, but the app can never run against a schema it
 
 - Deploys are single-operator and must be serialised. Payload takes no advisory lock, so never run
   two `migrate` invocations concurrently (including a manual `run --rm migrate` during a deploy).
-- Old images accumulate on a small VPS with every `build`. Periodically run `docker image prune`
+- Old images accumulate on a small virtual private server with every `build`. Periodically run `docker image prune`
   (add `-a` only if you accept re-pulling/rebuilding unused images) and check `df -h`.
 
 ## Backups and recovery
@@ -217,9 +217,9 @@ Accepts downtime on every release, but the app can never run against a schema it
 Migrations are forward-only. Nothing runs `migrate:down` in production. If a release goes wrong,
 recover by restoring a backup and shipping a corrective forward migration.
 
-**What must be backed up (M54):** two things, both on the VPS only. (1) The Postgres database
+**What must be backed up (Milestone 54):** two things, both on the virtual private server only. (1) The Postgres database
 (volume `gocart-prod_postgres-data`): products, orders and the admin account. (2) Uploaded product
-images (volume `gocart-prod_app-media`, [ADR-020](./DECISIONS.md)): `pg_dump` does not cover it.
+images (volume `gocart-prod_app-media`, [Architecture Decision Record 020](./DECISIONS.md)): `pg_dump` does not cover it.
 Both volumes survive `down`, `up`, `restart` and redeploys; they are lost only by `down -v`, deleting
 the volume, or losing the disk. **Never run `docker compose down -v` against production.**
 
@@ -245,13 +245,13 @@ BACKUP_PASSPHRASE_FILE=/path/outside/checkout/backup-passphrase scripts/backup.s
 ```
 
 The files then end in `.gpg` (GnuPG, AES256) and the plaintext copies are deleted. **Lose the
-passphrase and the backup is unreadable.** Copy the encrypted files off the VPS (another machine, cloud
+passphrase and the backup is unreadable.** Copy the encrypted files off the virtual private server (another machine, cloud
 drive, an external disk): a backup on the same disk as the database does not survive losing that disk.
 
-Backup times ([ADR-015](./DECISIONS.md)): before every schema-changing deploy (by hand, as above), and
+Backup times ([Architecture Decision Record 015](./DECISIONS.md)): before every schema-changing deploy (by hand, as above), and
 at least once a day while orders are coming in (scheduled, below).
 
-### Scheduled backups (`M99`)
+### Scheduled backups (Milestone 99)
 
 `scripts/backup-cron.sh` runs `backup.sh` and then `backup-verify.sh` on the new dump, for cron. It cds to
 the checkout (so `docker-compose.prod.yml` is found), sets a full `PATH`, refuses to run without
@@ -259,7 +259,7 @@ the checkout (so `docker-compose.prod.yml` is found), sets a full `PATH`, refuse
 previous run is still going (`flock`), timestamps every log line, and writes `<backup dir>/LAST_OK` only
 when the backup **and** the restore check both passed. Exit status is non-zero on any failure.
 
-On the VPS, as a user that can run `docker`, with `gpg` and `flock` installed (`sudo apt install gnupg
+On the virtual private server, as a user that can run `docker`, with `gpg` and `flock` installed (`sudo apt install gnupg
 util-linux` on Debian/Ubuntu; the paths are examples; use your own, all outside the checkout except the
 script):
 
@@ -275,11 +275,11 @@ sudo touch /var/log/gocart-backup.log && sudo chown deploy /var/log/gocart-backu
 Replace `deploy` with the user that runs the stack and `/srv/gocart/app` with the checkout. Before
 trusting the schedule, run the same command once by hand and read the log; afterwards
 `cat /srv/gocart/backups/LAST_OK` shows the last good run (a stale date means the job is failing:
-`tail /var/log/gocart-backup.log`). The job keeps the newest 14 sets on the VPS; copying the `.gpg` files
+`tail /var/log/gocart-backup.log`). The job keeps the newest 14 sets on the virtual private server; copying the `.gpg` files
 off the host is still a separate, owner-run step. Verified locally against PostgreSQL 16 (encrypted
 backup and restore check, cron's minimal environment, overlap, a failing database, a missing or empty
-passphrase) and by CI `prod-stack` against the real compose stack; **not yet run by cron on the real
-VPS** (that run is the `M99` evidence).
+passphrase) and by continuous integration `prod-stack` against the real compose stack; **not yet run by cron on the real
+Virtual private server** (that run is the Milestone 99 evidence).
 
 ### Proving a backup restores (do this, a backup never restored is a hope)
 
@@ -321,9 +321,9 @@ This replaces the live data. Do not run it to "check" a backup (use the verify s
 - Verified (local PostgreSQL 16, real migrated schema): `backup.sh` and `backup-verify.sh` logic: plain
   and encrypted backups, restore into a scratch database with row counts, wrong passphrase and truncated
   dump refused, retention, no partial file after a failure, directory mode 700 and file mode 600.
-- Checked by CI only (`scripts/prod-stack-check.sh`, the real compose stack): the Docker paths (`exec` into
+- Checked by continuous integration only (`scripts/prod-stack-check.sh`, the real compose stack): the Docker paths (`exec` into
   the postgres container, the media-volume read) and that a full `down` / `up` keeps the admin and the
-  uploaded image. **Unverified until CI has run on this change.**
+  uploaded image. **Unverified until continuous integration has run on this change.**
 - Not verified at all: the manual restore procedure above on a real stack, `cron` automation, a
   restore onto a different machine, and Postgres major-version upgrades.
 
@@ -359,12 +359,12 @@ deploy with the variable name and the rule, never the value):
 | `PAYLOAD_SECRET` | at least 32 characters, no whitespace, at least 12 distinct characters, and none of the same forbidden words as above (case-insensitive substring). `openssl rand -hex 32` gives 64 hex characters. |
 | `NEXT_PUBLIC_SITE_URL` | `https:`, a bare origin (no path, query or credentials), a public host: rejected are localhost (including a trailing dot), loopback, `0.0.0.0`, IPv4-mapped IPv6, private/link-local/CGNAT (`100.64.0.0/10`) ranges, `.local`/`.internal`/`.lan`/`.home.arpa` names and single-label hosts. **Build-time**: changing it needs `build`/`--build`. |
 | `TUNNEL_TOKEN` | required by compose (non-empty) and nothing more; `check-env` never sees it. A credential. |
-| `TURNSTILE_SECRET_KEY` | (`M52b`) the Turnstile widget's **secret** key; runtime only, given to `app` (siteverify) and `migrate` (`check-env`). 20-200 characters, no whitespace, none of the forbidden words above, **not** a Cloudflare test key (anything shaped like `1x0000000000000000000000000000000AA`), and different from the site key. A credential. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (`M52b`) the same widget's **public** site key (it is shipped to every browser; not a secret). 10-100 characters, no whitespace, no forbidden word, not a test key. **Build-time** for `app` (changing it needs `build`/`--build`); also passed to `migrate` at runtime so `check-env` can validate it. |
-| `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and CI only; `docker-compose.prod.yml` never passes it. |
-| `APP_DB_PASSWORD` | (ADR-036) the password of the restricted `gocart_app` database role the running app connects as. Same rules as `POSTGRES_PASSWORD` (16+ characters, `A-Z a-z 0-9 - . _ ~`, 10+ distinct, no forbidden word) and it **must differ from `POSTGRES_PASSWORD`**. Given to `migrate` (which creates the role) and used by compose to build `app`'s `DATABASE_URI`; `app` never sees `POSTGRES_PASSWORD`. Unlike `POSTGRES_PASSWORD` it is re-applied on every deploy, so it can be rotated (change the env file, then run the deploy gate). |
-| `ADMIN_BOOTSTRAP_USERNAME`, `ADMIN_BOOTSTRAP_PASSWORD` | (ADR-036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
-| `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails if it reaches the `migrate` container; compose never passes it to any service, which is the real control and is asserted by the `prod-stack` CI job): it re-opens the first-admin window. Development and CI only. |
+| `TURNSTILE_SECRET_KEY` | (Milestone 52b) the Turnstile widget's **secret** key; runtime only, given to `app` (siteverify) and `migrate` (`check-env`). 20-200 characters, no whitespace, none of the forbidden words above, **not** a Cloudflare test key (anything shaped like `1x0000000000000000000000000000000AA`), and different from the site key. A credential. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (Milestone 52b) the same widget's **public** site key (it is shipped to every browser; not a secret). 10-100 characters, no whitespace, no forbidden word, not a test key. **Build-time** for `app` (changing it needs `build`/`--build`); also passed to `migrate` at runtime so `check-env` can validate it. |
+| `TURNSTILE_ALLOW_TEST_KEYS` | **must be unset or empty** in production (`check-env` fails otherwise). Development and continuous integration only; `docker-compose.prod.yml` never passes it. |
+| `APP_DB_PASSWORD` | (Architecture Decision Record 036) the password of the restricted `gocart_app` database role the running app connects as. Same rules as `POSTGRES_PASSWORD` (16+ characters, `A-Z a-z 0-9 - . _ ~`, 10+ distinct, no forbidden word) and it **must differ from `POSTGRES_PASSWORD`**. Given to `migrate` (which creates the role) and used by compose to build `app`'s `DATABASE_URI`; `app` never sees `POSTGRES_PASSWORD`. Unlike `POSTGRES_PASSWORD` it is re-applied on every deploy, so it can be rotated (change the env file, then run the deploy gate). |
+| `ADMIN_BOOTSTRAP_USERNAME`, `ADMIN_BOOTSTRAP_PASSWORD` | (Architecture Decision Record 036) the first admin. Both or neither. Required **only while no user exists** (the migrate step fails otherwise, so the stack never starts with nobody able to administer it). Password: 14+ characters, no whitespace, 10+ distinct characters, no forbidden word. Reach the `migrate` container only; **remove both from the env file after the first deploy.** |
+| `PAYLOAD_ALLOW_FIRST_REGISTER` | **must be unset or empty** in production (`check-env` fails if it reaches the `migrate` container; compose never passes it to any service, which is the real control and is asserted by the `prod-stack` continuous integration job): it re-opens the first-admin window. Development and continuous integration only. |
 
 (The word list and host rules above follow the fix being made to `scripts/check-env.ts` at the time of
 writing; `scripts/check-env.ts` is the authority if they ever differ.)
@@ -380,7 +380,7 @@ then fail to log in. Rotating it means `ALTER USER` inside the database *and* th
 
 Sample env file. **Every value below is an example; none is a real secret.** The password and secret
 placeholders contain `REPLACE`, so they FAIL `check-env` if copied unchanged. The
-`NEXT_PUBLIC_SITE_URL` sample (`shop.example.com`) is **not** rejected by `check-env` (CI uses it
+`NEXT_PUBLIC_SITE_URL` sample (`shop.example.com`) is **not** rejected by `check-env` (continuous integration uses it
 deliberately): you must replace it with your real domain, or canonical URLs and the sitemap will point
 at a domain you do not own. `TUNNEL_TOKEN` is only checked non-empty (by compose).
 
@@ -409,19 +409,19 @@ is touched, naming the variable and rule.
 `PAYLOAD_ALLOW_FIRST_REGISTER=1`, which are for development only) and lists the production-only
 variables; this section is the authority for production.
 
-**Never paste the output of `docker compose config` or `docker inspect` anywhere** (chat, tickets, PRs,
+**Never paste the output of `docker compose config` or `docker inspect` anywhere** (chat, tickets, pull requests,
 logs shared with others): they print `TUNNEL_TOKEN`, `PAYLOAD_SECRET` and the database password in
 plaintext. Redact before sharing, or share the compose file instead.
 
 ## Cloudflare: one-time steps
 
-The origin boundary is a Cloudflare Tunnel ([ADR-033](./DECISIONS.md)): `cloudflared` runs as a compose
+The origin boundary is a Cloudflare Tunnel ([Architecture Decision Record 033](./DECISIONS.md)): `cloudflared` runs as a compose
 service, dials **out** to Cloudflare, and relays public traffic to `http://app:3000`. No service
 publishes a host port. These steps are done by the owner in the Cloudflare dashboard and cannot be
 automated or verified from this repository.
 
 1. In Cloudflare Zero Trust, create a tunnel (type: Cloudflared) and **copy its token** into
-   `TUNNEL_TOKEN` in the env file. Do not paste it into chat, tickets, shell history or a PR.
+   `TUNNEL_TOKEN` in the env file. Do not paste it into chat, tickets, shell history or a pull request.
 2. Add a **public hostname** for the tunnel: your domain, service type `HTTP`, URL `app:3000`
    (that is, `http://app:3000`). **Leave the "HTTP Host Header" override unset**, so the visitor's `Host`
    reaches the app unchanged (Next.js Server Actions compare `Origin` with `Host`).
@@ -439,17 +439,17 @@ automated or verified from this repository.
    list for connectors you do not recognise. Whether a token refresh drops already-connected old
    connectors is **unverified**; do not assume it does.
 
-What the tunnel guarantees, and what it does not (ADR-033):
+What the tunnel guarantees, and what it does not (Architecture Decision Record 033):
 
 - Guarantees: no packet from the public internet or the host's other interfaces reaches port 3000
   except through Cloudflare's edge; `cf-connecting-ip` as received was written by Cloudflare, not by the
   visitor (`lib/client-ip.ts` trusts only that header, and only in production).
 - Does **not** guarantee: (a) that `x-forwarded-for` is trustworthy (Cloudflare appends to a client
   value, so the app ignores it); (b) anything about other containers sharing a network with `app`: no
-  further service may join `edge` or `backend`; (c) protection from anyone with a shell on the VPS or the
+  further service may join `edge` or `backend`; (c) protection from anyone with a shell on the virtual private server or the
   Docker socket; (d) that `cf-connecting-ip` is present if "Remove visitor IP headers" is enabled;
   (e) anything if a second ingress to the app is added (a published port, another tunnel route, another
-  network member), which needs an ADR; (f) protection of `/admin` itself (Cloudflare Access/WAF is out of
+  network member), which needs an Architecture Decision Record; (f) protection of `/admin` itself (Cloudflare Access/WAF is out of
   scope).
 - **Docker bypasses `ufw`.** A port published by Docker (`ports:`) is NAT-ed in the `nat`/`FORWARD` path
   and is not filtered by `ufw`'s `INPUT` rules, so `ufw deny 3000` would not protect it. That is why the
@@ -465,7 +465,7 @@ What the tunnel guarantees, and what it does not (ADR-033):
 
 ## Cloudflare Turnstile: one-time setup
 
-`M52b` ([ADR-035](./DECISIONS.md)) verifies a Cloudflare Turnstile token on the server for order
+Milestone 52b ([Architecture Decision Record 035](./DECISIONS.md)) verifies a Cloudflare Turnstile token on the server for order
 placement (`/cart`) and order lookup (`/orders`). Turnstile is what lets many real customers behind one
 carrier-grade-NAT IP order without hitting each other's limit (see
 [Rate limits in the real world](#rate-limits-in-the-real-world)). Done by the owner in the Cloudflare
@@ -478,7 +478,7 @@ dashboard; it cannot be automated or verified from this repository.
    step 5).
 2. Copy the **site key** into `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **secret key** into
    `TURNSTILE_SECRET_KEY` in the out-of-band env file. Never paste the secret key into chat, tickets,
-   shell history or a PR. Never use Cloudflare's test keys in production: they accept a public dummy
+   shell history or a pull request. Never use Cloudflare's test keys in production: they accept a public dummy
    token, so they would turn the check off (`check-env` rejects them).
 3. Deploy as usual (the site key is inlined at build time, so the first deploy must `--build`). The
    `migrate` step validates both keys before the database is touched.
@@ -489,13 +489,13 @@ dashboard; it cannot be automated or verified from this repository.
    lines.** In particular, an ERROR line `[turnstile] rejected { reason: 'hostname-mismatch' }` or
    `{ reason: 'action-mismatch' }` means the widget's hostname in the Cloudflare dashboard or
    `NEXT_PUBLIC_SITE_URL` is wrong (for example `www.` versus the bare domain), and **every customer is
-   refused**: ADR-036 has no degraded path, so a mismatch is a total checkout outage. Fix the widget
+   refused**: Architecture Decision Record 036 has no degraded path, so a mismatch is a total checkout outage. Fix the widget
    hostname in the dashboard, or fix `NEXT_PUBLIC_SITE_URL` and rebuild.
 
 **Unverified until a real deploy**: the widget on the real hostname, a `verified` siteverify with the
-real keys, the `hostname`/`action` values Cloudflare returns, and the exact real-key formats. CI only
+real keys, the `hostname`/`action` values Cloudflare returns, and the exact real-key formats. Continuous integration only
 exercises Cloudflare's always-pass test keys (which skip the hostname/action check). The Turnstile
-facts ADR-035 relies on are listed there as UNVERIFIED; confirm them against Cloudflare's current
+facts Architecture Decision Record 035 relies on are listed there as UNVERIFIED; confirm them against Cloudflare's current
 documentation before launch.
 
 ### Rotating the Turnstile keys
@@ -511,7 +511,7 @@ documentation before launch.
   didn't complete" or "We can't run our security check right now") until both match.
 - If the secret key is exposed, rotate it in the Turnstile dashboard and follow the secret steps above.
 
-### When Turnstile is unreachable or a token is bad (strict mode, ADR-036)
+### When Turnstile is unreachable or a token is bad (strict mode, Architecture Decision Record 036)
 
 A verified token is **required**. There is no degraded path: the owner decided on 2026-10-11 that an
 order or lookup without a verified token must be refused. Consequences you should expect:
@@ -536,7 +536,7 @@ Reasons as they appear in `[turnstile] <outcome> { reason: ... }`:
 | unavailable `network`, `timeout`, `http-status`, `bad-response` | Cloudflare unreachable, slow (over 3 s) or answered without a definite verdict | warning |
 | unavailable `service-error` | Cloudflare returned an error code; **error** level when it refused our secret | warning / **error** |
 | unavailable `busy` | more than 50 verifications already in flight in this process; the request skips siteverify | warning |
-| unavailable `not-configured`, `test-key-not-allowed` | `TURNSTILE_SECRET_KEY` missing, `NEXT_PUBLIC_SITE_URL` unusable, or a test key without the dev/CI allow flag; production prevents these with compose `:?` and `check-env` | **error** |
+| unavailable `not-configured`, `test-key-not-allowed` | `TURNSTILE_SECRET_KEY` missing, `NEXT_PUBLIC_SITE_URL` unusable, or a test key without the development and continuous integration allow flag; production prevents these with compose `:?` and `check-env` | **error** |
 
 Watch the app logs for `[turnstile]` and `[order-guard]` lines after launch: any error-level line is a
 configuration problem to fix at once (customers are being refused); many `network`, `timeout` or
@@ -556,9 +556,9 @@ Cloudflare Turnstile (owner).
 
 Payload's built-in create-first-user flow (`POST /api/users/first-register` and the `/admin` create-first-user
 screen) makes **whoever reaches the site first** an admin with access to all order data. It is **closed**
-(ADR-036): `collections/Users.ts` refuses an unauthenticated user creation with 403 unless it comes from the
+(Architecture Decision Record 036): `collections/Users.ts` refuses an unauthenticated user creation with 403 unless it comes from the
 server-side bootstrap script or the process was started with `PAYLOAD_ALLOW_FIRST_REGISTER=1` (development
-and CI; `check-env` rejects it in production and the production compose never passes it).
+and continuous integration; `check-env` rejects it in production and the production compose never passes it).
 
 The production admin is created by the migrate step (`scripts/bootstrap-admin.ts`, the last step of
 `npm run deploy:migrate`), from `ADMIN_BOOTSTRAP_USERNAME` and `ADMIN_BOOTSTRAP_PASSWORD` in the env file:
@@ -582,8 +582,8 @@ real database.
 ## Rate limits in the real world
 
 Pakistani mobile carriers put many subscribers behind one public IPv4 address (carrier-grade NAT), so
-one IP can be many real customers. Since `M52b` ([ADR-035](./DECISIONS.md), amended by
-[ADR-036](./DECISIONS.md)) an order or lookup needs a **verified Turnstile token**, and the limits count
+one IP can be many real customers. Since Milestone 52b ([Architecture Decision Record 035](./DECISIONS.md), amended by
+[Architecture Decision Record 036](./DECISIONS.md)) an order or lookup needs a **verified Turnstile token**, and the limits count
 verified customers separately instead of by IP alone. All limits are code constants in `lib/order-guard.ts`
 (changing them is a code change, not configuration):
 
@@ -609,9 +609,9 @@ Things to know before launch:
 - **Nobody can lock a customer out of their own phone number from another connection**: the per-phone
   limits are keyed by phone *and IP*. An attacker with solved challenges and rotating IPs can still place
   fake orders on a victim's number; the cost per order is a solved token, and the alert above and `/admin`
-  are the detection. The real remedy is proof of phone ownership (SMS OTP, deferred by ADR-015).
+  are the detection. The real remedy is proof of phone ownership (SMS OTP, deferred by Architecture Decision Record 015).
 - **Limiter state is in-process and resets on restart** (every deploy or container restart starts all
-  counters at zero). Acceptable for the single instance of ADR-015; a second app instance would need a
+  counters at zero). Acceptable for the single instance of Architecture Decision Record 015; a second app instance would need a
   shared store. The limiters are fixed-size and non-evicting: a flood of distinct keys can only make the
   limits stricter for some keys (a hash collision), never reset a counter.
 - IPv6 clients are limited per `/64`, not per address.
@@ -644,8 +644,8 @@ cluster (there are none in this stack); **schema changes only ever happen throug
 
 ## Image optimisation
 
-`M51` ([ADR-034](./DECISIONS.md)) enabled Next.js's built-in image optimizer. **It is switched off again**
-(ADR-036) because `next@15.4.11` had critical advisories in the Image Optimization API. `M52c` (ADR-037)
+Milestone 51 ([Architecture Decision Record 034](./DECISIONS.md)) enabled Next.js's built-in image optimizer. **It is switched off again**
+(Architecture Decision Record 036) because `next@15.4.11` had critical advisories in the Image Optimization API. Milestone 52c (Architecture Decision Record 037)
 upgraded to Next 16.3.8, which has none; re-enabling the optimizer is now an owner decision (performance
 versus a public CPU-bound endpoint), not a security necessity. `next.config.mjs` sets `images.unoptimized: true` (product images are
 served as uploaded, from `/api/media/file/...`) and sends every `/_next/image` request to a 404. Uploads
@@ -655,18 +655,18 @@ are restricted to JPEG, PNG, WebP and GIF (no AVIF, SVG or HEIC).
   hundred KB (WebP or JPEG) before uploading: the file the visitor downloads is the file you upload.
   Do not upload SVG or AVIF (refused) and do not put private files in Media (it is public-read).
 - **Revisit** with the Next.js upgrade: the optimizer, its cache sizing and the Cloudflare cache rules in
-  ADR-034 apply again only if it is re-enabled.
+  Architecture Decision Record 034 apply again only if it is re-enabled.
 
 ## Read-only containers
 
-`app` and `migrate` run with `read_only: true` (ADR-036). Writable places: `/tmp` (tmpfs), `/app/.next/cache`
+`app` and `migrate` run with `read_only: true` (Architecture Decision Record 036). Writable places: `/tmp` (tmpfs), `/app/.next/cache`
 (tmpfs, `app` only, 128 MB, empty after each restart) and the `app-media` volume at `/app/media`. If a
 future change writes anywhere else you will see `EROFS` errors in `$PROD logs app`; fix the code or add a
-tmpfs, do not remove `read_only`. `postgres` and `cloudflared` are not read-only (see ADR-036).
+tmpfs, do not remove `read_only`. `postgres` and `cloudflared` are not read-only (see Architecture Decision Record 036).
 
 ## Rollback
 
-Not run on a real stack: this section is written from the compose file, the Dockerfile and ADR-032, and
+Not run on a real stack: this section is written from the compose file, the Dockerfile and Architecture Decision Record 032, and
 the failure cases marked "Verified" in [Deploying a release](#deploying-a-release). Rehearse it once on a
 scratch machine before relying on it. **Never** use `down -v`, `migrate:down`, `migrate:reset` or
 `migrate:fresh` on production (see the warning at the top of this file): they destroy `orders`.
@@ -690,7 +690,7 @@ scratch machine before relying on it. **Never** use `down -v`, `migrate:down`, `
    - A site-wide misconfiguration of a **build-time** value (`NEXT_PUBLIC_SITE_URL`,
      `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) is fixed in the env file and a rebuild, not by rolling back code.
 3. **The release applied a schema migration and the old code cannot work with it.** Migrations are
-   **forward-only** ([ADR-032](./DECISIONS.md)); nothing here runs a `down`. Redeploying old code against a
+   **forward-only** ([Architecture Decision Record 032](./DECISIONS.md)); nothing here runs a `down`. Redeploying old code against a
    newer schema is safe only if the migration was purely additive (a new nullable column or table); whether
    the older `migrate` step tolerates migration rows it has no file for is **unverified**. Otherwise the
    rollback is to **restore the pre-deploy backup** taken in checklist step 2, following the exact steps in
@@ -704,7 +704,7 @@ scratch machine before relying on it. **Never** use `down -v`, `migrate:down`, `
 ## Release
 
 The version tag is cut **by the owner**, after every box in the [Launch checklist](#launch-checklist) is ticked
-(this milestone, `M59`, does not create a tag). On the release commit, as an owner command (shown, not run):
+(this milestone, Milestone 59, does not create a tag). On the release commit, as an owner command (shown, not run):
 
 ```sh
 git tag -a v1.0.0 -m "Mirza v1.0.0: first production release"
@@ -712,77 +712,77 @@ git push origin v1.0.0
 ```
 
 At that time add one entry at the top of `docs/CHANGELOG.md` under a `## [1.0.0] - <date>` heading: the date,
-the commit the tag points at, which launch checklist steps were verified on the real VPS and which were
+the commit the tag points at, which launch checklist steps were verified on the real virtual private server and which were
 accepted by the owner instead (the Next.js blocker in particular), and the `npm audit` totals on that
 commit. Keep that commit and tag as the "previous release" that [Rollback](#rollback) redeploys.
 
 ## Launch decisions
 
-Owner decisions `M59` needs. The recommended default is what the runbook assumes; nothing is decided until
+Owner decisions Milestone 59 needs. The recommended default is what the runbook assumes; nothing is decided until
 the owner says so. DEPLOYMENT.md line numbers are as of commit `1afc575`, before this section was added; use
 the section names to find them in the current file.
 
 | Decision | Recommended default | Source |
 |---|---|---|
 | Hostname (`NEXT_PUBLIC_SITE_URL`) | The real `https://` origin, decided before the first build. It is **build-time**, so a change needs a rebuild. Replace the sample `shop.example.com`, which `check-env` does not reject; the Turnstile widget must be for exactly this host (`www.` versus bare). | `docs/DEPLOYMENT.md` 265, 286-290, 379-383 |
-| Turnstile keys | Managed widget for the production hostname; the site key is build-time, the secret key goes in the env file; never test keys. | `docs/DEPLOYMENT.md` 267-269, 379-388; ADR-035/036 |
+| Turnstile keys | Managed widget for the production hostname; the site key is build-time, the secret key goes in the env file; never test keys. | `docs/DEPLOYMENT.md` 267-269, 379-388; Architecture Decision Records 035 and 036 |
 | Cloudflare WAF rule | `POST` to `/cart` and `/orders`. Paid plan: about 30 requests/min/IP, Block or Managed Challenge. Free plan (reported, unverified): about 10 POSTs per 10 s per IP, action Block. | `docs/DEPLOYMENT.md` 586 |
 | Tunnel token and hostname order | Create the tunnel and put `TUNNEL_TOKEN` in the env file; attach the public hostname only after the gated deploy succeeds. | `docs/DEPLOYMENT.md` 15-20, 328-333 |
 | Env file location | Outside the checkout, mode 600, passed with `--env-file`; an off-host copy in a password manager. | `docs/DEPLOYMENT.md` 247-254 |
 | Bootstrap admin removal | Remove both lines after the first successful deploy and re-run the gate. | `docs/DEPLOYMENT.md` 476-477 |
-| Backup schedule, encryption, off-host | Daily while orders flow and before every schema-changing deploy; `BACKUP_PASSPHRASE_FILE` set; `.gpg` copies kept off the VPS; scheduled with `scripts/backup-cron.sh` ("Scheduled backups", `M99`), first run on the VPS still to be observed. | `docs/DEPLOYMENT.md` 172-187 |
+| Backup schedule, encryption, off-host | Daily while orders flow and before every schema-changing deploy; `BACKUP_PASSPHRASE_FILE` set; `.gpg` copies kept off the virtual private server; scheduled with `scripts/backup-cron.sh` ("Scheduled backups", Milestone 99), first run on the virtual private server still to be observed. | `docs/DEPLOYMENT.md` 172-187 |
 | Restore drill | Run `backup-verify.sh` once and rehearse the manual restore once on a scratch machine before launch. | `docs/DEPLOYMENT.md` 189-199, 232-233 |
 | Uptime monitor | External monitor on `https://<host>/api/health` (200 expected). | `docs/DEPLOYMENT.md` 587; `docs/DECISIONS.md` 1241 |
-| Email (order notifications) | **Decided (owner, 2026-10-29, `M99`): launch without any order email for now.** Customers see the order number on the confirmation page and check it at `/orders`; the admin sees new orders in `/admin`. ADR-015 names Resend, but no application code uses it; adding order email later needs its own milestone and ADR. | `docs/DECISIONS.md` 319, 328; `docs/PROJECT_SPEC.md` 71 |
+| Email (order notifications) | **Decided (owner, 2026-10-29, Milestone 99): launch without any order email for now.** Customers see the order number on the confirmation page and check it at `/orders`; the admin sees new orders in `/admin`. Architecture Decision Record 015 names Resend, but no application code uses it; adding order email later needs its own milestone and Architecture Decision Record. | `docs/DECISIONS.md` 319, 328; `docs/PROJECT_SPEC.md` 71 |
 | Image optimizer | Stays off (`images.unoptimized: true`, `/_next/image` returns 404). Re-enabling is a later owner decision. | `docs/DEPLOYMENT.md` 552-557; `next.config.mjs` 30-39 |
 | Memory limits; `read_only` for `cloudflared` and `postgres` | Open: the owner accepts the risk for launch or defers it to a hardening milestone. | `docs/DECISIONS.md` 1241; `docs/CHANGELOG.md` 42, 81; `docs/DEPLOYMENT.md` 570 |
-| GitHub Actions pinned by SHA | Open: actions are pinned by tag, not SHA (CHANGELOG `M52` review). Owner accepts or defers. | `docs/CHANGELOG.md` 81 |
-| `npm audit` | Re-run on the release commit; launch only after `M79` is merged (ADR-040 is Accepted, 2026-10-24) (or the owner explicitly accepts the open advisories). | `docs/DEPLOYMENT.md` 576-578 (item 1, rewritten by `M59`); `docs/MIGRATION_PLAN.md` 1380-1387 |
+| GitHub Actions pinned by SHA | Open: actions are pinned by tag, not SHA (CHANGELOG Milestone 52 review). Owner accepts or defers. | `docs/CHANGELOG.md` 81 |
+| `npm audit` | Re-run on the release commit; launch only after Milestone 79 is merged (Architecture Decision Record 040 is Accepted, 2026-10-24) (or the owner explicitly accepts the open advisories). | `docs/DEPLOYMENT.md` 576-578 (item 1, rewritten by Milestone 59); `docs/MIGRATION_PLAN.md` 1380-1387 |
 
 ## Launch blockers
 
 The stack is **not cleared for launch** until every item is done or explicitly accepted by the owner:
 
-1. **CLOSED IN CODE, DEPLOY AND RE-AUDIT PENDING: Next.js advisories published after `M52c`.** `M52c` (ADR-037) upgraded to
+1. **CLOSED IN CODE, DEPLOY AND RE-AUDIT PENDING: Next.js advisories published after Milestone 52c.** Milestone 52c (Architecture Decision Record 037) upgraded to
    `next@16.3.8`, which was clean when it was done. On 2026-10-24 `npm audit` reported it as **critical**
    (vulnerable range `16.0.0 - 16.4.0`): GHSA-2464-fhr4-w9xw (RCE in the Image Optimization API; also
    mitigated by configuration, see [Image optimisation](#image-optimisation)), GHSA-p3m5-59mp-jv5r (denial of
    service through App Router Server Actions, reachable without logging in) and GHSA-673q-mjm6-r5xr (RCE in
-   `use cache`; no matching code in this repository). `M79` (merged) sets `next` and
+   `use cache`; no matching code in this repository). Milestone 79 (merged) sets `next` and
    `eslint-config-next` to 16.4.2 and the `undici` override to 7.30.1. Verified: `npm audit`
    went from **18 vulnerabilities (1 low, 11 moderate, 4 high, 2 critical)** to **11 (1 low, 6 moderate,
    3 high, 1 critical)** and lists neither `next` nor `undici`. The one remaining critical was `dompurify`;
-   `M97` (ADR-045) pins it to 3.4.17 and `npm audit --omit=dev` now reports 15 (4 low, 5 moderate, 6 high,
+   Milestone 97 (Architecture Decision Record 045) pins it to 3.4.17 and `npm audit --omit=dev` now reports 15 (4 low, 5 moderate, 6 high,
    0 critical), all in Payload's own packages, waiting for a Payload release (do not apply the
    `npm audit fix --force` downgrade of `@payloadcms/richtext-lexical` or `db-postgres`). Still open: it
    must be deployed. Re-run `npm audit` before launch and after every
    dependency change.
-   **`M99` audit (2026-10-29):** `npm audit --omit=dev` on `main` at `1394bd0` (lockfile unchanged since; same
-   on `9f8a267`) reports **15: 4 low, 5 moderate, 6 high, 0 critical**, the same set ADR-045 accepted:
+   **Milestone 99 audit (2026-10-29):** `npm audit --omit=dev` on `main` at `1394bd0` (lockfile unchanged since; same
+   on `9f8a267`) reports **15: 4 low, 5 moderate, 6 high, 0 critical**, the same set Architecture Decision Record 045 accepted:
    `happy-dom` (via `@lexical/headless`) and `graphql-scalars` (pinned at 1.22.2 by `@payloadcms/graphql`;
    the patched 2.0.x is a major bump, so it stays accepted), `esbuild` (via `drizzle-kit`) and `deepmerge`
    (via `payload`), each also reported on the Payload packages that carry it. npm's suggested fixes are the
    pre-v3 `@payloadcms/richtext-lexical@0.1.9` / `@payloadcms/db-postgres@0.1.9` downgrades: do not apply.
    Still owner-only: pick the release commit, re-run this audit on it if any dependency changed, and deploy it.
 2. **Real Cloudflare checks with REAL keys** (not yet observed): with real Turnstile keys on the real
-   hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (CI already
+   hostname, a verified order and a lookup produce no `[turnstile]` or `[order-guard]` lines. (continuous integration already
    passes the `turnstile-contract` job and a golden path through the real widget and siteverify, but with
    Cloudflare's public TEST keys, which skip the hostname and action checks.)
 3. **First deploy checks**: the migrate step succeeded, `/admin` login works with the bootstrap credentials,
    the two bootstrap variables are removed from the env file, `cloudflared` connects with the real tunnel
-   token, and the CI `prod-stack` job stays green (it passed on the commit this section was written against).
+   token, and the continuous integration `prod-stack` job stays green (it passed on the commit this section was written against).
 4. **A Cloudflare WAF rate-limiting rule** on `POST` to `/cart` and `/orders` (on a paid plan, for example 30 requests per minute per IP, action Block or Managed Challenge; the Free plan is reported, unverified, to allow one rule with a 10-second counting window, a 10-second block and the Block action only, so use about 10 POSTs per 10 seconds per IP there). It is the defence against a distributed flood of junk tokens that would otherwise hold the 50 verification slots and make the strict policy refuse every customer; the application's per-client limits stop one address or one IPv6 /48, not a botnet. Not verifiable from this repository.
-5. **Backups** (`M54`): the scripts and the procedure exist; still open: a first real backup and a `backup-verify.sh` run on the real VPS, copies kept off the host, and a schedule. **Health checks** (`M53`, implemented): point an external uptime monitor at `https://<host>/api/health` (expects 200); `docker compose ps` should show `app` as `healthy`.
-6. **A Cloudflare WAF rate-limiting rule on admin sign-in** (`M114`, ADR-051): `POST` to `/api/users/login`, `/api/users/forgot-password`, `/api/users/unlock` and `/api/graphql`. Admins now sign in with a username, which is easier to guess than a private email; Payload's per-account lockout (5 failed attempts, 10 minutes, its defaults) is the only other limit, so without a per-IP rule anyone who guesses a username can keep that admin locked out and can confirm the username exists (a locked account answers differently). Also give backfilled admins (`name-1`) a less obvious username in `/admin`. Not verifiable from this repository.
+5. **Backups** (Milestone 54): the scripts and the procedure exist; still open: a first real backup and a `backup-verify.sh` run on the real virtual private server, copies kept off the host, and a schedule. **Health checks** (Milestone 53, implemented): point an external uptime monitor at `https://<host>/api/health` (expects 200); `docker compose ps` should show `app` as `healthy`.
+6. **A Cloudflare WAF rate-limiting rule on admin sign-in** (Milestone 114, Architecture Decision Record 051): `POST` to `/api/users/login`, `/api/users/forgot-password`, `/api/users/unlock` and `/api/graphql`. Admins now sign in with a username, which is easier to guess than a private email; Payload's per-account lockout (5 failed attempts, 10 minutes, its defaults) is the only other limit, so without a per-IP rule anyone who guesses a username can keep that admin locked out and can confirm the username exists (a locked account answers differently). Also give backfilled admins (`name-1`) a less obvious username in `/admin`. Not verifiable from this repository.
 
 ## Not covered yet
 
-- **This runbook has not been run on a clean VPS.** It was written and checked against the repository
-  (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a VPS
+- **This runbook has not been run on a clean virtual private server.** It was written and checked against the repository
+  (scripts, compose file, env contract, `package.json`), not executed; every step that needs Docker, a virtual private server
   or Cloudflare is unverified until the owner follows it.
 - The release tag `v1.0.0` is not cut (owner, after the [Launch checklist](#launch-checklist)).
-- The scheduled backup's first run on the real VPS (`scripts/backup-cron.sh` exists, `M99`), an off-host
+- The scheduled backup's first run on the real virtual private server (`scripts/backup-cron.sh` exists, Milestone 99), an off-host
   copy, a restore drill on a real stack and an external uptime monitor.
 - Memory limits, and `read_only` for `cloudflared` and `postgres` (not testable here).
-- Order notification email (ADR-015 names Resend; no code uses it). The owner decided on 2026-10-29 to launch without it (`M99`).
+- Order notification email (Architecture Decision Record 015 names Resend; no code uses it). The owner decided on 2026-10-29 to launch without it (Milestone 99).
 - GitHub Actions are pinned by tag, not by SHA.

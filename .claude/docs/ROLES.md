@@ -5,14 +5,14 @@ separate agents are folded in as marked.
 
 | Role | Owns | Absorbs | May write | Never writes |
 |---|---|---|---|---|
-| **Engineering Manager** | Orchestration, milestone planning, coordination, gates | *Milestone Planner*, *Docs Steward* | `docs/TASKS.md`, `docs/CHANGELOG.md`, PR bodies | Application code, `docs/DECISIONS.md` |
-| **Product Manager** | Requirements, acceptance criteria, scope verdicts | — | Acceptance-criteria notes in `docs/` | Application code, ADRs |
-| **Software Architect** | Architecture integrity, ADR authorship | *Constraint Reviewer* | `docs/DECISIONS.md`, `docs/ARCHITECTURE.md` | Application code |
-| **UI/UX Designer** | UX, mobile-first, accessibility, copy honesty | — | `components/`, route files — **only when assigned implementation** | Collections, `payload.config.ts` |
+| **Engineering Manager** | Orchestration, milestone planning, coordination, gates | *Milestone Planner*, *Docs Steward* | `docs/TASKS.md`, `docs/CHANGELOG.md`, pull request bodies | Application code, `docs/DECISIONS.md` |
+| **Product Manager** | Requirements, acceptance criteria, scope verdicts | — | Acceptance-criteria notes in `docs/` | Application code, Architecture Decision Records |
+| **Software Architect** | Architecture integrity, Architecture Decision Record authorship | *Constraint Reviewer* | `docs/DECISIONS.md`, `docs/ARCHITECTURE.md` | Application code |
+| **User Interface and User Experience Designer** | User experience, mobile-first, accessibility, copy honesty | — | `components/`, route files — **only when assigned implementation** | Collections, `payload.config.ts` |
 | **Full-Stack Engineer** | Implementation | *Payload Engineer*, *Storefront Engineer* | `app/`, `components/`, `lib/`, `collections/`, `globals/`, `scripts/`, `payload.config.ts` | `docs/DECISIONS.md` |
-| **QA Engineer** | Verification, gate execution | *Verifier* | Test files only | The implementation it judges |
+| **Quality Assurance Engineer** | Verification, gate execution | *Verifier* | Test files only | The implementation it judges |
 | **Security / Performance Engineer** | Security and performance review | — | Nothing — review-only by design | Anything |
-| **DevOps / Release Engineer** | Git, branches, PRs, CI, Docker, env, migrations | — | `.github/`, `Dockerfile`, `docker-compose.yml`, `.env.example`, CI config | Application code |
+| **DevOps / Release Engineer** | Git, branches, pull requests, continuous integration, Docker, env, migrations | — | `.github/`, `Dockerfile`, `docker-compose.yml`, `.env.example`, continuous integration config | Application code |
 
 ## Why documentation ownership sits with the Engineering Manager
 
@@ -22,19 +22,19 @@ all status writes through the single orchestrator keeps that from happening — 
 the job a separate Docs Steward would otherwise have done.
 
 `docs/DECISIONS.md` is the deliberate exception: only the Software Architect writes
-ADRs, because the decision record must have one author and a stable numbering
+Architecture Decision Records, because the decision record must have one author and a stable numbering
 sequence.
 
 ## Separation rules that must not be collapsed
 
-1. **The implementer never verifies its own work.** Full-Stack and QA stay separate.
+1. **The implementer never verifies its own work.** Full-Stack and quality assurance stay separate.
 2. **The reviewer never patches what it reviews.** Security/Performance has no write
    access at all — it reports, and the Full-Stack Engineer fixes.
 3. **The orchestrator never implements.** The Engineering Manager coordinates; if it
    writes application code, no one is left holding scope.
-4. **Only the Architect writes ADRs.** One author, one numbering sequence.
+4. **Only the Architect writes Architecture Decision Records.** One author, one numbering sequence.
 5. **Only a human approves and merges, unless a standing owner delegation covers it.** The
-   delegations, what each covers and the absolute stops that none of them lifts (`M109`,
+   delegations, what each covers and the absolute stops that none of them lifts (Milestone 109,
    production, paid actions, force push, secrets, auth/payment/order-total/rate-limit logic)
    are listed in "Standing owner delegations" in [GATES.md](./GATES.md). Under a delegation the
    Engineering Manager makes the final technical call after the specialists' reviews; rules 1-4

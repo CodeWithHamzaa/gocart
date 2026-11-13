@@ -11,7 +11,7 @@ If any test is uncertain, run sequentially.
    `Dependencies` line, directly or transitively.
 2. **Disjoint file ownership** — the two `Files` lines share no file. Also check the
    *actual* files each will touch, not just the planned list; excursions happen.
-3. **No architectural overlap** — neither needs an ADR that would constrain the other.
+3. **No architectural overlap** — neither needs an Architecture Decision Record that would constrain the other.
 4. **No schema overlap** — no two concurrent changes to `collections/`, `globals/`, or
    `payload.config.ts`. Schema changes are effectively serialized: they share one
    database and one migration history.
@@ -25,10 +25,10 @@ If any test is uncertain, run sequentially.
 
 | Pair | Verdict | Why |
 |---|---|---|
-| `M29` + `M30` | ✅ Safe | `M29`: `shop/page.jsx`, `lib/payload/products.ts`. `M30`: `lib/features/cart/cartSlice.js`. Disjoint; neither depends on the other |
-| `M33` + `M33a` | ❌ Sequential | `M33a` depends on `M33` |
+| Milestone 29 + Milestone 30 | ✅ Safe | Milestone 29: `shop/page.jsx`, `lib/payload/products.ts`. Milestone 30: `lib/features/cart/cartSlice.js`. Disjoint; neither depends on the other |
+| Milestone 33 + Milestone 33a | ❌ Sequential | Milestone 33a depends on Milestone 33 |
 | Two collection changes | ❌ Sequential | Shared schema and migration history |
-| `M40`–`M43` (SEO group) | ⚠️ Case by case | Same route files repeatedly; check the actual file lists |
+| Milestones 40 to 43 (search engine optimization group) | ⚠️ Case by case | Same route files repeatedly; check the actual file lists |
 | Anything + a milestone that reseeds the database | ❌ Sequential | Shared runtime state |
 
 ## Default
@@ -36,9 +36,9 @@ If any test is uncertain, run sequentially.
 **Sequential.** This project has 68 milestone entries and a single reviewer. Parallel
 execution is an optimization to be justified per pair, not a normal operating mode.
 
-`M28` is the standing argument for caution: a bug went live at `M25` and stayed
-invisible until `M28`, because each milestone verified only its own surface. There is
-still no automated regression net (no tests, no CI). Parallel work without one
+Milestone 28 is the standing argument for caution: a bug went live at Milestone 25 and stayed
+invisible until Milestone 28, because each milestone verified only its own surface. There is
+still no automated regression net (no tests, no continuous integration). Parallel work without one
 compounds that failure mode rather than exposing it.
 
 ## Before starting a parallel pair

@@ -1,10 +1,10 @@
-# Photo brief, sourcing plan and licence status (M104), 2026-11-01
+# Photo brief, sourcing plan and licence status (Milestone 104), 2026-11-01
 
-**Update 2026-11-02: all 61 slots are now sourced (the 4 products left open on 2026-11-01 were sourced after the owner accepted visible brand names in demo photos). Earlier text on 2026-11-01 (second session, `M104` sourcing done with gaps): 53 of 61 slots were sourced from Unsplash, licence-recorded, processed and integrated locally; 4 products (8 slots) found no acceptable photo. Results, rejections, limits and the full inventory are in [PHOTO_INVENTORY.md](./PHOTO_INVENTORY.md); provenance is in [MANIFEST.csv](./MANIFEST.csv). The text below is the original plan and first-session findings and is kept as written (section 5 is superseded by section 1 of the inventory: `images.unsplash.com` became reachable, the Unsplash and Pexels pages stay behind browser checks that are not bypassed).**
+**Update 2026-11-02: all 61 slots are now sourced (the 4 products left open on 2026-11-01 were sourced after the owner accepted visible brand names in demo photos). Earlier text on 2026-11-01 (second session, Milestone 104 sourcing done with gaps): 53 of 61 slots were sourced from Unsplash, licence-recorded, processed and integrated locally; 4 products (8 slots) found no acceptable photo. Results, rejections, limits and the full inventory are in [PHOTO_INVENTORY.md](./PHOTO_INVENTORY.md); provenance is in [MANIFEST.csv](./MANIFEST.csv). The text below is the original plan and first-session findings and is kept as written (section 5 is superseded by section 1 of the inventory: `images.unsplash.com` became reachable, the Unsplash and Pexels pages stay behind browser checks that are not bypassed).**
 
 **Original status (first session): brief and sourcing plan complete. No photograph has been selected, downloaded or licence-verified**, because Unsplash and Pexels are blocked by the environment's network policy (section 5) and `demo-assets/_inbox/` is empty. Every manifest row is therefore `status=needed`; no source URL, author or licence field is filled, because none could be checked. Nothing was invented to fill them.
 
-Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [MANIFEST.csv](./MANIFEST.csv) (61 rows), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). ADR-049 remains Proposed. `M105` and later are not started.
+Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [MANIFEST.csv](./MANIFEST.csv) (61 rows), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). Architecture Decision Record 049 remains Proposed. Milestone 105 and later are not started.
 
 ## 1. Visual direction (applies to every photo)
 
@@ -68,7 +68,7 @@ Category image: 800x600 (4:3), subject centred, calm uncluttered scene in the sa
 | 9 | Skincare | skincare tube and leaf, centred |
 | 10 | Fragrances | perfume bottles, centred |
 
-Other slots: **default share image** (`A-O01`, 1200x630 JPEG, clean lifestyle scene with room for a title; needs the `M107` code change, optional until then) and **two optional promo images** (`A-R01`, `A-R02`, 400x400; no promo cards exist in the seeds). The hero stays product-driven (D2), so it needs no separate image.
+Other slots: **default share image** (`A-O01`, 1200x630 JPEG, clean lifestyle scene with room for a title; needs the Milestone 107 code change, optional until then) and **two optional promo images** (`A-R01`, `A-R02`, 400x400; no promo cards exist in the seeds). The hero stays product-driven (D2), so it needs no separate image.
 
 ## 4. Licence verification protocol
 
@@ -87,11 +87,11 @@ Automation caution (unverified): both sites' terms and APIs may restrict bulk sc
 
 ## 5. Network restriction: findings and the exact setting to change
 
-Tested again 2026-11-01 (during `M104`): `images.unsplash.com`, `unsplash.com`, `api.unsplash.com`, `www.pexels.com`, `images.pexels.com` all fail at `CONNECT` with **HTTP 403 Forbidden** from the egress proxy; the proxy status records each as `connect_rejected` ("policy denial or upstream failure"). This is the cloud environment's **network access policy**, not a certificate or tooling fault. It is not bypassed and nothing was retried beyond the check.
+Tested again 2026-11-01 (during Milestone 104): `images.unsplash.com`, `unsplash.com`, `api.unsplash.com`, `www.pexels.com`, `images.pexels.com` all fail at `CONNECT` with **HTTP 403 Forbidden** from the egress proxy; the proxy status records each as `connect_rejected` ("policy denial or upstream failure"). This is the cloud environment's **network access policy**, not a certificate or tooling fault. It is not bypassed and nothing was retried beyond the check.
 
 What you need to change (only you can; I cannot):
 
-1. Open this session's **cloud environment settings**: the environment menu in the session title bar, then **Edit**.
+1. Open the **cloud environment settings**: the environment menu in the title bar, then **Edit**.
 2. Find **Network access**.
 3. Either raise the level to a broader setting that allows general internet access, **or** keep a restricted level and add these entries under **Allowed domains**: `unsplash.com`, `images.unsplash.com`, `pexels.com`, `www.pexels.com`, `images.pexels.com`. (`api.unsplash.com` only if you want API use.) Leave **Allow package managers** ticked so npm and git keep working. Allowed domains appears under the **Limited** level; an older app version may show it under **Custom** with a box to include the default package-manager list.
 4. Save, then start a new session or ask me to re-test (a change may only apply to new sessions; unverified).
@@ -117,10 +117,10 @@ Recommendation: **A** (with the policy change in section 5 as the alternative th
 
 All 61 slots are unfilled: 48 product photos, 10 category images, 1 share image, 2 optional promo images. Reason: no source access and nothing in `_inbox/`. Expected hardest to match (flagged now so D3 decisions are early): Volt Compact / Volt Max Power Banks (two distinct logo-free sizes), Nonstick Frying Pan, Gentle Foaming Face Wash and Aloe Gel Cream (unbranded tubes), Amber Oud (bottle without a readable label), Pulse and Orbit smart watches (no recognisable brand screens), and two visibly different pairs per category (headphones, speakers, watches).
 
-## 8. Recommended next steps for M105 (not started)
+## 8. Recommended next steps for Milestone 105 (not started)
 
-1. First unblock sourcing: the network setting in section 5, or option A in section 6. `M105` can be built and tested with a few approved sample photos; it does not need all 61.
+1. First unblock sourcing: the network setting in section 5, or option A in section 6. Milestone 105 can be built and tested with a few approved sample photos; it does not need all 61.
 2. Owner approves at least one sample per type: a product (square), a category (4:3) and the share image.
-3. `M105` then: add the processing script and npm entry (existing `sharp`, no new dependency); archive originals to `demo-assets/_archive/originals/` outside Git (D4) with a recommended second backup; produce WebP to the budgets (product 1000x1000 <= 120 KB, category 800x600 <= 70 KB, promo 400x400 <= 40 KB, share image 1200x630 JPEG <= 200 KB); strip metadata; validate and fill checksums, dimensions and bytes in the manifest.
-4. Fix the mismatch found in `M103`: the seed's override path caps at 1600 px with no byte limit and does not square-crop, so the pipeline's output must be what the seed ingests (settled in `M105`/`M106`, no seed change before then).
-5. Decide in advance what happens to the 4 blank CI-seed images (`M106`).
+3. Milestone 105 then: add the processing script and npm entry (existing `sharp`, no new dependency); archive originals to `demo-assets/_archive/originals/` outside Git (D4) with a recommended second backup; produce WebP to the budgets (product 1000x1000 <= 120 KB, category 800x600 <= 70 KB, promo 400x400 <= 40 KB, share image 1200x630 JPEG <= 200 KB); strip metadata; validate and fill checksums, dimensions and bytes in the manifest.
+4. Fix the mismatch found in Milestone 103: the seed's override path caps at 1600 px with no byte limit and does not square-crop, so the pipeline's output must be what the seed ingests (settled in Milestones 105 and 106, no seed change before then).
+5. Decide in advance what happens to the 4 blank continuous-integration-seed images (Milestone 106).

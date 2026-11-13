@@ -4,15 +4,15 @@ Read-only analysis of the codebase as it exists today, prepared to inform the si
 
 ## Executive summary
 
-This is a **frontend-only UI prototype**, not a working ecommerce backend, despite looking feature-complete at a glance:
+This is a **frontend-only user interface prototype**, not a working ecommerce backend, despite looking feature-complete at a glance:
 
 - **No route in this repo ever reads or writes a real database or external API.** Every "fetch" function (`fetchStores`, `fetchProducts`, `fetchDashboardData`, `fetchOrders`, `fetchProduct`, …) just assigns a hardcoded `*DummyData` object from `assets/assets.js` into `useState`.
 - **Every write/mutation handler is an empty stub.** `handleApprove`, `toggleIsActive`, `handleAddCoupon`, `deleteCoupon`, `onSubmitHandler` (add product), `toggleStock`, `updateOrderStatus`, the store-registration submit handler, and "Place Order" (`OrderSummary.jsx`) all either do nothing or just `router.push()` to another page. No order, product, coupon, or store is ever actually created, changed, or deleted.
 - **There is no authentication, and the admin/vendor "auth checks" are hardcoded to pass.** `components/admin/AdminLayout.jsx` sets `isAdmin` to `true` unconditionally; `components/store/StoreLayout.jsx` sets `isSeller` to `true` unconditionally. `/admin` and `/store` are wide open to anyone today.
 - **The Prisma/PostgreSQL schema (`prisma/schema.prisma`) is a design artifact, not a live integration.** `@prisma/client` and `prisma` are not in `package.json`; nothing in the app imports a Prisma client.
-- **Neither Stripe nor Sanity is actually integrated.** Stripe appears only as a UI radio button label and a schema enum value — no Stripe SDK, API key, or checkout call exists anywhere. Sanity does not appear anywhere in the repo.
+- **Neither Stripe nor Sanity is actually integrated.** Stripe appears only as a user interface radio button label and a schema enum value — no Stripe SDK, API key, or checkout call exists anywhere. Sanity does not appear anywhere in the repo.
 - **There are no API routes and no Server Actions.** `app/api/` does not exist; no file anywhere contains a `'use server'` directive.
-- This confirms and extends what [ARCHITECTURE.md](./ARCHITECTURE.md) already noted: the target platform (Payload CMS v3, PostgreSQL, guest COD checkout, admin-only auth) is being built essentially from scratch behind this UI shell, not by wiring up an existing backend.
+- This confirms and extends what [ARCHITECTURE.md](./ARCHITECTURE.md) already noted: the target platform (Payload CMS v3, PostgreSQL, guest cash on delivery checkout, admin-only auth) is being built essentially from scratch behind this user interface shell, not by wiring up an existing backend.
 
 ## Folder structure
 
@@ -64,7 +64,7 @@ gocart/
 └── CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE.md   Inherited from upstream GoCart
 ```
 
-No `app/api/` directory exists. No test directory or test runner config exists. No Docker files exist. No CI config (`.github/workflows`) exists.
+No `app/api/` directory exists. No test directory or test runner config exists. No Docker files exist. No continuous integration config (`.github/workflows`) exists.
 
 ## Tech stack
 
@@ -99,7 +99,7 @@ There is no real data flow beyond the browser. Concretely:
 - Even route-group layouts that don't need interactivity are marked `'use client'` unnecessarily — e.g. `app/(public)/layout.jsx` is just `<Banner /><Navbar />{children}<Footer />`, and `app/(public)/page.jsx` is just a static composition of section components; neither touches state, hooks, or browser APIs directly, but both opt out of server rendering because a client-only descendant pulled the whole subtree into the client boundary (or the `'use client'` directive was added by convention rather than necessity).
 - No page defines `generateMetadata` — the only metadata in the app is the single static `export const metadata` object in the root layout (title/description are the same on every page: "GoCart. - Shop smarter").
 - No `sitemap.xml`, `robots.txt`, or structured data (JSON-LD) exists anywhere.
-- **This directly contradicts the SEO-first requirement.** Product and category pages — the pages that actually need to rank and be crawlable/shareable — are 100% client-rendered with no per-page metadata today.
+- **This directly contradicts the search-engine-optimization-first requirement.** Product and category pages — the pages that actually need to rank and be crawlable/shareable — are 100% client-rendered with no per-page metadata today.
 
 ## State management
 
@@ -117,7 +117,7 @@ There is no real data flow beyond the browser. Concretely:
 1. `prisma/schema.prisma` — `STRIPE` is one of two values in the `PaymentMethod` enum (schema design intent only, unused since Prisma isn't wired up).
 2. `components/OrderSummary.jsx` — a second payment-method radio button labeled "Stripe Payment" that sets local state (`setPaymentMethod('STRIPE')`); nothing reads that state to call Stripe or any payment API. No `stripe`/`@stripe/*` package in `package.json`.
 
-Per [ADR-004](./DECISIONS.md), this radio option should not exist in the COD-only v1 checkout UI.
+Per [Architecture Decision Record 004](./DECISIONS.md), this radio option should not exist in the cash-on-delivery-only v1 checkout user interface.
 
 ## Sanity usage
 
@@ -136,7 +136,7 @@ Per [ADR-004](./DECISIONS.md), this radio option should not exist in the COD-onl
 | Variable | Declared in `.env.example`? | Actually used? | Notes |
 |---|---|---|---|
 | `NEXT_PUBLIC_CURRENCY_SYMBOL` | Yes (`'$'`) | Yes — read in 9 files (`app/store/page.jsx`, `app/store/manage-product/page.jsx`, `app/admin/page.jsx`, `app/(public)/cart/page.jsx`, `Hero.jsx`, `OrderSummary.jsx`, `OrderItem.jsx`, `ProductCard.jsx`, `ProductDetails.jsx`) | Every usage falls back to `'$'` if unset. Needs to become PKR-aware per [PROJECT_SPEC.md](./PROJECT_SPEC.md) open question. |
-| `DATABASE_URL`, `DIRECT_URL` | **No** | Referenced only inside `prisma/schema.prisma` via `env(...)` | Never set anywhere, consistent with Prisma never actually being wired up. Will need to be added (or replaced with Payload's own DB connection variable) at `M1`/`M3`. |
+| `DATABASE_URL`, `DIRECT_URL` | **No** | Referenced only inside `prisma/schema.prisma` via `env(...)` | Never set anywhere, consistent with Prisma never actually being wired up. Will need to be added (or replaced with Payload's own database connection variable) at Milestones 1 and 3. |
 
 `.gitignore` already excludes `.env` and, notably, `/app/generated/prisma` — a leftover from an abandoned attempt to generate the Prisma client into a custom output path, further evidence the Prisma integration was started but never finished.
 
@@ -149,7 +149,7 @@ No Payload, auth, or payment-gateway environment variables exist yet — expecte
 | Package | Purpose | Fate under target architecture |
 |---|---|---|
 | `next` 15.3.5 | Framework | Keep, upgrade as needed for Payload v3 compatibility |
-| `react` / `react-dom` 19.2.1 | UI | Keep |
+| `react` / `react-dom` 19.2.1 | User interface | Keep |
 | `react-redux` 9.2.0 | Redux bindings | Keep if client cart state stays Redux-based (see [ARCHITECTURE.md](./ARCHITECTURE.md) open question) |
 | `@reduxjs/toolkit` 2.8.2 | Redux store/slices | Same as above — likely trimmed to cart-only |
 | `react-hot-toast` 2.5.2 | Toast notifications | Keep |
@@ -159,22 +159,22 @@ No Payload, auth, or payment-gateway environment variables exist yet — expecte
 
 **Dev (`devDependencies`):** `@tailwindcss/postcss`, `tailwindcss` — both keep.
 
-**Conspicuously absent** given the target architecture: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, `prisma`/`@prisma/client` (present only as an un-added schema file), any Stripe/payment SDK, any auth package, `sharp` (commonly required by both Payload and Next.js image optimization once `images.unoptimized` is removed). None of these should be installed as part of this analysis — scheduled as `M2` (Payload, Postgres adapter, `sharp`) and `M2a` (TypeScript toolchain) in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+**Conspicuously absent** given the target architecture: `payload`, `@payloadcms/db-postgres`, `@payloadcms/next`, `prisma`/`@prisma/client` (present only as an un-added schema file), any Stripe/payment SDK, any auth package, `sharp` (commonly required by both Payload and Next.js image optimization once `images.unoptimized` is removed). None of these should be installed as part of this analysis — scheduled as Milestone 2 (Payload, Postgres adapter, `sharp`) and Milestone 2a (TypeScript toolchain) in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 
 ## Technical debt
 
 Ranked roughly by severity/impact:
 
-1. **`/admin` and `/store` have no real access control today.** `AdminLayout.jsx` and `StoreLayout.jsx` hardcode `isAdmin`/`isSeller` to `true`. If this app were deployed as-is, both dashboards would be public. This must not be carried forward — Payload's built-in auth (per [ADR-006](./DECISIONS.md)) replaces this entirely rather than patching it.
-2. **No real backend exists behind a UI that looks complete.** Every list, dashboard, and form is wired to `assets/assets.js` dummy data and stub handlers wrapped in `toast.promise`, which makes actions *feel* like they succeeded (a toast fires) while nothing happens. This is the single biggest gap between "looks production-ready" and "is production-ready."
+1. **`/admin` and `/store` have no real access control today.** `AdminLayout.jsx` and `StoreLayout.jsx` hardcode `isAdmin`/`isSeller` to `true`. If this app were deployed as-is, both dashboards would be public. This must not be carried forward — Payload's built-in auth (per [Architecture Decision Record 006](./DECISIONS.md)) replaces this entirely rather than patching it.
+2. **No real backend exists behind a user interface that looks complete.** Every list, dashboard, and form is wired to `assets/assets.js` dummy data and stub handlers wrapped in `toast.promise`, which makes actions *feel* like they succeeded (a toast fires) while nothing happens. This is the single biggest gap between "looks production-ready" and "is production-ready."
 3. **Cart has no persistence.** In-memory-only Redux state means a page refresh silently empties the cart, with no account to recover it from — a real problem for a guest-checkout-only site.
 4. **"Place Order" doesn't place an order.** It navigates to `/orders`, which shows unrelated dummy orders. There is currently no way to trace a cart to an order anywhere in the code.
-5. **The Prisma/PostgreSQL schema was started and abandoned.** `schema.prisma` models the full multi-vendor domain but has no client dependency, no generated client, and nothing importing it. It's a reference artifact, not working code (see [ADR-003](./DECISIONS.md)).
-6. **Almost the entire app opts out of server rendering** (`'use client'` on 41/~50 files, including layouts and pages with no actual interactivity), with no per-page metadata, sitemap, robots.txt, or structured data — directly at odds with the SEO-first requirement.
-7. **Multi-vendor scope is baked deep into the UI**, not just the data model: vendor signup (`create-store`), vendor approval (`admin/approve`), vendor activation (`admin/stores`), a per-vendor storefront route (`shop/[username]`), and "Product by {store.name}" attribution on every product page. All of this is now explicitly out of scope per [ADR-006](./DECISIONS.md) and needs removal, not adaptation.
+5. **The Prisma/PostgreSQL schema was started and abandoned.** `schema.prisma` models the full multi-vendor domain but has no client dependency, no generated client, and nothing importing it. It's a reference artifact, not working code (see [Architecture Decision Record 003](./DECISIONS.md)).
+6. **Almost the entire app opts out of server rendering** (`'use client'` on 41/~50 files, including layouts and pages with no actual interactivity), with no per-page metadata, sitemap, robots.txt, or structured data — directly at odds with the search-engine-optimization-first requirement.
+7. **Multi-vendor scope is baked deep into the user interface**, not just the data model: vendor signup (`create-store`), vendor approval (`admin/approve`), vendor activation (`admin/stores`), a per-vendor storefront route (`shop/[username]`), and "Product by {store.name}" attribution on every product page. All of this is now explicitly out of scope per [Architecture Decision Record 006](./DECISIONS.md) and needs removal, not adaptation.
 8. **Currency is hardcoded to `$`** across 9 files via one env var with a literal `'$'` fallback baked into the code itself, rather than a formatting utility — will need a small but repo-wide sweep for PKR.
 9. **`next.config.mjs` uses `images.unoptimized: true`**, a Vercel-shortcut default that disables Next.js's image optimization — wrong default for a self-hosted, Dockerized, production deployment.
-10. **No tests, no CI, no Docker, no linting beyond Next's default `next lint` script** (and even that has no committed ESLint config file visible in this listing). Production-readiness work (`M49`–`M54`) starts from zero here, not from hardening existing infra. Note that no milestone currently establishes a test framework or CI — tracked as an open gap in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
+10. **No tests, no continuous integration, no Docker, no linting beyond Next's default `next lint` script** (and even that has no committed ESLint config file visible in this listing). Production-readiness work (Milestones 49 to 54) starts from zero here, not from hardening existing infra. Note that no milestone currently establishes a test framework or continuous integration — tracked as an open gap in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 11. **Dead/orphaned routes**: `pricing/page.jsx` is an empty stub tied to a "Plus membership" concept that's never explained elsewhere; `loading/page.jsx` is a standalone page (not the Next.js `loading.jsx` convention) that exists only to redirect after an 8-second delay for the vendor-approval flow being removed.
 12. **Coupon logic references account-based targeting** (`forNewUser`, `forMember`) that has no meaning once guest checkout (no accounts) is the only flow — needs redesign, not direct reuse, per the open question already flagged in [PROJECT_SPEC.md](./PROJECT_SPEC.md).
 
@@ -186,15 +186,15 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 
 | Path | Classification | Why |
 |---|---|---|
-| `package.json` / `package-lock.json` | MODIFY | Add Payload v3 + Postgres adapter + `sharp` deps (`M2`) and the TypeScript toolchain (`M2a`); remove/never-add Prisma; re-evaluate Redux deps once cart-state design is finalized — not this task |
-| `next.config.mjs` | MODIFY | Remove `images.unoptimized: true` for self-hosted production (`M51`); add Payload's Next.js integration config at `M3` |
+| `package.json` / `package-lock.json` | MODIFY | Add Payload v3 + Postgres adapter + `sharp` deps (Milestone 2) and the TypeScript toolchain (Milestone 2a); remove/never-add Prisma; re-evaluate Redux deps once cart-state design is finalized — not this task |
+| `next.config.mjs` | MODIFY | Remove `images.unoptimized: true` for self-hosted production (Milestone 51); add Payload's Next.js integration config at Milestone 3 |
 | `jsconfig.json` | KEEP | `@/*` alias is fine and framework-agnostic |
 | `postcss.config.mjs` | KEEP | Tailwind v4 setup is fine |
 | `.env.example` | MODIFY | Add `DATABASE_URL`, Payload secret/config vars; revisit currency variable for PKR |
 | `.gitignore` | MODIFY | Remove the now-irrelevant `/app/generated/prisma` line once Prisma is formally retired; add Payload/Docker build artifacts when those land |
 | `README.md`, `CLAUDE.md`, `docs/*`, `prompts/*` | KEEP | Already rewritten for this transformation |
 | `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `LICENSE.md` | KEEP | Inherited governance docs, still applicable |
-| `prisma/schema.prisma` (and `prisma/` dir) | REPLACE | Never wired to a client; superseded by Payload collection definitions per [ADR-003](./DECISIONS.md). Useful only as a reference for field/relationship intent during collection design |
+| `prisma/schema.prisma` (and `prisma/` dir) | REPLACE | Never wired to a client; superseded by Payload collection definitions per [Architecture Decision Record 003](./DECISIONS.md). Useful only as a reference for field/relationship intent during collection design |
 
 ### `app/` — storefront (`(public)/`)
 
@@ -203,12 +203,12 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 | `app/layout.jsx` | MODIFY | Only real server component today; needs richer metadata, will host any Payload-in-Next mount point |
 | `app/StoreProvider.js` | MODIFY | Keep if client cart state stays Redux-based; trim scope to match whatever slices survive |
 | `app/globals.css`, `app/favicon.ico` | KEEP | No functional issue |
-| `(public)/layout.jsx` | MODIFY | Unnecessarily marked `'use client'`; convert to a server component wrapping client children for SEO |
+| `(public)/layout.jsx` | MODIFY | Unnecessarily marked `'use client'`; convert to a server component wrapping client children for search engine optimization |
 | `(public)/page.jsx` | MODIFY | Convert to server-renderable; replace dummy-data-backed child components with real data |
-| `(public)/shop/page.jsx` | MODIFY | Keep the search/filter UX, replace Redux dummy product list with real Payload data (ideally server-rendered) |
-| `(public)/shop/[username]/page.jsx` | DELETE | Per-vendor storefront — multi-vendor concept, out of scope per [ADR-006](./DECISIONS.md) |
-| `(public)/product/[productId]/page.jsx` | MODIFY | Fetch real product from Payload; add `generateMetadata`/JSON-LD for SEO |
-| `(public)/cart/page.jsx` | MODIFY | Keep UI structure; fix persistence gap; wire to real checkout |
+| `(public)/shop/page.jsx` | MODIFY | Keep the search/filter user experience, replace Redux dummy product list with real Payload data (ideally server-rendered) |
+| `(public)/shop/[username]/page.jsx` | DELETE | Per-vendor storefront — multi-vendor concept, out of scope per [Architecture Decision Record 006](./DECISIONS.md) |
+| `(public)/product/[productId]/page.jsx` | MODIFY | Fetch real product from Payload; add `generateMetadata`/JSON-LD for search engine optimization |
+| `(public)/cart/page.jsx` | MODIFY | Keep user interface structure; fix persistence gap; wire to real checkout |
 | `(public)/orders/page.jsx` | MODIFY | Replace dummy data; redesign for guest order lookup (no account/login to key off of) |
 | `(public)/create-store/page.jsx` | DELETE | Vendor registration — out of scope |
 | `(public)/pricing/page.jsx` | DELETE | Empty stub tied to vendor "Plus membership" concept that's out of scope |
@@ -220,8 +220,8 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 |---|---|---|
 | `admin/layout.jsx`, `admin/page.jsx` | REPLACE | Custom dashboard has no real auth (`isAdmin` hardcoded true) and no real data; superseded by Payload's built-in `/admin` panel, which provides authenticated CRUD out of the box |
 | `admin/stores/page.jsx`, `admin/approve/page.jsx` | DELETE | Vendor activation/approval — out of scope entirely, not just unauthenticated |
-| `admin/coupons/page.jsx` | REPLACE | Coupon CRUD belongs in Payload's admin UI as a `Coupons` collection (if retained — see open question in [PROJECT_SPEC.md](./PROJECT_SPEC.md)), not a hand-rolled page |
-| `store/**` (entire directory: `layout.jsx`, `page.jsx`, `add-product/`, `manage-product/`, `orders/`) | DELETE | Vendor dashboard — out of scope per [ADR-006](./DECISIONS.md); also has the same hardcoded-`true` auth bypass (`isSeller`) |
+| `admin/coupons/page.jsx` | REPLACE | Coupon CRUD belongs in Payload's admin user interface as a `Coupons` collection (if retained — see open question in [PROJECT_SPEC.md](./PROJECT_SPEC.md)), not a hand-rolled page |
+| `store/**` (entire directory: `layout.jsx`, `page.jsx`, `add-product/`, `manage-product/`, `orders/`) | DELETE | Vendor dashboard — out of scope per [Architecture Decision Record 006](./DECISIONS.md); also has the same hardcoded-`true` auth bypass (`isSeller`) |
 
 ### `components/` — storefront-facing
 
@@ -234,10 +234,10 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 | `Footer.jsx` | MODIFY | Remove "Become Plus Member" and "Create Your Store" links (vendor/membership concepts, out of scope); update contact info to real business details |
 | `Hero.jsx` | MODIFY | Structurally fine; has a hardcoded example price ("$4.90") and imports `CategoriesMarquee` — update copy/currency |
 | `Loading.jsx` | KEEP | Generic spinner |
-| `Navbar.jsx` | MODIFY | "Login" button is non-functional (no handler) and shouldn't exist for guest-only customers per [ADR-005](./DECISIONS.md) — remove or repurpose |
+| `Navbar.jsx` | MODIFY | "Login" button is non-functional (no handler) and shouldn't exist for guest-only customers per [Architecture Decision Record 005](./DECISIONS.md) — remove or repurpose |
 | `Newsletter.jsx` | MODIFY | Form has no submit handler at all today — either wire to a real subscribe mechanism or drop |
 | `OrderItem.jsx` | MODIFY | Adjust to whatever the real guest-order shape ends up being from Payload |
-| `OrderSummary.jsx` | MODIFY | Remove the Stripe radio option (COD-only per [ADR-004](./DECISIONS.md)); "Place Order" needs to actually create an order; coupon-code handler is currently an empty stub |
+| `OrderSummary.jsx` | MODIFY | Remove the Stripe radio option (cash-on-delivery-only per [Architecture Decision Record 004](./DECISIONS.md)); "Place Order" needs to actually create an order; coupon-code handler is currently an empty stub |
 | `OurSpec.jsx` | KEEP | Static trust-badges section, no backend dependency |
 | `PageTitle.jsx`, `Title.jsx` | KEEP | Generic, reusable, no backend dependency |
 | `ProductCard.jsx` | MODIFY | Fine structurally; currency formatting needs PKR |
@@ -245,9 +245,9 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 | `ProductDetails.jsx` | MODIFY | Fine structurally; currency/PKR, and trust copy ("Free shipping worldwide") should reflect real Pakistan shipping policy once defined |
 | `Rating.jsx` | KEEP | Pure presentational star display |
 | `RatingModal.jsx` | MODIFY | Submit handler never persists a rating today; needs a real backend call and an identity model that works without accounts |
-| `admin/AdminLayout.jsx`, `admin/AdminNavbar.jsx`, `admin/AdminSidebar.jsx`, `admin/StoreInfo.jsx` | REPLACE | Entire custom admin shell, including its fake auth gate, is superseded by Payload's built-in admin UI |
+| `admin/AdminLayout.jsx`, `admin/AdminNavbar.jsx`, `admin/AdminSidebar.jsx`, `admin/StoreInfo.jsx` | REPLACE | Entire custom admin shell, including its fake auth gate, is superseded by Payload's built-in admin user interface |
 | `store/StoreLayout.jsx`, `store/StoreNavbar.jsx`, `store/StoreSidebar.jsx` | DELETE | Vendor dashboard shell — out of scope, also has the same fake auth gate |
-| `OrdersAreaChart.jsx` | DELETE | Only consumer is the custom admin dashboard being replaced by Payload's admin UI; revisit only if a custom analytics view is scoped later |
+| `OrdersAreaChart.jsx` | DELETE | Only consumer is the custom admin dashboard being replaced by Payload's admin user interface; revisit only if a custom analytics view is scoped later |
 
 ### `lib/` — Redux state
 
@@ -264,7 +264,7 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 | Path | Classification | Why |
 |---|---|---|
 | `assets/assets.js` | DELETE | The single source of every piece of fake data in the app (`productDummyData`, `orderDummyData`, `dummyAdminDashboardData`, `dummyStoreDashboardData`, `storesDummyData`, `couponDummyData`, `dummyRatingsData`, `dummyStoreData`, etc.) — must not ship; real data comes from Payload |
-| `assets/*.svg`, `gs_logo.jpg`, `upload_area.svg` | KEEP | Generic UI assets (upload placeholder icon, etc.), no dummy-data coupling |
+| `assets/*.svg`, `gs_logo.jpg`, `upload_area.svg` | KEEP | Generic user interface assets (upload placeholder icon, etc.), no dummy-data coupling |
 | `assets/product_img*.png`, `hero_*`, `happy_store.webp`, `profile_pic*.jpg` | DELETE | Placeholder/stock imagery tied to the dummy dataset and the (now out-of-scope) multi-vendor demo store; real product photography replaces these |
 
 ## Summary counts
@@ -272,7 +272,7 @@ Legend: **KEEP** (carry forward largely as-is) · **MODIFY** (keep the file but 
 | Classification | Approx. file/folder count | Dominant reason |
 |---|---|---|
 | KEEP | ~15 | Generic, presentational, or already-correct config with no dummy-data or multi-vendor coupling |
-| MODIFY | ~20 | Right shape, wrong data source (dummy → real) or missing PKR/COD/guest-checkout details |
+| MODIFY | ~20 | Right shape, wrong data source (dummy → real) or missing Pakistani rupee, cash on delivery and guest checkout details |
 | DELETE | ~20 | Multi-vendor feature surface, or artifacts (dummy data, orphaned routes) with no place in the target product |
 | REPLACE | ~8 | Custom-built admin/vendor shells (with a live auth bypass) superseded by Payload CMS v3's built-in admin panel |
 
