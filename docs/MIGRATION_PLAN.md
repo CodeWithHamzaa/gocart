@@ -1757,7 +1757,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Hybrid palette values, aubergine footer, shared admin palette (M117)`
 
 ### M118 — Homepage: editorial hero, Shop by category, honest deals
-- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 2 of the premium storefront redesign; authorized by the owner on 2026-11-12. Revised the same day on the owner's review: "Why shop with Mirza" removed with nothing in its place; "Shop by category" redesigned from the owner's two reference styles (cards chosen after a side-by-side capture).
+- **Status (2026-11-12)**: **Done, in review** (not deployed). Phase 2 of the premium storefront redesign; authorized by the owner on 2026-11-12. Revised the same day on the owner's review: "Why shop with Mirza" removed with nothing in its place; "Shop by category" redesigned from the owner's reference styles: after side-by-side captures it ends as round category photos at every size (owner, 2026-11-13), without a white ring, sized per breakpoint.
 - **Goal**: replace the run of near-identical grids with an editorial home page built only from existing data.
 - **Files**: `app/(public)/page.jsx` (order), `components/Hero.jsx`, `components/HeroSlider.tsx`, `components/CategoryShowcase.tsx` (new), `components/HeroShortcuts.tsx` and `components/CodSteps.tsx` (removed), `components/DealsOfTheDay.tsx`, `components/ui/Countdown.tsx`, `components/Footer.jsx` (all categories), `docs/redesign/phase2/`.
 - **Spec**: `docs/redesign/phase2/README.md`. No stored `tone`/`label` value added or renamed; "Featured" kept (ADR-022); promo cards unchanged (owner); only verified trust facts; `force-dynamic` kept on `/`.

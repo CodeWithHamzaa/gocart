@@ -462,7 +462,7 @@ production build (`M49`) cannot assume a reachable database. `/` moved `○ Stat
 | `M115` | Design foundation: shared palette file (`app/tokens.css`), role tokens, shared `Button` and `Price` (no visible colour change) | **Done, in review** (2026-11-12). Phase 1a of the premium storefront redesign; owner authorized Phase 1 on 2026-11-12. Not deployed. |
 | `M116` | Palette decision record: ADR-052 hybrid palette (warm ivory surfaces, `#5F42EC` for actions, aubergine dark surface, no champagne); amends ADR-047 item 4 and records `bc5a77a` | **Done, in review** (2026-11-12). Owner decision 2026-11-12. Docs only. |
 | `M117` | Hybrid palette values (ADR-052): warm ivory surfaces, aubergine footer, violet saved-heart and wishlist badge; the admin's brand colours read the shared palette | **Done, in review** (2026-11-12). Not deployed. Before/after captures in `docs/redesign/phase1/`. |
-| `M118` | Homepage: editorial hero (one photo, display headline), "Shop by category" photo cards with an intro column (owner's reference), "Limited-time deals" with an end date, cash-on-delivery band removed (owner), all categories in the footer | **Done, in review** (2026-11-12). Phase 2; not deployed. Captures in `docs/redesign/phase2/`. |
+| `M118` | Homepage: editorial hero (one photo, display headline), "Shop by category" round category photos at every size, beside an intro column on desktop (owner's reference), "Limited-time deals" with an end date, cash-on-delivery band removed (owner), all categories in the footer | **Done, in review** (2026-11-12). Phase 2; not deployed. Captures in `docs/redesign/phase2/`. |
 
 ---
 
