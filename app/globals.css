@@ -122,6 +122,24 @@
     }
 }
 
+/* Milestone 122: the announcement ticker. The track holds the message list twice and slides left by one copy,
+   so the loop is seamless. No motion at all when the visitor asks for reduced motion. */
+@keyframes announcement-ticker {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.announcement-ticker {
+    animation: announcement-ticker 45s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .announcement-ticker {
+        animation: none;
+    }
+}
+
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }

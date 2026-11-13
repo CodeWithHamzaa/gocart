@@ -1602,3 +1602,39 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - The brand kit (`docs/brand-kit/`, Milestone 113) and its contrast table describe the pre-ADR palette until it is regenerated (a follow-up, not part of Milestones 115 to 117).
 - The comment and contrast table at the top of `app/globals.css` are updated with the values.
 - Rollback: revert Milestone 117 (values only); Milestone 115's structure keeps working with any values.
+
+---
+
+## Architecture Decision Record 053: The Mirza Cart brand: name, clean neutral palette and shopping-cart logo (Milestone 122)
+
+**Status**: **Accepted (2026-11-13)** by the owner on 2026-11-13, who fixed the name, the palette ("Option 1, Clean Neutral + Violet") and the logo direction ("Abstract Shopping Cart"), and chose logo concept A ("Solid Basket") from three presented. It **amends Architecture Decision Record 047** (the brand name and the logo) and **supersedes Architecture Decision Record 052 item 3** (warm ivory surfaces). Everything else in those records stands: one action violet, the aubergine dark surface, the status colours, Plus Jakarta Sans as the only typeface (Architecture Decision Record 043).
+
+**Context**: the owner finalised the brand after the premium storefront redesign (Milestones 115 to 121). The name "Mirza" alone and its "M" monogram are replaced; the warm ivory surfaces of Architecture Decision Record 052 are replaced by cool, clean neutrals.
+
+**Decision**:
+
+1. **Name**: the brand is **Mirza Cart**. It remains the Settings `storeName` value (never hard-coded in a component). The default changes from "Mirza" to "Mirza Cart"; migration `20261113_204148_mirza_cart_store_name` changes the column default and renames a stored name **only when it is exactly "Mirza"** (any other name an admin saved is left alone).
+2. **Palette** (raw values in `app/tokens.css`, role tokens in `app/globals.css`):
+
+   | Role | Colour |
+   |---|---|
+   | Page background | `#F8F8FA` |
+   | Cards and primary surfaces | `#FFFFFF` |
+   | Product image wells, announcement strip | `#F1F2F5` |
+   | Brand violet (actions, links, selected states, focus) | `#5F42EC` (hover `#4A2FD0`, tints `#EEE9FF` / `#E2DAFF`) |
+   | Deep aubergine (the one dark surface: footer) | `#352746` |
+   | Main text | `#242328` |
+   | Lines | `#E9E9EE` / `#DEDEE5` / `#C4C4CD`; form-field boundary `#83838F` |
+
+   Status colours (sale, amber, success) are unchanged. No second accent, no gradients on buttons.
+3. **Logo**: an abstract shopping cart (a filled, forward-leaning basket, a short handle, two wheels) in white on a rounded violet tile; on the aubergine surface the tile is white and the cart violet. The wordmark is the store name in Plus Jakarta Sans, first word weight 800 and the rest weight 500. Source: `components/ui/BrandLogo.tsx`; the same mark is `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png` and the admin logo. The "M" monogram is retired.
+4. **Identifiers that keep an older name on purpose** (renaming them risks data or infrastructure and gains nothing a customer sees): everything Architecture Decision Record 047 already listed (`gocart_app` database role, Docker project, `GC-` order numbers, `gocart:cart` / `gocart:wishlist` storage keys, the repository and Vercel names, historical migrations), plus the `--mirza-*` CSS variables and `.mirza-*` classes of the admin stylesheet, the `mirza:last-order` session storage key, the brand kit file names under `docs/brand-kit/` and accepted decision records and past milestone entries, which keep the name that was true when they were written.
+
+**Contrast (WCAG 2.2, measured)**: text on page 14.71:1; muted text on page 5.63:1 and on wells 5.34:1; violet on page 5.69:1; white on violet 6.04:1; sale on page 6.88:1; field boundary 3.74:1 on white and 3.53:1 on page (WCAG 1.4.11); white on aubergine 13.73:1.
+
+**Consequences**:
+- A database migration (default and the conditional rename) must be applied before the code is deployed, as with Milestone 101.
+- The admin's own surfaces (sidebar, page, Payload's grey ramp, Architecture Decision Record 043) are unchanged; it shows the new mark and the new name.
+- The brand kit (`docs/brand-kit/`, Milestone 113) describes the earlier identity until it is regenerated.
+- Rollback: revert the pull request and run the migration's `down` (it restores the default and renames "Mirza Cart" back to "Mirza").
+

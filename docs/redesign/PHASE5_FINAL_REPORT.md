@@ -82,7 +82,7 @@ measured by the script (unverified).
 
 1. **Deploy to the test site.** Nothing from the redesign is live. A deploy is a separate step done on
    request; no database migration is needed for any of these milestones.
-2. **Merge the open pull requests** (120 and this one) once their checks are green.
+2. ~~Merge the open pull requests.~~ Done: pull request 84 (Milestones 120 and 121) was merged on 2026-11-13.
 3. **Photographs.** Every image slot still uses an existing product or category photo, or is absent.
    The earlier request list stands:
 
@@ -97,7 +97,10 @@ measured by the script (unverified).
 4. **Paused-ordering notice.** It could show the store's phone and email, but its text lives in the Turnstile
    widget, which this redesign deliberately did not edit. A small separate milestone.
 5. **Brand kit.** `docs/brand-kit/` still describes the earlier colours (Milestone 113). Regenerating it for
-   the new palette is a separate follow-up using the tools in `docs/brand-kit/tools/`.
+   the new identity is a separate follow-up using the tools in `docs/brand-kit/tools/`. Note: after this
+   report, Milestone 122 (Architecture Decision Record 053) renamed the brand to Mirza Cart, replaced the warm
+   ivory surfaces with clean neutrals and changed the logo, the search field and the announcement strip, so the
+   screenshots in `final/` show the storefront before that milestone.
 6. **Not built, on purpose:** a phone bottom sheet for sort and filter, the header search box showing the
    current search words, price and discount filters on the shop, product brand, model, specification and
    rating fields (the product has no such data), and returns or delivery-time promises (none exist).

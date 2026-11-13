@@ -4,7 +4,7 @@ Guidance for Claude Code (and any AI agent) working in this repository. Kept sho
 
 ## What this project is
 
-**Mirza** (the project was called GoCart Pakistan until 2026-10-31, [Architecture Decision Record 047](./docs/DECISIONS.md)) is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** (embedded in Next.js 16) and **PostgreSQL**. Context: [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md), [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before structural decisions.
+**Mirza Cart** (called Mirza until 2026-11-13, [Architecture Decision Record 053](./docs/DECISIONS.md), and GoCart Pakistan until 2026-10-31, [Architecture Decision Record 047](./docs/DECISIONS.md); "Mirza" in older text means this project) is being transformed from an open-source multi-vendor Next.js storefront into a **production-ready, single-store, Cash-on-Delivery ecommerce platform for Pakistan**, backed by **Payload CMS v3** (embedded in Next.js 16) and **PostgreSQL**. Context: [docs/PROJECT_SPEC.md](./docs/PROJECT_SPEC.md), [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). Read those before structural decisions.
 
 ## Where things stand
 
@@ -22,7 +22,7 @@ Code facts that save a search:
 - Payload `/admin` is the only authenticated surface; no middleware, no customer or vendor login.
 - Gotcha: a `loading.tsx` on `/category/[slug]` makes `notFound()` return HTTP 200 (Next App Router limitation), so that route deliberately has none ([MIGRATION_PLAN.md](./docs/MIGRATION_PLAN.md), Milestone 27a).
 - TypeScript is established (`tsconfig.json`, `moduleResolution: "bundler"`, `allowJs`). New files are `.ts`/`.tsx`; never convert existing `.jsx` opportunistically. Lint is `npm run lint` (ESLint CLI; `next lint` no longer exists).
-- Brand: **Mirza** (Architecture Decision Record 047). Identifiers that still say `gocart` (database role `gocart_app`, Docker project, `GC-` order numbers, `gocart:cart`/`gocart:wishlist` storage keys, repo and Vercel names, historical migrations) are kept on purpose; do not rename them without a new decision. Accepted Architecture Decision Records keep the old name.
+- Brand: **Mirza Cart** (Architecture Decision Record 053, amending 047): clean neutral palette, shopping-cart logo. Identifiers that still say `mirza` alone (admin CSS variables, `mirza:last-order`) or `gocart` (database role `gocart_app`, Docker project, `GC-` order numbers, `gocart:cart`/`gocart:wishlist` storage keys, repo and Vercel names, historical migrations) are kept on purpose; do not rename them without a new decision. Accepted Architecture Decision Records keep the old name.
 - Currency symbol is `Rs. ` via `NEXT_PUBLIC_CURRENCY_SYMBOL`; PKR formatting (`Rs. 1,500`, no decimals) is done by Milestone 55 ([Architecture Decision Record 029](./docs/DECISIONS.md)).
 - All legacy multi-vendor surface (`app/store/*`, vendor approval, `Store` model, Prisma, the dummy `assets/` dataset) is **removed**. If you see any of it, something has gone wrong. Treat any doc implying single-vs-multi-vendor is still open as stale.
 

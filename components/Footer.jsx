@@ -72,7 +72,7 @@ const Footer = async () => {
                 <div className="grid grid-cols-2 gap-x-6 gap-y-10 py-12 lg:grid-cols-[1.4fr_repeat(3,1fr)] lg:gap-x-10">
                     <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
                         <Link href="/" className="self-start text-2xl">
-                            <BrandLogo name={settings.storeName} mark={false} inverse />
+                            <BrandLogo name={settings.storeName} inverse />
                         </Link>
                         <p className="max-w-[300px] leading-relaxed">{content.footerTagline}</p>
                     </div>

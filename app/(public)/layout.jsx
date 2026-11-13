@@ -4,11 +4,11 @@ import StoreProvider from "@/app/StoreProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AnnouncementBar from "@/components/AnnouncementBar";
-import CategoryNav from "@/components/ui/CategoryNav";
 import MobileTabBar from "@/components/ui/MobileTabBar";
 import "../globals.css";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSettings } from "@/lib/payload/settings";
+import { getStorefrontContent } from "@/lib/payload/storefront-content";
 import { DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 // M45: display "swap" shows text in the fallback font immediately instead of blocking on the font.
@@ -46,7 +46,7 @@ export async function generateMetadata() {
 export default async function PublicLayout({ children }) {
     // M61: the header shows the store's own name (memoised, so this is the same query the metadata,
     // announcement bar and footer already make).
-    const { storeName } = await getSettings();
+    const [{ storeName }, { showTrackOrderLink }] = await Promise.all([getSettings(), getStorefrontContent()]);
     return (
         <html lang="en" className={jakarta.variable}>
             <body className="font-sans antialiased bg-page text-ink">
@@ -57,9 +57,7 @@ export default async function PublicLayout({ children }) {
                         Skip to content
                     </a>
                     <AnnouncementBar />
-                    <Navbar storeName={storeName}>
-                        <CategoryNav />
-                    </Navbar>
+                    <Navbar storeName={storeName} showTrackOrder={showTrackOrderLink} />
                     <main id="main">{children}</main>
                     <Footer />
                     <MobileTabBar />
