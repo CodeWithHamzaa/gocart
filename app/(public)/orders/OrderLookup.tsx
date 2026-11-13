@@ -17,8 +17,9 @@ import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidg
 // Milestone 120: each field has a one-line hint linked with aria-describedby. Still one form with one submit button;
 // the answer for a wrong number and a wrong phone is the same message, as before (the server decides).
 // M66: the redesign's field style (tokens, visible focus).
+// Milestone 121: the fields keep the site's 2px focus ring (the earlier outline-none plus a 1px ring was too faint).
 // M101 (owner-approved home style): a lavender panel with pill fields and a pill button, no shadow.
-const inputClass = 'w-full min-h-12 rounded-full border border-line-input bg-surface px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
+const inputClass = 'w-full min-h-12 rounded-full border border-line-input bg-surface px-5 text-ink placeholder:text-muted focus:border-primary'
 
 export function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState('')

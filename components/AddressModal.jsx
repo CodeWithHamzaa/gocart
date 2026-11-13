@@ -96,7 +96,7 @@ const AddressModal = ({ setShowAddressModal, onSaved }) => {
         setShowAddressModal(false)
     }
 
-    const field = 'h-12 w-full min-w-0 rounded-full border border-line-input bg-surface px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary aria-[invalid=true]:border-sale'
+    const field = 'h-12 w-full min-w-0 rounded-full border border-line-input bg-surface px-5 text-ink placeholder:text-muted focus:border-primary aria-[invalid=true]:border-sale'
 
     const describe = (id, hint) => (errors[id] ? `${id}-error` : hint ? `${id}-hint` : undefined)
     const legend = 'mb-3 text-xs font-semibold uppercase tracking-eyebrow text-muted'

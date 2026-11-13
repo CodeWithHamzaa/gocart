@@ -17,6 +17,7 @@ Detailed, living documentation for Mirza (formerly the GoCart Pakistan transform
 | [AI_TEAM_READINESS_REPORT.md](./AI_TEAM_READINESS_REPORT.md) | Development-time AI engineering team: architecture, roles, gates, permissions, Milestone 29 dry run |
 | [CHANGELOG.md](./CHANGELOG.md) | Notable changes over time |
 | [GLOSSARY.md](./GLOSSARY.md) | Plain-language meaning of project terms, identifier styles, review labels and technical abbreviations |
+| [redesign/PHASE5_FINAL_REPORT.md](./redesign/PHASE5_FINAL_REPORT.md) | The premium storefront redesign (Milestones 115 to 121): what changed, how it was checked, what is still open. Earlier phase notes and screenshots sit beside it in `redesign/` |
 
 **Referencing convention**: cite work by milestone name and number (Milestone 12), never by phase or group number.
 Group names are labels for reporting only and carry no execution order. Documentation is written to the
