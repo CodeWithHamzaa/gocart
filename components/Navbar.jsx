@@ -40,7 +40,7 @@ const Navbar = ({ storeName = 'Mirza', children }) => {
                     <BrandLogo name={storeName} />
                 </Link>
 
-                <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-12 w-full items-center gap-2.5 rounded-full border border-line-input bg-surface pl-4 pr-1 text-sm transition focus-within:border-primary focus-within:ring-1 focus-within:ring-primary lg:order-none lg:w-auto lg:flex-1">
+                <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-12 w-full items-center gap-2.5 rounded-full border border-line-input bg-surface pl-4 pr-1 text-sm transition focus-within:border-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary lg:order-none lg:w-auto lg:flex-1">
                     <SearchIcon size={20} className="shrink-0 text-muted" aria-hidden="true" />
                     <input aria-label="Search products" className="h-full min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted" type="text" enterKeyHint="search" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
                     <button type="button" onClick={() => formRef.current?.requestSubmit()} aria-label="Search" className="flex h-11 min-w-11 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary-dark sm:px-5">

@@ -123,7 +123,7 @@ export default function Cart() {
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
                                                     {categoryTitle && <p className="text-sm text-muted">{categoryTitle}</p>}
-                                                    <Link href={`/product/${item.id}`} className="text-base font-semibold leading-snug tracking-tight text-ink [overflow-wrap:anywhere] hover:underline hover:underline-offset-4 sm:text-lg sm:tracking-tight">{item.name}</Link>
+                                                    <Link href={`/product/${item.id}`} className="-my-0.5 inline-block py-0.5 text-base font-semibold leading-snug tracking-tight text-ink [overflow-wrap:anywhere] hover:underline hover:underline-offset-4 sm:text-lg sm:tracking-tight">{item.name}</Link>
                                                 </div>
                                                 {/* M44 made removal reachable on a phone; M65 keeps one 44px button at every width. */}
                                                 <button type="button" aria-label={`Remove ${item.name}`} onClick={() => handleDeleteItemFromCart(item.id)} className="-mr-1.5 -mt-1.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-3 transition hover:bg-surface-muted hover:text-sale active:scale-95">
@@ -132,7 +132,7 @@ export default function Cart() {
                                             </div>
                                             <p className="text-base font-semibold text-ink sm:text-lg">{formatPKR(item.price)}</p>
                                             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                                                <Counter productId={item.id} name={item.name} />
+                                                <Counter productId={item.id} name={item.name} removeAtOne={false} />
                                                 <p className="text-sm text-muted">Item total <strong className="whitespace-nowrap text-ink">{formatPKR(item.price * item.quantity)}</strong></p>
                                             </div>
                                         </div>

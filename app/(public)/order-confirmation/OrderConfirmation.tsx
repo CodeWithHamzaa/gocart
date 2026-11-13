@@ -14,6 +14,9 @@ import { buttonClasses } from '@/components/ui/Button'
 // M66: the redesign's buttons (design: "Order placed"). The order number is never upper-cased by CSS:
 // e2e reads it back from the page text. M101: pill buttons and a lavender order-number card.
 // M115: the shared Button look (components/ui/Button.tsx).
+// Milestone 120: the order number is the page's main fact, so it is larger and sits with one plain line that
+// says what to do with it. It stays alone in its own element, as plain text. "Track order" opens the Orders
+// page, which fills in this tab's last order number and phone by itself (OrderLookup reads the same saved order).
 const primaryButton = buttonClasses({ size: 'lg' })
 const secondaryButton = buttonClasses({ variant: 'soft', size: 'lg' })
 
@@ -84,25 +87,25 @@ export function OrderConfirmation() {
           </span>
           <h1 className="text-3xl font-semibold leading-tight tracking-tighter text-ink sm:text-4xl">Order placed!</h1>
           <p className="max-w-md text-sm text-muted">
-            Pay in cash when your order is delivered. Keep your order number and phone number to
-            check your order status on the Orders page.
+            Pay in cash when your order is delivered.
           </p>
         </div>
 
         <div className="mt-6 rounded-card bg-surface-muted p-5 sm:p-6">
           <p className="text-xs font-semibold text-muted">Your order number</p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <p className="break-all font-mono text-xl font-semibold text-ink sm:text-2xl">
+            <p className="break-all font-mono text-2xl font-semibold text-ink sm:text-3xl">
               {order.orderNumber}
             </p>
             <button
               type="button"
               onClick={copyOrderNumber}
-              className="inline-flex min-h-11 items-center rounded-full bg-white px-5 text-xs font-semibold text-primary-dark transition hover:bg-accent-soft active:scale-95"
+              className="inline-flex min-h-11 items-center rounded-full bg-surface px-5 text-sm font-semibold text-primary-dark transition hover:bg-accent-soft active:scale-95"
             >
               Copy
             </button>
           </div>
+          <p className="mt-2 text-sm text-ink-2">Keep this number. With your phone number, it is how you track your order.</p>
           <dl className="mt-4 grid gap-x-6 gap-y-2 border-t border-line-2 pt-4 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-xs text-muted">Total to pay</dt>

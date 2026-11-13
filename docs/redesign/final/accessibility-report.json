@@ -1,0 +1,1207 @@
+[
+ {
+  "vp": "mobile-390",
+  "page": "home",
+  "url": "/",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 131,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 1 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 2 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 3 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Pause slides\"",
+    "extra": "32x32 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "shop",
+  "url": "/shop",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 75,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "shop-sorted",
+  "url": "/shop?sort=low",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 72,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "search",
+  "url": "/shop?search=watch",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 42,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "search-empty",
+  "url": "/shop?search=zzqxv",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 32,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "categories",
+  "url": "/categories",
+  "h1": 1,
+  "lang": "en",
+  "title": "Categories | Mirza",
+  "textChecked": 27,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "category",
+  "url": "/category/watches",
+  "h1": 1,
+  "lang": "en",
+  "title": "Watches | Mirza",
+  "textChecked": 44,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "product",
+  "url": "/product/23",
+  "h1": 1,
+  "lang": "en",
+  "title": "Amber Oud Eau de Parfum | Mirza",
+  "textChecked": 46,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Fragrances\"",
+    "extra": "75x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "product-oos",
+  "url": "/product/16",
+  "h1": 1,
+  "lang": "en",
+  "title": "Round Frame Sunglasses | Mirza",
+  "textChecked": 46,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Sunglasses\"",
+    "extra": "76x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "cart-empty",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 13,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "cart",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 55,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "wishlist",
+  "url": "/wishlist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your wishlist | Mirza",
+  "textChecked": 21,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "orders",
+  "url": "/orders",
+  "h1": 1,
+  "lang": "en",
+  "title": "Check your order | Mirza",
+  "textChecked": 22,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "confirmation-none",
+  "url": "/order-confirmation",
+  "h1": 1,
+  "lang": "en",
+  "title": "Order confirmed | Mirza",
+  "textChecked": 13,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "mobile-390",
+  "page": "not-found",
+  "url": "/this-page-does-not-exist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 18,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "home",
+  "url": "/",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 136,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 1 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 2 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Show slide 3 of 3\"",
+    "extra": "24x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "button \"Pause slides\"",
+    "extra": "32x32 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "shop",
+  "url": "/shop",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 78,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "shop-sorted",
+  "url": "/shop?sort=low",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 75,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "search",
+  "url": "/shop?search=watch",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 45,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "search-empty",
+  "url": "/shop?search=zzqxv",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 35,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "categories",
+  "url": "/categories",
+  "h1": 1,
+  "lang": "en",
+  "title": "Categories | Mirza",
+  "textChecked": 30,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "category",
+  "url": "/category/watches",
+  "h1": 1,
+  "lang": "en",
+  "title": "Watches | Mirza",
+  "textChecked": 47,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "product",
+  "url": "/product/23",
+  "h1": 1,
+  "lang": "en",
+  "title": "Amber Oud Eau de Parfum | Mirza",
+  "textChecked": 50,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Fragrances\"",
+    "extra": "75x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "product-oos",
+  "url": "/product/16",
+  "h1": 1,
+  "lang": "en",
+  "title": "Round Frame Sunglasses | Mirza",
+  "textChecked": 50,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Shop\"",
+    "extra": "36x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Sunglasses\"",
+    "extra": "76x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "cart-empty",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 16,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "cart",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 58,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Pulse Active Smart Watch\"",
+    "extra": "212x29 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Gentle Foaming Face Wash\"",
+    "extra": "225x29 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Amber Oud Eau de Parfum\"",
+    "extra": "218x29 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "wishlist",
+  "url": "/wishlist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your wishlist | Mirza",
+  "textChecked": 24,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Home\"",
+    "extra": "41x44 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "orders",
+  "url": "/orders",
+  "h1": 1,
+  "lang": "en",
+  "title": "Check your order | Mirza",
+  "textChecked": 25,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "confirmation-none",
+  "url": "/order-confirmation",
+  "h1": 1,
+  "lang": "en",
+  "title": "Order confirmed | Mirza",
+  "textChecked": 16,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "tablet-820",
+  "page": "not-found",
+  "url": "/this-page-does-not-exist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 21,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": [
+   {
+    "type": "small-target",
+    "el": "a \"Track your order\"",
+    "extra": "133x24 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Mirza\"",
+    "extra": "60x30 < 44"
+   },
+   {
+    "type": "small-target",
+    "el": "a \"Bags\"",
+    "extra": "34x44 < 44"
+   }
+  ]
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "home",
+  "url": "/",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 136,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "shop",
+  "url": "/shop",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 78,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "shop-sorted",
+  "url": "/shop?sort=low",
+  "h1": 1,
+  "lang": "en",
+  "title": "Shop all products | Mirza",
+  "textChecked": 75,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "search",
+  "url": "/shop?search=watch",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 45,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "search-empty",
+  "url": "/shop?search=zzqxv",
+  "h1": 1,
+  "lang": "en",
+  "title": "Search results | Mirza",
+  "textChecked": 35,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "categories",
+  "url": "/categories",
+  "h1": 1,
+  "lang": "en",
+  "title": "Categories | Mirza",
+  "textChecked": 30,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "category",
+  "url": "/category/watches",
+  "h1": 1,
+  "lang": "en",
+  "title": "Watches | Mirza",
+  "textChecked": 45,
+  "contrastSkipped": 2,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "product",
+  "url": "/product/23",
+  "h1": 1,
+  "lang": "en",
+  "title": "Amber Oud Eau de Parfum | Mirza",
+  "textChecked": 53,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "product-oos",
+  "url": "/product/16",
+  "h1": 1,
+  "lang": "en",
+  "title": "Round Frame Sunglasses | Mirza",
+  "textChecked": 53,
+  "contrastSkipped": 0,
+  "tabStops": 45,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "cart-empty",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 21,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "cart",
+  "url": "/cart",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your cart | Mirza",
+  "textChecked": 61,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "wishlist",
+  "url": "/wishlist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Your wishlist | Mirza",
+  "textChecked": 24,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "orders",
+  "url": "/orders",
+  "h1": 1,
+  "lang": "en",
+  "title": "Check your order | Mirza",
+  "textChecked": 25,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "confirmation-none",
+  "url": "/order-confirmation",
+  "h1": 1,
+  "lang": "en",
+  "title": "Order confirmed | Mirza",
+  "textChecked": 21,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ },
+ {
+  "vp": "desktop-1440",
+  "page": "not-found",
+  "url": "/this-page-does-not-exist",
+  "h1": 1,
+  "lang": "en",
+  "title": "Mirza - Online shopping with Cash on Delivery in Pakistan",
+  "textChecked": 21,
+  "contrastSkipped": 0,
+  "tabStops": 44,
+  "skipLinkFirst": true,
+  "issues": []
+ }
+]

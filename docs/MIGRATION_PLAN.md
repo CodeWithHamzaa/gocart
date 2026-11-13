@@ -1697,7 +1697,7 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Admin-editable storefront content, sliding announcement bar, Featured grid (M110)`
 
 ### Milestone 111 — Listing card hierarchy, 2/3/4 product grids, shorter header category row
-- **Status (2026-11-05)**: **Implemented, in review** (not deployed). Requested by the owner on 2026-11-05; scope confirmed by the owner: the new layout in the Mirza palette (not black/grey), the first four categories in admin order (nothing hardcoded), the search bar left as it is, the 2/3/4 grid on every product listing.
+- **Status (2026-11-05)**: **Done and merged.** It is part of the code deployed to the test site on 2026-11-11 (`main` at `e1e9e5a`); checked with git on 2026-11-13: this milestone's commit `e6e3b3a` is an ancestor of `e1e9e5a`. (Corrected from "Implemented, in review" by Milestone 121.) Requested by the owner on 2026-11-05; scope confirmed by the owner: the new layout in the Mirza palette (not black/grey), the first four categories in admin order (nothing hardcoded), the search bar left as it is, the 2/3/4 grid on every product listing.
 - **Goal**: fix the listing card's visual hierarchy and row alignment, make every product grid 2 / 3 / 4 columns, and keep the desktop category row to four links plus "All categories".
 - **Files**: `components/ProductCard.jsx`, `components/ui/Badge.tsx` (`shape="tag"`), `components/ui/QuickAddButton.tsx` (`variant="solid"`), `components/ui/CategoryNav.tsx`, `components/HeroShortcuts.tsx`, `components/BestSelling.jsx` (Featured grid now uses `ProductCard`), `components/DealsOfTheDay.tsx`, `app/(public)/shop/page.jsx`, `app/(public)/category/[slug]/page.tsx`, `app/(public)/wishlist/page.tsx`.
 - **Spec**: card order is a square photo tile (status and discount tags float top-left, heart top-right), the category in small uppercase, the name clamped to two lines (full text stays in the DOM), then the price row at the bottom (`mt-auto`) with a 44px round brand-colour add-to-cart button that is disabled and dimmed when out of stock. Cards fill the row height. Grids: `grid-cols-2 gap-3`, `md:grid-cols-3`, `lg:grid-cols-4 lg:gap-6`; card padding `p-3`, `lg:p-4`. The home "New arrivals" rail keeps the Milestone 101 `RailCard`. No data, schema, checkout or access-control change; no new package.
@@ -1775,4 +1775,24 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: type-check, lint (0 errors), production build, the continuous integration unit scripts; on a throwaway local PostgreSQL: sort orders, not-indexed marker and "Load more" checked on the running shop, photo swipe checked with touch events, captures at 390/820/1440 with no overflow or console errors. The end-to-end suite runs in continuous integration.
 - **Rollback**: revert the pull request.
 - **Commit message**: `Redesign shop, category, search and product pages`
+
+### Milestone 120 — Cart, checkout panel, address form, order confirmation and order lookup
+- **Status (2026-11-13)**: **Done, in review** (not deployed). Phase 4 of the premium storefront redesign; authorized by the owner on 2026-11-13.
+- **Goal**: make the buying steps clearer without touching how an order is placed: one way to remove a cart line, a visible reason when no address is chosen, a labelled address form (email and area marked optional, as the server already allows), a more prominent order number on the confirmation page, and hints on the order lookup form.
+- **Files**: `components/ui/QuantityStepper.tsx`, `components/Counter.jsx`, `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx` (markup and display text only), `components/AddressModal.jsx`, `app/(public)/order-confirmation/OrderConfirmation.tsx`, `app/(public)/orders/OrderLookup.tsx`, `docs/redesign/phase4/`.
+- **Spec**: `docs/redesign/phase4/README.md`, including what was left out (the contact links in the paused-ordering notice, which live in the Turnstile widget). The address form stays a popup (owner decision). One behaviour change: the form no longer requires email or area. No change to `placeOrder`, the idempotency key, Turnstile, `lib/validation/pk.ts`, the order guard, the schema or dependencies. Guest checkout and cash on delivery only.
+- **Dependencies**: Milestones 115 to 119.
+- **Testing**: type-check, lint (0 errors), the continuous integration unit scripts; on a throwaway local PostgreSQL: a 33-check script (11 checks at 390, 820 and 1440px) all passing, 51 general captures with no overflow or console errors. No order was placed (the Turnstile script cannot load in the sandbox); the confirmation page was captured from a made-up order in session storage. The end-to-end suite runs in continuous integration.
+- **Rollback**: revert the pull request.
+- **Commit message**: `Clarify cart, address form, order confirmation and order lookup`
+
+### Milestone 121 — Final quality assurance and documentation for the storefront redesign
+- **Status (2026-11-13)**: **Done, in review** (not deployed). Phase 5 of the premium storefront redesign; authorized by the owner on 2026-11-13.
+- **Goal**: check the finished redesign end to end, fix what the check finds, and leave an honest record: a final screenshot set, an accessibility report, what is still open, and the correct status of Milestone 111.
+- **Files**: `components/Navbar.jsx`, `components/AddressModal.jsx`, `app/(public)/orders/OrderLookup.tsx` (the 2px focus ring restored on three text fields), `app/(public)/cart/page.jsx` (cart product-name links no longer shorter than 24px), `docs/redesign/PHASE5_FINAL_REPORT.md`, `docs/redesign/final/`, `docs/README.md`, and the status lines for Milestone 111 in this file, `docs/TASKS.md` and `docs/CHANGELOG.md`.
+- **Spec**: `docs/redesign/PHASE5_FINAL_REPORT.md`. No schema, data, API, checkout logic or dependency change.
+- **Dependencies**: Milestones 115 to 120.
+- **Testing**: type-check, lint (0 errors), the continuous integration unit scripts; an automated accessibility pass over 15 page states at 390, 820 and 1440px (45 checks of a page, 0 failures other than target sizes, all of which are at least 24px); the 33-check checkout script from Milestone 120 re-run (all pass); 51 captures with no overflow or console errors. Screen-reader, real-device and zoom testing were not done (unverified).
+- **Rollback**: revert the pull request.
+- **Commit message**: `Final quality pass for the storefront redesign`
 
