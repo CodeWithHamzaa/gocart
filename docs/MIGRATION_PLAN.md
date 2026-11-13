@@ -1776,3 +1776,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: revert the pull request.
 - **Commit message**: `Redesign shop, category, search and product pages`
 
+### Milestone 120 — Cart, checkout panel, address form, order confirmation and order lookup
+- **Status (2026-11-13)**: **Done, in review** (not deployed). Phase 4 of the premium storefront redesign; authorized by the owner on 2026-11-13.
+- **Goal**: make the buying steps clearer without touching how an order is placed: one way to remove a cart line, a visible reason when no address is chosen, a labelled address form (email and area marked optional, as the server already allows), a more prominent order number on the confirmation page, and hints on the order lookup form.
+- **Files**: `components/ui/QuantityStepper.tsx`, `components/Counter.jsx`, `app/(public)/cart/page.jsx`, `components/OrderSummary.jsx` (markup and display text only), `components/AddressModal.jsx`, `app/(public)/order-confirmation/OrderConfirmation.tsx`, `app/(public)/orders/OrderLookup.tsx`, `docs/redesign/phase4/`.
+- **Spec**: `docs/redesign/phase4/README.md`, including what was left out (the contact links in the paused-ordering notice, which live in the Turnstile widget). The address form stays a popup (owner decision). One behaviour change: the form no longer requires email or area. No change to `placeOrder`, the idempotency key, Turnstile, `lib/validation/pk.ts`, the order guard, the schema or dependencies. Guest checkout and cash on delivery only.
+- **Dependencies**: Milestones 115 to 119.
+- **Testing**: type-check, lint (0 errors), the continuous integration unit scripts; on a throwaway local PostgreSQL: a 33-check script (11 checks at 390, 820 and 1440px) all passing, 51 general captures with no overflow or console errors. No order was placed (the Turnstile script cannot load in the sandbox); the confirmation page was captured from a made-up order in session storage. The end-to-end suite runs in continuous integration.
+- **Rollback**: revert the pull request.
+- **Commit message**: `Clarify cart, address form, order confirmation and order lookup`
+

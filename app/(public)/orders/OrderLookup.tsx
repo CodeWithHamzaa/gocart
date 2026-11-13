@@ -14,6 +14,8 @@ import { buttonClasses } from '@/components/ui/Button'
 import { TurnstileWidget, initialTurnstileState } from '@/components/TurnstileWidget'
 import type { TurnstileHandle, TurnstileState } from '@/components/TurnstileWidget'
 
+// Milestone 120: each field has a one-line hint linked with aria-describedby. Still one form with one submit button;
+// the answer for a wrong number and a wrong phone is the same message, as before (the server decides).
 // M66: the redesign's field style (tokens, visible focus).
 // M101 (owner-approved home style): a lavender panel with pill fields and a pill button, no shadow.
 const inputClass = 'w-full min-h-12 rounded-full border border-line-input bg-surface px-5 text-ink outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary'
@@ -81,9 +83,11 @@ export function OrderLookup() {
               autoComplete="off"
               spellCheck={false}
               placeholder="GC-XXXXXXXX-XXXXXXXX"
+              aria-describedby="order-number-hint"
               className={`${inputClass} font-mono`}
               required
             />
+            <span id="order-number-hint" className="text-xs font-normal text-muted">It starts with GC and is on your order confirmation.</span>
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
             Phone number
@@ -95,9 +99,11 @@ export function OrderLookup() {
               pattern="(0[0-9]{10}|\+923[0-9]{9})"
               title="Phone number you ordered with, e.g. 03001234567 or +923001234567"
               placeholder="03XXXXXXXXX"
+              aria-describedby="phone-hint"
               className={inputClass}
               required
             />
+            <span id="phone-hint" className="text-xs font-normal text-muted">The number you gave when you ordered.</span>
           </label>
           <TurnstileWidget ref={turnstileRef} action="order_lookup" onChange={setTurnstile} />
           <button

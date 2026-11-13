@@ -132,7 +132,7 @@ export default function Cart() {
                                             </div>
                                             <p className="text-base font-semibold text-ink sm:text-lg">{formatPKR(item.price)}</p>
                                             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                                                <Counter productId={item.id} name={item.name} />
+                                                <Counter productId={item.id} name={item.name} removeAtOne={false} />
                                                 <p className="text-sm text-muted">Item total <strong className="whitespace-nowrap text-ink">{formatPKR(item.price * item.quantity)}</strong></p>
                                             </div>
                                         </div>

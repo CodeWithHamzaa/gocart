@@ -18,6 +18,12 @@ import { buttonClasses } from '@/components/ui/Button'
 // every handler, state, effect, the server action call and the Turnstile wiring are as before. The
 // design's promo code, express delivery and card/wallet/bank payments are not built (ADR-017, ADR-018,
 // ADR-004). Below `lg` the total and the Place Order button sit in a fixed bar; it is the same button.
+// Milestone 120: markup only. An address is shown without a gap when its area is empty (area is optional);
+// and while no address is chosen a line next to the Place order button says what is missing, instead of
+// the shopper learning it from an error message after pressing the button. The button's own enabled
+// rules, the Turnstile check, the idempotency key and the server action call are untouched.
+const addressLine = (address) => [address.name, address.address, address.area, address.city].filter(Boolean).join(', ')
+
 const OrderSummary = ({ totalPrice, items }) => {
 
 
@@ -176,7 +182,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 {
                     selectedAddress ? (
                         <div className='flex items-center gap-2 rounded-tile bg-surface-muted p-3 pl-4'>
-                            <p className='min-w-0 flex-1 text-ink-2 [overflow-wrap:anywhere]'>{selectedAddress.name}, {selectedAddress.address}, {selectedAddress.area}, {selectedAddress.city}</p>
+                            <p className='min-w-0 flex-1 text-ink-2 [overflow-wrap:anywhere]'>{addressLine(selectedAddress)}</p>
                             <button type='button' aria-label='Change delivery address' onClick={() => setSelectedAddress(null)} className='inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent-soft'><SquarePenIcon size={18} aria-hidden='true' /></button>
                         </div>
                     ) : (
@@ -187,7 +193,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                                         <option value="">Select Address</option>
                                         {
                                             addressList.map((address, index) => (
-                                                <option key={index} value={index}>{address.name}, {address.address}, {address.area}, {address.city}</option>
+                                                <option key={index} value={index}>{addressLine(address)}</option>
                                             ))
                                         }
                                     </select>
@@ -234,12 +240,15 @@ const OrderSummary = ({ totalPrice, items }) => {
             )}
             <TurnstileWidget ref={turnstileRef} action='place_order' onChange={setTurnstile} />
             <MobileActionBar label='Place order' inline>
+                {items?.length > 0 && !selectedAddress && (
+                    <p id='place-order-hint' className='mx-auto mb-2 max-w-xl text-xs text-muted lg:mb-3 lg:max-w-none'>Choose or add a delivery address to place your order.</p>
+                )}
                 <div className='mx-auto flex max-w-xl items-center gap-3 lg:max-w-none'>
                     <div className='shrink-0 lg:hidden'>
                         <p className='text-xs text-muted'>Total</p>
                         <p className='text-lg font-semibold leading-tight text-ink'>{grandTotal === null ? '...' : formatPKR(grandTotal)}</p>
                     </div>
-                    <button onClick={handlePlaceOrder} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className={buttonClasses({ size: 'xl', className: 'flex-1' })}>{placing ? 'Placing order...' : 'Place order'}</button>
+                    <button onClick={handlePlaceOrder} aria-describedby={items?.length > 0 && !selectedAddress ? 'place-order-hint' : undefined} disabled={placing || shippingSettings === null || turnstile.status !== 'verified'} className={buttonClasses({ size: 'xl', className: 'flex-1' })}>{placing ? 'Placing order...' : 'Place order'}</button>
                 </div>
             </MobileActionBar>
             <p className='flex items-center justify-center gap-2 text-xs text-muted'><LockIcon size={14} aria-hidden='true' />Cash on delivery &middot; no online payment</p>

@@ -464,6 +464,7 @@ production build (Milestone 49) cannot assume a reachable database. `/` moved `â
 | Milestone 117 | Hybrid palette values (Architecture Decision Record 052): warm ivory surfaces, aubergine footer, violet saved-heart and wishlist badge; the admin's brand colours read the shared palette | **Done, in review** (2026-11-12). Not deployed. Before/after captures in `docs/redesign/phase1/`. |
 | Milestone 118 | Homepage: editorial hero (one photo, display headline), "Shop by category" round category photos at every size, beside an intro column on desktop (owner's reference), "Limited-time deals" with an end date, cash-on-delivery band removed (owner), all categories in the footer | **Done, in review** (2026-11-12). Phase 2; not deployed. Captures in `docs/redesign/phase2/`. |
 | Milestone 119 | Shop, category, search and product pages: one page header, a sort on the shop, category links under an empty search, the price in the phone's bottom bar, photo swipe, two product columns from 768px, a related-products fallback | **Done, in review** (2026-11-13). Phase 3; not deployed. Captures in `docs/redesign/phase3/`. |
+| Milestone 120 | Cart, address form, order confirmation and order lookup: one remove control per cart line, a reason line beside Place order while no address is chosen, a labelled address form with email and area optional, a larger order number with a plain instruction, hints on the lookup form | **Done, in review** (2026-11-13). Phase 4; not deployed; no order logic, Turnstile or schema change. Captures in `docs/redesign/phase4/`. |
 
 ---
 

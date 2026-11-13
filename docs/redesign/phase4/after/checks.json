@@ -1,0 +1,167 @@
+[
+  {
+    "name": "mobile-390 cart: one remove control per line",
+    "ok": true,
+    "extra": "3 remove buttons for 3 lines"
+  },
+  {
+    "name": "mobile-390 cart: reason line shown before an address is chosen",
+    "ok": true,
+    "extra": "hint count 1"
+  },
+  {
+    "name": "mobile-390 modal: visible labels",
+    "ok": true,
+    "extra": "6 labels"
+  },
+  {
+    "name": "mobile-390 modal: input keeps focus while typing",
+    "ok": true,
+    "extra": "focused: name"
+  },
+  {
+    "name": "mobile-390 modal: a landline number is refused with the same message",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "mobile-390 modal: saves without email and area",
+    "ok": true,
+    "extra": "save buttons left: 0"
+  },
+  {
+    "name": "mobile-390 summary: address line has no empty gap",
+    "ok": true,
+    "extra": "Demo Buyer, House 5, Street 12, G-9/1, Islamabad"
+  },
+  {
+    "name": "mobile-390 cart: reason line gone once an address is chosen",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "mobile-390 orders: exactly one submit button",
+    "ok": true,
+    "extra": "1"
+  },
+  {
+    "name": "mobile-390 confirmation: order number readable from the page text",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  },
+  {
+    "name": "mobile-390 confirmation: Track order opens Orders with the number filled in",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  },
+  {
+    "name": "tablet-820 cart: one remove control per line",
+    "ok": true,
+    "extra": "3 remove buttons for 3 lines"
+  },
+  {
+    "name": "tablet-820 cart: reason line shown before an address is chosen",
+    "ok": true,
+    "extra": "hint count 1"
+  },
+  {
+    "name": "tablet-820 modal: visible labels",
+    "ok": true,
+    "extra": "6 labels"
+  },
+  {
+    "name": "tablet-820 modal: input keeps focus while typing",
+    "ok": true,
+    "extra": "focused: name"
+  },
+  {
+    "name": "tablet-820 modal: a landline number is refused with the same message",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "tablet-820 modal: saves without email and area",
+    "ok": true,
+    "extra": "save buttons left: 0"
+  },
+  {
+    "name": "tablet-820 summary: address line has no empty gap",
+    "ok": true,
+    "extra": "Demo Buyer, House 5, Street 12, G-9/1, Islamabad"
+  },
+  {
+    "name": "tablet-820 cart: reason line gone once an address is chosen",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "tablet-820 orders: exactly one submit button",
+    "ok": true,
+    "extra": "1"
+  },
+  {
+    "name": "tablet-820 confirmation: order number readable from the page text",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  },
+  {
+    "name": "tablet-820 confirmation: Track order opens Orders with the number filled in",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  },
+  {
+    "name": "desktop-1440 cart: one remove control per line",
+    "ok": true,
+    "extra": "3 remove buttons for 3 lines"
+  },
+  {
+    "name": "desktop-1440 cart: reason line shown before an address is chosen",
+    "ok": true,
+    "extra": "hint count 1"
+  },
+  {
+    "name": "desktop-1440 modal: visible labels",
+    "ok": true,
+    "extra": "6 labels"
+  },
+  {
+    "name": "desktop-1440 modal: input keeps focus while typing",
+    "ok": true,
+    "extra": "focused: name"
+  },
+  {
+    "name": "desktop-1440 modal: a landline number is refused with the same message",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "desktop-1440 modal: saves without email and area",
+    "ok": true,
+    "extra": "save buttons left: 0"
+  },
+  {
+    "name": "desktop-1440 summary: address line has no empty gap",
+    "ok": true,
+    "extra": "Demo Buyer, House 5, Street 12, G-9/1, Islamabad"
+  },
+  {
+    "name": "desktop-1440 cart: reason line gone once an address is chosen",
+    "ok": true,
+    "extra": ""
+  },
+  {
+    "name": "desktop-1440 orders: exactly one submit button",
+    "ok": true,
+    "extra": "1"
+  },
+  {
+    "name": "desktop-1440 confirmation: order number readable from the page text",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  },
+  {
+    "name": "desktop-1440 confirmation: Track order opens Orders with the number filled in",
+    "ok": true,
+    "extra": "GC-20261113-AB12CD34"
+  }
+]
