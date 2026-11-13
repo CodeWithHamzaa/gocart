@@ -5,7 +5,7 @@ import { ArrowRightIcon, TruckIcon, BanknoteIcon, ShoppingBagIcon, ShoppingCartI
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
 import Badge from "./ui/Badge";
@@ -54,6 +54,25 @@ const ProductDetails = ({ product, shipping, children = null }) => {
     const [mainImage, setMainImage] = useState(images[0]);
     const imageIndex = Math.max(images.indexOf(mainImage), 0);
 
+    // Milestone 119: on a phone the photo can be swiped. A mostly horizontal drag of 40px or more moves to the
+    // next or previous photo; a vertical drag still scrolls the page. The thumbnails stay for taps and keyboards.
+    const touchStart = useRef(null);
+    const onTouchStart = (event) => {
+        const touch = event.touches[0];
+        touchStart.current = { x: touch.clientX, y: touch.clientY };
+    };
+    const onTouchEnd = (event) => {
+        const start = touchStart.current;
+        touchStart.current = null;
+        if (!start || images.length < 2) return;
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        const next = (imageIndex + (dx < 0 ? 1 : -1) + images.length) % images.length;
+        setMainImage(images[next]);
+    };
+
     const category = typeof product.category === 'object' && product.category ? product.category : null;
     // M69: the same badge rule as the product card (lib/product-badges.ts).
     const status = statusBadge(product);
@@ -77,12 +96,13 @@ const ProductDetails = ({ product, shipping, children = null }) => {
     }
 
     return (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
+        <div className="grid gap-6 md:grid-cols-2 md:items-start md:gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row-reverse lg:gap-4">
-                {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. */}
-                <div className={`relative -mx-4 flex aspect-square min-w-0 flex-1 items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel lg:aspect-square ${tileFor(productId)}`}>
+                {/* Full-bleed on a phone (the page's side margin is cancelled), a rounded tile from `sm`. A wide
+                    5:4 tile on a tablet-width single column, square once the layout has two columns (`md`). */}
+                <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={`relative -mx-4 flex aspect-square min-w-0 flex-1 touch-pan-y items-center justify-center overflow-hidden sm:mx-0 sm:aspect-[5/4] sm:rounded-panel md:aspect-square ${tileFor(productId)}`}>
                     {/* M45: the main product image is the largest contentful paint, so it is not lazy-loaded. */}
-                    {mainImage && <Image src={mainImage} alt={gallery[imageIndex]?.alt || product.name} width={900} height={900} sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw" priority fetchPriority="high" className="size-full object-cover" />}
+                    {mainImage && <Image src={mainImage} alt={gallery[imageIndex]?.alt || product.name} width={900} height={900} sizes="(min-width: 1280px) 620px, (min-width: 768px) 50vw, 100vw" priority fetchPriority="high" className="size-full object-cover" />}
                     {/* M101: "Out of stock" is said once, by the stock line; the photo keeps only an admin label. */}
                     {status && !outOfStock && <Badge tone={status.tone} className="absolute left-3 top-3">{status.text}</Badge>}
                     {images.length > 1 && (
@@ -121,6 +141,11 @@ const ProductDetails = ({ product, shipping, children = null }) => {
 
                 {/* The action group: fixed to the bottom below `lg`, inline in the column from `lg`. */}
                 <MobileActionBar label="Add to cart" inline>
+                    {/* Milestone 119: the price rides in the fixed bar below `lg`, so it is in view whatever the scroll
+                        position; from `lg` the bar is inline in the column, right under the price, so it is dropped there. */}
+                    <div className="mx-auto mb-2 flex max-w-xl items-baseline justify-between gap-3 lg:hidden">
+                        <Price price={product.price} mrp={product.mrp} />
+                    </div>
                     <div className="mx-auto flex max-w-xl items-center gap-3 lg:max-w-none">
                         {outOfStock ? (
                             <>

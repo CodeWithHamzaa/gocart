@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { applyInMemory, type CategorySort } from '@/lib/category-filters'
 import type { Category, Media } from './categories'
 
 // M22: server-side data-fetching utility for Products. Uses Payload's Local API
@@ -86,6 +87,30 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Pro
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
   }
+}
+
+/**
+ * The shop listing in one of the category page's four orders (Milestone 119). Price order is a
+ * database sort. "Biggest discount" compares price with MRP, which Payload cannot sort by, so that
+ * order reads every match and sorts and trims them here, the same rule getProductsByCategory uses.
+ * "Recommended" is the plain listing. `totalDocs` is the number of matches either way.
+ */
+export async function getProductsSorted(
+  sortBy: CategorySort,
+  { search, limit = 0 }: { search?: string; limit?: number } = {},
+): Promise<ProductsResult> {
+  if (sortBy === 'disc') {
+    const all = await getProducts({ search, limit: 0 })
+    const ordered = applyInMemory(all.docs, { sort: 'disc' })
+    return {
+      docs: limit > 0 ? ordered.slice(0, limit) : ordered,
+      page: 1,
+      totalDocs: ordered.length,
+      totalPages: limit > 0 ? Math.max(Math.ceil(ordered.length / limit), 1) : 1,
+    }
+  }
+  const sort = sortBy === 'low' ? 'price' : sortBy === 'high' ? '-price' : undefined
+  return getProducts({ search, limit, sort })
 }
 
 /**

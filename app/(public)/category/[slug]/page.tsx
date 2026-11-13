@@ -7,6 +7,7 @@ import ProductCard from '@/components/ProductCard'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import CategoryControls from '@/components/ui/CategoryControls'
 import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 import { filtersToQuery, isRefined, parseCategoryFilters } from '@/lib/category-filters'
 import { CategoryIcon } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
@@ -129,37 +130,42 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <Breadcrumb items={crumbs} />
         </div>
 
-        <section aria-labelledby="category-title" className="relative mt-3 overflow-hidden rounded-panel border border-line bg-linear-to-br from-accent-soft via-accent-soft/50 to-surface px-5 py-7 sm:px-10 sm:py-10">
-          {/* M101: the home banner's look: a lavender panel and a large semibold title. */}
-          {/* M107: the category's photo fills the circle when an admin uploaded one (as on the tiles and shortcuts); the icon stands in otherwise. */}
-          <span aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden size-40 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-surface text-ink-3 shadow-float-sm sm:flex lg:right-14">
-            {bannerImage ? (
-              <Image src={bannerImage} alt="" width={320} height={320} sizes="160px" className="size-full object-cover" />
-            ) : (
-              <CategoryIcon category={category} size={72} strokeWidth={1.2} />
-            )}
-          </span>
-          <div className="relative flex max-w-2xl flex-col gap-3">
-            <h1 id="category-title" className="text-3xl font-semibold tracking-tight text-ink sm:text-5xl sm:tracking-tighter">{category.title}</h1>
-            {category.description && <p className="text-base text-ink-3">{category.description}</p>}
-          </div>
-        </section>
+        {/* Milestone 119: the shared page header (plain title, one-line description, count) replaces the
+            tinted banner. The category's own photo stays as a small round inset from `sm`, as on the
+            home page's category circles (M107: the icon stands in when there is no photo). */}
+        <PageHeader
+          id="category-title"
+          title={category.title}
+          description={category.description}
+          meta={
+            <>
+              <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
+              {refined && (totalDocs === 1 ? ' matches' : ' match')}
+            </>
+          }
+          aside={
+            <span aria-hidden="true" className="hidden size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-muted text-ink-3 sm:flex lg:size-28">
+              {bannerImage ? (
+                <Image src={bannerImage} alt="" width={224} height={224} sizes="112px" className="size-full object-cover" />
+              ) : (
+                <CategoryIcon category={category} size={44} strokeWidth={1.3} />
+              )}
+            </span>
+          }
+        />
 
         {(products.length > 0 || refined) && (
-          <div className="mt-6">
+          <div className="mt-5">
             <CategoryControls basePath={basePath} filters={filters} />
           </div>
         )}
 
         {products.length > 0 ? (
           <>
-            <p className="mt-6 text-sm text-muted">
-              Showing <strong className="text-ink">{totalDocs}</strong> product{totalDocs === 1 ? '' : 's'}
-            </p>
             <h2 className="sr-only">Products</h2>
-            <div className="mt-4 mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+            <div className="mt-6 mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6">
               {products.map((product, index) => (
-                <ProductCard key={product.id} product={product} priority={index < 4} />
+                <ProductCard key={product.id} product={product} priority={index < 4} showCategory={false} />
               ))}
             </div>
           </>

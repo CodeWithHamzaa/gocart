@@ -1765,3 +1765,14 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Testing**: type-check, lint (0 errors), build, continuous integration unit scripts; local before/after captures at 390/820/1440.
 - **Rollback**: revert the commit.
 - **Commit message**: `Homepage: editorial hero, Shop by category, honest deals, Why shop with Mirza (M118)`
+
+### Milestone 119 — Shop, category, search and product pages
+- **Status (2026-11-13)**: **Done, in review** (not deployed). Phase 3 of the premium storefront redesign; authorized by the owner on 2026-11-13.
+- **Goal**: make the listing pages and the product page read as one calm, consistent set, using only existing data: one header pattern, a sort on the shop, a way on from an empty search, a price that stays in view on a phone, a two-column product page from tablet width, and a related-products section that never leaves the page with a dead end.
+- **Files**: `components/ui/PageHeader.tsx` and `components/ui/SortControl.tsx` (new), `app/(public)/shop/page.jsx`, `app/(public)/category/[slug]/page.tsx`, `components/ProductCard.jsx` (`showCategory`), `components/ProductDetails.jsx`, `components/ProductDescription.jsx`, `components/RelatedProducts.tsx`, `components/ui/CategoryControls.tsx`, `components/ui/MobileTabBar.tsx`, `lib/payload/products.ts` (`getProductsSorted`), `docs/redesign/phase3/`.
+- **Spec**: `docs/redesign/phase3/README.md`, including what the audit proposed and this milestone left out (phone bottom sheet, search box prefill, shop filters, schema-dependent fields). No schema, API, checkout, stored value or dependency change; no `loading.tsx` on the category route; `force-dynamic` kept on `/shop`, `/` and the product page.
+- **Dependencies**: Milestones 115 to 117 (shared button, price and palette).
+- **Testing**: type-check, lint (0 errors), production build, the continuous integration unit scripts; on a throwaway local PostgreSQL: sort orders, not-indexed marker and "Load more" checked on the running shop, photo swipe checked with touch events, captures at 390/820/1440 with no overflow or console errors. The end-to-end suite runs in continuous integration.
+- **Rollback**: revert the pull request.
+- **Commit message**: `Redesign shop, category, search and product pages`
+

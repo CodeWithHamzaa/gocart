@@ -4,7 +4,7 @@ import Title from '@/components/Title'
 import { RAIL_ROW } from '@/components/ProductRail'
 import ScrollRail from '@/components/ui/ScrollRail'
 import { getProductsByCategory } from '@/lib/payload/categories'
-import type { Product } from '@/lib/payload/products'
+import { getProducts, type Product } from '@/lib/payload/products'
 
 // M67: "You may also like" under a product: up to four in-stock products from the same category,
 // never the product being viewed. Server component; the data comes from the existing
@@ -12,6 +12,9 @@ import type { Product } from '@/lib/payload/products'
 // The section renders nothing (no heading) when there is nothing to show, when the product has no
 // category, or when the read fails: the product page must never break because of this section.
 // The order is whatever that helper returns (Payload's default for the collection).
+// Milestone 119: with fewer than two in the category (a small or new category), the section falls back to
+// "More to explore": the newest in-stock products, so the page never ends in a dead end. It still renders
+// nothing when even that finds fewer than two.
 type RelatedCategory = { slug: string; title: string }
 
 const SHOWN = 4
@@ -19,11 +22,16 @@ const FETCHED = 8
 
 async function RelatedList({ category, currentId }: { category: RelatedCategory; currentId: number | string }) {
   let related: Product[] = []
+  let fallback = false
+  const others = (docs: Product[]) =>
+    docs.filter((product) => String(product.id) !== String(currentId) && product.inStock === true).slice(0, SHOWN)
   try {
     const result = await getProductsByCategory(category.slug, { limit: FETCHED })
-    related = ((result?.docs ?? []) as Product[])
-      .filter((product) => String(product.id) !== String(currentId) && product.inStock === true)
-      .slice(0, SHOWN)
+    related = others((result?.docs ?? []) as Product[])
+    if (related.length < 2) {
+      related = others((await getProducts({ sort: '-createdAt', limit: FETCHED })).docs)
+      fallback = true
+    }
   } catch (error) {
     // The slug only: nothing about the visitor or the product's price/stock.
     console.error('RelatedProducts failed for category', category.slug, error instanceof Error ? error.message : 'unknown error')
@@ -36,9 +44,9 @@ async function RelatedList({ category, currentId }: { category: RelatedCategory;
   // M101: the home page's rail (Title, ScrollRail, RailCard), so "You may also like" looks like "New arrivals".
   return (
     <section aria-labelledby="related-products" className="my-12 sm:my-16">
-      <Title id="related-products" title="You may also like" href={`/category/${category.slug}`} linkLabel="View all" />
+      <Title id="related-products" title={fallback ? 'More to explore' : 'You may also like'} href={fallback ? '/shop' : `/category/${category.slug}`} linkLabel="View all" />
       <div className="mt-6">
-        <ScrollRail label="You may also like">
+        <ScrollRail label={fallback ? 'More to explore' : 'You may also like'}>
           <ul className={RAIL_ROW}>
             {related.map((product) => (
               <li key={product.id}>
