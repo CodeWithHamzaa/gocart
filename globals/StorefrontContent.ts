@@ -43,7 +43,7 @@ export const StorefrontContent: GlobalConfig = {
           name: 'showTrackOrderLink',
           type: 'checkbox',
           defaultValue: true,
-          label: 'Show the "Track order" link on the right',
+          label: 'Show the "Track order" button in the header',
         },
       ],
     },

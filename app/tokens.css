@@ -2,8 +2,9 @@
    storefront (app/globals.css maps the role tokens onto these) and the Payload admin can read one
    source of truth. Components never use these names directly: they use the role utilities
    (bg-page, text-ink, bg-primary, bg-inverse...). Change a colour here, not in a component.
-   M115 moved the values here unchanged; M117 applies ADR-052 (the hybrid palette): warm ivory
-   surfaces and lines, one violet for actions, an aubergine dark surface. */
+   M115 moved the values here unchanged; M117 applied ADR-052 (warm ivory surfaces). Milestone 122
+   applies ADR-053 (the final Mirza Cart palette): clean cool-neutral surfaces and lines, one violet
+   for actions, an aubergine dark surface. */
 :root {
     /* Violet: the one action colour, its hover/pressed state and its light tints. */
     --palette-violet-600: #5F42EC;
@@ -12,22 +13,23 @@
     --palette-violet-200: #E2DAFF;
 
     /* Ink: text from headings to disabled. */
-    --palette-ink-900: #1D1D1F;
+    --palette-ink-900: #242328;
     --palette-ink-700: #424245;
     --palette-ink-600: #515154;
     --palette-ink-500: #636368;
     --palette-ink-300: #A1A1A6;
 
-    /* Warm neutral surfaces and lines (ADR-052): ivory page, white cards, warm wells. */
-    --palette-ivory-50: #F7F5F0;
+    /* Clean neutral surfaces and lines (ADR-053): near-white page, white cards, a neutral well
+       behind product images. */
+    --palette-neutral-50: #F8F8FA;
     --palette-white: #FFFFFF;
-    --palette-ivory-100: #F1EEE8;
-    --palette-line-100: #E8E4DC;
-    --palette-line-200: #DDD8CE;
-    --palette-line-300: #C6BFB2;
-    --palette-line-500: #8A8275;
+    --palette-neutral-100: #F1F2F5;
+    --palette-line-100: #E9E9EE;
+    --palette-line-200: #DEDEE5;
+    --palette-line-300: #C4C4CD;
+    --palette-line-500: #83838F;
 
-    /* The one dark surface (ADR-052): footer and, from Phase 2, one editorial band. */
+    /* The one dark surface (ADR-052, kept by ADR-053): the footer. */
     --palette-aubergine-900: #352746;
 
     /* Status: sale is for real discounts only, amber for "Limited edition". */

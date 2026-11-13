@@ -304,9 +304,9 @@ async function ensureProducts(payload: Payload, categoryIds: Map<string, number>
 // owner's to enter in /admin, and an empty one is simply not shown. 'GoCart' is still treated as
 // untouched so a database created before the rename is recognised.
 const DEMO_SETTINGS = {
-  storeName: 'Mirza',
+  storeName: 'Mirza Cart',
 }
-const UNTOUCHED_STORE_NAMES = new Set(['Mirza', 'GoCart'])
+const UNTOUCHED_STORE_NAMES = new Set(['Mirza Cart', 'Mirza', 'GoCart'])
 
 async function ensureSettings(payload: Payload): Promise<{ flatRate: number; threshold: number }> {
   const current = await payload.findGlobal({ slug: 'settings', overrideAccess: true })

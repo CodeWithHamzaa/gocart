@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 const pad = (n: number) => String(n).padStart(2, '0')
 // M118: a live clock only in the last 48 hours. A deal ending weeks away read "Ends in 1158 : 32 : 18",
 // which is false urgency; until then it simply says the date it ends ("Ends 30 Dec"). The chips are
-// neutral (ink on the warm well): the sale colour is for the discount itself (ADR-052).
+// neutral (ink on the neutral well): the sale colour is for the discount itself (ADR-052).
 const LIVE_SECONDS = 48 * 3600
 const dateLabel = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 

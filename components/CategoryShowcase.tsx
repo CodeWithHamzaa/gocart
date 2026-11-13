@@ -13,7 +13,7 @@ import ScrollRail from '@/components/ui/ScrollRail'
 //   phone 76px / gap 12 / 12px name   sm 96 / 20 / 14   lg 112 / 24 / 14   xl 124 / 28 / 15
 // No white ring (owner review: compared with and without; without reads cleaner and shows more photo);
 // hover adds a violet ring. Adapted to the Mirza identity (ADR-052): Plus Jakarta Sans only (no serif),
-// violet for actions, warm wells. Every category in the admin's order (ADR-048), one link each, all in
+// violet for actions, neutral wells. Every category in the admin's order (ADR-048), one link each, all in
 // the server HTML (M40, e2e/seo.spec.ts). Swiped on touch, scrolled with ScrollRail's round buttons from
 // `md`. A category without an image shows its icon. (Photo cards for desktop were built, compared and
 // then dropped at the owner's request in favour of one style everywhere.)
