@@ -1,10 +1,10 @@
-# demo-assets (M90)
+# demo-assets (Milestone 90)
 
 Optional photos for the demo seed (`scripts/seed-demo.ts`). Everything in this folder except this README is git-ignored: photos are never committed.
 
 The seed works with this folder empty. It then generates simple vector artwork (no text) for every image.
 
-**Licensed demo photography (M104-M106).** The tracked spec `scripts/demo-data/photos.ts` and the provenance record `docs/assets/MANIFEST.csv` describe 61 images cut from 24 Unsplash photographs (Unsplash License). The photos are never committed. To rebuild them on a machine that has the originals in `demo-assets/_archive/originals/` (git-ignored; keep a second copy of that folder somewhere safe):
+**Licensed demo photography (Milestones 104 to 106).** The tracked spec `scripts/demo-data/photos.ts` and the provenance record `docs/assets/MANIFEST.csv` describe 61 images cut from 24 Unsplash photographs (Unsplash License). The photos are never committed. To rebuild them on a machine that has the originals in `demo-assets/_archive/originals/` (git-ignored; keep a second copy of that folder somewhere safe):
 
 ```
 npm run fetch:demo-originals           # re-downloads the 24 originals, kept only if they match the manifest's checksums
@@ -57,9 +57,9 @@ There is deliberately no delete routine. In /admin (`/admin`), in this order, be
 
 1. Orders (only if you used `--with-orders`): open Orders, search for `Demo Customer` (or phone `0300000000`), select the 8 rows, Delete.
 2. Products: open Products, select the 24 demo products listed below by name, Delete. Do not select products you added yourself.
-3. Categories: open Categories and delete the ten demo categories (Headphones, Speakers, Power Banks, Watches, Bags, Sunglasses, Lamps, Kitchen, Skincare, Fragrances; flat since `M102`, ADR-048). Skip `speakers`, `headphones` and `watches` if they existed before the demo seed (for example from `npm run seed`).
+3. Categories: open Categories and delete the ten demo categories (Headphones, Speakers, Power Banks, Watches, Bags, Sunglasses, Lamps, Kitchen, Skincare, Fragrances; flat since Milestone 102, Architecture Decision Record 048). Skip `speakers`, `headphones` and `watches` if they existed before the demo seed (for example from `npm run seed`).
 4. Media: open Media and delete the files named `category-<slug>.webp` and `<product-slug>-1.webp` / `<product-slug>-2.webp`.
-5. Settings: the seed sets only the store name (`Mirza`, and only while Settings is untouched). Add the real phone, email and address yourself; an empty one is not shown on the storefront. Seeds run before `M101` also wrote placeholder contact details (phone `0300-0000000`, email `demo@example.com`, address `Demo Store, Sample Street, Placeholder City (fake address)`): replace or clear them.
+5. Settings: the seed sets only the store name (`Mirza`, and only while Settings is untouched). Add the real phone, email and address yourself; an empty one is not shown on the storefront. Seeds run before Milestone 101 also wrote placeholder contact details (phone `0300-0000000`, email `demo@example.com`, address `Demo Store, Sample Street, Placeholder City (fake address)`): replace or clear them.
 
 ## Product slugs
 

@@ -1,12 +1,12 @@
-# Mirza storefront UX review (`M101`)
+# Mirza storefront user experience review (Milestone 101)
 
-Milestone `M101` (Mirza brand migration + 10-issue UX pass). Decision record: [ADR-047](./DECISIONS.md).
+Milestone 101 (Mirza brand migration + 10-issue user experience pass). Decision record: [Architecture Decision Record 047](./DECISIONS.md).
 
 ## 1. Baseline review (before any code change)
 
 - **Date:** 2026-10-31.
 - **Target:** the live test site `https://gocart-test-inky.vercel.app/` (deployment
-  `dpl_5nCzJ7eeSwJEX6n8KvxxLQC4evnH`, built from `main` before `M101`).
+  `dpl_5nCzJ7eeSwJEX6n8KvxxLQC4evnH`, built from `main` before Milestone 101).
 - **Method:** headless Chromium (Playwright). Full-page screenshots of 10 routes at 375, 390, 430, 768,
   1024 and 1440 px (60 screenshots). Automated checks on every one: HTTP status, horizontal overflow,
   interactive targets under 24 px, images with no `alt`, console errors, and any "GoCart" text in the
@@ -32,7 +32,7 @@ form inputs, so none are real.
 | 3 | Design system | `@theme` values only, "lavender wash" (the owner's choice from three lighter-violet options, after warm-neutral, bright-coral and minimal-green passes): page `#FCFAFF`, lavender wells and strips `#F1ECFF`, near-black ink (16.2:1), muted text `#636368` (4.6-5.8:1 on every surface), bright violet `#5F42EC` (white text 6.0:1, on lavender 5.2:1, on the soft violet 4.8:1), hot pink `#CC1966` for discounts (white 5.4:1, on lavender 4.7:1), amber `#FFC247` "Limited edition" labels with dark text (10.5:1). Labels are rounded pills. Every text pair is 4.5:1 or more. |
 | 4 | Product cards | High | Frame within a frame: a square photo at 75 % size inside a randomly tinted tile inside a white card with a ring and a shadow. Up to three overlays on the image (status badge, heart, quick add) plus a "% OFF" pill row. Every Featured card says "Featured". | The image fills a neutral square tile (`object-cover`). One status badge at most, and none that repeats the section's name. Price in ink with the discount as text beside it. A quieter quick-add button. |
 | 5 | Category discovery | Medium | The home page shows the top-level categories twice in a row (a circle row, then tinted cards with large line icons). | One category section on the home page: cards with the category's own image, name and subcategories, two columns on phones. |
-| 6 | Product detail page | Medium | On desktop, a large empty area under the buy box. The price sits in its own boxed card. "Out of stock" shows three times (image badge, pill, button). The description is a collapsed accordion narrower than the gallery and info columns combined. | An unboxed price block, a single stock line, delivery and COD notes grouped under the buttons, and the description open by default. |
+| 6 | Product detail page | Medium | On desktop, a large empty area under the buy box. The price sits in its own boxed card. "Out of stock" shows three times (image badge, pill, button). The description is a collapsed accordion narrower than the gallery and info columns combined. | An unboxed price block, a single stock line, delivery and cash on delivery notes grouped under the buttons, and the description open by default. |
 | 7 | Homepage merchandising | Medium | "Latest products" and "Featured" show the same products (e.g. Aloe Hydrating Gel Cream in both). Listing-page counts ("Showing 6 of 6 products") on the home page. Six featured products on a five-column grid leave an orphan card. The promo cards say "Summer Sale" and "Winter Sale" side by side (admin data). | New arrivals exclude the featured products. Remove the counts from home sections. Trim the grid to full rows. Promo copy is the owner's to edit in /admin. |
 | 8 | Trust and confidence | Medium | The same three statements (delivery, cash on delivery, no account) appear in the announcement bar, the hero chips and the trust row on one screen-length of page. The "Online ordering is not available right now. Please contact us." message is small grey text under the total. Root cause: no Turnstile keys on this deployment, by owner decision, so it is correct that ordering is off. | Say each promise once: a static announcement line, no hero chips, one trust row. Show the ordering-off message as a clear notice. Never bypass the Turnstile check. |
 | 9 | Mobile experience | Medium | The announcement bar scrolls continuously, so at 375-430 px it usually shows a sentence cut mid-word. The hero pushes all products below the first screen. Otherwise there is no overflow and the touch targets pass. | A short static announcement on phones. A compact hero. Keep the tab bar and the sticky buy bar. |
@@ -41,12 +41,12 @@ form inputs, so none are real.
 Additional notes from the baseline (not in the top 10):
 - Order numbers start with `GC-` (the `/orders` placeholder shows `GC-XXXXXXXX-XXXXXXX`). This identifier
   is kept on purpose: existing orders and their lookups depend on it (see the retained-identifier list
-  in ADR-047).
+  in Architecture Decision Record 047).
 - Cart and wishlist localStorage keys are `gocart:cart` and `gocart:wishlist`. Kept on purpose (the owner's
   rename list covers only `gocart:last-order`). Renaming them would empty every visitor's saved cart unless a
   fallback is added.
 
-## 2. What `M101` changed, per problem
+## 2. What Milestone 101 changed, per problem
 
 | # | Area | Change |
 |---|---|---|
@@ -55,7 +55,7 @@ Additional notes from the baseline (not in the top 10):
 | 3 | Design system | `@theme` values only, "lavender wash" (the owner's choice): page `#FCFAFF`, lavender wells `#F1ECFF`, soft violet `#E9E2FF`, bright violet `primary` `#5F42EC` for actions, hot pink `#CC1966` for discounts and sale labels, amber `#FFC247` "Limited edition" labels with dark text, near-black ink `#1D1D1F`, muted `#636368`. Pill buttons and labels, surfaces separated by tone with almost no shadow, semibold headings with tight tracking. Every text pair is 4.5:1 or more (table below). |
 | 4 | Product cards | The home page's large card (`RailCard`), and the listing card (`ProductCard`) in the same look: lavender card, category, name, price with the struck MRP and a pink "N% off" pill, the photo full-bleed on a white tile at the bottom. At most one label, never "Featured". Heart and quick-add are siblings of the one stretched link. |
 | 5 | Category discovery | Category shortcuts with images under the banner (every department first, then sub-categories, then "View all"), and from `md` one large tile per top-level category with its child links and image. The owner removed the phone category row because the shortcuts already cover it. |
-| 6 | Product detail | Full-bleed main image and thumbnails. An unboxed price with the "N% off" pill. One stock line (dot + word). Pill buttons ("Add to Cart" violet, "Buy Now" soft violet). Delivery, COD and "no account" in one lavender list. The description is open by default. "You may also like" is a rail of large cards. |
+| 6 | Product detail | Full-bleed main image and thumbnails. An unboxed price with the "N% off" pill. One stock line (dot + word). Pill buttons ("Add to Cart" violet, "Buy Now" soft violet). Delivery, cash on delivery and "no account" in one lavender list. The description is open by default. "You may also like" is a rail of large cards. |
 | 7 | Homepage merchandising | "New arrivals" leave out featured products and, like "Featured", are a swipeable row of the large home cards (arrow buttons from `md`; Featured's category tabs still filter). No listing counts on the home page. Promo copy is admin data (**owner**). |
 | 8 | Trust | The announcement bar is a static light-grey strip. The hero chips are gone, and the home trust row is replaced by three real cash-on-delivery steps (order without an account, delivery and its charge, pay the courier and track the order). A blocked form ('disabled' or 'failed' Turnstile status) shows a visible notice that names the paused action; the check itself is unchanged. |
 | 9 | Mobile | A short static bar on phones. A compact hero with side-by-side CTAs. No horizontal overflow at 375-1440 (checked automatically). |
@@ -78,7 +78,7 @@ Additional notes from the baseline (not in the top 10):
 
 The owner approved the home page as it is at commit `94b2eae` and asked for the same style on every other
 page, without changing what the pages do. Layout and classes only: prices, totals, the Turnstile check,
-COD and the guest checkout are untouched.
+Cash on delivery and the guest checkout are untouched.
 
 | Page or part | What changed |
 |---|---|
@@ -115,13 +115,13 @@ remove and undo, "Out of Stock" disabled, heart on and off, quick add, and categ
   repository, so there is nothing to credit yet. The hero and the category tiles use the store's own
   product and category images.
 - **Orphan cards:** gone. New arrivals and Featured are swipeable rows (rails), so there are no grid rows to leave a card alone.
-- **Colour token names** (`lavender`, `pink`) are kept and reinterpreted (ADR-047), to avoid rewriting
+- **Colour token names** (`lavender`, `pink`) are kept and reinterpreted (Architecture Decision Record 047), to avoid rewriting
   every component.
 
 ## 3. Branch review (before merge)
 
 - **Date:** 2026-10-31. **Target:** a local production build (`next build` + `next start`) of the
-  `M101` branch on PostgreSQL 16, seeded with `npm run seed:demo` (the same demo catalogue as the test
+  Milestone 101 branch on PostgreSQL 16, seeded with `npm run seed:demo` (the same demo catalogue as the test
   site). A Vercel preview was not possible: the `gocart-test` project's `DATABASE_URI` is scoped to
   Production only, and the project has no Git-triggered deployments.
 - **Method:** the same script and routes as the baseline, plus an in-stock product page, at all six widths.
@@ -131,7 +131,7 @@ remove and undo, "Out of Stock" disabled, heart on and off, quick add, and categ
 
 ## 4. Live second review (after merge)
 
-- **Date:** 2026-11-01, after `M101` (PR #53) and `M102` (PR #54, flat categories) were merged and deployed
+- **Date:** 2026-11-01, after Milestone 101 (pull request #53) and Milestone 102 (pull request #54, flat categories) were merged and deployed
   (deployment `dpl_254K4bWXkz2nWdXJXKwwP9YxMnTP`, commit `a6aedc1`), with migrations
   `20261031_160131_mirza_store_name` and `20261101_205147_flat_categories` applied on Neon.
 - **Target:** `https://gocart-test-inky.vercel.app/`.
@@ -143,4 +143,4 @@ remove and undo, "Out of Stock" disabled, heart on and off, quick add, and categ
   and the removed category). No horizontal overflow, no image without `alt`, no "GoCart" text, exactly one
   `<h1>` per page. The sitemap lists the ten flat categories only. The store name is Mirza.
 - **Not verified live:** placing an order or an order lookup (no Turnstile keys on this deployment, by owner
-  decision); covered by CI's `e2e` job.
+  decision); covered by continuous integration's `e2e` job.

@@ -1,10 +1,10 @@
-# Sourced-image inventory and processing report (M104–M106)
+# Sourced-image inventory and processing report (Milestones 104 to 106)
 
 **Status (2026-11-02): all 61 planned image slots are filled, processed, validated and integrated locally.** Every product (24), category (10), the share image and both promo images now use a licensed photograph; no generated artwork remains in the demo seed. Nothing was uploaded, deployed or written to any remote database. Provenance per image is in [MANIFEST.csv](./MANIFEST.csv) (the source of truth); the tables below are generated from it.
 
-Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [PHOTO_BRIEF.md](./PHOTO_BRIEF.md), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). ADR-049 is still **Proposed**; `M107`–`M109` are not started.
+Related: [VISUAL_ASSETS_PLAN.md](../VISUAL_ASSETS_PLAN.md), [PHOTO_BRIEF.md](./PHOTO_BRIEF.md), [MEDIA_AUDIT.md](./MEDIA_AUDIT.md). Architecture Decision Record 049 is still **Proposed**; Milestones 107 to 109 are not started.
 
-## Update 2026-11-10 (`M112`, visual upgrade): what changed and what is still limited
+## Update 2026-11-10 (Milestone 112, visual upgrade): what changed and what is still limited
 
 Six new Unsplash photos (all "Free to use under the Unsplash License", none Unsplash+; author, date and licence line read from each photo page on 2026-11-10; no attribution required, credit recorded anyway in [MANIFEST.csv](./MANIFEST.csv)). Four sourcing agents searched all 24 products; a candidate was used only if it was clearly the same item (gallery image 2) or clearly better than what shipped (replacement).
 
@@ -27,7 +27,7 @@ Honest limits of this set:
 - Two originals (Orbit Slim watch, Dome lamp) were re-encoded by the Unsplash CDN; the same photographs were re-pinned in the manifest (old checksums are in `photos.ts`).
 - Pipeline: `pad: 'copy'` (edge-pixel padding) for portrait photos in `contain` mode, and a fix to `edgeColour` (sharp's `stats()` ignores `extract()`, so the "corner colour" had been the whole-image mean; the tote's padding colour is corrected as a side effect).
 
-Rolled out to the test site on 2026-11-11 (owner-approved `M108` workflow, apply run 42933845361: 13 files uploaded under the new media ids 124-136, 9 rows relinked, 0 created, older rows kept); `media_id` and `media_env` in the manifest are now stamped from that run. The two home promo cards on the test site showed the old cartoon art, because the rollout does not handle promo cards; on 2026-11-11 they were relinked by hand to existing product photos (headphones, lamp) instead of uploading `demo-promo-1/2.webp`. Production was not touched.
+Rolled out to the test site on 2026-11-11 (owner-approved Milestone 108 workflow, apply run 42933845361: 13 files uploaded under the new media ids 124-136, 9 rows relinked, 0 created, older rows kept); `media_id` and `media_env` in the manifest are now stamped from that run. The two home promo cards on the test site showed the old cartoon art, because the rollout does not handle promo cards; on 2026-11-11 they were relinked by hand to existing product photos (headphones, lamp) instead of uploading `demo-promo-1/2.webp`. Production was not touched.
 
 ## 1. Owner decisions that shaped this set (2026-11-02)
 

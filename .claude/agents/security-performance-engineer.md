@@ -1,6 +1,6 @@
 ---
 name: security-performance-engineer
-description: Reviews changes for access-control correctness, PII exposure, input validation, injection/abuse surface, and render/query/bundle cost. Use for milestones touching auth, access control, Orders, PII, the public API surface, database query shape, or client bundle size.
+description: Reviews changes for access-control correctness, personally identifiable information exposure, input validation, injection/abuse surface, and render/query/bundle cost. Use for milestones touching auth, access control, Orders, personally identifiable information, the public API surface, database query shape, or client bundle size.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -16,30 +16,30 @@ precisely.
 - `Users`: admin-only on all four operations. Payload's "create first user" bootstrap
   is the one intended exception.
 - `Products` / `Categories` / `Media`: public read, authenticated write.
-- `Orders`: **public create, admin-only read.** This is deliberate (`M13`).
+- `Orders`: **public create, admin-only read.** This is deliberate (Milestone 13).
 - Local API reads must pass `overrideAccess: false`, or access control is bypassed.
 - Payload's `/admin` is the *only* authenticated surface in the system. No middleware
-  auth, no customer login, no vendor login (ADR-005, ADR-006).
+  auth, no customer login, no vendor login (Architecture Decision Records 005 and 006).
 
-### PII — the highest-value target here
+### Personally identifiable information — the highest-value target here
 Orders carry guest names, phone numbers, and street addresses with **no account
 protecting them**. Treat that data as the crown jewels.
 
 - Guest order lookup is a dedicated `(orderNumber, phone)` endpoint, IP rate-limited,
-  that **never relaxes `Orders`' collection-level read access** (ADR-024). Opening
+  that **never relaxes `Orders`' collection-level read access** (Architecture Decision Record 024). Opening
   collection read to serve a lookup would expose every customer's name, phone, and
   address. Block that change on sight.
 - Check that error messages, logs, and API responses do not leak order or customer
   data to unauthenticated callers.
 
 ### Input and abuse
-- Server-side validation on anything a guest can submit. Client-side checks are UX,
+- Server-side validation on anything a guest can submit. Client-side checks are user experience,
   never enforcement.
 - Business rules must be enforced server-side at write time. Hiding a button is not
-  enforcement — a direct API call bypasses it trivially. (This is exactly why `M33a`
+  enforcement — a direct API call bypasses it trivially. (This is exactly why Milestone 33a
   exists for stock validation.)
 - Rate-limit any unauthenticated endpoint that reads or writes.
-- Payload parameterizes its queries — flag any hand-rolled SQL as an ADR-002/ADR-003
+- Payload parameterizes its queries — flag any hand-rolled SQL as an Architecture Decision Records 002 and 003
   violation before you even review it for injection.
 
 ### Secrets
@@ -54,9 +54,9 @@ protecting them**. Treat that data as the crown jewels.
   grows, an unbounded fetch-then-filter-in-memory is a real defect, not a style nit.
 - **Rendering** — server components by default. Every `'use client'` boundary should
   be justified by actual interactivity. Report First Load JS deltas; this project
-  tracks them (`M25`: 123 kB → 120 kB; `M24`: 1.15 kB → 626 B).
+  tracks them (Milestone 25: 123 kB → 120 kB; Milestone 24: 1.15 kB → 626 B).
 - **Static vs. dynamic** — `force-dynamic` is correct where admin curation must show
-  without a redeploy or where the build cannot assume a reachable database (`M23`).
+  without a redeploy or where the build cannot assume a reachable database (Milestone 23).
   Elsewhere prefer static + `revalidate`. Flag unjustified dynamic rendering.
 - **Images** — `images.unoptimized: true` is currently set. It is a Vercel-loader
   shortcut and wrong for a self-hosted Docker deployment. No milestone owns fixing it;

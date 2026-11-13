@@ -11,8 +11,8 @@ Where things went:
 | Original intent | Now lives at |
 |---|---|
 | "Scaffold a Payload collection" | `.claude/agents/fullstack-engineer.md` |
-| "Write an ADR" | `.claude/commands/write-adr.md` |
-| "Review a PR against DECISIONS.md" | `.claude/agents/software-architect.md` |
+| "Write an Architecture Decision Record" | `.claude/commands/write-adr.md` |
+| "Review a pull request against DECISIONS.md" | `.claude/agents/software-architect.md` |
 
 **Do not add prompt files here.** Add a slash command to `.claude/commands/` or extend
 the relevant role in `.claude/agents/`.

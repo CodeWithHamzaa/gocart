@@ -42,7 +42,7 @@ maintains it next — human or otherwise — and carry no runtime dependency.
    `Dockerfile`, or any deployment configuration.
 4. **Never** add an application feature whose behavior requires a model call —
    no AI search, no AI descriptions, no AI recommendations, no AI support chat.
-   Any such feature is a **product decision requiring an ADR and human approval**,
+   Any such feature is a **product decision requiring an Architecture Decision Record and human approval**,
    and it is out of scope for v1 regardless.
 5. **Never** ship a prompt as application data or content.
 6. `.claude/` may be committed for the development team's benefit, but deleting the

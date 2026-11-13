@@ -11,7 +11,7 @@ Finding: **$ARGUMENTS**
 Classify it using the taxonomy from `docs/PHASE_1_READINESS_REPORT.md`:
 
 - **`C` — Contradiction**: two authoritative sources disagree, or the milestone
-  contradicts an Accepted ADR or hard constraint.
+  contradicts an Accepted Architecture Decision Record or hard constraint.
 - **`D` — Missing decision**: the specification is silent on something the work needs.
 - **`R` — Risk**: a defect or hazard in existing work, or a gap nothing owns.
 

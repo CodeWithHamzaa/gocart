@@ -2,14 +2,14 @@
 
 **Date**: 2026-08-19
 **Scope**: Establish the development-time AI engineering team. No application
-functionality was changed, and `M29` was **not** implemented.
+functionality was changed, and Milestone 29 was **not** implemented.
 
 ---
 
 ## 1. What was implemented
 
 An eight-role, development-time engineering system under [`.claude/`](../.claude/),
-executing the project's existing milestone and ADR system rather than replacing it.
+executing the project's existing milestone and Architecture Decision Record system rather than replacing it.
 
 ```
 HUMAN
@@ -44,25 +44,25 @@ Markdown role definitions, slash commands, and a permissions file.
 
 Responsibilities that might have become separate agents were folded in as instructed:
 Milestone Planner and Docs Steward → Engineering Manager; Constraint Reviewer →
-Software Architect; Verifier → QA; Payload Engineer and Storefront Engineer →
+Software Architect; Verifier → quality assurance; Payload Engineer and Storefront Engineer →
 Full-Stack Engineer.
 
 ## 2. Role responsibilities
 
 | Role | Owns | May write | Never writes |
 |---|---|---|---|
-| **Engineering Manager** | Orchestration, milestone planning, dependency checks, scope, gate enforcement, status | `TASKS.md`, `CHANGELOG.md`, PR bodies | Application code, `DECISIONS.md` |
-| **Product Manager** | Requirements, testable acceptance criteria, non-goals, scope verdicts | Acceptance-criteria notes | Application code, ADRs |
-| **Software Architect** | Architectural integrity; **sole ADR author** | `DECISIONS.md`, `ARCHITECTURE.md` | Application code |
-| **UI/UX Designer** | Mobile-first, accessibility, all states, copy honesty | `components/`, route files *when assigned* | Collections, `payload.config.ts` |
+| **Engineering Manager** | Orchestration, milestone planning, dependency checks, scope, gate enforcement, status | `TASKS.md`, `CHANGELOG.md`, pull request bodies | Application code, `DECISIONS.md` |
+| **Product Manager** | Requirements, testable acceptance criteria, non-goals, scope verdicts | Acceptance-criteria notes | Application code, Architecture Decision Records |
+| **Software Architect** | Architectural integrity; **sole Architecture Decision Record author** | `DECISIONS.md`, `ARCHITECTURE.md` | Application code |
+| **User Interface and User Experience Designer** | Mobile-first, accessibility, all states, copy honesty | `components/`, route files *when assigned* | Collections, `payload.config.ts` |
 | **Full-Stack Engineer** | Implementation | `app/`, `components/`, `lib/`, `collections/`, `globals/`, `scripts/` | `DECISIONS.md` |
-| **QA Engineer** | Independent verification, gate execution | Test files only | The implementation it judges |
-| **Security / Performance** | Access control, PII, validation, query/render/bundle cost | **Nothing — review-only** | Anything |
-| **DevOps / Release** | Git, branches, PRs, CI, Docker, env, migrations | `.github/`, Docker, `.env.example` | Application code |
+| **Quality Assurance Engineer** | Independent verification, gate execution | Test files only | The implementation it judges |
+| **Security / Performance** | Access control, personally identifiable information, validation, query/render/bundle cost | **Nothing — review-only** | Anything |
+| **DevOps / Release** | Git, branches, pull requests, continuous integration, Docker, env, migrations | `.github/`, Docker, `.env.example` | Application code |
 
 **Separation rules that must not collapse**: the implementer never verifies its own
 work; the reviewer never patches what it reviewed; the orchestrator never implements;
-only the Architect writes ADRs; **only a human approves and merges.**
+only the Architect writes Architecture Decision Records; **only a human approves and merges.**
 
 ## 3. Workflow and gates
 
@@ -70,12 +70,12 @@ only the Architect writes ADRs; **only a human approves and merges.**
 |---|---|---|
 | **G0** Dependency | Engineering Manager | Every `Dependencies` milestone is `Done`; not already claimed |
 | **G1** Scope | EM + Product | Testable criteria, non-goals, `Files` boundary understood |
-| **G2** Architecture | Architect | No Accepted ADR or hard constraint contradicted |
-| **G3** Design | UI/UX | Mobile-first, all states, no dead UI, copy true |
+| **G2** Architecture | Architect | No Accepted Architecture Decision Record or hard constraint contradicted |
+| **G3** Design | User interface and user experience | Mobile-first, all states, no dead user interface, copy true |
 | **G4** Implementation | Full-Stack | `type-check` + `build` pass; scope respected |
-| **G5** Verification | QA | Every criterion checked on a live server, with evidence |
-| **G6** Security / Performance | Sec/Perf | No access-control, PII, validation, or cost regression |
-| **G7** Release | DevOps | Correct branch, one commit, PR body prepared |
+| **G5** Verification | Quality assurance | Every criterion checked on a live server, with evidence |
+| **G6** Security / Performance | Sec/Perf | No access-control, personally identifiable information, validation, or cost regression |
+| **G7** Release | DevOps | Correct branch, one commit, pull request body prepared |
 | **G8** **Human approval** | **HUMAN** | **A person approved. Non-delegable** (historical; since 2026-10-30 standing owner delegations apply, see `.claude/docs/GATES.md`, "Standing owner delegations") |
 
 A skipped gate is a failed gate. A gate not run is reported as *not run* — never as
@@ -93,9 +93,9 @@ be named with a reason; not every milestone needs every role.
   `npm run seed`, `payload migrate`, `docker build`, `docker compose up/down`.
 - **Allowed**: read-only inspection, `npm run type-check`, `npm run build`.
 
-Additional human-approval actions — changing an Accepted ADR, major architecture/schema
+Additional human-approval actions — changing an Accepted Architecture Decision Record, major architecture/schema
 changes, auth/authorization changes, payment changes, production infrastructure
-changes, production deployment, and merging a production-impacting PR — are enforced by
+changes, production deployment, and merging a production-impacting pull request — are enforced by
 role instructions and by the human at G8.
 
 ## 5. Classification of the previously identified blockers
@@ -106,12 +106,12 @@ only what was necessary was implemented.
 | # | Item | Classification | Action taken |
 |---|---|---|---|
 | 1 | **`main` branch reconciliation** | **Required before parallel execution** — human-owned | **Not actioned.** Reconciling the trunk is a destructive-Git / production-impacting decision reserved for a human (G8). Mitigated instead: the DevOps role and `GATES.md` forbid branching from `main`, and `settings.json` denies `git push origin main`. **Remains an open blocker.** |
-| 2 | **`CONTRIBUTING.md` contradicts ADR-006** | **Direct safety blocker** | **Fixed.** Rewritten for single-store reality with an explicit "Out of scope" table citing ADR-004/005/006/016/017. |
-| 3 | **Stale root `README.md`** | **Required before AI-team operation** | **Fixed.** Status corrected to `M1`–`M28` Done, `M29` next; setup instructions made real; stale CONTRIBUTING endorsement removed. |
-| 4 | **Broken `npm run lint`** | **Required before parallel execution** | **Neutralized, not repaired.** Repair needs `npm install`, which `CLAUDE.md` forbids without explicit instruction. Instead, `GATES.md` and the QA role state it is broken and **must never be reported as passing**. **Remains an open blocker.** |
-| 5 | **Missing CI** | **Required before parallel execution** — *not* required for the AI-team foundation | **Deferred deliberately.** Adding a workflow now would go red immediately on the broken `lint` and on a build with no reachable database, training everyone to ignore CI. The DevOps role carries the exact intended pipeline for when item 4 is resolved. |
-| 6 | **Missing test infrastructure** | **Optional hardening now; required before parallel execution** | **Deferred.** Owned by `M56a` (readiness finding `R7`). Pulling it forward would change `M56a`'s scope and needs an ADR + human approval. QA's manual protocol is the interim net and says so explicitly. |
-| 7 | **Missing `tsx` dependency** | **Required before executing any milestone whose testing needs seed data** | **Not actioned** — adding a dependency is an `ask` action and forbidden without instruction. Documented in the DevOps role and flagged in the `M29` dry run below. **Remains an open blocker.** |
+| 2 | **`CONTRIBUTING.md` contradicts Architecture Decision Record 006** | **Direct safety blocker** | **Fixed.** Rewritten for single-store reality with an explicit "Out of scope" table citing Architecture Decision Records 004, 005, 006, 016 and 017. |
+| 3 | **Stale root `README.md`** | **Required before AI-team operation** | **Fixed.** Status corrected to Milestones 1 to 28 Done, Milestone 29 next; setup instructions made real; stale CONTRIBUTING endorsement removed. |
+| 4 | **Broken `npm run lint`** | **Required before parallel execution** | **Neutralized, not repaired.** Repair needs `npm install`, which `CLAUDE.md` forbids without explicit instruction. Instead, `GATES.md` and the quality assurance role state it is broken and **must never be reported as passing**. **Remains an open blocker.** |
+| 5 | **Missing continuous integration** | **Required before parallel execution** — *not* required for the AI-team foundation | **Deferred deliberately.** Adding a workflow now would go red immediately on the broken `lint` and on a build with no reachable database, training everyone to ignore continuous integration. The DevOps role carries the exact intended pipeline for when item 4 is resolved. |
+| 6 | **Missing test infrastructure** | **Optional hardening now; required before parallel execution** | **Deferred.** Owned by Milestone 56a (readiness finding `R7`). Pulling it forward would change Milestone 56a's scope and needs an Architecture Decision Record + human approval. Quality assurance's manual protocol is the interim net and says so explicitly. |
+| 7 | **Missing `tsx` dependency** | **Required before executing any milestone whose testing needs seed data** | **Not actioned** — adding a dependency is an `ask` action and forbidden without instruction. Documented in the DevOps role and flagged in the Milestone 29 dry run below. **Remains an open blocker.** |
 | 8 | **`prompts/` vs `.claude/commands/`** | **Required before AI-team operation** | **Fixed.** `.claude/commands/` is canonical; `prompts/README.md` now points there and forbids adding files. |
 | 9 | **Documentation/status ownership** | **Already resolved by the approved role model** | Engineering Manager is the single writer of `TASKS.md`/`CHANGELOG.md`; Architect is the single writer of `DECISIONS.md`. Recorded in `ROLES.md`. |
 | 10 | **`.claude/` shipped into the Docker image** | **New finding — direct safety blocker for the no-AI guarantee** | **Fixed.** The `Dockerfile` does `COPY . .`, so `.claude/` would have been baked into every image. Added to `.dockerignore`. |
@@ -134,7 +134,7 @@ The binding test — *the application builds with `.claude/` deleted* — is rec
 `node_modules` is not installed in this environment; it is listed as a prerequisite
 below. By construction it must pass: nothing in the application references `.claude/`.
 
-## 7. `M29` dry run — analysis only, nothing implemented
+## 7. Milestone 29 dry run — analysis only, nothing implemented
 
 ### Contract (`docs/MIGRATION_PLAN.md`)
 
@@ -142,20 +142,20 @@ below. By construction it must pass: nothing in the application references `.cla
 |---|---|
 | **Goal** | Replace the in-memory `.includes()` Redux-array search with a real query against Payload/Postgres so it scales past a handful of seeded products |
 | **Files** | `app/(public)/shop/page.jsx`, `lib/payload/products.ts` |
-| **Dependencies** | `M24` |
+| **Dependencies** | Milestone 24 |
 | **Testing** | A seeded product name returns correct results; a non-matching term returns an empty state, not an error |
 | **Rollback** | Revert both files |
 | **Commit message** | `Replace client-side array search with real product query` |
 
 ### G0 — Dependency check: **PASS**
 
-`M24` is **Done (2026-08-18)** per `docs/TASKS.md` (both the narrative entry and the
-`M22`–`M28` roll-up row). No other milestone claims either file. No branch is in
-progress on `M29`.
+Milestone 24 is **Done (2026-08-18)** per `docs/TASKS.md` (both the narrative entry and the
+Milestones 22 to 28 roll-up row). No other milestone claims either file. No branch is in
+progress on Milestone 29.
 
 ### Current state of the target files
 
-- `app/(public)/shop/page.jsx` — already an async **server component** (`M24`). It calls
+- `app/(public)/shop/page.jsx` — already an async **server component** (Milestone 24). It calls
   `getProducts()` with no arguments, then filters in memory:
   `products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))`.
 - `lib/payload/products.ts` — `getProducts()` accepts `{ limit = 0, page = 1, sort }`
@@ -168,8 +168,8 @@ the fetched array.
 
 ### G2 — Architecture check: **PASS, with one decision to make**
 
-No Accepted ADR is contradicted. The page is already a server component (ADR-007), the
-query stays inside Payload's Local API (ADR-002/ADR-003), and nothing touches auth,
+No Accepted Architecture Decision Record is contradicted. The page is already a server component (Architecture Decision Record 007), the
+query stays inside Payload's Local API (Architecture Decision Records 002 and 003), and nothing touches auth,
 payments, or the vendor surface.
 
 **One genuine `D`-class question the milestone does not answer**: what are the match
@@ -183,12 +183,12 @@ and whether `description` becomes searchable. This is a small decision, but it i
 | Role | Assigned? | Reason |
 |---|---|---|
 | **Product Manager** | ✅ Yes | Match semantics and case sensitivity must be pinned as testable criteria first |
-| **Software Architect** | ✅ Light | Confirm no ADR is needed and that the query stays within Payload's Local API |
-| **UI/UX Designer** | ❌ **Skipped** | No visual change. The empty state, the back-link, and the grid all already exist and are unchanged by `M29` |
+| **Software Architect** | ✅ Light | Confirm no Architecture Decision Record is needed and that the query stays within Payload's Local API |
+| **User Interface and User Experience Designer** | ❌ **Skipped** | No visual change. The empty state, the back-link, and the grid all already exist and are unchanged by Milestone 29 |
 | **Full-Stack Engineer** | ✅ Yes | Two-file implementation |
-| **QA Engineer** | ✅ Yes | Behavior change on a customer-facing route |
+| **Quality Assurance Engineer** | ✅ Yes | Behavior change on a customer-facing route |
 | **Security / Performance** | ✅ Yes | User-controlled input now flows into a database query, and removing the unbounded `limit: 0` fetch is the milestone's actual point |
-| **DevOps / Release** | ✅ Light | Branch, commit, PR preparation only |
+| **DevOps / Release** | ✅ Light | Branch, commit, pull request preparation only |
 
 ### Acceptance criteria (draft — Product Manager confirms)
 
@@ -208,14 +208,14 @@ and whether `description` becomes searchable. This is a small decision, but it i
 | `npm run type-check` | ✅ Yes, once `node_modules` is installed |
 | `npm run build` | ✅ Yes |
 | `npm run lint` | ❌ **Broken** — must be reported as unavailable |
-| Automated tests | ❌ **None exist** (`M56a`, Not Started) |
-| **QA manual verification** | ⚠️ **Blocked without seeded data** |
+| Automated tests | ❌ **None exist** (Milestone 56a, Not Started) |
+| **Quality assurance manual verification** | ⚠️ **Blocked without seeded data** |
 
-The last row is the binding one. `M29`'s own Testing line requires *"a seeded product
+The last row is the binding one. Milestone 29's own Testing line requires *"a seeded product
 name"*. That requires a running Postgres **and** a successful `npm run seed` — and
 `npm run seed` invokes `tsx`, which is **not declared in `devDependencies`**, and has
 **never been executed successfully** (a `tsx`/Node ESM-interop issue). Until seeding is
-proven, `M29` cannot be verified, only written.
+proven, Milestone 29 cannot be verified, only written.
 
 ### Risks
 
@@ -227,28 +227,28 @@ proven, `M29` cannot be verified, only written.
 2. **Pagination interaction.** `getProducts()` still defaults to `limit: 0`. Moving the
    filter into the query without addressing the unbounded fetch only half-solves the
    milestone's stated goal.
-3. **Other consumers of `getProducts()`.** `app/(public)/page.jsx` (`M23`) also calls
+3. **Other consumers of `getProducts()`.** `app/(public)/page.jsx` (Milestone 23) also calls
    it. Any signature change must stay backward-compatible — this is exactly the
-   consumer-check discipline the `M28` cart bug taught.
+   consumer-check discipline the Milestone 28 cart bug taught.
 4. **`lib/payload/products.ts` types are hand-written mirrors.** A change to
    `GetProductsOptions` must keep them consistent; `payload-types.ts` has never been
    generated.
 
 ### Parallelism
 
-`M29` ∥ `M30` is **safe** — verified against all six tests in
+Milestone 29 ∥ Milestone 30 is **safe** — verified against all six tests in
 `.claude/docs/PARALLELISM.md`:
 
-- `M29` files: `app/(public)/shop/page.jsx`, `lib/payload/products.ts`
-- `M30` files: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
-- Disjoint; `M30` has **no dependencies**; no schema change on either side.
+- Milestone 29 files: `app/(public)/shop/page.jsx`, `lib/payload/products.ts`
+- Milestone 30 files: `lib/features/cart/cartSlice.js`, `app/StoreProvider.js`
+- Disjoint; Milestone 30 has **no dependencies**; no schema change on either side.
 
 Shared documentation (`CHANGELOG.md`, `TASKS.md`) must still be written serially by the
 Engineering Manager.
 
 ### Verdict: **READY WITH PREREQUISITES**
 
-`M29` is well-scoped, its dependency is satisfied, and it contradicts nothing. It cannot
+Milestone 29 is well-scoped, its dependency is satisfied, and it contradicts nothing. It cannot
 be *verified* until seed data works:
 
 1. `npm install` (`node_modules` is absent) — **human-approved action**
@@ -262,11 +262,11 @@ be *verified* until seed data works:
 |---|---|---|---|
 | 1 | `main` still holds the pristine upstream multi-vendor app; `origin/HEAD` unset | **Critical** | **Human** — destructive/production-impacting |
 | 2 | `npm run lint` broken; repairing it needs a package install | **High** | Human approval, then DevOps |
-| 3 | No CI | **High** | DevOps, once blocker 2 clears |
-| 4 | No test framework (`M56a`, blocked behind `M33a`/`M56`) | **High** | Human decision on pulling it forward |
-| 5 | `tsx` undeclared; `npm run seed` never executed | **High** — blocks `M29` verification | Human approval, then DevOps |
+| 3 | No continuous integration | **High** | DevOps, once blocker 2 clears |
+| 4 | No test framework (Milestone 56a, blocked behind Milestones 33a and 56) | **High** | Human decision on pulling it forward |
+| 5 | `tsx` undeclared; `npm run seed` never executed | **High** — blocks Milestone 29 verification | Human approval, then DevOps |
 | 6 | `payload-types.ts` never generated; hand-written type mirrors can drift | Medium | Architect + Full-Stack |
-| 7 | `MIGRATION_PLAN.md` header says *"63 milestones"*; there are **68** `### M…` entries (`M33a`, `M48a`, `M52a`, `M55a`, `M56a` were added later). Flagged, not edited — the roadmap is authoritative and should be corrected deliberately | Low | Engineering Manager |
+| 7 | `MIGRATION_PLAN.md` header says *"63 milestones"*; there are **68** `### M…` entries (Milestones 33a, 48a, 52a, 55a and 56a were added later). Flagged, not edited — the roadmap is authoritative and should be corrected deliberately | Low | Engineering Manager |
 | 8 | `docker build` never verified against a real registry | Medium | DevOps |
 | 9 | Open findings `C5`, `C11`, `C12`, `D7`, `D8`, `R10`; `D8` (order notifications) has **no milestone at all** | Low–Medium | Product + Architect |
 
@@ -275,19 +275,19 @@ sequential milestone run under human supervision.
 
 ## 9. Readiness verdict
 
-### The team is **READY TO EXECUTE `M29` SEQUENTIALLY**, under human supervision, once the four `M29` prerequisites in §7 are met.
+### The team is **READY TO EXECUTE Milestone 29 SEQUENTIALLY**, under human supervision, once the four Milestone 29 prerequisites in §7 are met.
 
 - ✅ Eight roles defined with enforced separation
 - ✅ Engineering Manager established as sole orchestrator
 - ✅ Human approval gates defined and mechanically enforced where possible
-- ✅ Existing milestone/ADR system preserved and authoritative
+- ✅ Existing milestone and Architecture Decision Record system preserved and authoritative
 - ✅ No production AI dependency; `.claude/` now excluded from Docker images
 - ✅ Conflict escalation defined against the existing `C`/`D`/`R` taxonomy
 - ✅ Parallelism rules defined, defaulting to sequential
 
 ### **NOT READY FOR PARALLEL EXECUTION**
 
-Blockers 1–4 must clear first. With no CI, no tests, and a broken lint gate, manual QA
-is the only regression net — and `M28` already demonstrated what that misses: a cart
-bug that shipped at `M25` and stayed invisible for three milestones. Parallel agents
+Blockers 1–4 must clear first. With no continuous integration, no tests, and a broken lint gate, manual quality assurance
+is the only regression net — and Milestone 28 already demonstrated what that misses: a cart
+bug that shipped at Milestone 25 and stayed invisible for three milestones. Parallel agents
 without an automated net compound that failure mode instead of exposing it.

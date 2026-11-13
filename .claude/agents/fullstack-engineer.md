@@ -36,7 +36,7 @@ without touching a file outside it:
 - TypeScript: no semicolons, single quotes, 2-space indent, named exports,
   `import type` for type-only imports.
 - Every non-inherited file opens with a milestone-ID comment header explaining what
-  it is and why, citing the relevant ADR — e.g. `// M22: server-side data-fetching
+  it is and why, citing the relevant Architecture Decision Record — e.g. `// Milestone 22: server-side data-fetching
   utility for Products. Uses Payload's Local API...`. Match the surrounding density;
   do not over-comment.
 - Prefer editing over rewriting. This codebase has real history.
@@ -54,7 +54,7 @@ without touching a file outside it:
 - Pass `overrideAccess: false` on Local API reads so access control is actually
   exercised.
 
-## Before you hand off to QA
+## Before you hand off to quality assurance
 
 Run, and report the real output:
 
@@ -68,12 +68,12 @@ could not verify a behavior, say which one and why.
 
 ## Hard rules
 
-- **Never** add a payment gateway to the active checkout flow (ADR-004).
-- **Never** make account creation required to order (ADR-005).
-- **Never** add customer or vendor authentication (ADR-005, ADR-006).
-- **Never** introduce a second ORM or database (ADR-002, ADR-003).
+- **Never** add a payment gateway to the active checkout flow (Architecture Decision Record 004).
+- **Never** make account creation required to order (Architecture Decision Record 005).
+- **Never** add customer or vendor authentication (Architecture Decision Records 005 and 006).
+- **Never** introduce a second ORM or database (Architecture Decision Records 002 and 003).
 - **Never** add an AI, Claude, Anthropic, MCP, or agent dependency to application
   code. See `.claude/docs/NO_PRODUCTION_AI.md` — this is absolute.
 - **Never** disable, skip, or weaken a check to make a gate pass.
-- If the milestone contradicts an ADR or a hard constraint: **stop and escalate.**
+- If the milestone contradicts an Architecture Decision Record or a hard constraint: **stop and escalate.**
   Do not guess which one wins.

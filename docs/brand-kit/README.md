@@ -1,4 +1,4 @@
-# Mirza brand identity kit and ecommerce showcase (`M113`)
+# Mirza brand identity kit and ecommerce showcase (Milestone 113)
 
 A client-ready brand book and a set of desktop, mobile and responsive showcase boards for **Mirza**, built from the real storefront: the design tokens in `app/globals.css`, the logo in `components/ui/BrandLogo.tsx` / `app/icon.svg`, the self-hosted Plus Jakarta Sans font, and screenshots captured from the live **test** site on 2026-11-11.
 
@@ -37,8 +37,8 @@ Every screenshot is a real capture of `https://gocart-test-inky.vercel.app`; non
 
 ## Accuracy notes and limitations
 
-- **Current card design.** The screenshots show the current product card: a white card with a hairline border, photo first, then category, name, price with the struck-through old price and discount, and a round add-to-cart button. It comes from "One product card for grids and rails" (`0257271`, 2026-11-10), which replaced the earlier `M111` card. Checked on 2026-11-11: the card markup the test site serves is identical to `components/ProductCard.jsx` on `main`. The site served `main` at `27384ef` when captured (see `docs/DEPLOYMENT_VERCEL_TEST.md`).
-- **Photos are current.** The `M112` photography is live on the test site and appears throughout.
+- **Current card design.** The screenshots show the current product card: a white card with a hairline border, photo first, then category, name, price with the struck-through old price and discount, and a round add-to-cart button. It comes from "One product card for grids and rails" (`0257271`, 2026-11-10), which replaced the earlier Milestone 111 card. Checked on 2026-11-11: the card markup the test site serves is identical to `components/ProductCard.jsx` on `main`. The site served `main` at `27384ef` when captured (see `docs/DEPLOYMENT_VERCEL_TEST.md`).
+- **Photos are current.** The Milestone 112 photography is live on the test site and appears throughout.
 - **Redaction.** The footer "Contact" column (phone number, email address, city) and every `tel:`/`mailto:` link are hidden before each capture, so no personal contact details appear in the kit. Nothing else on the page is changed.
 - **Cart and wishlist contents** were set through the store's own browser storage (`gocart:cart`, `gocart:wishlist`), the same state a shopper creates with "Add to cart" and the heart button. No order was placed.
 - **Checkout is off on the test site** (no Turnstile keys), so "Place order" shows in its disabled colour and no order-confirmation screen exists to show. The cart and order summary (address step, standard delivery, cash on delivery, totals) are shown instead.

@@ -1,16 +1,16 @@
 # Category Browsing Requirements — Mirza (formerly GoCart Pakistan)
 
-> **M102 ([ADR-048](./DECISIONS.md), 2026-11-01): categories are flat.** There is no `parent` field, no
+> **Milestone 102 ([Architecture Decision Record 048](./DECISIONS.md), 2026-11-01): categories are flat.** There is no `parent` field, no
 > sub-category, no parent roll-up, no parent breadcrumb and no child navigation any more. The sections
-> below on parent/child behaviour describe the former two-level design (ADR-013) and are kept as a
-> record; where they disagree with ADR-048, ADR-048 wins.
+> below on parent/child behaviour describe the former two-level design (Architecture Decision Record 013) and are kept as a
+> record; where they disagree with Architecture Decision Records 048 and 048 wins.
 
-The behavior specification for customer-facing category browsing. **`M27a` and `M27b` in
-[MIGRATION_PLAN.md](./MIGRATION_PLAN.md) implement against this document**; `M9`, `M10`, and `M22`
+The behavior specification for customer-facing category browsing. **Milestones 27a and 27b in
+[MIGRATION_PLAN.md](./MIGRATION_PLAN.md) implement against this document**; Milestones 9 and 10, and Milestone 22
 supply the data model and queries it depends on.
 
 Category browsing is **Phase 1 launch scope**, settled by
-[ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)
+[Architecture Decision Record 013](./DECISIONS.md#architecture-decision-record-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)
 (Accepted 2026-08-16). It is not a filter feature and is not deferred — see
 [Out-of-scope filtering](#out-of-scope-filtering-features) for the boundary.
 
@@ -27,16 +27,16 @@ Category browsing is **Phase 1 launch scope**, settled by
 
 | Route | File | Milestone | Rendering |
 |---|---|:---:|---|
-| `/categories` | `app/(public)/categories/page.tsx` | **`M27b`** | Server component |
-| `/category/[slug]` | `app/(public)/category/[slug]/page.tsx` | **`M27a`** | Server component |
+| `/categories` | `app/(public)/categories/page.tsx` | **Milestone 27b** | Server component |
+| `/category/[slug]` | `app/(public)/category/[slug]/page.tsx` | **Milestone 27a** | Server component |
 
 Both live inside the existing `(public)` route group, so they inherit the storefront shell
 (`Banner` / `Navbar` / `Footer`) from `app/(public)/layout.jsx` with no additional layout work.
 
-**Both are `.tsx`, not `.jsx`.** `M2a` established TypeScript with `allowJs: true` on the explicit
+**Both are `.tsx`, not `.jsx`.** Milestone 2a established TypeScript with `allowJs: true` on the explicit
 rule that *new files are `.ts`/`.tsx` and existing `.jsx` is never opportunistically converted*.
 These routes read Payload's generated `payload-types.ts` through the `lib/payload/*` utilities from
-`M22` — typed end to end from the first commit.
+Milestone 22 — typed end to end from the first commit.
 
 Supporting files owned by the same milestones: `loading.tsx` on both routes, plus `error.tsx` and
 `not-found.tsx` on `/category/[slug]`.
@@ -45,12 +45,12 @@ Supporting files owned by the same milestones: `loading.tsx` on both routes, plu
 
 1. **The primary browse path.** A multi-category catalog needs a way in other than "everything at
    once" (`/shop`) or "I already know the product name" (search). Today the storefront has neither.
-2. **The SEO landing surface for category-intent search.** Category-level queries ("phone cases in
+2. **The search engine optimization landing surface for category-intent search.** Category-level queries ("phone cases in
    Pakistan") are a large share of ecommerce discovery, and there is currently no page that can rank
-   for one. [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass)
+   for one. [Architecture Decision Record 007](./DECISIONS.md#architecture-decision-record-007-search-engine-optimization-first-and-mobile-first-are-default-requirements-not-a-later-pass)
    makes server-rendered category pages non-negotiable.
-3. **The destination that makes three existing plan items coherent.** `CategoriesMarquee` (`M27`),
-   the product-page breadcrumb (`M25`), and the sitemap's category entries (`M42`) all point at a
+3. **The destination that makes three existing plan items coherent.** `CategoriesMarquee` (Milestone 27),
+   the product-page breadcrumb (Milestone 25), and the sitemap's category entries (Milestone 42) all point at a
    category URL. Without these routes, all three point at nothing — the contradiction recorded as
    finding **C8** in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 
@@ -118,10 +118,10 @@ broken to a customer.
 - **That category is the most specific one that applies**, which in a two-level tree normally means a
   child. Admins never file a product under both a parent and its child; the rollup handles the parent.
 - **Parent pages derive their inventory from the rollup**, resolved in
-  `getProductsByCategory()` (`M22`), not in route code. Both routes and the sitemap read the same
+  `getProductsByCategory()` (Milestone 22), not in route code. Both routes and the sitemap read the same
   helper, so "which products are in this category" has exactly one implementation.
 - Products assigned directly to a parent category are valid and appear on that parent's page.
-- A product's category drives the product-page breadcrumb link (`M27a` wires it), replacing today's
+- A product's category drives the product-page breadcrumb link (Milestone 27a wires it), replacing today's
   unlinked plain-text `Home / Products / {category}`.
 
 **Out-of-stock products are still listed** (with an out-of-stock indicator), not hidden. Hiding them
@@ -129,15 +129,15 @@ would make the catalog appear to shrink and would break inbound links to individ
 they can be *ordered* is a separate concern, tracked as risk `R5` in
 [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md).
 
-## SEO requirements
+## Search engine optimization requirements
 
-Non-negotiable per [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass).
-These ship **with the routes**, in `M27a`/`M27b` — not as a later pass in `M41`.
+Non-negotiable per [Architecture Decision Record 007](./DECISIONS.md#architecture-decision-record-007-search-engine-optimization-first-and-mobile-first-are-default-requirements-not-a-later-pass).
+These ship **with the routes**, in Milestones 27a and 27b — not as a later pass in Milestone 41.
 
 - **Server-rendered content.** The product grid, category name, description, and pagination links are
   present in the initial HTML response, not injected after hydration. Verified by viewing page source,
   not DevTools.
-- **`generateMetadata` per page** — title and description derived from the category's SEO override
+- **`generateMetadata` per page** — title and description derived from the category's search engine optimization override
   fields where set, falling back to its title and description.
 - **`generateStaticParams`** over published category slugs where build-time generation is practical,
   so category pages are static-by-default and revalidated rather than rendered per request.
@@ -148,16 +148,16 @@ These ship **with the routes**, in `M27a`/`M27b` — not as a later pass in `M41
 - **Real anchor elements** for every category link and pagination control — `<a>`/`next/link`, never
   a `<button>` with an `onClick`. A crawler cannot follow a click handler, and neither can a keyboard
   user. This is precisely the defect `CategoriesMarquee` has today.
-- **Both routes in `sitemap.xml`** — `/categories` plus one entry per published category (`M42`).
+- **Both routes in `sitemap.xml`** — `/categories` plus one entry per published category (Milestone 42).
 - **Images** with explicit dimensions and meaningful `alt` text; no layout shift on load.
 - **No authentication, ever.** Category browsing is fully public, per
-  [ADR-005](./DECISIONS.md#adr-005-guest-checkout-no-customer-accounts) and
-  [ADR-006](./DECISIONS.md#adr-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope).
+  [Architecture Decision Record 005](./DECISIONS.md#architecture-decision-record-005-guest-checkout-no-customer-accounts) and
+  [Architecture Decision Record 006](./DECISIONS.md#architecture-decision-record-006-single-store-no-vendors--admin-only-authentication-multi-vendor-marketplace-features-removed-from-scope).
   No login wall, no soft gate, no cookie prerequisite, nothing that a crawler or a first-time visitor
   can fail.
 
 **Not required for Phase 1**: JSON-LD on category pages (`BreadcrumbList`, `CollectionPage`,
-`ItemList`). `M43` scopes structured data to `Product` on product detail pages. Category structured
+`ItemList`). Milestone 43 scopes structured data to `Product` on product detail pages. Category structured
 data is a reasonable post-launch addition and is deliberately not scheduled.
 
 ## Empty state
@@ -207,13 +207,13 @@ is, on a page whose whole purpose is being indexed accurately.
 - The rollup applies before pagination: a parent's page count reflects parent + child products.
 - **No infinite scroll, no load-more button** for Phase 1. Client-side appending leaves every product
   past page 1 invisible to crawlers unless a parallel paginated path is maintained anyway — a direct
-  conflict with the SEO-first constraint.
+  conflict with the search-engine-optimization-first constraint.
 
 ## Out-of-scope filtering features
 
 Category browsing is **navigation**, not filtering. The following remain **Future Phase**, consistent
 with the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) and the scope note in
-[MIGRATION_PLAN.md](./MIGRATION_PLAN.md). None is to be built as part of `M27a`/`M27b`:
+[MIGRATION_PLAN.md](./MIGRATION_PLAN.md). None is to be built as part of Milestones 27a and 27b:
 
 - Price-range filtering or price sliders
 - Brand filtering (no `Brands` entity exists — also Future Phase)
@@ -221,16 +221,16 @@ with the Filters row in [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) and the scope n
 - In-stock / out-of-stock toggles
 - Sort controls (price, newest, popularity) — default order only
 - Multi-category or multi-facet selection
-- Sidebar or drawer filter UI, and any filter-state URL parameters
+- Sidebar or drawer filter user interface, and any filter-state URL parameters
 - **`/shop?category=`** — explicitly not introduced; `/category/[slug]` is the canonical route
 
 `/shop` keeps its current role unchanged: the all-products listing plus name-based search
-(`?search=`, made a real query at `M29`). Category browsing does not modify it.
+(`?search=`, made a real query at Milestone 29). Category browsing does not modify it.
 
 ## Responsive expectations
 
-Mobile-first per [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass);
-both routes enter the `M44` audit.
+Mobile-first per [Architecture Decision Record 007](./DECISIONS.md#architecture-decision-record-007-search-engine-optimization-first-and-mobile-first-are-default-requirements-not-a-later-pass);
+both routes enter the Milestone 44 audit.
 
 - Product grid: 2 columns on mobile, 3 on tablet, 4 on desktop.
 - `/categories` cards: single or double column on mobile, scaling up with the viewport.
@@ -241,7 +241,7 @@ both routes enter the `M44` audit.
 
 ## Data model requirements
 
-The `Categories` collection (`M9`) must provide the following. Every field listed here has a named
+The `Categories` collection (Milestone 9) must provide the following. Every field listed here has a named
 reader in this document — nothing is specified speculatively.
 
 | Field | Type | Required | Read by |
@@ -261,29 +261,29 @@ Constraints:
 - `slug` is unique across the whole collection, parent and child alike (flat URL space).
 - A category whose `parent` already has a `parent` is **rejected** (two-level limit).
 - A category may not be its own parent.
-- Public read access; admin-only write (`M13`).
+- Public read access; admin-only write (Milestone 13).
 
-`Products.category` is a `relationship` to `categories` with `hasMany: false` (`M10`).
+`Products.category` is a `relationship` to `categories` with `hasMany: false` (Milestone 10).
 
 ## Milestone ownership
 
 | Milestone | Owns |
 |:---:|---|
-| **`M9`** | `Categories` collection — the field list and constraints above |
-| **`M10`** | `Products.category` single relationship |
-| **`M13`** | Public read access; seeded parent/child categories with products |
-| **`M22`** | `getTopLevelCategories()`, `getCategoryBySlug()`, `getProductsByCategory()` with rollup |
-| **`M27`** | `CategoriesMarquee` wired to real categories (renders inert; links land at `M27a`) |
-| **`M27a`** | `/category/[slug]` + marquee links + product-page breadcrumb link |
-| **`M27b`** | `/categories` |
-| **`M41`** | Canonical/OG normalization pass across both routes |
-| **`M42`** | Both routes in `sitemap.xml` |
-| **`M44`** | Mobile/tablet/desktop audit of both routes |
+| **Milestone 9** | `Categories` collection — the field list and constraints above |
+| **Milestone 10** | `Products.category` single relationship |
+| **Milestone 13** | Public read access; seeded parent/child categories with products |
+| **Milestone 22** | `getTopLevelCategories()`, `getCategoryBySlug()`, `getProductsByCategory()` with rollup |
+| **Milestone 27** | `CategoriesMarquee` wired to real categories (renders inert; links land at Milestone 27a) |
+| **Milestone 27a** | `/category/[slug]` + marquee links + product-page breadcrumb link |
+| **Milestone 27b** | `/categories` |
+| **Milestone 41** | Canonical/OG normalization pass across both routes |
+| **Milestone 42** | Both routes in `sitemap.xml` |
+| **Milestone 44** | Mobile/tablet/desktop audit of both routes |
 
 ## Cross-references
 
-- Decision and rationale: [ADR-013](./DECISIONS.md#adr-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)
+- Decision and rationale: [Architecture Decision Record 013](./DECISIONS.md#architecture-decision-record-013-category-browsing-ships-in-phase-1-as-dedicated-slug-routes-with-a-two-level-hierarchy)
 - Milestones and dependencies: [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)
 - Filters boundary: [FEATURE_MATRIX.md](./FEATURE_MATRIX.md) (Categories and Filters rows)
 - Originating gap: finding **C8** in [PHASE_1_READINESS_REPORT.md](./PHASE_1_READINESS_REPORT.md)
-- SEO/mobile mandate: [ADR-007](./DECISIONS.md#adr-007-seo-first-and-mobile-first-are-default-requirements-not-a-later-pass)
+- Search engine optimization/mobile mandate: [Architecture Decision Record 007](./DECISIONS.md#architecture-decision-record-007-search-engine-optimization-first-and-mobile-first-are-default-requirements-not-a-later-pass)

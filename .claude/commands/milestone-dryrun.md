@@ -22,8 +22,8 @@ and the evidence. State whether G0 passes.
 Read every file on the `Files` line. Describe what exists today and precisely what
 would have to change. Cite `file:line`.
 
-## 4. Architecture and ADR check (G2)
-Which Accepted ADRs and hard constraints bear on this milestone? Does anything in the
+## 4. Architecture and Architecture Decision Record check (G2)
+Which Accepted Architecture Decision Records and hard constraints bear on this milestone? Does anything in the
 milestone as written contradict one? If so, that is a `C`-class finding — report it,
 do not resolve it.
 

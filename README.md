@@ -8,9 +8,9 @@
 
 ---
 
-> **Brand:** the store is **Mirza** ([ADR-047](./docs/DECISIONS.md)). The project was called "GoCart Pakistan" until 2026-10-31; older ADRs, the changelog and some infrastructure names (the `gocart` repository, Docker project, `gocart_app` database role, `gocart-test` Vercel project) keep the old name on purpose. ADR-047 lists them.
+> **Brand:** the store is **Mirza** ([Architecture Decision Record 047](./docs/DECISIONS.md)). The project was called "GoCart Pakistan" until 2026-10-31; older Architecture Decision Records, the changelog and some infrastructure names (the `gocart` repository, Docker project, `gocart_app` database role, `gocart-test` Vercel project) keep the old name on purpose. Architecture Decision Record 047 lists them.
 
-> **Status: implemented, launch NOT cleared.** This repository started as the open-source [GoCart](https://github.com/GreatStackDev/goCart) storefront and is now a single-store, admin-managed, Cash-on-Delivery platform for Pakistan on Next.js 16, Payload CMS v3 and PostgreSQL. The storefront, guest COD checkout, order confirmation, guest order lookup (order number + phone), the Payload admin, Cloudflare Turnstile on ordering, migrations as a deploy step, backups and health checks are implemented. **Launch is not cleared:** real-key Turnstile checks, a Cloudflare WAF rule, first-deploy checks and an external uptime monitor remain open (see "Launch blockers" in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)). [docs/TASKS.md](./docs/TASKS.md) is the source of truth for milestone status.
+> **Status: implemented, launch NOT cleared.** This repository started as the open-source [GoCart](https://github.com/GreatStackDev/goCart) storefront and is now a single-store, admin-managed, Cash-on-Delivery platform for Pakistan on Next.js 16, Payload CMS v3 and PostgreSQL. The storefront, guest cash on delivery checkout, order confirmation, guest order lookup (order number + phone), the Payload admin, Cloudflare Turnstile on ordering, migrations as a deploy step, backups and health checks are implemented. **Launch is not cleared:** real-key Turnstile checks, a Cloudflare WAF rule, first-deploy checks and an external uptime monitor remain open (see "Launch blockers" in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)). [docs/TASKS.md](./docs/TASKS.md) is the source of truth for milestone status.
 
 ## What this is
 
@@ -19,7 +19,7 @@
 - **Cash on Delivery** as the only payment method for launch (architecture leaves room for online payment gateways later)
 - **Guest checkout** — customers can order without creating an account
 - **Admin-only login** — Payload `/admin` is the only authenticated surface; there is no customer login
-- **SEO-first** and **mobile-first** by default
+- **search-engine-optimization-first** and **mobile-first** by default
 - **Dockerized** for local development and production
 
 ## Documentation
@@ -35,11 +35,11 @@ Start here, in order:
 
 ## Original project
 
-This codebase started from the GreatStack **GoCart** open-source storefront (Next.js + Tailwind CSS + Redux Toolkit). `LICENSE.md` and `CODE_OF_CONDUCT.md` carry over unchanged. **`CONTRIBUTING.md` has been rewritten** for this project: marketplace features are permanently out of scope ([ADR-006](./docs/DECISIONS.md)), and Payload CMS v3 is the system of record ([ADR-003](./docs/DECISIONS.md)).
+This codebase started from the GreatStack **GoCart** open-source storefront (Next.js + Tailwind CSS + Redux Toolkit). `LICENSE.md` and `CODE_OF_CONDUCT.md` carry over unchanged. **`CONTRIBUTING.md` has been rewritten** for this project: marketplace features are permanently out of scope ([Architecture Decision Record 006](./docs/DECISIONS.md)), and Payload CMS v3 is the system of record ([Architecture Decision Record 003](./docs/DECISIONS.md)).
 
 ## Getting started
 
-Requires Docker with Compose and Node.js 22 (the version the `Dockerfile` and CI use; `package.json` declares no `engines` field).
+Requires Docker with Compose and Node.js 22 (the version the `Dockerfile` and continuous integration use; `package.json` declares no `engines` field).
 
 ```bash
 docker compose up -d postgres   # PostgreSQL, bound to 127.0.0.1 only
@@ -57,12 +57,12 @@ Run `npm run seed` for development data.
 To run the app in Docker as well, use `docker compose up` (database and app; the app port is
 loopback-only). Ordering and order lookup require a verified Cloudflare Turnstile token;
 `.env.example` and the dev compose file default to Cloudflare's public always-pass test keys,
-which need network access to Cloudflare and are for development and CI only.
+which need network access to Cloudflare and are for development and continuous integration only.
 
 Verification: `npm run type-check`, `npm run lint` and `npm run build`, the unit-style checks
 (`npm run test:env`, `test:turnstile`, `test:idempotency`, `test:users-guard`) and the Playwright
-end-to-end tests (`npm run test:e2e`: golden-path checkout, SEO and mobile layout) against a
-seeded database. CI (`.github/workflows/ci.yml`) runs them on every pull request.
+end-to-end tests (`npm run test:e2e`: golden-path checkout, search engine optimization and mobile layout) against a
+seeded database. Continuous integration (`.github/workflows/ci.yml`) runs them on every pull request.
 
 ### Production
 
@@ -78,7 +78,7 @@ Do not run it from a development checkout without an explicit `--env-file`. The 
 launch blockers are in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md); that file is the only
 production reference. `docker build --target dev .` builds the development image.
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 
 ## Building Mirza
 

@@ -13,6 +13,8 @@ Eight roles, one orchestrator, human approval before anything merges, except whe
 ├── settings.json      Permissions — denies destructive ops, asks before pushes/installs
 ├── agents/            The eight roles
 ├── commands/          /milestone  /milestone-dryrun  /team-status  /write-adr  /escalate
+├── rules/             Always-applicable rules: documentation style, language, privacy, GitHub identity, commits
+├── skills/            documentation-governance: the detailed procedure for writing and cleaning up documentation
 └── docs/
     ├── WORKFLOW.md          The pipeline and gate sequence
     ├── ROLES.md             Ownership boundaries and separation rules
@@ -33,14 +35,14 @@ HUMAN → Engineering Manager → { Product · Architecture · UI/UX · Full-Sta
 
 | Role | One-line charter |
 |---|---|
-| **Engineering Manager** | Orchestrates. Plans milestones, assigns roles, enforces gates, prepares the PR |
+| **Engineering Manager** | Orchestrates. Plans milestones, assigns roles, enforces gates, prepares the pull request |
 | **Product Manager** | Turns a Goal into testable acceptance criteria |
-| **Software Architect** | Guards the architecture; sole author of ADRs |
-| **UI/UX Designer** | Mobile-first, accessibility, honest copy, every state designed |
+| **Software Architect** | Guards the architecture; sole author of Architecture Decision Records |
+| **User Interface and User Experience Designer** | Mobile-first, accessibility, honest copy, every state designed |
 | **Full-Stack Engineer** | Implements — exactly the milestone, nothing more |
-| **QA Engineer** | Independently verifies. Never fixes what it judges |
-| **Security / Performance Engineer** | Reviews access control, PII, validation, cost. Review-only |
-| **DevOps / Release Engineer** | Git, branches, PRs, CI, Docker, env, migrations |
+| **Quality Assurance Engineer** | Independently verifies. Never fixes what it judges |
+| **Security / Performance Engineer** | Reviews access control, personally identifiable information, validation, cost. Review-only |
+| **DevOps / Release Engineer** | Git, branches, pull requests, continuous integration, Docker, env, migrations |
 
 ## Getting started
 
@@ -54,10 +56,10 @@ HUMAN → Engineering Manager → { Product · Architecture · UI/UX · Full-Sta
 
 `CLAUDE.md` remains the engineering constitution. `docs/MIGRATION_PLAN.md` remains the
 authoritative implementation roadmap, and its milestone IDs remain the only units of
-work. The Accepted ADRs in `docs/DECISIONS.md` remain binding. This team **executes**
+work. The Accepted Architecture Decision Records in `docs/DECISIONS.md` remain binding. This team **executes**
 that system — it does not replace it.
 
 ## Two rules that override everything else
 
 1. **Surface the conflict rather than guessing.** Stopping to escalate is a success.
-2. **A human approves before anything merges or deploys, unless a standing owner delegation covers it.** The owner has delegated the test environment (Vercel Hobby + Neon Free + Vercel Blob), ADR-049 work and routine technical, governance and documentation decisions; the list, each scope, and the absolute stops none of them lifts (`M109` and all production work until the client's go-ahead, paid actions, changing an Accepted ADR's decision, force push and history rewrite, deleting resources outside the test scope, auth/payment/order-total/rate-limiting changes, secrets) are in "Standing owner delegations" in [docs/GATES.md](./docs/GATES.md).
+2. **A human approves before anything merges or deploys, unless a standing owner delegation covers it.** The owner has delegated the test environment (Vercel Hobby + Neon Free + Vercel Blob), Architecture Decision Record 049 work and routine technical, governance and documentation decisions; the list, each scope, and the absolute stops none of them lifts (Milestone 109 and all production work until the client's go-ahead, paid actions, changing an Accepted Architecture Decision Record's decision, force push and history rewrite, deleting resources outside the test scope, auth/payment/order-total/rate-limiting changes, secrets) are in "Standing owner delegations" in [docs/GATES.md](./docs/GATES.md).
