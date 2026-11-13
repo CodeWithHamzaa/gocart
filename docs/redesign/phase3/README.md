@@ -10,10 +10,14 @@ API, checkout logic or a dependency.
 
 **All listing pages (shop, search results, a category)**
 - One header pattern (`components/ui/PageHeader.tsx`): a plain title, an optional one-line
-  description, a product count, and a hairline underneath. The category page lost its lavender
-  gradient banner, which did not belong to the ivory palette. The category's photo stays as a small
-  round inset from the `sm` breakpoint (640px) up, matching the round category photos on the home page.
-- The "Showing N products" line moved into the header, so the first product row starts higher on a phone.
+  description, a product count, and a hairline underneath. On the shop and search pages it is used at
+  every size. On a category page it is used below 1024px (phones and tablets), with the category's
+  photo as a small round inset from the `sm` breakpoint (640px) up.
+- **Owner review, 2026-11-13:** on a category page from 1024px (desktop and larger screens) the earlier
+  look is kept: the lavender panel with the large title, the photo in a white circle, and the
+  "Showing N products" line under the filters. The first version of this milestone had replaced it on
+  every size; the owner preferred the earlier panel on large screens and the new header elsewhere.
+- Below 1024px the count sits in the header, so the first product row starts higher on a phone.
 - On a category page the product cards no longer repeat the category name on every card
   (`ProductCard` has a new `showCategory` prop; the shop, search and home still show it).
 - The tablet grid gap is 16px (it was 12px).
