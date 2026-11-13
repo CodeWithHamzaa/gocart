@@ -49,23 +49,31 @@ Every screenshot is a real capture of `https://gocart-test-inky.vercel.app`; non
 - **Device frames** (phone, tablet, browser window) are generic shapes drawn by the build, not photos of a real device or brand. Mirza Cart is a responsive website, not a native app, and the boards say so.
 - **Guidance vs. fact.** Colours, type sizes, radii, shadows and badge styles are measured or copied from the code. Clear space, minimum sizes, approved backgrounds, personality and do's and don'ts are recommendations written for this kit, and they are worded as guidance.
 
-## Rebuilding
+## Editing and rebuilding
 
-Development machine only. You need Node with Playwright's Chromium (already in the repo's dev dependencies) and Python 3 with Pillow and python-pptx.
+**Quick edits, no tools needed.** `exports/mirza-brand-showcase.pptx` is a normal PowerPoint file: open it in PowerPoint, Keynote or Google Slides, delete or reorder slides, change any text or colour, replace a picture (right-click, "Change picture"), then export to PDF from there. The PDF and the PNG boards are finished outputs and are not meant to be edited.
+
+**Rebuilding with the current storefront.** On a development machine with Node (Playwright's Chromium is in the repo's dev dependencies) and Python 3 with Pillow and python-pptx:
 
 ```bash
-# 1. Screenshots from the test site (about 3 minutes)
-node docs/brand-kit/tools/capture.js
-node docs/brand-kit/tools/capture-elements.js
+# See the page numbers
+python3 docs/brand-kit/tools/build.py --list
 
-# 2. PDF, PNG boards and PPTX from one layout source (about 50 seconds)
-python3 docs/brand-kit/tools/build.py          # or --pptx for the deck only
+# Full kit with new screenshots and the current product photos (about 5 minutes)
+python3 docs/brand-kit/tools/build.py --refresh
 
-# The brand pages use product photos named <product-slug>-1.webp. By default they are read from the
-# repository's local /media folder. If that folder holds the generated demo art (a local demo seed), download
-# each product's first photo from the test site into a folder and point the build at it:
-BRAND_KIT_MEDIA=/path/to/photos python3 docs/brand-kit/tools/build.py
+# Only some pages, or everything except some pages (can be combined with --refresh)
+python3 docs/brand-kit/tools/build.py --pages 1,5-8,15-24
+python3 docs/brand-kit/tools/build.py --skip 4,11,25
+
+# Full kit from the screenshots already saved (about 50 seconds); --pptx builds the deck only
+python3 docs/brand-kit/tools/build.py
 ```
+
+- `--refresh` captures the storefront again and downloads each product's first photo, so a change of design, products or images on the site shows up in the kit. It reads the test site; `--site <url>` reads another one, for example a local `http://localhost:3000`.
+- A selection (`--pages`, `--skip`) is renumbered ("01 / 6"), leaves out the Contents page (it lists every page) and is written to `exports/custom/` (or `--out <folder name>`), which Git ignores. The full kit in `exports/` is only replaced by a build without a selection.
+- To change wording or layout permanently, edit `tools/pages.py` (one block per page) and rebuild.
+- Without `--refresh`, product photos come from the last refresh (`.build/photos/`), or from the folder named in `BRAND_KIT_MEDIA`, or else from the repository's local `/media` folder.
 
 | Tool | Role |
 |---|---|
@@ -73,7 +81,7 @@ BRAND_KIT_MEDIA=/path/to/photos python3 docs/brand-kit/tools/build.py
 | `tools/kit.py` | Layout primitives, design tokens and device frames, written out as HTML and as native PowerPoint shapes |
 | `tools/pages.py` | The 26 pages: content and layout |
 | `tools/render.js` | Chromium renders the HTML to the PDF and to one PNG per page |
-| `tools/build.py` | Runs the steps above |
+| `tools/build.py` | Runs everything: optional refresh, page selection, PDF, boards and deck |
 
 Intermediate files go to `.build/` (git-ignored).
 
