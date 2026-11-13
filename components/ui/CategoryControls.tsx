@@ -7,6 +7,7 @@ import { DISCOUNT_STEPS, SORTS, SORT_LABELS, hasActiveFilters, isRefined, type C
 // <details> panel on every width, open when something is applied. Only fields the catalogue really
 // has are offered: price and discount (price against MRP). The design's size, colour and delivery
 // filters have no data behind them (docs/CATEGORY_REQUIREMENTS.md), so they are not built.
+// Milestone 119: from `lg` the buttons sit at the end of the same row as the fields, so the panel is one line tall.
 // M101: the home page's look: a lavender panel with white pill fields and pill buttons, no ring.
 const field = 'min-h-11 w-full rounded-full border border-line-input bg-surface px-4 text-ink'
 
@@ -22,8 +23,8 @@ export default function CategoryControls({ basePath, filters }: { basePath: stri
         <span aria-hidden="true" className="text-lg text-primary group-open:hidden lg:hidden">+</span>
         <span aria-hidden="true" className="hidden text-lg text-primary group-open:inline lg:!hidden">&minus;</span>
       </summary>
-      <form method="get" action={basePath} className="flex flex-col gap-4 border-t border-line p-5">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <form method="get" action={basePath} className="flex flex-col gap-4 border-t border-line p-5 lg:flex-row lg:items-end lg:gap-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:flex-1 lg:grid-cols-4">
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
             Sort by
             <select name="sort" defaultValue={filters.sort} className={field}>
@@ -52,7 +53,7 @@ export default function CategoryControls({ basePath, filters }: { basePath: stri
             </div>
           </fieldset>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 lg:shrink-0">
           <button type="submit" className={buttonClasses()}>Apply</button>
           {(active || hasActiveFilters(filters)) && (
             <Link href={basePath} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary-dark">Clear all</Link>

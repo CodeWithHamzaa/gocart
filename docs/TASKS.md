@@ -463,6 +463,7 @@ production build (Milestone 49) cannot assume a reachable database. `/` moved `â
 | Milestone 116 | Palette decision record: Architecture Decision Record 052 hybrid palette (warm ivory surfaces, `#5F42EC` for actions, aubergine dark surface, no champagne); amends Architecture Decision Record 047 item 4 and records `bc5a77a` | **Done, in review** (2026-11-12). Owner decision 2026-11-12. Docs only. |
 | Milestone 117 | Hybrid palette values (Architecture Decision Record 052): warm ivory surfaces, aubergine footer, violet saved-heart and wishlist badge; the admin's brand colours read the shared palette | **Done, in review** (2026-11-12). Not deployed. Before/after captures in `docs/redesign/phase1/`. |
 | Milestone 118 | Homepage: editorial hero (one photo, display headline), "Shop by category" round category photos at every size, beside an intro column on desktop (owner's reference), "Limited-time deals" with an end date, cash-on-delivery band removed (owner), all categories in the footer | **Done, in review** (2026-11-12). Phase 2; not deployed. Captures in `docs/redesign/phase2/`. |
+| Milestone 119 | Shop, category, search and product pages: one page header, a sort on the shop, category links under an empty search, the price in the phone's bottom bar, photo swipe, two product columns from 768px, a related-products fallback | **Done, in review** (2026-11-13). Phase 3; not deployed. Captures in `docs/redesign/phase3/`. |
 
 ---
 

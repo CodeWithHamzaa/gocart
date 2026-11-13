@@ -15,9 +15,10 @@ import WishlistButton from './ui/WishlistButton'
 // stretched over the card. A long unbroken name wraps instead of widening the column.
 // `rail` gives the card a fixed width for a horizontal rail; in a grid it fills its cell.
 // `headingLevel` keeps the name one level below the section heading it sits under.
+// `showCategory={false}` drops the category line where the page is already one category's listing.
 const RAIL_WIDTH = 'w-[46vw] max-w-[260px] shrink-0 sm:w-[240px] lg:w-[260px]'
 
-const ProductCard = ({ product, priority = false, rail = false, headingLevel = 3 }) => {
+const ProductCard = ({ product, priority = false, rail = false, headingLevel = 3, showCategory = true }) => {
 
     const firstImage = product.images?.[0]
     const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
@@ -25,7 +26,7 @@ const ProductCard = ({ product, priority = false, rail = false, headingLevel = 3
     const status = statusBadge(product)
     const label = status && !(status.tone === 'sale' && discount > 0) ? status : null
     const outOfStock = product.inStock !== true
-    const categoryTitle = typeof product.category === 'object' && product.category ? product.category.title : null
+    const categoryTitle = showCategory && typeof product.category === 'object' && product.category ? product.category.title : null
     const Heading = headingLevel === 2 ? 'h2' : 'h3'
 
     return (

@@ -1,3 +1,5 @@
+import { ChevronDownIcon } from 'lucide-react'
+
 
 // M26: the multi-vendor "Product by {store}" attribution block is removed —
 // products aren't vendor-owned, and its link pointed at /shop/[username],
@@ -14,7 +16,7 @@ const Section = ({ title, open = false, children }) => (
     <details open={open} className="group border-b border-line last:border-b-0">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-base font-semibold text-ink [&::-webkit-details-marker]:hidden">
             {title}
-            <span aria-hidden="true" className="text-xl leading-none text-ink-3 transition group-open:rotate-45">+</span>
+            <ChevronDownIcon size={20} aria-hidden="true" className="shrink-0 text-ink-3 transition group-open:rotate-180 motion-reduce:transition-none" />
         </summary>
         <div className="pb-5 text-base leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{children}</div>
     </details>

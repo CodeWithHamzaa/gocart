@@ -26,7 +26,7 @@ export default function MobileTabBar() {
 
   return (
     <>
-      {(showTabs || hasActionBar) && <div aria-hidden="true" className="h-24 lg:hidden" />}
+      {(showTabs || hasActionBar) && <div aria-hidden="true" className={`${hasActionBar ? 'h-32' : 'h-24'} lg:hidden`} />}
       {showTabs && (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 px-1.5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-bar backdrop-blur lg:hidden">
           {TABS.map(({ href, label, Icon, match, cart }) => {
