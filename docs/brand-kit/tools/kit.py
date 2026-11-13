@@ -22,7 +22,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 REPO = os.path.abspath(os.path.join(ROOT, '..', '..'))
 BUILD = os.path.join(ROOT, '.build')
 SHOTS = os.path.join(ROOT, 'source-assets', 'screenshots')
-MEDIA = os.path.join(REPO, 'media')
+# Product photos for the brand pages. BRAND_KIT_MEDIA points at a folder of the live catalogue's photos named
+# <product-slug>-1.webp; without it the repository's local /media folder is used (which holds whatever the
+# local database was seeded with, so set the variable when the local seed is the generated demo art).
+MEDIA = os.environ.get('BRAND_KIT_MEDIA') or os.path.join(REPO, 'media')
 FONT_FILE = os.path.join(REPO, 'app', 'fonts', 'PlusJakartaSans-Variable.ttf')
 FONT = 'Plus Jakarta Sans'
 

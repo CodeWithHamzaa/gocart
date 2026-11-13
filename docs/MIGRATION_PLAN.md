@@ -1797,14 +1797,24 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Commit message**: `Final quality pass for the storefront redesign`
 
 ### Milestone 122 — The Mirza Cart brand: name, neutral palette, cart logo, search field, moving announcement strip
-- **Status (2026-11-13)**: **Done, in review** (not deployed). Requested and approved by the owner on 2026-11-13 (name, palette, logo concept A, and the header changes below).
+- **Status (2026-11-13)**: **Done, merged and deployed to the test site** (pull request #85; `main` at `d5ed333`, deployment `dpl_6hNJU8oC…`, 2026-11-13, after the migration was applied to the test database). Requested and approved by the owner on 2026-11-13 (name, palette, logo concept A, and the header changes below).
 - **Goal**: apply the final brand (Architecture Decision Record 053) across the storefront and the admin, and make the header changes the owner asked for.
 - **What changed**: the default store name is "Mirza Cart" (with a migration); clean neutral surfaces replace the warm ivory ones; a shopping-cart logo replaces the "M" monogram in the header, footer, admin, favicon and a new iPhone home-screen icon; the header search field is redesigned (one white pill, the magnifier as its submit button, a soft violet glow on focus, a clear button, a "/" keyboard shortcut on desktop); the category row under the header is removed; the announcement strip is a slow, seamless right-to-left ticker in which the same message is never on screen twice (one lap is at least as wide as the strip), with a pause button, and it does not move for visitors who ask for reduced motion; "Track order" moved from the strip to a labelled button in the header (desktop; phones and tablets keep the Orders tab).
 - **Files**: `app/tokens.css`, `app/globals.css`, `components/ui/BrandLogo.tsx`, `components/admin/Logo.tsx`, `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`, `components/Navbar.jsx`, `components/AnnouncementBar.tsx`, `components/ui/AnnouncementTicker.tsx` (new), `components/ui/CategoryNav.tsx` (removed), `components/Footer.jsx`, `app/(public)/layout.jsx`, `globals/Settings.ts`, `globals/StorefrontContent.ts` (a label), `lib/payload/settings.ts`, `lib/seo.ts`, `scripts/seed-demo.ts`, `migrations/20261113_204148_mirza_cart_store_name.*`.
 - **Spec**: Architecture Decision Record 053. One schema-level change: the default of `settings.store_name`. No API, order logic, Turnstile or dependency change.
 - **Dependencies**: Milestones 115 to 121.
 - **Testing**: type-check, lint (0 errors, the same 8 warnings), the continuous integration unit scripts, the 33-check checkout script, and captures of 17 pages at 390, 820 and 1440px on a local production build. The end-to-end suite runs in continuous integration only. Screen-reader and real-device testing were not done (unverified).
-- **Not done here**: regenerating the brand kit for the new identity, and deploying to the test site (the migration must be applied to the test database first).
+- **Not done here**: regenerating the brand kit for the new identity (Milestone 123).
 - **Rollback**: revert the pull request and run the migration's `down`.
 - **Commit message**: `Apply the Mirza Cart brand, new search field and moving announcement strip`
+
+### Milestone 123 — Brand kit regenerated for Mirza Cart
+- **Status (2026-11-13)**: **Done, in review.** Requested by the owner on 2026-11-13. Documentation and development-time tooling only.
+- **Goal**: bring `docs/brand-kit/` (Milestone 113) in line with Architecture Decision Record 053: the name, the clean neutral palette with the aubergine surface, the shopping-cart logo (horizontal, stacked, icon-only and inverse), and fresh desktop, tablet and phone captures of the deployed test site.
+- **Files**: `docs/brand-kit/tools/` (`kit.py`, `pages.py`, `capture.js`), `docs/brand-kit/source-assets/` (new captures; `brand/mirza-cart-mark.svg` replaces `mirza-monogram.svg`), `docs/brand-kit/exports/` (the 26-page PDF, the editable deck, 26 boards), `docs/brand-kit/README.md`, and the records of the test deployment in `docs/DEPLOYMENT_VERCEL_TEST.md`, `CLAUDE.md`, `docs/TASKS.md` and `docs/CHANGELOG.md`.
+- **Spec**: `docs/brand-kit/README.md`. No application code, schema or dependency change. Export file names are unchanged.
+- **Dependencies**: Milestone 122 deployed to the test site.
+- **Testing**: the build runs without errors; all 26 boards were looked at as contact sheets, and the logo, component and photography boards at larger size. The deck was not opened in PowerPoint (unverified).
+- **Rollback**: revert the pull request.
+- **Commit message**: `Regenerate the brand kit for the Mirza Cart identity`
 

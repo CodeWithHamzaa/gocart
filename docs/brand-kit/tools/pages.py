@@ -300,7 +300,7 @@ def build_pages():
     x2 = 980
     heading(p, 'Typography', 'One family,\nfour weights.', 'There is no secondary typeface. Hierarchy comes from size, weight and tight tracking on headings.', x=x2, y=150, w=820, size=56)
     weights = [(400, 'Regular', 'Body copy, descriptions'), (500, 'Medium', 'Announcement bar, small labels'),
-               (600, 'SemiBold', 'Headings, buttons, prices, nav'), (700, 'Bold', 'The wordmark')]
+               (600, 'SemiBold', 'Headings, buttons, prices, nav'), (800, 'ExtraBold', 'The wordmark ("Mirza")')]
     for i, (wt, n, u) in enumerate(weights):
         y = 520 + i * 100
         p.add(Rect(x2, y, 820, 1, fill='line-2'))
@@ -315,7 +315,7 @@ def build_pages():
     heading(p, 'Type hierarchy', 'Measured on the live storefront', y=150, w=1200, size=48)
     rows = [
         ('Hero heading', 'Deals on headphones and fragrances', 48, 52, 600, -0.03, 'ink', '48 / 52  SemiBold  −3%', 'Phone: 28 / 34'),
-        ('Section heading', 'Deals of the day', 36, 40, 600, -0.03, 'ink', '36 / 40  SemiBold  −3%', 'Phone: 24 / 30'),
+        ('Section heading', 'Limited-time deals', 36, 40, 600, -0.03, 'ink', '36 / 40  SemiBold  −3%', 'Phone: 24 / 30'),
         ('Price', 'Rs. 4,499', 28, 28, 600, -0.02, 'ink', '28 / 28  SemiBold  −2%', 'Product page'),
         ('Wordmark', 'Mirza Cart', 22, 30, 800, -0.03, 'ink', '22 / 30  ExtraBold + Medium  −3%', 'Header'),
         ('Lead', 'Up to 36% off. Pay cash on delivery.', 18, 26, 400, 0, 'ink-2', '18 / 26  Regular', 'Phone: 16 / 24'),
@@ -355,7 +355,7 @@ def build_pages():
     gx, gy, gs, gg = 790, 150, 236, 18
     for i, t in enumerate(grid):
         p.add(Img(gx + (i % 4) * (gs + gg), gy + (i // 4) * (gs + gg), gs, gs, photo(t), radius=16))
-    p.add(Text(gx, gy + 3 * (gs + gg) + 4, 1000, 20, 'Product photos are shown on a muted well (#F5F4F8) inside cards. Category images are 4:3 and appear as circles in the home shortcuts.', size=14, weight=500, color='muted', lh=20))
+    p.add(Text(gx, gy + 3 * (gs + gg) + 4, 1000, 20, 'Product photos are shown on a neutral well (#F1F2F5) inside cards. Category images are 4:3 and appear as circles in the home shortcuts.', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 12 Interface language -------------------------------------------------------------------
@@ -426,10 +426,10 @@ def build_pages():
     rx = 1440
     p.add(Img(rx, 340, 360, 360 * 663 / 1896, shot('elements', 'promo-card'), radius=20, shadow='float-sm'))
     p.add(Text(rx, 340 + 360 * 663 / 1896 + 12, 360, 20, 'Promotional card', size=14, weight=500, color='muted', lh=20))
-    p.add(Img(M, 790, 1680, 1680 * 405 / 4320, shot('elements', 'header'), radius=16, shadow='float-sm'))
-    p.add(Text(M, 790 + 1680 * 405 / 4320 + 12, 1000, 20, 'Header: lockup, search, Shop, Track order, wishlist and cart.', size=14, weight=500, color='muted', lh=20))
-    p.add(Img(rx, 600, 360, 360 * 177 / 1640, shot('elements', 'category-shortcuts'), crop=(270, 0, 1640), radius=12, shadow='float-sm'))
-    p.add(Text(rx, 600 + 360 * 177 / 1640 + 12, 360, 20, 'Category shortcuts', size=14, weight=500, color='muted', lh=20))
+    p.add(Img(M, 790, 1680, 1680 * 243 / 4320, shot('elements', 'header'), radius=16, shadow='float-sm'))
+    p.add(Text(M, 790 + 1680 * 243 / 4320 + 12, 1000, 20, 'Header: lockup, search, Shop, Track order, wishlist and cart.', size=14, weight=500, color='muted', lh=20))
+    p.add(Img(rx, 600, 360, 360 * 504 / 3000, shot('elements', 'category-shortcuts'), radius=12, shadow='float-sm'))
+    p.add(Text(rx, 600 + 360 * 504 / 3000 + 12, 360, 20, 'Category circles', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 14 Brand in use -------------------------------------------------------------------------
@@ -439,8 +439,8 @@ def build_pages():
     p.add(body(M, 340, 560, 200, 'The header lockup, the violet actions, the soft hero panel and the photo-first cards repeat on every page, '
                                  'so a shopper always knows where they are, on any screen.', size=18, lh=29))
     hw = 1100
-    p.add(Img(700, 150, hw, hw * 405 / 4320, shot('elements', 'header'), radius=14, shadow='float-sm'))
-    p.add(Img(700, 270, hw, hw * 1875 / 4176, shot('elements', 'hero'), radius=22, shadow='float'))
+    p.add(Img(700, 150, hw, hw * 243 / 4320, shot('elements', 'header'), radius=14, shadow='float-sm'))
+    p.add(Img(700, 240, hw, hw * 1686 / 4176, shot('elements', 'hero'), radius=22, shadow='float'))
     for i, n in enumerate(['card-new', 'card-limited']):
         p.add(Img(M + i * 270, 560, 250, 250 * 1200 / 906, shot('elements', n), radius=16, shadow='float-sm'))
     els, _ = phone(1540, 490, 220, shot('mobile', 'product-9'), shadow='device-sm')
@@ -462,11 +462,11 @@ def build_pages():
     p = Page('desktop-home-sections', 'Desktop homepage sections', 'desktop', bg='page')
     chrome(p, 16, 'Desktop showcase')
     heading(p, 'Desktop · Homepage', 'Deals, featured picks\nand promotions', y=150, w=700, size=48)
-    p.add(Text(M, 330, 560, 120, 'Deals of the day with a live countdown, an admin-curated Featured grid with category tabs, and two promotional cards that link to sales.', size=18, weight=400, color='ink-2', lh=29))
+    p.add(Text(M, 330, 560, 120, 'Limited-time deals with their end date, an admin-curated Featured grid with category tabs, and two promotional cards that link to sales.', size=18, weight=400, color='ink-2', lh=29))
     p.add(section_panel(740, 150, 1060, 'featured', css_h=600))
     p.add(section_panel(740, 150 + 1060 * 600 / 1440 + 26, 1060, 'promos', pad=28))
     p.add(section_panel(M, 520, 560, 'deals', pad=32, shadow='float'))
-    p.add(Text(M, 520 + 560 * (SECTIONS['deals']['h'] + 64) / 1440 + 14, 560, 20, 'Deals of the day, with a countdown to the end of the offer.', size=14, weight=500, color='muted', lh=20))
+    p.add(Text(M, 520 + 560 * (SECTIONS['deals']['h'] + 64) / 1440 + 14, 560, 20, 'Limited-time deals, with the date the offer ends.', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 17 Desktop shopping ---------------------------------------------------------------------

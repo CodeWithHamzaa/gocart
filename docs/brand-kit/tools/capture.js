@@ -115,12 +115,12 @@ const fillWishlist = (page) => setStorage(page, 'gocart:wishlist', ['5', '12', '
         return h ? box(h.closest('section') || h.parentElement.parentElement) : null
       }
       const promo = [...document.querySelectorAll('a')].find((a) => a.textContent.includes('Summer Sale'))
-      return { deals: sec('Deals of the day'), featured: sec('Featured'), newArrivals: sec('New arrivals', true),
+      return { deals: sec('Limited-time deals'), featured: sec('Featured'), newArrivals: sec('New arrivals', true),
                promos: promo ? box(promo.parentElement) : null }
     })
     fs.writeFileSync(path.join(OUT, 'desktop', 'home-sections.json'), JSON.stringify(boxes, null, 2))
     console.log('sections', JSON.stringify(boxes))
-    await scrollToText(p, 'Deals of the day'); await shot(p, 'desktop', 'home-deals')
+    await scrollToText(p, 'Limited-time deals'); await shot(p, 'desktop', 'home-deals')
     await scrollToText(p, 'Featured'); await shot(p, 'desktop', 'home-featured')
     await scrollToText(p, 'New arrivals', 330, true); await shot(p, 'desktop', 'home-promos')
     await scrollToText(p, 'New arrivals', 90, true); await shot(p, 'desktop', 'home-new-arrivals')
@@ -155,7 +155,7 @@ const fillWishlist = (page) => setStorage(page, 'gocart:wishlist', ['5', '12', '
     const ctx = await browser.newContext(VIEWPORTS.mobile)
     const p = await ctx.newPage()
     await go(p, '/'); await shot(p, 'mobile', 'home-hero')
-    await scrollToText(p, 'Deals of the day', 28); await shot(p, 'mobile', 'home-deals')
+    await scrollToText(p, 'Limited-time deals', 28); await shot(p, 'mobile', 'home-deals')
     await scrollToText(p, 'Featured', 28); await shot(p, 'mobile', 'home-featured')
     await scrollToText(p, 'New arrivals', 360, true); await shot(p, 'mobile', 'home-promos')
     await scrollToText(p, 'New arrivals', 70, true); await shot(p, 'mobile', 'home-new-arrivals')
