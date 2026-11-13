@@ -1,42 +1,49 @@
 'use client'
 
-// Milestone 122: the announcement strip as a ticker (the owner asked for it on 2026-11-13, replacing the static
-// strip chosen on 2026-11-10). One message is on screen at a time: it enters from the left edge, travels to
-// the right and leaves completely; only then does the next message (or the same one, if there is only one)
-// enter from the left. So a message is never visible twice. The movement is the `announcement-ticker`
-// keyframes in app/globals.css; each finished pass advances to the next message. Motion rules: it pauses
-// while the pointer is over the strip, the button stops and restarts it (WCAG 2.2.2, moving content), and
-// with "reduce motion" set nothing moves and the current message sits centred. Screen readers get the full
-// list once, as a hidden list; the moving copy is hidden from them.
+// Milestone 122: the announcement strip as a slow, seamless ticker (the owner asked for it on 2026-11-13,
+// replacing the static strip chosen on 2026-11-10). The different messages travel together from right to
+// left with space between them. One lap is never shorter than the strip itself: each copy of the list is at
+// least as wide as the strip (`min-w-[100vw]`; the strip spans the page), and the track holds two copies and slides by exactly one (the
+// `announcement-ticker` keyframes in app/globals.css). So the same message is never on screen twice: as much
+// of it as has left on the left edge enters again on the right, with no jump. The pace follows what shop
+// themes recommend for a calm, readable band (a slow lap, pause on hover): it pauses while the pointer is
+// over it or the pause button has focus, the button stops and restarts it (WCAG 2.2.2, moving content), and
+// with "reduce motion" set nothing moves and the messages sit side by side (the first one only on a phone).
+// Screen readers get the list once; the second copy is hidden from them.
 import { BadgeCheckIcon, PauseIcon, PlayIcon, TruckIcon } from 'lucide-react'
 import { useState } from 'react'
 
 export type TickerMessage = { text: string; kind: 'delivery' | 'promise' }
 
 export default function AnnouncementTicker({ messages }: { messages: TickerMessage[] }) {
-  const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   if (messages.length === 0) return null
-  const message = messages[index % messages.length]
-  const Icon = message.kind === 'delivery' ? TruckIcon : BadgeCheckIcon
+
+  const group = (copy: boolean) => (
+    <ul aria-hidden={copy || undefined} className={`flex min-w-[100vw] shrink-0 items-center justify-around ${copy ? 'motion-reduce:hidden' : 'motion-reduce:justify-center'}`}>
+      {messages.map((message, i) => {
+        const Icon = message.kind === 'delivery' ? TruckIcon : BadgeCheckIcon
+        return (
+          <li key={i} className={`flex shrink-0 items-center gap-2 px-8 sm:px-12 ${i > 0 ? 'max-sm:motion-reduce:hidden' : ''}`}>
+            <Icon size={16} strokeWidth={1.9} aria-hidden="true" className="shrink-0 text-primary" />
+            <span className="whitespace-nowrap">{message.text}</span>
+          </li>
+        )
+      })}
+    </ul>
+  )
 
   return (
     <div className="group/ticker relative flex h-10 items-center overflow-hidden">
-      <ul className="sr-only">
-        {messages.map((item, i) => (
-          <li key={i}>{item.text}</li>
-        ))}
-      </ul>
-      <p
-        aria-hidden="true"
-        onAnimationIteration={() => setIndex((value) => (value + 1) % messages.length)}
-        className="announcement-ticker absolute left-0 flex items-center gap-2 whitespace-nowrap group-hover/ticker:[animation-play-state:paused] motion-reduce:static motion-reduce:mx-auto motion-reduce:max-w-full motion-reduce:px-4"
+      <div
+        className="announcement-ticker flex items-center group-hover/ticker:[animation-play-state:paused] group-focus-within/ticker:[animation-play-state:paused]"
         style={paused ? { animationPlayState: 'paused' } : undefined}
       >
-        <Icon size={16} strokeWidth={1.9} aria-hidden="true" className="shrink-0 text-primary" />
-        <span className="motion-reduce:truncate">{message.text}</span>
-      </p>
-      <div className="absolute inset-y-0 right-0 flex items-center bg-linear-to-l from-surface-muted from-70% to-transparent pl-8 pr-2 motion-reduce:hidden sm:pr-4">
+        {group(false)}
+        {group(true)}
+      </div>
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-linear-to-r from-surface-muted to-transparent motion-reduce:hidden" />
+      <div className="absolute inset-y-0 right-0 flex items-center bg-linear-to-l from-surface-muted from-60% to-transparent pl-10 pr-2 motion-reduce:hidden sm:pr-4">
         <button
           type="button"
           onClick={() => setPaused((value) => !value)}
