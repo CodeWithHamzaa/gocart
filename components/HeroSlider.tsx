@@ -16,7 +16,7 @@ import { buttonClasses } from '@/components/ui/Button'
 // M118 (ADR-052): an editorial banner: a calm solid panel (no gradient wash), a large display headline on
 // the left and ONE large product photo on the right (a phone: below, as a wide crop), instead of two
 // overlapping tiles. The stored tones (ADR-050) are mapped, never renamed: green = the violet tint,
-// blue = white, grey = the warm well, so consecutive slides stay distinguishable.
+// blue = white, grey = the neutral well, so consecutive slides stay distinguishable.
 const TONES: Record<HeroSlide['tone'], string> = {
   green: 'bg-accent-soft',
   blue: 'bg-surface',

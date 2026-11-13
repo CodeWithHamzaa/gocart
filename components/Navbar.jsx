@@ -1,5 +1,5 @@
 'use client'
-import { HeartIcon, SearchIcon, ShoppingCartIcon } from "lucide-react";
+import { ArrowRightIcon, HeartIcon, SearchIcon, ShoppingCartIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { useRouter } from "next/navigation";
@@ -14,13 +14,17 @@ import { useSelector } from "react-redux";
 // submits as before. The category row (CategoryNav, a server component) arrives as `children`.
 // M91: the wishlist heart (browser-only, ADR-041) sits before the cart.
 // M101: the search field and its button are pills, like every other action in the owner-approved style.
+// Milestone 122: a quieter, modern field: a filled neutral pill with no border at rest, which turns white with
+// the violet focus ring when used; a round violet submit button (still 44px) and a clear
+// button that appears once something is typed.
 // Left out on purpose: Sign in (admin-only auth, no customer accounts), notification
 // bell and menu button (none of them has a destination in this store).
-const Navbar = ({ storeName = 'Mirza', children }) => {
+const Navbar = ({ storeName = 'Mirza Cart', children }) => {
 
     const router = useRouter();
 
     const formRef = useRef(null)
+    const inputRef = useRef(null)
     const [search, setSearch] = useState('')
     const cartCount = useSelector(state => state.cart.total)
     const wishCount = useSelector(state => state.wishlist.ids.length)
@@ -40,12 +44,16 @@ const Navbar = ({ storeName = 'Mirza', children }) => {
                     <BrandLogo name={storeName} />
                 </Link>
 
-                <form ref={formRef} onSubmit={handleSearch} role="search" className="order-last flex h-12 w-full items-center gap-2.5 rounded-full border border-line-input bg-surface pl-4 pr-1 text-sm transition focus-within:border-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary lg:order-none lg:w-auto lg:flex-1">
-                    <SearchIcon size={20} className="shrink-0 text-muted" aria-hidden="true" />
-                    <input aria-label="Search products" className="h-full min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted" type="text" enterKeyHint="search" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
-                    <button type="button" onClick={() => formRef.current?.requestSubmit()} aria-label="Search" className="flex h-11 min-w-11 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary-dark sm:px-5">
-                        <SearchIcon size={18} className="sm:hidden" aria-hidden="true" />
-                        <span className="hidden sm:inline">Search</span>
+                <form ref={formRef} onSubmit={handleSearch} role="search" className="group order-last flex h-[46px] w-full items-center gap-2 rounded-full border border-transparent bg-surface-muted pl-4 pr-px text-sm transition-colors hover:border-line-3 focus-within:border-primary focus-within:bg-surface focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary lg:order-none lg:w-auto lg:flex-1">
+                    <SearchIcon size={18} strokeWidth={2.2} className="shrink-0 text-muted transition-colors group-focus-within:text-primary" aria-hidden="true" />
+                    <input ref={inputRef} aria-label="Search products" className="h-full min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden" type="text" enterKeyHint="search" placeholder="Search for products" value={search} onChange={(e) => setSearch(e.target.value)} required />
+                    {search && (
+                        <button type="button" onClick={() => { setSearch(''); inputRef.current?.focus() }} aria-label="Clear search" className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-line hover:text-ink">
+                            <XIcon size={16} strokeWidth={2.4} aria-hidden="true" />
+                        </button>
+                    )}
+                    <button type="button" onClick={() => formRef.current?.requestSubmit()} aria-label="Search" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition hover:bg-primary-dark active:scale-95">
+                        <ArrowRightIcon size={18} strokeWidth={2.4} aria-hidden="true" />
                     </button>
                 </form>
 

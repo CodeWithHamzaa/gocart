@@ -5,9 +5,9 @@ import { getSiteUrl } from './site-url'
 // storefront route follows the same canonical / Open Graph conventions. Pure functions;
 // the site origin comes only from NEXT_PUBLIC_SITE_URL (lib/site-url.ts), never a literal.
 
-// M101: Mirza sells electronics, fashion, home and beauty, not only gadgets.
+// M101: the store sells electronics, fashion, home and beauty, not only gadgets.
 export const DEFAULT_DESCRIPTION =
-  'Shop electronics, fashion, home and beauty online at Mirza. Cash on Delivery across Pakistan, no account needed.'
+  'Shop electronics, fashion, home and beauty online at Mirza Cart. Cash on Delivery across Pakistan, no account needed.'
 
 /** Absolute URL for a site path, or the input unchanged if it is already absolute. */
 export function absoluteUrl(pathOrUrl: string): string {

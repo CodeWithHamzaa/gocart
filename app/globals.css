@@ -9,15 +9,16 @@
    `muted` (text), `line*` (borders), `primary*`/`accent*` (actions and selected states), `inverse*`
    (the dark surface: footer), and the status colours.
 
-   ADR-052 (hybrid palette): warm ivory page, white cards separated by a warm hairline, a warm well behind
-   images, so product photography reads true. Violet (`primary`) is the one action colour; its soft tint
-   (`accent-soft`) is kept for the hero, soft buttons and selected states. Aubergine (`inverse`) is the one
-   dark surface (footer). `sale` is for real discounts only; `amber` for "Limited edition". No second accent.
+   ADR-053 (the final Mirza Cart palette, replacing ADR-052's warm ivory): a clean near-white page, white
+   cards separated by a neutral hairline, a neutral well behind images, so product photography reads true.
+   Violet (`primary`) is the one action colour; its soft tint (`accent-soft`) is kept for soft buttons and
+   selected states. Aubergine (`inverse`) is the one dark surface (footer). `sale` is for real discounts
+   only; `amber` for "Limited edition". No second accent.
 
-   Contrast (WCAG 2.2, sRGB relative luminance): ink on page 15.45:1, muted on page 5.48:1, muted on
-   surface-muted 5.16:1, primary on page 5.54:1, white on primary 6.04:1, ink-2 on accent-soft 8.46:1,
-   sale on page 6.70:1, sale on sale-soft 6.12:1, white on sale-strong 5.39:1, white / 75% / 60% on inverse
-   13.73 / 8.39 / 5.98:1, line-input 3.80:1 on white and 3.48:1 on page (WCAG 1.4.11, field boundaries).
+   Contrast (WCAG 2.2, sRGB relative luminance): ink on page 14.71:1, muted on page 5.63:1, muted on
+   surface-muted 5.34:1, primary on page 5.69:1, white on primary 6.04:1, ink-2 on accent-soft 8.46:1,
+   sale on page 6.88:1, white on inverse 13.73:1, line-input 3.74:1 on white and 3.53:1 on page
+   (WCAG 1.4.11, field boundaries).
    Violet on inverse is 2.27:1, so focus rings on the inverse surface are white (.surface-inverse). */
 @theme {
     /* Brand and text. */
@@ -33,9 +34,9 @@
     --color-disabled: var(--palette-ink-300);
 
     /* Surfaces and lines. */
-    --color-page: var(--palette-ivory-50);
+    --color-page: var(--palette-neutral-50);
     --color-surface: var(--palette-white);
-    --color-surface-muted: var(--palette-ivory-100);
+    --color-surface-muted: var(--palette-neutral-100);
     --color-line: var(--palette-line-100);
     --color-line-2: var(--palette-line-200);
     --color-line-3: var(--palette-line-300);

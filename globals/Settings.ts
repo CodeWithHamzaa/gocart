@@ -16,9 +16,9 @@ export const Settings: GlobalConfig = {
       name: 'storeName',
       type: 'text',
       required: true,
-      // M101 (ADR-047): the brand is Mirza. Migration 20261031_160131_mirza_store_name changes the column
-      // default only; a value an admin has saved is never touched.
-      defaultValue: 'Mirza',
+      // Milestone 122 (ADR-053): the brand is Mirza Cart (it was Mirza, ADR-047). The migration changes the column
+      // default and renames a stored name only when it is exactly the old default, "Mirza".
+      defaultValue: 'Mirza Cart',
     },
     {
       name: 'contactPhone',

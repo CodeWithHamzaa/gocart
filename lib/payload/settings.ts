@@ -18,7 +18,7 @@ export type StoreSettings = {
 }
 
 const EMPTY: StoreSettings = {
-  storeName: 'Mirza',
+  storeName: 'Mirza Cart',
   contactPhone: null,
   contactEmail: null,
   contactAddress: null,
