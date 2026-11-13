@@ -1,4 +1,4 @@
-"""Mirza brand kit: shared layout primitives (development-time tooling, not part of the app).
+"""Mirza Cart brand kit: shared layout primitives (development-time tooling, not part of the app).
 
 Every page of the book is a list of primitives positioned on a 1920 x 1080 px canvas. The same list
 is written out twice:
@@ -29,12 +29,13 @@ FONT = 'Plus Jakarta Sans'
 W, H = 1920, 1080
 EMU = 6350
 
-# Design tokens, copied from app/globals.css (@theme). Never invent a colour here.
+# Design tokens, copied from app/tokens.css and app/globals.css (Architecture Decision Record 053). Never
+# invent a colour here.
 C = {
     'primary': '#5F42EC', 'primary-dark': '#4A2FD0', 'accent-soft': '#EEE9FF', 'accent': '#E2DAFF',
-    'ink': '#1D1D1F', 'ink-2': '#424245', 'ink-3': '#515154', 'muted': '#636368', 'disabled': '#A1A1A6',
-    'page': '#FAFAFC', 'surface': '#FFFFFF', 'surface-muted': '#F5F4F8', 'line': '#ECE9F2',
-    'line-2': '#E2DFEA', 'line-3': '#CBC6D8', 'line-input': '#8A84A3',
+    'ink': '#242328', 'ink-2': '#424245', 'ink-3': '#515154', 'muted': '#636368', 'disabled': '#A1A1A6',
+    'page': '#F8F8FA', 'surface': '#FFFFFF', 'surface-muted': '#F1F2F5', 'line': '#E9E9EE',
+    'line-2': '#DEDEE5', 'line-3': '#C4C4CD', 'line-input': '#83838F', 'inverse': '#352746',
     'sale': '#A8144F', 'sale-soft': '#FFE4F0', 'sale-strong': '#CC1966', 'amber': '#FFC247',
     'success': '#0B6E4F', 'success-soft': '#E6F2EE', 'white': '#FFFFFF',
 }
@@ -76,6 +77,40 @@ def shot(kind: str, name: str) -> str:
 
 def photo(name: str) -> str:
     return os.path.join(MEDIA, f'{name}.webp')
+
+
+_font_cache: dict = {}
+
+
+def text_width(text: str, size: float, weight: int, ls: float = 0) -> float:
+    """Width of a single line in the brand font, measured with the real variable font file."""
+    from PIL import ImageFont
+    key = (round(size * 4), weight)
+    if key not in _font_cache:
+        f = ImageFont.truetype(FONT_FILE, max(1, round(size * 4)))
+        f.set_variation_by_axes([weight])
+        _font_cache[key] = f
+    return _font_cache[key].getlength(text) / (round(size * 4) / size) + ls * size * len(text)
+
+
+def wordmark(x, y, size, color='ink', center_w=None, h=None):
+    """The Mirza Cart wordmark: "Mirza" heavy and "Cart" medium, as in components/ui/BrandLogo.tsx.
+    Returns two text elements. With center_w the pair is centred in a box of that width starting at x."""
+    ls = -0.03
+    w1 = text_width('Mirza', size, 800, ls)
+    gap = size * 0.24
+    w2 = text_width('Cart', size, 500, ls)
+    if center_w is not None:
+        x = x + (center_w - (w1 + gap + w2)) / 2
+    h = h or size * 1.15
+    return [
+        Text(x, y, w1 + size * 0.2, h, 'Mirza', size=size, weight=800, color=color, lh=h, ls=ls, name='Wordmark: Mirza'),
+        Text(x + w1 + gap, y, w2 + size * 0.2, h, 'Cart', size=size, weight=500, color=color, lh=h, ls=ls, name='Wordmark: Cart'),
+    ]
+
+
+def wordmark_width(size):
+    return text_width('Mirza', size, 800, -0.03) + size * 0.24 + text_width('Cart', size, 500, -0.03)
 
 
 # ---------------------------------------------------------------- primitives
@@ -137,7 +172,7 @@ class Img:
 @dataclass
 class Mark:
     x: float; y: float; size: float
-    bg: str = 'ink'
+    bg: str = 'primary'
     fg: str = 'white'
 
 
@@ -226,9 +261,12 @@ def el_html(e) -> str:
     if isinstance(e, Mark):
         s = e.size
         return (f'<svg class="e" style="{pos}" width="{s}" height="{s}" viewBox="0 0 32 32">'
-                f'<rect width="32" height="32" rx="7" fill="{col(e.bg)}"/>'
-                f'<path d="M9 22.5V10l7 8.5 7-8.5v12.5" fill="none" stroke="{col(e.fg)}" stroke-width="2.6" '
-                f'stroke-linecap="round" stroke-linejoin="round"/></svg>')
+                f'<rect width="32" height="32" rx="8" fill="{col(e.bg)}"/>'
+                f'<g transform="translate(3.4 3.6) scale(.79)" fill="{col(e.fg)}">'
+                f'<path d="M3.5 6.5h3.3a1.6 1.6 0 0 1 1.55 1.2L9 10" fill="none" stroke="{col(e.fg)}" stroke-width="2.6" '
+                f'stroke-linecap="round" stroke-linejoin="round"/>'
+                f'<path d="M8.2 9.6h19.2a1.2 1.2 0 0 1 1.15 1.55l-2.7 8.9a1.9 1.9 0 0 1-1.82 1.35H13.1a1.9 1.9 0 0 1-1.84-1.42z"/>'
+                f'<circle cx="13.6" cy="26.3" r="2.2"/><circle cx="23.4" cy="26.3" r="2.2"/></g></svg>')
     raise TypeError(e)
 
 
@@ -256,7 +294,7 @@ body {{ font-family: 'Jakarta', ui-sans-serif, system-ui, sans-serif; -webkit-fo
 .t {{ white-space: pre-line; overflow: visible; }}
 """
     pages_html = '\n'.join(page_html(p, i + 1) for i, p in enumerate(pages))
-    return f'<!doctype html><html><head><meta charset="utf-8"><title>Mirza: Brand Identity &amp; Ecommerce Showcase</title><style>{css}</style></head><body>\n{pages_html}\n</body></html>'
+    return f'<!doctype html><html><head><meta charset="utf-8"><title>Mirza Cart: Brand Identity &amp; Ecommerce Showcase</title><style>{css}</style></head><body>\n{pages_html}\n</body></html>'
 
 
 # ---------------------------------------------------------------- PPTX writer
@@ -403,29 +441,48 @@ def build_pptx(pages: list[Page], out: str):
             elif isinstance(e, Mark):
                 k = e.size / 32
                 box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, E(e.x), E(e.y), E(e.size), E(e.size))
-                box.adjustments[0] = 7 / 32
+                box.adjustments[0] = 8 / 32
                 box.fill.solid(); box.fill.fore_color.rgb = rgb(e.bg)
                 box.line.fill.background()
                 plain(box)
-                box.name = 'Mirza mark (square)'
-                pts = [(9, 22.5), (9, 10), (16, 18.5), (23, 10), (23, 22.5)]
-                fb = s.shapes.build_freeform(E(e.x + pts[0][0] * k), E(e.y + pts[0][1] * k), scale=1.0)
-                fb.add_line_segments([(E(e.x + px * k), E(e.y + py * k)) for px, py in pts[1:]], close=False)
+                box.name = 'Mirza Cart mark (tile)'
+                # The cart glyph of components/ui/BrandLogo.tsx, in its translate(3.4 3.6) scale(.79) frame.
+                g = lambda px, py: (E(e.x + (3.4 + px * .79) * k), E(e.y + (3.6 + py * .79) * k))
+                basket = [(8.4, 9.6), (27.4, 9.6), (28.3, 10), (28.55, 11.15), (25.85, 20.05), (25.2, 21), (24.03, 21.4),
+                          (13.1, 21.4), (11.95, 21), (11.26, 19.98)]
+                fb = s.shapes.build_freeform(*g(*basket[0]), scale=1.0)
+                fb.add_line_segments([g(px, py) for px, py in basket[1:]], close=True)
+                m = fb.convert_to_shape()
+                m.fill.solid(); m.fill.fore_color.rgb = rgb(e.fg)
+                m.line.fill.background()
+                plain(m)
+                m.name = 'Mirza Cart mark (basket)'
+                handle = [(3.5, 6.5), (6.8, 6.5), (7.9, 6.95), (8.35, 7.7), (9, 10)]
+                fb = s.shapes.build_freeform(*g(*handle[0]), scale=1.0)
+                fb.add_line_segments([g(px, py) for px, py in handle[1:]], close=False)
                 m = fb.convert_to_shape()
                 m.fill.background()
                 m.line.color.rgb = rgb(e.fg)
-                m.line.width = E(2.6 * k)
+                m.line.width = E(2.6 * .79 * k)
                 ln = m.line._get_or_add_ln()
                 ln.set('cap', 'rnd')
                 etree.SubElement(ln, qn('a:round'))
                 plain(m)
-                m.name = 'Mirza mark (M stroke)'
+                m.name = 'Mirza Cart mark (handle)'
+                for cx in (13.6, 23.4):
+                    x0, y0 = g(cx - 2.2, 26.3 - 2.2)
+                    d = E(4.4 * .79 * k)
+                    wheel = s.shapes.add_shape(MSO_SHAPE.OVAL, x0, y0, d, d)
+                    wheel.fill.solid(); wheel.fill.fore_color.rgb = rgb(e.fg)
+                    wheel.line.fill.background()
+                    plain(wheel)
+                    wheel.name = 'Mirza Cart mark (wheel)'
         # Speaker notes: the page title, so the deck is navigable in the outline.
         s.notes_slide.notes_text_frame.text = p.title
     cp = prs.core_properties
-    cp.title = 'Mirza: Brand Identity & Ecommerce Showcase'
-    cp.author = 'Mirza'
-    cp.last_modified_by = 'Mirza'
+    cp.title = 'Mirza Cart: Brand Identity & Ecommerce Showcase'
+    cp.author = 'Mirza Cart'
+    cp.last_modified_by = 'Mirza Cart'
     cp.subject = 'Brand guidelines and storefront showcase'
     cp.keywords = ''
     cp.comments = ''
