@@ -1,6 +1,8 @@
-# Mirza brand identity kit and ecommerce showcase (Milestone 113)
+# Mirza Cart brand identity kit and ecommerce showcase (Milestones 113 and 123)
 
-A client-ready brand book and a set of desktop, mobile and responsive showcase boards for **Mirza**, built from the real storefront: the design tokens in `app/globals.css`, the logo in `components/ui/BrandLogo.tsx` / `app/icon.svg`, the self-hosted Plus Jakarta Sans font, and screenshots captured from the live **test** site on 2026-11-11.
+A client-ready brand book and a set of desktop, mobile and responsive showcase boards for **Mirza Cart**, built from the real storefront: the design tokens in `app/tokens.css` and `app/globals.css`, the logo in `components/ui/BrandLogo.tsx` / `app/icon.svg`, the self-hosted Plus Jakarta Sans font, and screenshots captured from the live **test** site on 2026-11-13, after the Mirza Cart identity (Architecture Decision Record 053, Milestone 122) was deployed there.
+
+The kit was first made for the earlier "Mirza" identity (Milestone 113) and regenerated for Mirza Cart in Milestone 123: the name, the clean neutral palette, the shopping-cart logo in its horizontal, stacked, icon-only and inverse forms, and new captures. The export file names (`mirza-brand-kit.pdf`, `mirza-brand-showcase.pptx`) are kept so existing links keep working.
 
 This folder is presentation material and development-time tooling only. Nothing here is imported by the application, and deleting it leaves the app unchanged.
 
@@ -30,21 +32,21 @@ The mobile boards follow the two reference compositions the owner supplied (a ro
 | `source-assets/screenshots/desktop/` | 1440 x 900 viewport at 2x (2880 px wide), plus full-page captures (`*-full.png`) and `home-sections.json` (section positions used to crop board 16) |
 | `source-assets/screenshots/tablet/` | 820 x 1180 viewport at 2x |
 | `source-assets/screenshots/mobile/` | 390 x 844 viewport at 3x (iPhone-class), touch emulation on |
-| `source-assets/screenshots/elements/` | Single components at 3x: product cards, header, hero, promo card, category shortcuts, footer trust strip |
-| `source-assets/brand/` | The monogram as SVG (`mirza-monogram.svg`, identical to `app/icon.svg`) and the Plus Jakarta Sans variable font with its SIL Open Font License |
+| `source-assets/screenshots/elements/` | Single components at 3x: product cards, header, hero, promo card, category circles, footer trust strip |
+| `source-assets/brand/` | The cart mark as SVG (`mirza-cart-mark.svg`, identical to `app/icon.svg`) and the Plus Jakarta Sans variable font with its SIL Open Font License |
 
-Every screenshot is a real capture of `https://gocart-test-inky.vercel.app`; none is drawn or edited, apart from the redaction below. Product photos on the brand pages are the catalogue images in `/media` (sources and licences: `docs/assets/MANIFEST.csv`, `docs/assets/PHOTO_INVENTORY.md`).
+Every screenshot is a real capture of `https://gocart-test-inky.vercel.app`; none is drawn or edited, apart from the redaction below. Product photos on the brand pages are the live catalogue's own photos, downloaded from the test site for the build (see "Rebuilding"; sources and licences: `docs/assets/MANIFEST.csv`, `docs/assets/PHOTO_INVENTORY.md`).
 
 ## Accuracy notes and limitations
 
-- **Current card design.** The screenshots show the current product card: a white card with a hairline border, photo first, then category, name, price with the struck-through old price and discount, and a round add-to-cart button. It comes from "One product card for grids and rails" (`0257271`, 2026-11-10), which replaced the earlier Milestone 111 card. Checked on 2026-11-11: the card markup the test site serves is identical to `components/ProductCard.jsx` on `main`. The site served `main` at `27384ef` when captured (see `docs/DEPLOYMENT_VERCEL_TEST.md`).
+- **Current card design.** The screenshots show the current product card: a white card with a hairline border, photo first, then category, name, price with the struck-through old price and discount, and a round add-to-cart button. It comes from "One product card for grids and rails" (`0257271`, 2026-11-10), which replaced the earlier Milestone 111 card. Checked on 2026-11-11: the card markup the test site serves is identical to `components/ProductCard.jsx` on `main`. The site served `main` at `d5ed333` (pull request #85, Milestone 122) when the current screenshots were captured on 2026-11-13 (see `docs/DEPLOYMENT_VERCEL_TEST.md`).
 - **Photos are current.** The Milestone 112 photography is live on the test site and appears throughout.
 - **Redaction.** The footer "Contact" column (phone number, email address, city) and every `tel:`/`mailto:` link are hidden before each capture, so no personal contact details appear in the kit. Nothing else on the page is changed.
 - **Cart and wishlist contents** were set through the store's own browser storage (`gocart:cart`, `gocart:wishlist`), the same state a shopper creates with "Add to cart" and the heart button. No order was placed.
 - **Checkout is off on the test site** (no Turnstile keys), so "Place order" shows in its disabled colour and no order-confirmation screen exists to show. The cart and order summary (address step, standard delivery, cash on delivery, totals) are shown instead.
 - **Order lookup is paused on the test site** ("Online order lookup is paused right now"). It was captured (`*/orders-lookup.png`) but is not used on any board.
 - **Hero banners rotate.** Captures are taken right after page load, so the first slide shows; `desktop/home-hero-slide2.png` is the second slide.
-- **Device frames** (phone, tablet, browser window) are generic shapes drawn by the build, not photos of a real device or brand. Mirza is a responsive website, not a native app, and the boards say so.
+- **Device frames** (phone, tablet, browser window) are generic shapes drawn by the build, not photos of a real device or brand. Mirza Cart is a responsive website, not a native app, and the boards say so.
 - **Guidance vs. fact.** Colours, type sizes, radii, shadows and badge styles are measured or copied from the code. Clear space, minimum sizes, approved backgrounds, personality and do's and don'ts are recommendations written for this kit, and they are worded as guidance.
 
 ## Rebuilding
@@ -56,8 +58,13 @@ Development machine only. You need Node with Playwright's Chromium (already in t
 node docs/brand-kit/tools/capture.js
 node docs/brand-kit/tools/capture-elements.js
 
-# 2. PDF, PNG boards and PPTX from one layout source (about 20 seconds)
+# 2. PDF, PNG boards and PPTX from one layout source (about 50 seconds)
 python3 docs/brand-kit/tools/build.py          # or --pptx for the deck only
+
+# The brand pages use product photos named <product-slug>-1.webp. By default they are read from the
+# repository's local /media folder. If that folder holds the generated demo art (a local demo seed), download
+# each product's first photo from the test site into a folder and point the build at it:
+BRAND_KIT_MEDIA=/path/to/photos python3 docs/brand-kit/tools/build.py
 ```
 
 | Tool | Role |

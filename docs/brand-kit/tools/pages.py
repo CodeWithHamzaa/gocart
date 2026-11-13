@@ -1,4 +1,4 @@
-"""Mirza brand kit: the pages of the book (content + layout). See kit.py for the primitives.
+"""Mirza Cart brand kit: the pages of the book (content + layout). See kit.py for the primitives.
 
 Facts on these pages come from the repository and the live test storefront:
   colours, radii, shadows   app/globals.css (@theme tokens)
@@ -13,7 +13,7 @@ import json
 import os
 
 from kit import (SHOTS, C, Rect, Text, Img, Mark, Page, phone, phone_h, screen_card, browser, tablet,
-                 shot, photo, W, H)
+                 shot, photo, wordmark, wordmark_width, W, H)
 
 TOTAL = 26
 
@@ -34,14 +34,12 @@ def chrome(p: Page, n: int, section: str, dark=False):
     fg = 'white' if dark else 'ink'
     sub = '#B9B6C6' if dark else 'muted'
     p.add(
-        Mark(M, 56, 28, bg='white' if dark else 'ink', fg='ink' if dark else 'white') if not dark else Rect(0, 0, 0, 0, fill=None),
-        Text(M + (0 if dark else 38), 58, 200, 26, 'Mirza', size=20, weight=700, color=fg, lh=26, ls=-0.03),
+        Mark(M, 56, 28, bg='white' if dark else 'primary', fg='primary' if dark else 'white'),
+        *wordmark(M + 38, 58, 20, color=fg, h=26),
         Text(W - M - 600, 62, 600, 20, f'{n:02d}  ·  {section}', size=13, weight=600, color=sub, lh=20, ls=0.12, upper=True, align='right'),
         Text(M, H - 64, 600, 20, 'Brand Identity & Ecommerce Showcase', size=13, weight=500, color=sub, lh=20),
         Text(W - M - 200, H - 64, 200, 20, f'{n:02d} / {TOTAL}', size=13, weight=500, color=sub, lh=20, align='right'),
     )
-    # drop the placeholder rect used for dark pages
-    p.items = [e for e in p.items if not (isinstance(e, Rect) and e.w == 0)]
 
 
 def heading(p, eyebrow, title, caption=None, x=M, y=150, w=760, size=56, dark=False):
@@ -87,7 +85,7 @@ def build_pages():
     p = Page('cover', 'Cover', 'brand', bg=(135, 'accent-soft', 'page'))
     p.add(Mark(M, 120, 64))
     p.add(Text(M, 330, 700, 20, 'Brand identity & ecommerce showcase', size=16, weight=600, color='primary', lh=20, ls=0.12, upper=True))
-    p.add(Text(M, 366, 760, 190, 'Mirza', size=168, weight=700, color='ink', lh=180, ls=-0.04))
+    p.add(wordmark(M - 6, 376, 132, h=170))
     p.add(body(M, 580, 600, 120, 'Electronics, fashion, home and beauty, delivered across Pakistan. Pay in cash when your order arrives.', size=24, lh=36))
     p.add(Rect(M, 760, 600, 1, fill='line-3'))
     p.add(Text(M, 784, 640, 60, 'Responsive storefront  ·  Cash on Delivery  ·  Guest checkout\nNext.js  ·  Payload CMS  ·  PostgreSQL', size=16, weight=500, color='muted', lh=28))
@@ -100,7 +98,7 @@ def build_pages():
     # 02 Contents -----------------------------------------------------------------------------
     p = Page('contents', 'Contents', 'brand', bg='page')
     chrome(p, 2, 'Contents')
-    heading(p, 'Inside', 'Contents', 'A brand guide and a visual tour of the live Mirza storefront, on desktop, tablet and phone.', y=170, w=600)
+    heading(p, 'Inside', 'Contents', 'A brand guide and a visual tour of the live Mirza Cart storefront, on desktop, tablet and phone.', y=170, w=600)
     groups = [
         ('Brand', [('03', 'Introduction'), ('04', 'Positioning & personality'), ('05', 'Logo'), ('06', 'Logo usage'),
                    ('07', 'Colour: core palette'), ('08', 'Colour: supporting palette'), ('09', 'Typeface'), ('10', 'Type hierarchy')]),
@@ -126,7 +124,7 @@ def build_pages():
     chrome(p, 3, 'Introduction')
     heading(p, 'Brand overview', 'Everyday shopping,\nmade calm and certain.', y=160, w=820, size=60)
     p.add(body(M, 370, 700, 170,
-               'Mirza is a single-store online shop for Pakistan. It sells a curated range of electronics, fashion, '
+               'Mirza Cart is a single-store online shop for Pakistan. It sells a curated range of electronics, fashion, '
                'home and beauty products, delivers nationwide and lets every customer pay in cash when the parcel arrives. '
                'No account is needed to order.', size=20, lh=32))
     p.add(Rect(M, 570, 700, 150, fill='accent-soft', radius=24))
@@ -134,7 +132,7 @@ def build_pages():
     p.add(Text(M + 32, 630, 640, 80, 'Electronics, fashion, home and beauty, delivered across Pakistan. Pay in cash when your order arrives.',
                size=22, weight=600, color='ink', lh=32, ls=-0.01))
     p.add(label(M, 760, 700, 'Visual direction'))
-    p.add(body(M, 790, 700, 120, 'Neutral, airy surfaces so product photography reads true; one confident violet for every action; '
+    p.add(body(M, 790, 700, 120, 'Clean, neutral surfaces so product photography reads true; one confident violet for every action; a deep aubergine for depth; '
                                  'a single modern sans-serif; soft 16 to 24 px corners; hairlines instead of heavy borders.', size=18, lh=30))
     tiles = ['amber-oud-eau-de-parfum-1', 'aero-wave-wireless-headphones-1', 'everyday-faux-leather-tote-1',
              'pulse-active-smart-watch-1', 'arc-table-lamp-1', 'aloe-hydrating-gel-cream-1']
@@ -147,9 +145,9 @@ def build_pages():
     # 04 Positioning & personality -------------------------------------------------------------
     p = Page('positioning', 'Positioning & personality', 'brand', bg='page')
     chrome(p, 4, 'Positioning & personality')
-    p.add(Rect(M, 150, 820, 400, fill='ink', radius=24))
+    p.add(Rect(M, 150, 820, 400, fill='inverse', radius=24))
     p.add(Text(M + 48, 196, 700, 20, 'Positioning', size=14, weight=600, color='#B9A9FF', lh=20, ls=0.12, upper=True))
-    p.add(Text(M + 48, 236, 720, 200, 'For shoppers across Pakistan who want good everyday products without risk, Mirza is the online store '
+    p.add(Text(M + 48, 236, 720, 200, 'For shoppers across Pakistan who want good everyday products without risk, Mirza Cart is the online store '
                                       'where you order in a minute and pay only when it arrives.', size=34, weight=600, color='white', lh=46, ls=-0.02))
     p.add(Text(M + 48, 470, 720, 60, 'Single store  ·  Curated catalogue  ·  Cash on Delivery  ·  Nationwide delivery', size=16, weight=500, color='#B9B6C6', lh=24))
     promises = [('Cash on delivery', 'Pay the courier in cash when the parcel arrives. No card needed.'),
@@ -184,26 +182,28 @@ def build_pages():
     # 05 Logo ---------------------------------------------------------------------------------
     p = Page('logo', 'Logo', 'brand', bg='page')
     chrome(p, 5, 'Logo')
-    heading(p, 'Primary logo', 'The Mirza lockup', 'A near-black square monogram, an "M" drawn as one continuous stroke, beside the store name set in Plus Jakarta Sans Bold.', y=150, w=700)
+    heading(p, 'Primary logo', 'The Mirza Cart lockup', 'An abstract shopping cart (a filled, forward-leaning basket, a short handle, two wheels) on a violet tile, beside the name in Plus Jakarta Sans: "Mirza" heavy, "Cart" medium.', y=150, w=760)
     p.add(Rect(M, 400, 1040, 520, fill='surface', radius=24, stroke='line', name='Logo panel'))
     ms = 150
-    lx = M + 520 - (ms + 26 + 330) / 2
+    lx = M + 520 - (ms + 30 + wordmark_width(118)) / 2
     p.add(Mark(lx, 660 - ms / 2, ms))
-    p.add(Text(lx + ms + 26, 660 - 70, 400, 140, 'Mirza', size=124, weight=700, color='ink', lh=140, ls=-0.03))
+    p.add(wordmark(lx + ms + 30, 660 - 70, 118, h=140))
     vx = 1200
-    cards = [('Monogram', 'Favicon and admin', 'mark'), ('Wordmark, inverse', 'Footer and dark surfaces', 'inverse'),
-             ('Lockup', 'Storefront header', 'tint')]
+    cards = [('Icon only', 'Favicon, app icon, phone header', 'mark'), ('Lockup, inverse', 'Footer and dark surfaces', 'inverse'),
+             ('Stacked', 'Square spaces, social avatars', 'tint')]
     for i, (t, d, kind) in enumerate(cards):
         y = 150 + i * 262
-        bgc = {'mark': 'surface-muted', 'inverse': 'ink', 'tint': 'surface'}[kind]
+        bgc = {'mark': 'surface-muted', 'inverse': 'inverse', 'tint': 'surface'}[kind]
         p.add(Rect(vx, y, 600, 240, fill=bgc, radius=24, stroke='line' if kind != 'inverse' else None))
         if kind == 'mark':
             p.add(Mark(vx + 300 - 48, y + 54, 96))
         elif kind == 'inverse':
-            p.add(Text(vx, y + 64, 600, 80, 'Mirza', size=64, weight=700, color='white', lh=80, ls=-0.03, align='center'))
+            lw = 64 + 18 + wordmark_width(50)
+            p.add(Mark(vx + 300 - lw / 2, y + 64, 64, bg='white', fg='primary'))
+            p.add(wordmark(vx + 300 - lw / 2 + 82, y + 64, 50, color='white', h=64))
         else:
-            p.add(Mark(vx + 300 - 110, y + 70, 64))
-            p.add(Text(vx + 300 - 110 + 78, y + 70, 200, 64, 'Mirza', size=52, weight=700, color='ink', lh=64, ls=-0.03))
+            p.add(Mark(vx + 300 - 36, y + 34, 72))
+            p.add(wordmark(vx, y + 114, 38, center_w=600, h=48))
         tc = 'white' if kind == 'inverse' else 'ink'
         p.add(Text(vx + 28, y + 178, 300, 22, t, size=16, weight=600, color=tc, lh=22))
         p.add(Text(vx + 28, y + 202, 400, 20, d, size=14, weight=400, color='#B9B6C6' if kind == 'inverse' else 'muted', lh=20))
@@ -217,48 +217,49 @@ def build_pages():
     p.add(Rect(M, 300, 820, 470, fill='surface', radius=24, stroke='line'))
     p.add(label(M + 32, 328, 400, 'Clear space'))
     ms = 112
-    cx0, cy0 = M + 160, 470
+    cx0, cy0 = M + 100, 470
     pad = ms * 0.5
-    lw = ms + 20 + 92 * 2.5
+    lw = ms + 22 + wordmark_width(84) + 16
     p.add(Rect(cx0 - pad, cy0 - pad, lw + 2 * pad, ms + 2 * pad, fill='accent-soft', radius=0, stroke='primary', dashed=True, stroke_w=1.5))
     p.add(Rect(cx0, cy0, lw, ms, fill='surface', radius=0, stroke='line-3', dashed=True))
     p.add(Mark(cx0, cy0, ms))
-    p.add(Text(cx0 + ms + 20, cy0 + 6, 320, 100, 'Mirza', size=92, weight=700, color='ink', lh=100, ls=-0.03))
+    p.add(wordmark(cx0 + ms + 22, cy0 + 6, 84, h=100))
     p.add(Text(cx0 - pad, cy0 - pad - 26, 200, 18, '½ × mark', size=13, weight=600, color='primary', lh=18))
-    p.add(body(M + 32, 690, 760, 60, 'Keep a margin of at least half the monogram\'s height on every side. Nothing else (text, photos, edges) enters it.', size=16, lh=24))
+    p.add(body(M + 32, 690, 760, 60, 'Keep a margin of at least half the mark\'s height on every side. Nothing else (text, photos, edges) enters it.', size=16, lh=24))
     # min size
     x2 = 980
     p.add(Rect(x2, 300, 820, 220, fill='surface', radius=24, stroke='line'))
     p.add(label(x2 + 32, 328, 400, 'Minimum size'))
-    p.add(Mark(x2 + 40, 380, 28)); p.add(Text(x2 + 78, 380, 120, 28, 'Mirza', size=24, weight=700, color='ink', lh=28, ls=-0.03))
-    p.add(Text(x2 + 40, 430, 300, 40, 'Lockup: 28 px monogram\n(the storefront header size)', size=13, weight=500, color='muted', lh=19))
+    p.add(Mark(x2 + 40, 380, 28)); p.add(wordmark(x2 + 78, 380, 22, h=28))
+    p.add(Text(x2 + 40, 430, 300, 40, 'Lockup: 28 px mark\n(the storefront header uses 32 px)', size=13, weight=500, color='muted', lh=19))
     p.add(Mark(x2 + 400, 380, 16))
-    p.add(Text(x2 + 400, 430, 360, 40, 'Monogram alone: 16 px\n(the favicon size)', size=13, weight=500, color='muted', lh=19))
+    p.add(Text(x2 + 400, 430, 360, 40, 'Mark alone: 16 px\n(the favicon size)', size=13, weight=500, color='muted', lh=19))
     # backgrounds
     p.add(Rect(x2, 540, 820, 230, fill='surface', radius=24, stroke='line'))
     p.add(label(x2 + 32, 568, 400, 'Approved backgrounds'))
-    bgs = [('page', 'lock'), ('surface-muted', 'lock'), ('accent-soft', 'lock'), ('ink', 'word')]
+    bgs = [('page', 'lock'), ('surface', 'lock'), ('surface-muted', 'lock'), ('inverse', 'word')]
     for i, (b, kind) in enumerate(bgs):
         bx = x2 + 32 + i * 192
-        p.add(Rect(bx, 606, 176, 110, fill=b, radius=14, stroke='line' if b != 'ink' else None))
+        p.add(Rect(bx, 606, 176, 110, fill=b, radius=14, stroke='line' if b != 'inverse' else None))
         if kind == 'lock':
-            p.add(Mark(bx + 30, 646, 30)); p.add(Text(bx + 68, 646, 100, 30, 'Mirza', size=26, weight=700, color='ink', lh=30, ls=-0.03))
+            p.add(Mark(bx + 16, 648, 26)); p.add(wordmark(bx + 50, 647, 19, h=28))
         else:
-            p.add(Text(bx, 646, 176, 30, 'Mirza', size=26, weight=700, color='white', lh=30, ls=-0.03, align='center'))
+            p.add(Mark(bx + 16, 648, 26, bg='white', fg='primary')); p.add(wordmark(bx + 50, 647, 19, color='white', h=28))
         p.add(Text(bx, 724, 176, 18, C[b], size=12, weight=500, color='muted', lh=18, align='center'))
-    p.add(body(M, 800, 1680, 60, 'On near-black, use the white wordmark on its own, as the storefront footer does: the monogram is near-black itself and would disappear. '
-                                 'The store name in the lockup comes from the admin Settings, so a renamed store renames the logo.', size=16, lh=26))
+    p.add(body(M, 800, 1680, 60, 'On the aubergine surface the tile turns white and the cart violet, with a white wordmark, as the storefront footer does. '
+                                 'The mark works alone wherever space is tight (favicon, app icon). The store name in the lockup comes from the admin Settings, so a renamed store renames the logo.', size=16, lh=26))
     pages.append(p)
 
     # 07 Colour core --------------------------------------------------------------------------
     p = Page('colour-core', 'Colour: core palette', 'brand', bg='page')
     chrome(p, 7, 'Colour')
-    heading(p, 'Colour', 'Core palette', 'Every colour below is a design token in the storefront (app/globals.css). Neutral surfaces let the photos speak; violet marks every action.', y=150, w=1100)
-    p.add(swatch(M, 360, 480, 560, 'primary', 'The one action colour: buttons, links, selected tabs, focus rings. White on primary: 6.04:1.', big=True))
+    heading(p, 'Colour', 'Core palette', 'Every colour below is a design token in the storefront (app/tokens.css). Clean neutral surfaces let the photos speak; violet marks every action; aubergine adds depth.', y=150, w=1100)
+    p.add(swatch(M, 360, 480, 270, 'primary', 'The one action colour: buttons, links, selected states, focus rings, the logo tile. White on it: 6.04:1.', big=True))
+    p.add(swatch(M, 650, 480, 270, 'inverse', 'Deep aubergine: the one dark surface (footer). White on it: 13.73:1.', big=True))
     sx = M + 510
-    for i, (t, u) in enumerate([('primary-dark', 'Hover and pressed states.'), ('accent', 'Soft fills, decorative tints.'), ('accent-soft', 'Hero, announcement bar, selected chips.')]):
+    for i, (t, u) in enumerate([('primary-dark', 'Hover and pressed states.'), ('accent', 'Soft fills, decorative tints.'), ('accent-soft', 'Soft buttons, selected chips, banner tint.')]):
         p.add(swatch(sx + i * 397, 360, 377, 270, t, u))
-    for i, (t, u) in enumerate([('ink', 'Headings, prices, logo.'), ('ink-2', 'Body copy.'), ('ink-3', 'Secondary copy.'), ('muted', 'Captions, meta.'), ('disabled', 'Disabled controls.')]):
+    for i, (t, u) in enumerate([('ink', 'Headings, prices, wordmark.'), ('ink-2', 'Body copy.'), ('ink-3', 'Secondary copy.'), ('muted', 'Captions, meta.'), ('disabled', 'Disabled controls.')]):
         p.add(swatch(sx + i * 238, 650, 222, 270, t, u))
     pages.append(p)
 
@@ -267,7 +268,7 @@ def build_pages():
     chrome(p, 8, 'Colour')
     heading(p, 'Colour', 'Surfaces, lines and status', y=150, w=1100)
     p.add(label(M, 290, 600, 'Surfaces and lines'))
-    surf = [('page', 'Page'), ('surface', 'Cards'), ('surface-muted', 'Photo wells'), ('line', 'Card hairline'), ('line-2', 'Dividers'), ('line-3', 'Hover line'), ('line-input', 'Form fields')]
+    surf = [('page', 'Page'), ('surface', 'Cards'), ('surface-muted', 'Image wells'), ('line', 'Card hairline'), ('line-2', 'Dividers'), ('line-3', 'Hover line'), ('line-input', 'Form fields')]
     for i, (t, u) in enumerate(surf):
         p.add(swatch(M + i * 242, 318, 226, 230, t, u))
     p.add(label(M, 580, 600, 'Status'))
@@ -278,10 +279,10 @@ def build_pages():
     cx = M + 6 * 242
     p.add(Rect(cx, 608, 226, 230, fill='surface', radius=16, stroke='line'))
     p.add(Text(cx + 18, 624, 200, 18, 'Contrast (WCAG)', size=13, weight=600, color='muted', lh=18, ls=0.12, upper=True))
-    pairs = [('white', 'primary', '6.04:1'), ('ink-2', 'accent-soft', '9.3:1'), ('muted', 'surface-muted', '5.47:1'), ('sale', 'sale-soft', '6.12:1'), ('white', 'sale-strong', '5.39:1')]
+    pairs = [('white', 'primary', '6.04:1'), ('white', 'inverse', '13.73:1'), ('ink', 'page', '14.71:1'), ('muted', 'surface-muted', '5.34:1'), ('sale', 'page', '6.88:1')]
     for i, (fg, bg, r) in enumerate(pairs):
         y = 656 + i * 34
-        p.add(Rect(cx + 18, y, 54, 26, fill=bg, radius=6, stroke='line' if bg in ('accent-soft', 'surface-muted', 'sale-soft') else None))
+        p.add(Rect(cx + 18, y, 54, 26, fill=bg, radius=6, stroke='line' if bg in ('accent-soft', 'surface-muted', 'sale-soft', 'page') else None))
         p.add(Text(cx + 18, y + 3, 54, 20, 'Aa', size=14, weight=600, color=fg, lh=20, align='center'))
         p.add(Text(cx + 84, y + 3, 130, 20, r, size=14, weight=600, color='ink', lh=20))
     p.add(body(M, 870, 1680, 60, 'Sale colours are for real discounts only, amber only for "Limited edition". Cards use a hairline, not a shadow.', size=16, lh=26))
@@ -299,7 +300,7 @@ def build_pages():
     x2 = 980
     heading(p, 'Typography', 'One family,\nfour weights.', 'There is no secondary typeface. Hierarchy comes from size, weight and tight tracking on headings.', x=x2, y=150, w=820, size=56)
     weights = [(400, 'Regular', 'Body copy, descriptions'), (500, 'Medium', 'Announcement bar, small labels'),
-               (600, 'SemiBold', 'Headings, buttons, prices, nav'), (700, 'Bold', 'The wordmark')]
+               (600, 'SemiBold', 'Headings, buttons, prices, nav'), (800, 'ExtraBold', 'The wordmark ("Mirza")')]
     for i, (wt, n, u) in enumerate(weights):
         y = 520 + i * 100
         p.add(Rect(x2, y, 820, 1, fill='line-2'))
@@ -314,9 +315,9 @@ def build_pages():
     heading(p, 'Type hierarchy', 'Measured on the live storefront', y=150, w=1200, size=48)
     rows = [
         ('Hero heading', 'Deals on headphones and fragrances', 48, 52, 600, -0.03, 'ink', '48 / 52  SemiBold  −3%', 'Phone: 28 / 34'),
-        ('Section heading', 'Deals of the day', 36, 40, 600, -0.03, 'ink', '36 / 40  SemiBold  −3%', 'Phone: 24 / 30'),
+        ('Section heading', 'Limited-time deals', 36, 40, 600, -0.03, 'ink', '36 / 40  SemiBold  −3%', 'Phone: 24 / 30'),
         ('Price', 'Rs. 4,499', 28, 28, 600, -0.02, 'ink', '28 / 28  SemiBold  −2%', 'Product page'),
-        ('Wordmark', 'Mirza', 24, 30, 700, -0.03, 'ink', '24 / 30  Bold  −3%', 'Header'),
+        ('Wordmark', 'Mirza Cart', 22, 30, 800, -0.03, 'ink', '22 / 30  ExtraBold + Medium  −3%', 'Header'),
         ('Lead', 'Up to 36% off. Pay cash on delivery.', 18, 26, 400, 0, 'ink-2', '18 / 26  Regular', 'Phone: 16 / 24'),
         ('Product name', 'Aero Wave Wireless Headphones', 16, 24, 600, 0, 'ink', '16 / 24  SemiBold', 'Phone: 14 / 20'),
         ('Body', 'Picked by the store, across every category.', 16, 24, 400, 0, 'muted', '16 / 24  Regular', 'Phone: 14 / 20'),
@@ -354,7 +355,7 @@ def build_pages():
     gx, gy, gs, gg = 790, 150, 236, 18
     for i, t in enumerate(grid):
         p.add(Img(gx + (i % 4) * (gs + gg), gy + (i // 4) * (gs + gg), gs, gs, photo(t), radius=16))
-    p.add(Text(gx, gy + 3 * (gs + gg) + 4, 1000, 20, 'Product photos are shown on a muted well (#F5F4F8) inside cards. Category images are 4:3 and appear as circles in the home shortcuts.', size=14, weight=500, color='muted', lh=20))
+    p.add(Text(gx, gy + 3 * (gs + gg) + 4, 1000, 20, 'Product photos are shown on a neutral well (#F1F2F5) inside cards. Category images are 4:3 and appear as circles in the home shortcuts.', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 12 Interface language -------------------------------------------------------------------
@@ -425,10 +426,10 @@ def build_pages():
     rx = 1440
     p.add(Img(rx, 340, 360, 360 * 663 / 1896, shot('elements', 'promo-card'), radius=20, shadow='float-sm'))
     p.add(Text(rx, 340 + 360 * 663 / 1896 + 12, 360, 20, 'Promotional card', size=14, weight=500, color='muted', lh=20))
-    p.add(Img(M, 790, 1680, 1680 * 405 / 4320, shot('elements', 'header'), radius=16, shadow='float-sm'))
-    p.add(Text(M, 790 + 1680 * 405 / 4320 + 12, 1000, 20, 'Header: lockup, search, quick links, wishlist and cart, with the category row below.', size=14, weight=500, color='muted', lh=20))
-    p.add(Img(rx, 600, 360, 360 * 177 / 1640, shot('elements', 'category-shortcuts'), crop=(270, 0, 1640), radius=12, shadow='float-sm'))
-    p.add(Text(rx, 600 + 360 * 177 / 1640 + 12, 360, 20, 'Category shortcuts', size=14, weight=500, color='muted', lh=20))
+    p.add(Img(M, 790, 1680, 1680 * 243 / 4320, shot('elements', 'header'), radius=16, shadow='float-sm'))
+    p.add(Text(M, 790 + 1680 * 243 / 4320 + 12, 1000, 20, 'Header: lockup, search, Shop, Track order, wishlist and cart.', size=14, weight=500, color='muted', lh=20))
+    p.add(Img(rx, 600, 360, 360 * 504 / 3000, shot('elements', 'category-shortcuts'), radius=12, shadow='float-sm'))
+    p.add(Text(rx, 600 + 360 * 504 / 3000 + 12, 360, 20, 'Category circles', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 14 Brand in use -------------------------------------------------------------------------
@@ -438,8 +439,8 @@ def build_pages():
     p.add(body(M, 340, 560, 200, 'The header lockup, the violet actions, the soft hero panel and the photo-first cards repeat on every page, '
                                  'so a shopper always knows where they are, on any screen.', size=18, lh=29))
     hw = 1100
-    p.add(Img(700, 150, hw, hw * 405 / 4320, shot('elements', 'header'), radius=14, shadow='float-sm'))
-    p.add(Img(700, 270, hw, hw * 1875 / 4176, shot('elements', 'hero'), radius=22, shadow='float'))
+    p.add(Img(700, 150, hw, hw * 243 / 4320, shot('elements', 'header'), radius=14, shadow='float-sm'))
+    p.add(Img(700, 240, hw, hw * 1686 / 4176, shot('elements', 'hero'), radius=22, shadow='float'))
     for i, n in enumerate(['card-new', 'card-limited']):
         p.add(Img(M + i * 270, 560, 250, 250 * 1200 / 906, shot('elements', n), radius=16, shadow='float-sm'))
     els, _ = phone(1540, 490, 220, shot('mobile', 'product-9'), shadow='device-sm')
@@ -450,7 +451,7 @@ def build_pages():
     # 15 Desktop homepage ---------------------------------------------------------------------
     p = Page('desktop-homepage', 'Desktop homepage', 'desktop', bg=(160, 'surface-muted', 'accent-soft'))
     chrome(p, 15, 'Desktop showcase')
-    heading(p, 'Desktop · Homepage', 'A storefront that\nleads with the product', 'Announcement bar, search-first header, category row, a product-led hero slider and category shortcuts, all above the fold.', y=150, w=560, size=48)
+    heading(p, 'Desktop · Homepage', 'A storefront that\nleads with the product', 'A moving announcement bar, a search-first header with Track order, a product-led banner and category circles, all above the fold.', y=150, w=560, size=48)
     els, bh = browser(M, 520, 560, shot('desktop', 'home-hero-slide2'), shadow='device-sm')
     p.add(els)
     els, bh = browser(740, 150, 1060, shot('desktop', 'home-full'), h=840)
@@ -461,11 +462,11 @@ def build_pages():
     p = Page('desktop-home-sections', 'Desktop homepage sections', 'desktop', bg='page')
     chrome(p, 16, 'Desktop showcase')
     heading(p, 'Desktop · Homepage', 'Deals, featured picks\nand promotions', y=150, w=700, size=48)
-    p.add(Text(M, 330, 560, 120, 'Deals of the day with a live countdown, an admin-curated Featured grid with category tabs, and two promotional cards that link to sales.', size=18, weight=400, color='ink-2', lh=29))
+    p.add(Text(M, 330, 560, 120, 'Limited-time deals with their end date, an admin-curated Featured grid with category tabs, and two promotional cards that link to sales.', size=18, weight=400, color='ink-2', lh=29))
     p.add(section_panel(740, 150, 1060, 'featured', css_h=600))
     p.add(section_panel(740, 150 + 1060 * 600 / 1440 + 26, 1060, 'promos', pad=28))
     p.add(section_panel(M, 520, 560, 'deals', pad=32, shadow='float'))
-    p.add(Text(M, 520 + 560 * (SECTIONS['deals']['h'] + 64) / 1440 + 14, 560, 20, 'Deals of the day, with a countdown to the end of the offer.', size=14, weight=500, color='muted', lh=20))
+    p.add(Text(M, 520 + 560 * (SECTIONS['deals']['h'] + 64) / 1440 + 14, 560, 20, 'Limited-time deals, with the date the offer ends.', size=14, weight=500, color='muted', lh=20))
     pages.append(p)
 
     # 17 Desktop shopping ---------------------------------------------------------------------
@@ -611,14 +612,14 @@ def build_pages():
     p = Page('dos-donts', "Do's and don'ts", 'brand', bg='page')
     chrome(p, 25, 'Guidelines')
     heading(p, 'Guidelines', "Do's and don'ts", y=150, w=900, size=52)
-    dos = ['Use the lockup exactly as supplied: monogram left, name right.',
+    dos = ['Use the lockup exactly as supplied: cart mark left, name right.',
            'Keep violet (#5F42EC) for actions and selected states only.',
            'Set everything in Plus Jakarta Sans; SemiBold for headings.',
            'Show one product per square photo on a neutral backdrop.',
            'Say what happens: delivery cost, cash on delivery, no account.',
            'Use sale colours only for a real discount.']
     donts = ['Recolour, outline, stretch or rotate the logo.',
-             'Put the near-black monogram on a dark background.',
+             'Put the violet tile on the aubergine surface (use the white tile there).',
              'Add a second accent colour or gradients on buttons.',
              'Mix in another typeface or use weights below 400.',
              'Use cluttered, filtered or branded product photos.',
@@ -636,9 +637,10 @@ def build_pages():
     pages.append(p)
 
     # 26 Closing --------------------------------------------------------------------------------
-    p = Page('closing', 'Closing', 'brand', bg='ink', dark=True)
-    chrome(p, 26, 'Mirza', dark=True)
-    p.add(Text(0, 330, W, 200, 'Mirza', size=180, weight=700, color='white', lh=200, ls=-0.04, align='center'))
+    p = Page('closing', 'Closing', 'brand', bg='inverse', dark=True)
+    chrome(p, 26, 'Mirza Cart', dark=True)
+    p.add(Mark(W / 2 - 60, 220, 120, bg='white', fg='primary'))
+    p.add(wordmark(0, 372, 150, color='white', center_w=W, h=190))
     p.add(Text(0, 560, W, 40, 'Electronics, fashion, home and beauty, delivered across Pakistan.\nPay in cash when your order arrives.', size=26, weight=400, color='#C9C6D4', lh=40, align='center'))
     p.add(Rect(W / 2 - 40, 680, 80, 2, fill='primary'))
     p.add(Text(0, 712, W, 26, 'Responsive storefront  ·  Guest checkout  ·  Cash on Delivery  ·  Admin-managed with Payload CMS', size=17, weight=500, color='#B9B6C6', lh=26, align='center'))
