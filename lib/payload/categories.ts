@@ -19,6 +19,8 @@ export type Media = {
   id: number | string
   url?: null | string
   alt?: null | string
+  /** M124: generated sizes (collections/Media.ts `imageSizes`); absent on media uploaded before M124. */
+  sizes?: null | Partial<Record<'product' | 'category' | 'hero', null | { url?: null | string }>>
 }
 
 export type Category = {

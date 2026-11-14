@@ -8,6 +8,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb'
 import CategoryControls from '@/components/ui/CategoryControls'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
+import { mediaUrl } from '@/lib/media'
 import { filtersToQuery, isRefined, parseCategoryFilters } from '@/lib/category-filters'
 import { CategoryIcon } from '@/lib/category-style'
 import { getCategoryBySlug, getProductsByCategory } from '@/lib/payload/categories'
@@ -105,7 +106,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     return query ? `${basePath}?${query}` : basePath
   }
 
-  const bannerImage = typeof category.image === 'object' && category.image ? category.image.url : null
+  const bannerImage = mediaUrl(category.image, 'category')
   const crumbs = [
     { label: 'Home', href: '/' },
     { label: 'Categories', href: '/categories' },

@@ -4,6 +4,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
+import sharp from 'sharp'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Categories } from './collections/Categories'
@@ -53,6 +54,9 @@ export default buildConfig({
   collections: [Users, Media, Categories, Products, Orders, PromoCards, HeroSlides],
   globals: [Settings, StorefrontContent],
   editor: lexicalEditor(),
+  // M124 (ADR-054): Payload needs sharp passed in to generate the `imageSizes` of the Media collection and to
+  // apply an admin's crop. sharp is already a dependency (the demo photo tooling uses it).
+  sharp,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { CategoryIcon } from '@/lib/category-style'
+import { mediaUrl } from '@/lib/media'
 
 // M61: the categories page's large category circle (M101 moved the home page's tile variant to a
 // home-page component, since removed by M102; `variant` stays 'circle' so callers read the same). A server
@@ -13,7 +14,7 @@ import { CategoryIcon } from '@/lib/category-style'
 type TileCategory = { slug: string; title: string; image?: { url?: string | null } | number | string | null }
 
 export default function CategoryTile({ category, className = '' }: { category: TileCategory; index?: number; variant: 'circle'; className?: string }) {
-  const image = typeof category.image === 'object' && category.image ? category.image.url : null
+  const image = mediaUrl(category.image, 'category')
   const href = `/category/${category.slug}`
 
   return (

@@ -1,5 +1,6 @@
 import { discountPercent } from './product-badges'
 import { formatPKR } from './currency'
+import { mediaUrl } from './media'
 import type { Product } from './payload/products'
 import type { Category } from './payload/categories'
 
@@ -31,7 +32,8 @@ type Input = {
 const imageOf = (product: Product) => {
   const first = product.images?.[0]
   if (typeof first === 'string') return { url: first, alt: '' }
-  return first && typeof first === 'object' && first.url ? { url: first.url, alt: first.alt ?? '' } : null
+  const url = mediaUrl(first, 'product')
+  return url && first && typeof first === 'object' ? { url, alt: first.alt ?? '' } : null
 }
 const categoryOf = (product: Product) => (product.category && typeof product.category === 'object' ? product.category : null)
 const usable = (product: Product) => product.inStock === true && imageOf(product) !== null
@@ -147,10 +149,12 @@ export function adminSlidesToHero(docs: AdminSlideDoc[]): HeroSlide[] {
     const href = str(doc.link)
     if (!title || !text || !badge || !label || !safePath(href)) continue
     const images = (Array.isArray(doc.images) ? doc.images : [])
-      .map((item) => (item && typeof item === 'object' ? (item as { url?: unknown; alt?: unknown }) : null))
-      .filter((item): item is { url: string; alt?: unknown } => item !== null && typeof item.url === 'string' && item.url.length > 0)
+      .map((item) => {
+        const url = mediaUrl(item, 'hero')
+        return url ? { url, alt: str((item as { alt?: unknown }).alt) } : null
+      })
+      .filter((item): item is { url: string; alt: string } => item !== null)
       .slice(0, 2)
-      .map((item) => ({ url: item.url, alt: str(item.alt) }))
     slides.push({
       id: `admin-${doc.id}`,
       badge,
