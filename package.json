@@ -26,7 +26,9 @@
     "test:seo": "tsx scripts/seo.test.ts",
     "test:rollout-demo-photos": "tsx scripts/rollout-demo-photos.test.ts",
     "test:storefront-content": "tsx scripts/storefront-content.test.ts",
+    "test:media": "tsx scripts/media.test.ts",
     "test:rollout-demo-photos:db": "tsx scripts/rollout-demo-photos.db-test.ts",
+    "test:media-sizes:db": "tsx scripts/media-sizes.db-test.ts",
     "rollout:demo-photos": "tsx scripts/rollout-demo-photos.ts",
     "deploy:migrate": "tsx scripts/check-env.ts && payload migrate && tsx scripts/verify-migrations.ts && tsx scripts/db-roles.ts && tsx scripts/bootstrap-admin.ts",
     "test:e2e": "playwright test"

@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { deliveryNote } from "@/lib/delivery";
 import { tileFor } from "@/lib/category-style";
 import { statusBadge } from "@/lib/product-badges";
+import { mediaUrl } from "@/lib/media";
 import Price from "./ui/Price";
 import { buttonClasses } from "./ui/Button";
 
@@ -48,7 +49,7 @@ const ProductDetails = ({ product, shipping, children = null }) => {
 
     // M107: each photo carries its own description (Media alt); the product name is the fallback.
     const gallery = product.images
-        .map((image) => (typeof image === 'string' ? { url: image, alt: '' } : { url: image?.url, alt: image?.alt || '' }))
+        .map((image) => (typeof image === 'string' ? { url: image, alt: '' } : { url: mediaUrl(image, 'product'), alt: image?.alt || '' }))
         .filter((entry) => entry.url)
     const images = gallery.map((entry) => entry.url)
     const [mainImage, setMainImage] = useState(images[0]);

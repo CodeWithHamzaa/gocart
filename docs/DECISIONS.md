@@ -1638,3 +1638,26 @@ These fields can be set **only at creation** — by `createOrder` through the Lo
 - The brand kit (`docs/brand-kit/`, Milestone 113) describes the earlier identity until it is regenerated.
 - Rollback: revert the pull request and run the migration's `down` (it restores the default and renames "Mirza Cart" back to "Mirza").
 
+
+
+## Architecture Decision Record 054: Admin crop tool on every image upload and a generated size per storefront placement (Milestone 124)
+
+**Status**: **Proposed (2026-11-14)**, written after the owner asked for the crop tool to be available on every media or product image upload, with each placement keeping its own ratio. It changes no Accepted decision: Architecture Decision Record 020 (storage), 036 (allowed image types) and 046 (test environment) are unchanged.
+
+**Context**: the `media` collection had no `imageSizes`, so Payload offered no crop tool on upload, and the storefront showed the original file and relied on CSS `object-cover`. A photo with another ratio was cut at the centre, often through the product. Placements use different ratios: product 1:1, category 4:3, home banner 16:10.
+
+**Decision**:
+
+1. **`imageSizes` on `media`**: `product` 1000 by 1000, `category` 800 by 600 and `hero` 1600 by 1000, each `fit: 'cover'`, `position: 'attention'` and WebP at quality 80. Declaring sizes is what makes the admin show the crop tool (the Edit button beside a chosen file). Promo cards have no size: they show the whole image (`object-contain`), so a crop would only remove part of it.
+2. **Automatic framing**: with no admin crop, sharp's `attention` strategy (brightness detail, colour saturation, skin tones) chooses the framing. Measured on a synthetic photo, the square kept 3.6 times more of the subject than a centre crop (`scripts/media-sizes.db-test.ts`).
+3. **`focalPoint: false`**: Payload gives every new upload a centre focal point and, with a focal point set, ignores `position` and crops around it (read in `node_modules/payload/dist/uploads/generateFileData.js` and `getImageResizeAction.js`). Keeping the focal point would therefore switch the automatic framing off. The admin's manual correction is the crop tool instead. The existing `focal_x` and `focal_y` columns stay in the table, unused.
+4. **A crop replaces the stored original** (verified: a crop box produced a stored file of the cropped size). The sizes are generated from the cropped image. The admin crop is free-form: width and height fields, no ratio lock.
+5. **Storefront**: `lib/media.ts` (`mediaUrl`) returns the size for the placement and falls back to the original file. Media uploaded before this change, and images smaller than a size (Payload omits a size rather than enlarge), keep working through the fallback.
+6. **`sharp` is passed to `buildConfig`** in `payload.config.ts`, which Payload needs to generate sizes and apply crops. No new package: `sharp` is already a dependency.
+
+**Consequences**:
+- A migration (`20261114_035841_media_image_sizes`, 18 nullable columns and 3 indexes on `media`, no data change) must be applied to the test Neon before the code is deployed.
+- Media uploaded before the change has no sizes until it is uploaded again; the storefront shows its original file as before. A one-off regeneration script is not part of this milestone.
+- Whether sizes are generated for uploads sent straight from the browser to Vercel Blob (`clientUploads: true`) is read from Payload's source (it fetches the file back when sizes are configured) but is **unverified** on the test site until the first upload there.
+- Rejected: a custom crop component (react-easy-crop) for an always-remembered crop. It needs a new dependency, is exposed to Payload upgrades and Payload's own crop already covers the request.
+- Rollback: revert the pull request and run the migration's `down`.

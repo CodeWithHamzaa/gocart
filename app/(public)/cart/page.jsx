@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatPKR } from '@/lib/currency'
+import { mediaUrl } from '@/lib/media'
 
 // M28: previously resolved cart line items against `state.product.list`,
 // a Redux slice populated only from the dummy dataset (`productSlice.js`,
@@ -111,7 +112,7 @@ export default function Cart() {
                         {
                             cartArray.map((item) => {
                                 const firstImage = item.images?.[0]
-                                const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
+                                const imageUrl = typeof firstImage === 'string' ? firstImage : mediaUrl(firstImage, 'product')
                                 const categoryTitle = typeof item.category === 'object' && item.category ? item.category.title : item.category
 
                                 return (

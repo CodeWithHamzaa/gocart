@@ -4,6 +4,7 @@ import React from 'react'
 import Badge from './ui/Badge'
 import Price from './ui/Price'
 import { discountPercent, statusBadge } from '@/lib/product-badges'
+import { mediaUrl } from '@/lib/media'
 import QuickAddButton from './ui/QuickAddButton'
 import WishlistButton from './ui/WishlistButton'
 
@@ -21,7 +22,7 @@ const RAIL_WIDTH = 'w-[46vw] max-w-[260px] shrink-0 sm:w-[240px] lg:w-[260px]'
 const ProductCard = ({ product, priority = false, rail = false, headingLevel = 3, showCategory = true }) => {
 
     const firstImage = product.images?.[0]
-    const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url
+    const imageUrl = typeof firstImage === 'string' ? firstImage : mediaUrl(firstImage, 'product')
     const discount = discountPercent(product.mrp, product.price)
     const status = statusBadge(product)
     const label = status && !(status.tone === 'sale' && discount > 0) ? status : null

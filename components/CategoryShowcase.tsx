@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowRightIcon } from 'lucide-react'
 import type { Category } from '@/lib/payload/categories'
 import { CategoryIcon } from '@/lib/category-style'
+import { mediaUrl } from '@/lib/media'
 import ScrollRail from '@/components/ui/ScrollRail'
 
 // M118: "Shop by category", the home page's category discovery, after the owner's reference ("Style 3,
@@ -17,7 +18,7 @@ import ScrollRail from '@/components/ui/ScrollRail'
 // the server HTML (M40, e2e/seo.spec.ts). Swiped on touch, scrolled with ScrollRail's round buttons from
 // `md`. A category without an image shows its icon. (Photo cards for desktop were built, compared and
 // then dropped at the owner's request in favour of one style everywhere.)
-const imageOf = (category: Category) => (category.image && typeof category.image === 'object' ? (category.image.url ?? null) : null)
+const imageOf = (category: Category) => mediaUrl(category.image, 'category')
 
 // The row bleeds to the screen edge below `lg` so the next circle peeks in; from `lg` it sits in its
 // column. py-1.5 leaves room for the hover ring.

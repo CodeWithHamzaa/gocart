@@ -1818,3 +1818,13 @@ Groups are labels, not a sequence. Read the **Order** column for execution.
 - **Rollback**: revert the pull request.
 - **Commit message**: `Regenerate the brand kit for the Mirza Cart identity`
 
+
+
+### Milestone 124 — Admin crop tool and a generated image size per storefront placement
+- **Status (2026-11-14)**: **Implemented, in review.** Requested by the owner on 2026-11-14.
+- **Goal**: the crop tool is offered on every image upload in the admin, and each storefront placement shows an image framed for its own ratio (Architecture Decision Record 054).
+- **Files**: `collections/Media.ts`, `payload.config.ts`, `lib/media.ts`, `lib/payload/categories.ts`, `lib/hero-slides.ts`, `components/ProductCard.jsx`, `components/ProductDetails.jsx`, `components/CategoryShowcase.tsx`, `components/ui/CategoryTile.tsx`, `app/(public)/cart/page.jsx`, `app/(public)/category/[slug]/page.tsx`, migration `20261114_035841_media_image_sizes`, `scripts/media.test.ts`, `scripts/media-sizes.db-test.ts`, `.github/workflows/ci.yml`.
+- **Dependencies**: none beyond the existing `sharp`.
+- **Testing**: type-check, lint (0 errors, the same 8 warnings), the unit scripts, a production build, `npm run test:media-sizes:db` against a throwaway local database (sizes, automatic framing, an admin crop) and a browser check that the admin shows the crop tool after a file is chosen. Not tested: an upload on the test site with Vercel Blob (unverified).
+- **Rollback**: revert the pull request and run the migration's `down`.
+- **Commit message**: `Offer the crop tool on image uploads and serve a size per placement`
